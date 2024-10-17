@@ -3634,8 +3634,10 @@ static void walk_update_folio(struct lru_gen_mm_walk *walk, struct folio *folio,
 			update_batch_size(walk, folio, old_gen, new_gen);
 	} else if (lru_gen_set_refs(folio)) {
 		old_gen = folio_lru_gen(folio);
-		if (old_gen >= 0 && old_gen != new_gen)
+		if (old_gen >= 0 && old_gen != new_gen) {
+			folio_clear_lru_refs(folio);
 			folio_activate(folio);
+		}
 	}
 }
 
@@ -4677,7 +4679,7 @@ bool isolate_folio(struct lruvec *lruvec, struct folio *folio, struct scan_contr
 
 	/* see the comment on LRU_REFS_FLAGS */
 	if (!folio_test_referenced(folio))
-		set_mask_bits(&folio->flags, LRU_REFS_MASK, 0);
+		folio_clear_lru_refs(folio);
 
 	/* for shrink_folio_list() */
 	folio_clear_reclaim(folio);
