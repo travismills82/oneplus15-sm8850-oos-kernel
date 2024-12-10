@@ -185,14 +185,14 @@ binder_set_installed_page(struct binder_alloc *alloc,
 			  struct page *page)
 {
 	/* Pairs with acquire in binder_get_installed_page() */
-	smp_store_release(&alloc_to_wrap(alloc)->pages[index], page);
+	smp_store_release(&alloc->pages[index], page);
 }
 
 static inline struct page *
 binder_get_installed_page(struct binder_alloc *alloc, unsigned long index)
 {
 	/* Pairs with release in binder_set_installed_page() */
-	return smp_load_acquire(&alloc_to_wrap(alloc)->pages[index]);
+	return smp_load_acquire(&alloc->pages[index]);
 }
 
 static void binder_lru_freelist_add(struct binder_alloc *alloc,
@@ -222,66 +222,6 @@ static void binder_lru_freelist_add(struct binder_alloc *alloc,
 
 		trace_binder_free_lru_end(alloc, index);
 	}
-}
-
-static inline
-void binder_alloc_set_mapped(struct binder_alloc *alloc, bool state)
-{
-	/* pairs with smp_load_acquire in binder_alloc_is_mapped() */
-	smp_store_release(&alloc_to_wrap(alloc)->mapped, state);
-}
-
-static inline bool binder_alloc_is_mapped(struct binder_alloc *alloc)
-{
-	/* pairs with smp_store_release in binder_alloc_set_mapped() */
-	return smp_load_acquire(&alloc_to_wrap(alloc)->mapped);
-}
-
-static struct page *binder_page_lookup(struct binder_alloc *alloc,
-				       unsigned long addr)
-{
-	struct mm_struct *mm = alloc->mm;
-	struct page *page;
-	long npages = 0;
-
-	/*
-	 * Find an existing page in the remote mm. If missing,
-	 * don't attempt to fault-in just propagate an error.
-	 */
-	mmap_read_lock(mm);
-	if (binder_alloc_is_mapped(alloc))
-		npages = get_user_pages_remote(mm, addr, 1, FOLL_NOFAULT,
-					       &page, NULL);
-	mmap_read_unlock(mm);
-
-	return npages > 0 ? page : NULL;
-}
-
-static int binder_page_insert(struct binder_alloc *alloc,
-			      unsigned long addr,
-			      struct page *page)
-{
-	struct mm_struct *mm = alloc->mm;
-	struct vm_area_struct *vma;
-	int ret = -ESRCH;
-
-	/* attempt per-vma lock first */
-	vma = lock_vma_under_rcu(mm, addr);
-	if (vma) {
-		if (binder_alloc_is_mapped(alloc))
-			ret = vm_insert_page(vma, addr, page);
-		vma_end_read(vma);
-		return ret;
-	}
-
-	/* fall back to mmap_lock */
-	mmap_read_lock(mm);
-	vma = vma_lookup(mm, addr);
-	if (vma && binder_alloc_is_mapped(alloc))
-		ret = vm_insert_page(vma, addr, page);
-	mmap_read_unlock(mm);
-
-	return ret;
 }
 
 static struct page *binder_page_alloc(struct binder_alloc *alloc,
@@ -327,7 +267,7 @@ static int binder_install_single_page(struct binder_alloc *alloc,
 	if (!mmget_not_zero(alloc->mm))
 		return -ESRCH;
 
-	page = alloc_page(GFP_KERNEL | __GFP_HIGHMEM | __GFP_ZERO);
+	page = binder_page_alloc(alloc, index);
 	if (!page) {
 		ret = -ENOMEM;
 		goto out;
@@ -336,7 +276,7 @@ static int binder_install_single_page(struct binder_alloc *alloc,
 	mmap_read_lock(alloc->mm);
 	vma = vma_lookup(alloc->mm, addr);
 	if (!vma || vma != alloc->vma) {
-		__free_page(page);
+		binder_free_page(page);
 		pr_err("%d: %s failed, no vma\n", alloc->pid, __func__);
 		ret = -ESRCH;
 		goto unlock;
@@ -347,11 +287,11 @@ static int binder_install_single_page(struct binder_alloc *alloc,
 	case -EBUSY:
 		/*
 		 * EBUSY is ok. Someone installed the pte first but the
-		 * lru_page->page_ptr has not been updated yet. Discard
+		 * alloc->pages[index] has not been updated yet. Discard
 		 * our page and look up the one already installed.
 		 */
 		ret = 0;
-		__free_page(page);
+		binder_free_page(page);
 		npages = get_user_pages_remote(alloc->mm, addr, 1,
 					       FOLL_NOFAULT, &page, NULL);
 		if (npages <= 0) {
@@ -363,10 +303,10 @@ static int binder_install_single_page(struct binder_alloc *alloc,
 		fallthrough;
 	case 0:
 		/* Mark page installation complete and safe to use */
-		binder_set_installed_page(lru_page, page);
+		binder_set_installed_page(alloc, index, page);
 		break;
 	default:
-		__free_page(page);
+		binder_free_page(page);
 		pr_err("%d: %s failed to insert page at offset %lx with %d\n",
 		       alloc->pid, __func__, addr - alloc->buffer, ret);
 		ret = -ENOMEM;
@@ -851,7 +791,7 @@ static struct page *binder_alloc_get_page(struct binder_alloc *alloc,
 
 	*pgoffp = pgoff;
 
-	return alloc_to_wrap(alloc)->pages[index];
+	return alloc->pages[index];
 }
 
 /**
@@ -949,7 +889,7 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	alloc_to_wrap(alloc)->pages = kvcalloc(alloc->buffer_size / PAGE_SIZE,
 				sizeof(alloc_to_wrap(alloc)->pages[0]),
 				GFP_KERNEL);
-	if (!alloc_to_wrap(alloc)->pages) {
+	if (!alloc->pages) {
 		ret = -ENOMEM;
 		failure_string = "alloc page array";
 		goto err_alloc_pages_failed;
@@ -1183,8 +1123,6 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 		goto err_mmap_read_lock_failed;
 	if (!mutex_trylock(&alloc->mutex))
 		goto err_get_alloc_mutex_failed;
-	if (!page->page_ptr)
-		goto err_page_already_freed;
 
 	index = mdata->page_index;
 	page_addr = alloc->buffer + index * PAGE_SIZE;
@@ -1212,7 +1150,7 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 
 	trace_binder_unmap_kernel_start(alloc, index);
 
-	page_to_free = alloc_to_wrap(alloc)->pages[index];
+	page_to_free = alloc->pages[index];
 	binder_set_installed_page(alloc, index, NULL);
 
 	trace_binder_unmap_kernel_end(alloc, index);
@@ -1237,7 +1175,6 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	return LRU_REMOVED_RETRY;
 
 err_invalid_vma:
-err_page_already_freed:
 	mutex_unlock(&alloc->mutex);
 err_get_alloc_mutex_failed:
 	mmap_read_unlock(mm);
