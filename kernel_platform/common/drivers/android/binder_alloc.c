@@ -319,30 +319,42 @@ static int binder_install_single_page(struct binder_alloc *alloc,
 				      unsigned long index,
 				      unsigned long addr)
 {
+	struct vm_area_struct *vma;
 	struct page *page;
+	long npages;
 	int ret;
 
 	if (!mmget_not_zero(alloc->mm))
 		return -ESRCH;
 
-	page = binder_page_alloc(alloc, index);
+	page = alloc_page(GFP_KERNEL | __GFP_HIGHMEM | __GFP_ZERO);
 	if (!page) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	ret = binder_page_insert(alloc, addr, page);
+	mmap_read_lock(alloc->mm);
+	vma = vma_lookup(alloc->mm, addr);
+	if (!vma || vma != alloc->vma) {
+		__free_page(page);
+		pr_err("%d: %s failed, no vma\n", alloc->pid, __func__);
+		ret = -ESRCH;
+		goto unlock;
+	}
+
+	ret = vm_insert_page(vma, addr, page);
 	switch (ret) {
 	case -EBUSY:
 		/*
 		 * EBUSY is ok. Someone installed the pte first but the
-		 * alloc->pages[index] has not been updated yet. Discard
+		 * lru_page->page_ptr has not been updated yet. Discard
 		 * our page and look up the one already installed.
 		 */
 		ret = 0;
-		binder_free_page(page);
-		page = binder_page_lookup(alloc, addr);
-		if (!page) {
+		__free_page(page);
+		npages = get_user_pages_remote(alloc->mm, addr, 1,
+					       FOLL_NOFAULT, &page, NULL);
+		if (npages <= 0) {
 			pr_err("%d: failed to find page at offset %lx\n",
 			       alloc->pid, addr - alloc->buffer);
 			ret = -ESRCH;
@@ -351,14 +363,17 @@ static int binder_install_single_page(struct binder_alloc *alloc,
 		fallthrough;
 	case 0:
 		/* Mark page installation complete and safe to use */
-		binder_set_installed_page(alloc, index, page);
+		binder_set_installed_page(lru_page, page);
 		break;
 	default:
-		binder_free_page(page);
+		__free_page(page);
 		pr_err("%d: %s failed to insert page at offset %lx with %d\n",
 		       alloc->pid, __func__, addr - alloc->buffer, ret);
+		ret = -ENOMEM;
 		break;
 	}
+unlock:
+	mmap_read_unlock(alloc->mm);
 out:
 	mmput_async(alloc->mm);
 	return ret;
@@ -1203,7 +1218,6 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	trace_binder_unmap_kernel_end(alloc, index);
 
 	list_lru_isolate(lru, item);
-	mutex_unlock(&alloc->mutex);
 	spin_unlock(lock);
 
 	if (vma) {
@@ -1214,11 +1228,8 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 		trace_binder_unmap_user_end(alloc, index);
 	}
 
-	mutex_unlock(&alloc_to_wrap(alloc)->mutex);
-	if (mm_locked)
-		mmap_read_unlock(mm);
-	else
-		vma_end_read(vma);
+	mutex_unlock(&alloc->mutex);
+	mmap_read_unlock(mm);
 	mmput_async(mm);
 	binder_free_page(page_to_free);
 
