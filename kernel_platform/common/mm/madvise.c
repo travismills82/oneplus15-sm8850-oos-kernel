@@ -1669,95 +1669,29 @@ static bool is_memory_failure(int behavior)
 }
 #endif
 
-/*
- * Any behaviour which results in changes to the vma->vm_flags needs to
- * take mmap_lock for writing. Others, which simply traverse vmas, need
- * to only take it for reading.
- */
-static enum madvise_lock_mode get_lock_mode(struct madvise_behavior *madv_behavior)
+static int madvise_lock(struct mm_struct *mm, int behavior)
 {
-	int behavior = madv_behavior->behavior;
-
 	if (is_memory_failure(behavior))
-		return MADVISE_NO_LOCK;
+		return 0;
 
-	switch (behavior) {
-	case MADV_REMOVE:
-	case MADV_WILLNEED:
-	case MADV_COLD:
-	case MADV_PAGEOUT:
-	case MADV_FREE:
-	case MADV_POPULATE_READ:
-	case MADV_POPULATE_WRITE:
-	case MADV_COLLAPSE:
-	case MADV_GUARD_INSTALL:
-	case MADV_GUARD_REMOVE:
-		return MADVISE_MMAP_READ_LOCK;
-	case MADV_DONTNEED:
-	case MADV_DONTNEED_LOCKED:
-		return MADVISE_VMA_READ_LOCK;
-	default:
-		return MADVISE_MMAP_WRITE_LOCK;
-	}
-}
-
-static int madvise_lock(struct mm_struct *mm,
-		struct madvise_behavior *madv_behavior)
-{
-	enum madvise_lock_mode lock_mode = get_lock_mode(madv_behavior);
-
-	switch (lock_mode) {
-	case MADVISE_NO_LOCK:
-		break;
-	case MADVISE_MMAP_WRITE_LOCK:
+	if (madvise_need_mmap_write(behavior)) {
 		if (mmap_write_lock_killable(mm))
 			return -EINTR;
-		break;
-	case MADVISE_MMAP_READ_LOCK:
+	} else {
 		mmap_read_lock(mm);
-		break;
-	case MADVISE_VMA_READ_LOCK:
-		/* We will acquire the lock per-VMA in madvise_walk_vmas(). */
-		break;
 	}
-
-	madv_behavior->lock_mode = lock_mode;
 	return 0;
 }
 
-static void madvise_unlock(struct mm_struct *mm,
-		struct madvise_behavior *madv_behavior)
+static void madvise_unlock(struct mm_struct *mm, int behavior)
 {
-	switch (madv_behavior->lock_mode) {
-	case  MADVISE_NO_LOCK:
+	if (is_memory_failure(behavior))
 		return;
-	case MADVISE_MMAP_WRITE_LOCK:
+
+	if (madvise_need_mmap_write(behavior))
 		mmap_write_unlock(mm);
-		break;
-	case MADVISE_MMAP_READ_LOCK:
+	else
 		mmap_read_unlock(mm);
-		break;
-	case MADVISE_VMA_READ_LOCK:
-		/* We will drop the lock per-VMA in madvise_walk_vmas(). */
-		break;
-	}
-
-	madv_behavior->lock_mode = MADVISE_NO_LOCK;
-}
-
-/*
- * untagged_addr_remote() assumes mmap_lock is already held. On
- * architectures like x86 and RISC-V, tagging is tricky because each
- * mm may have a different tagging mask. However, we might only hold
- * the per-VMA lock (currently only local processes are supported),
- * so untagged_addr is used to avoid the mmap_lock assertion for
- * local processes.
- */
-static inline unsigned long get_untagged_addr(struct mm_struct *mm,
-		unsigned long start)
-{
-	return current->mm == mm ? untagged_addr(start) :
-				   untagged_addr_remote(mm, start);
 }
 
 /*
@@ -1863,7 +1797,7 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 	if (bypass)
 		return error;
 
-	error = madvise_lock(mm, &madv_behavior);
+	error = madvise_lock(mm, behavior);
 	if (error)
 		return error;
 
@@ -1876,19 +1810,6 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 		return ret;
 	}
 #endif
-
-	trace_android_vh_mm_do_madvise_bypass(mm, start, len, behavior,
-					      &error, &bypass);
-	if (bypass)
-		return error;
-
-	write = madvise_need_mmap_write(behavior);
-	if (write) {
-		if (mmap_write_lock_killable(mm))
-			return -EINTR;
-	} else {
-		mmap_read_lock(mm);
-	}
 
 	start = untagged_addr_remote(mm, start);
 	end = start + len;
@@ -1906,7 +1827,7 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 	}
 	blk_finish_plug(&plug);
 
-	madvise_unlock(mm, &madv_behavior);
+	madvise_unlock(mm, behavior);
 
 	return error;
 }
