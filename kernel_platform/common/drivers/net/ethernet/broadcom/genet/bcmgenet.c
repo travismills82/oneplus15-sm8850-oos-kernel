@@ -3222,8 +3222,7 @@ static void bcmgenet_get_hw_addr(struct bcmgenet_priv *priv,
 	put_unaligned_be16(addr_tmp, &addr[4]);
 }
 
-/* Returns a reusable dma control register value */
-static u32 bcmgenet_dma_disable(struct bcmgenet_priv *priv, bool flush_rx)
+static void bcmgenet_dma_disable(struct bcmgenet_priv *priv, bool flush_rx)
 {
 	unsigned int i;
 	u32 reg;
@@ -3255,20 +3254,18 @@ static u32 bcmgenet_dma_disable(struct bcmgenet_priv *priv, bool flush_rx)
 		bcmgenet_rbuf_ctrl_set(priv, reg);
 		udelay(10);
 	}
-
-	return dma_ctrl;
 }
 
-static void bcmgenet_enable_dma(struct bcmgenet_priv *priv, u32 dma_ctrl)
+static void bcmgenet_enable_dma(struct bcmgenet_priv *priv)
 {
 	u32 reg;
 
 	reg = bcmgenet_rdma_readl(priv, DMA_CTRL);
-	reg |= dma_ctrl;
+	reg |= DMA_EN;
 	bcmgenet_rdma_writel(priv, reg, DMA_CTRL);
 
 	reg = bcmgenet_tdma_readl(priv, DMA_CTRL);
-	reg |= dma_ctrl;
+	reg |= DMA_EN;
 	bcmgenet_tdma_writel(priv, reg, DMA_CTRL);
 }
 
@@ -3295,7 +3292,6 @@ static void bcmgenet_netif_start(struct net_device *dev)
 static int bcmgenet_open(struct net_device *dev)
 {
 	struct bcmgenet_priv *priv = netdev_priv(dev);
-	unsigned long dma_ctrl;
 	int ret;
 
 	netif_dbg(priv, ifup, dev, "bcmgenet_open\n");
@@ -3325,7 +3321,7 @@ static int bcmgenet_open(struct net_device *dev)
 	bcmgenet_hfb_init(priv);
 
 	/* Disable RX/TX DMA and flush TX and RX queues */
-	dma_ctrl = bcmgenet_dma_disable(priv, true);
+	bcmgenet_dma_disable(priv, true);
 
 	/* Reinitialize TDMA and RDMA and SW housekeeping */
 	ret = bcmgenet_init_dma(priv);
@@ -3334,7 +3330,7 @@ static int bcmgenet_open(struct net_device *dev)
 		goto err_clk_disable;
 	}
 
-	bcmgenet_enable_dma(priv, dma_ctrl);
+	bcmgenet_enable_dma(priv);
 
 	ret = request_irq(priv->irq0, bcmgenet_isr0, IRQF_SHARED,
 			  dev->name, priv);
@@ -4181,7 +4177,6 @@ static int bcmgenet_resume(struct device *d)
 	struct net_device *dev = dev_get_drvdata(d);
 	struct bcmgenet_priv *priv = netdev_priv(dev);
 	struct bcmgenet_rxnfc_rule *rule;
-	unsigned long dma_ctrl;
 	int ret;
 
 	if (!netif_running(dev))
@@ -4207,7 +4202,7 @@ static int bcmgenet_resume(struct device *d)
 			bcmgenet_hfb_create_rxnfc_filter(priv, rule);
 
 	/* Disable RX/TX DMA and flush TX queues */
-	dma_ctrl = bcmgenet_dma_disable(priv, false);
+	bcmgenet_dma_disable(priv, false);
 
 	/* Reinitialize TDMA and RDMA and SW housekeeping */
 	ret = bcmgenet_init_dma(priv);
@@ -4216,7 +4211,7 @@ static int bcmgenet_resume(struct device *d)
 		goto out_clk_disable;
 	}
 
-	bcmgenet_enable_dma(priv, dma_ctrl);
+	bcmgenet_enable_dma(priv);
 
 	if (!device_may_wakeup(d))
 		phy_resume(dev->phydev);
