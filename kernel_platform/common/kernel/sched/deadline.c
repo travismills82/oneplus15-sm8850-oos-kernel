@@ -2661,9 +2661,27 @@ static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
 static inline bool __dl_revalidate_rq_state(struct task_struct *task, struct rq *rq,
 					    struct rq *later)
 {
-	if (!dl_task(task))
+	if (!dl_task(task) || is_migration_disabled(task) ||
+	    !cpumask_test_cpu(later->cpu, &task->cpus_mask))
 		return false;
-	return __revalidate_rq_state(task, rq, later);
+
+	/*
+	 * A throttled task is migrated by dl_task_offline_migration() and is
+	 * not expected to be in the pushable tree.  Preserve the complete
+	 * post-unlock state validation for that path.
+	 */
+	if (task->dl.dl_throttled)
+		return task_rq(task) == rq && !task_on_cpu(rq, task) &&
+		       task_on_rq_queued(task);
+
+	/*
+	 * push_dl_task() must still own the head of the pushable tree after
+	 * double_lock_balance() temporarily dropped rq->lock.  Merely finding
+	 * the task queued on this runqueue is insufficient because it may have
+	 * run, migrated, and then been queued again in the meantime.
+	 */
+	return has_pushable_dl_tasks(rq) &&
+	       task == __node_2_pdl(rb_first_cached(&rq->dl.pushable_dl_tasks_root));
 }
 
 static inline bool dl_revalidate_rq_state(struct task_struct *task, struct rq *rq,
