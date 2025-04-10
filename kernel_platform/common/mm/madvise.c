@@ -53,18 +53,37 @@ struct madvise_walk_private {
 	void *private;
 };
 
-enum madvise_lock_mode {
-	MADVISE_NO_LOCK,
-	MADVISE_MMAP_READ_LOCK,
-	MADVISE_MMAP_WRITE_LOCK,
-	MADVISE_VMA_READ_LOCK,
-};
-
 struct madvise_behavior {
 	int behavior;
 	struct mmu_gather *tlb;
-	enum madvise_lock_mode lock_mode;
 };
+
+/*
+ * Any behaviour which results in changes to the vma->vm_flags needs to
+ * take mmap_lock for writing. Others, which simply traverse vmas, need
+ * to only take it for reading.
+ */
+static int madvise_need_mmap_write(int behavior)
+{
+	switch (behavior) {
+	case MADV_REMOVE:
+	case MADV_WILLNEED:
+	case MADV_DONTNEED:
+	case MADV_DONTNEED_LOCKED:
+	case MADV_COLD:
+	case MADV_PAGEOUT:
+	case MADV_FREE:
+	case MADV_POPULATE_READ:
+	case MADV_POPULATE_WRITE:
+	case MADV_COLLAPSE:
+	case MADV_GUARD_INSTALL:
+	case MADV_GUARD_REMOVE:
+		return 0;
+	default:
+		/* be safe, default to 1. list exceptions explicitly */
+		return 1;
+	}
+}
 
 #ifdef CONFIG_ANON_VMA_NAME
 struct anon_vma_name *anon_vma_name_alloc(const char *name)
@@ -1530,8 +1549,7 @@ take_mmap_read_lock:
  */
 static
 int madvise_walk_vmas(struct mm_struct *mm, unsigned long start,
-		      unsigned long end, struct madvise_behavior *madv_behavior,
-		      void *arg,
+		      unsigned long end, void *arg,
 		      int (*visit)(struct vm_area_struct *vma,
 				   struct vm_area_struct **prev, unsigned long start,
 				   unsigned long end, void *arg))
@@ -1646,7 +1664,7 @@ int madvise_set_anon_name(struct mm_struct *mm, unsigned long start,
 	if (end == start)
 		return 0;
 
-	return madvise_walk_vmas(mm, start, end, NULL, anon_name,
+	return madvise_walk_vmas(mm, start, end, anon_name,
 				 madvise_vma_anon_name);
 }
 #endif /* CONFIG_ANON_VMA_NAME */
@@ -1772,6 +1790,7 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 	int error;
 	size_t len;
 	struct blk_plug plug;
+	struct madvise_behavior madv_behavior = {.behavior = behavior};
 	bool bypass = false;
 
 	if (!madvise_behavior_valid(behavior))
@@ -1822,7 +1841,7 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 		break;
 	default:
 		error = madvise_walk_vmas(mm, start, end, &madv_behavior,
-					  &madv_behavior, madvise_vma_behavior);
+					  madvise_vma_behavior);
 		break;
 	}
 	blk_finish_plug(&plug);
