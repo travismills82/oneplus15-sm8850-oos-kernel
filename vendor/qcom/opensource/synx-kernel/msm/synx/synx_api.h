@@ -27,6 +27,11 @@
 */
 #define SYNX_NO_SECURITY_KEY 0
 
+/**
+ * SYNX_NO_CLIENT_DATA      : No client data is associated with Synx obj
+ */
+#define SYNX_NO_CLIENT_DATA 0
+
 /* synx object states */
 #define SYNX_STATE_INVALID             0    // Invalid synx object
 #define SYNX_STATE_ACTIVE              1    // Synx object has not been signaled
@@ -756,7 +761,8 @@ enum synx_signal_type {
  * @flags       : Synx signal flags, see enum synx_signal_flags for detail
  * @status      : Status of signaling, see enum synx_signal_status for supported statuses, provide
  *                value greater than SYNX_STATE_SIGNALED_MAX for custom notification
- * @client_data : 64-bit client data propagated to waiting clients
+ * @client_data : 64-bit client data propagated to waiting clients.
+ *                If client_data is not required use SYNX_NO_CLIENT_DATA macro.
  * @signal_idx  : pointer to tx queue write index (filled by the function
  *                if SYNX_SIGNAL_DELAY is set in flags); supported for
  *                SYNX_HW_FENCE clients only, not by other clients
@@ -888,6 +894,97 @@ struct synx_get_params {
 };
 
 /**
+ * enum synx_callback_params_type - Callback params type
+ *
+ * SYNX_CALLBACK_INDV_PARAMS : Callback filled with synx_callback_indv_params struct
+ * SYNX_CALLBACK_ARR_PARAMS  : Callback filled with synx_callback_arr_params struct
+ */
+enum synx_callback_params_type {
+	SYNX_CALLBACK_INDV_PARAMS = 0x01,
+	SYNX_CALLBACK_ARR_PARAMS  = 0x02,
+};
+
+/**
+ * struct synx_callback_response - Synx Callback response parameters
+ *
+ * Clients can access this structure in client's callback function
+ * which is registered during synx_async_wait_n or synx_cancel_async_wait_n
+ *
+ * @h_synx      : Synx object handle
+ * @status      : positive status if handle signaled
+ *                SYNX_STATUS_TIMEOUT if timeout has elapsed
+ *                SYNX_STATE_SIGNALED_CANCEL if handle released by
+ *                client before signal
+ * @userdata    : userdata provided in synx_callback_indv_params
+ * @client_data : 64-bit client data propagated by signaling clients.
+ *                SYNX_NO_CLIENT_DATA if signaling client doesn't provide client_data.
+ */
+struct synx_callback_response {
+	u32 h_synx;
+	int status;
+	void *userdata;
+	u64 client_data;
+};
+
+/**
+ * synx_user_callback_v2_t - Callback function registered by clients.
+ *
+ * User callback registered for non-blocking wait. Dispatched when
+ * synx object is signaled or if the time out expires.
+ *
+ * @synx_callback_response      : Pointer to response structure for callback
+ */
+typedef void (*synx_user_callback_v2_t)(struct synx_callback_response *);
+
+/**
+ * struct synx_callback_indv_params - Synx callback indv parameters.
+ *
+ * @h_synx         : Synx object handle.
+ * @cb_func        : Pointer to callback func to be invoked.
+ * @userdata       : Opaque pointer passed back with callback as data.
+ * @cancel_cb_func : Pointer to callback to ack cancellation. If NULL, no
+ *                   callback is executed during cancellation.
+ * @timeout_ms     : Timeout in ms. SYNX_NO_TIMEOUT if timeout is not
+ *                   required.
+ * @result         : Return value of callback registration.
+ */
+struct synx_callback_indv_params {
+	u32 h_synx;
+	synx_user_callback_v2_t cb_func;
+	void *userdata;
+	synx_user_callback_v2_t cancel_cb_func;
+	u64 timeout_ms;
+	int result;
+};
+
+/**
+ * struct synx_callback_arr_params - Synx callback arr parameters
+ *
+ * @list       : List of synx_callback_indv_params.
+ * @num_fences : Number of synx handles to be registered for callback
+ *               notification.
+ */
+struct synx_callback_arr_params {
+	struct synx_callback_indv_params *list;
+	u32 num_fences;
+};
+
+/**
+ * struct synx_callback_n_params - Synx callback_n parameters
+ *
+ * @type : Callback params type filled by client
+ * @indv : Params to register/cancel callback of an individual handle
+ * @arr  : Params to register/cancel callback of an array of handles
+ */
+struct synx_callback_n_params {
+	enum synx_callback_params_type type;
+	union {
+		struct synx_callback_indv_params indv;
+		struct synx_callback_arr_params arr;
+	};
+};
+
+/**
  * struct synx_ops - Synx operations
  *
  * @uninitialize        : destroys the client session
@@ -906,6 +1003,8 @@ struct synx_get_params {
  * @get                 : gets information associated with synx object
  * @release_n           : releases an array of synx objects
  * @merge_n             : merges multiple synx objects with merge_n params
+ * @async_wait_n        : registers a list of callbacks
+ * @cancel_async_wait_n : de-registers a list of callbacks
  */
 struct synx_ops {
 	int (*uninitialize)(struct synx_session *session);
@@ -924,6 +1023,9 @@ struct synx_ops {
 	int (*get)(struct synx_session *session, struct synx_get_params *params);
 	int (*release_n)(struct synx_session *session, struct synx_release_n_params *params);
 	int (*merge_n)(struct synx_session *session, struct synx_merge_n_params *params);
+	int (*async_wait_n)(struct synx_session *session, struct synx_callback_n_params *params);
+	int (*cancel_async_wait_n)(struct synx_session *session,
+		struct synx_callback_n_params *params);
 };
 
 /* Kernel APIs */
@@ -999,6 +1101,25 @@ int synx_create(struct synx_session *session, struct synx_create_params *params)
 int synx_async_wait(struct synx_session *session, struct synx_callback_params *params);
 
 /**
+ * synx_async_wait_n - Registers a list of callback
+ *
+ * Clients can register maximum of 256 callbacks functions per synx session.
+ * Clients should register callback functions with minimal computation.
+ * This API will continue to register callback for rest of the requests, even if some of the
+ * registration fails in array of callback list. The status of individual registration failure
+ * can be seen in result member of synx_callback_indv_params.
+ *
+ * @param session : Session ptr (returned from synx_initialize)
+ * @param params  : Callback params.
+ *                  cancel_cb_func in callback params is optional with this API.
+ *
+ * @return Status of operation. Negative if at least one of the handle callback registration
+ * failed, SYNX_SUCCESS otherwise.
+ */
+int synx_async_wait_n(struct synx_session *session,
+	struct synx_callback_n_params *params);
+
+/**
  * synx_cancel_async_wait - De-registers a callback with a synx object
  *
  * This API will cancel one instance of callback function (mapped
@@ -1011,6 +1132,24 @@ int synx_async_wait(struct synx_session *session, struct synx_callback_params *p
  */
 int synx_cancel_async_wait(struct synx_session *session,
 	struct synx_callback_params *params);
+
+/**
+ * synx_cancel_async_wait_n - De-registers a list of synx callbacks
+ *
+ * This API will cancel one instance of callback function (mapped with userdata and h_synx)
+ * provided in cb_func of each synx_callback_indv_params params.
+ * This API will continue to de-register callback for rest of the requests, even if some of
+ * the de-registration fails in array of callback list. The status of individual de-registration
+ * failure can be seen in result member of synx_callback_indv_params.
+ *
+ * @param session : Session ptr (returned from synx_initialize)
+ * @param params  : Callback params
+ *
+ * @return Status of operation. Negative if at least one of the handle callback de-registration
+ * failed, SYNX_SUCCESS otherwise.
+ */
+int synx_cancel_async_wait_n(struct synx_session *session,
+	struct synx_callback_n_params *params);
 
 /**
  * synx_signal - Signals a synx object with the status argument.
