@@ -62,7 +62,7 @@ struct vm_struct {
 	unsigned int		nr_pages;
 	phys_addr_t		phys_addr;
 	const void		*caller;
-	ANDROID_OEM_DATA(1);
+	unsigned long		requested_size;
 };
 
 struct vmap_area {
