@@ -9,8 +9,6 @@
 struct ufs_hba_priv {
 	struct ufs_hba hba;
 	bool hid_sup;
-	/* synchronizes PM QoS request and status updates */
-	struct mutex pm_qos_mutex;
 };
 
 static inline struct ufs_hba_priv *to_hba_priv(struct ufs_hba *hba)
