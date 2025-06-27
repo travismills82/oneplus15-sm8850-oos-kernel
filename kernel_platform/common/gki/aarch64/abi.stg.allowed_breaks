@@ -14,4 +14,3 @@ type 'enum gunyah_rm_vm_status' changed
 2 variable symbol(s) removed
   'struct tracepoint __tracepoint_android_vh_f2fs_printk'
   'struct tracepoint __tracepoint_f2fs_submit_folio_write'
-
