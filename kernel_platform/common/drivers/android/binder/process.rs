@@ -1508,11 +1508,13 @@ impl Process {
     }
 
     pub(crate) fn release(this: Arc<Process>, _file: &File) {
+        let binderfs_file;
         let should_schedule;
         {
             let mut inner = this.inner.lock();
             should_schedule = inner.defer_work == 0;
             inner.defer_work |= PROC_DEFER_RELEASE;
+            binderfs_file = inner.binderfs_file.take();
         }
 
         if should_schedule {
@@ -1520,6 +1522,8 @@ impl Process {
             // scheduled for execution.
             let _ = workqueue::system().enqueue(this);
         }
+
+        drop(binderfs_file);
     }
 
     pub(crate) fn flush(this: ArcBorrow<'_, Process>) -> Result {
