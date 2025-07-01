@@ -240,6 +240,18 @@
   register_chrdev_region
   unregister_chrdev_region
 
+# required by pcie-exynosauto-ep.ko
+  pci_epc_mem_alloc_addr
+  pci_epc_mem_free_addr
+  pci_epc_set_bar
+  pci_epc_unmap_addr
+
+# required by pcie-exynosauto-rc.ko
+  pci_num_vf
+
+# required by pcie-exynosauto-test-rc.ko
+  pci_ioremap_wc_bar
+
 # required by pinctrl-samsung-core.ko
   device_get_next_child_node
   devm_gpiochip_add_data_with_key
