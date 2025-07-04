@@ -27,28 +27,6 @@
  */
 #define FSCRYPT_MIN_KEY_SIZE	16
 
-/* Maximum size of a standard fscrypt master key */
-#define FSCRYPT_MAX_STANDARD_KEY_SIZE	64
-#define FSCRYPT_MAX_RAW_KEY_SIZE	64
-
-/* Maximum size of a hardware-wrapped fscrypt master key */
-#define FSCRYPT_MAX_HW_WRAPPED_KEY_SIZE	BLK_CRYPTO_MAX_HW_WRAPPED_KEY_SIZE
-
-/*
- * Maximum size of an fscrypt master key across both key types.
- * This should just use max(), but max() doesn't work in a struct definition.
- */
-#define FSCRYPT_MAX_ANY_KEY_SIZE \
-	(FSCRYPT_MAX_HW_WRAPPED_KEY_SIZE > FSCRYPT_MAX_STANDARD_KEY_SIZE ? \
-	 FSCRYPT_MAX_HW_WRAPPED_KEY_SIZE : FSCRYPT_MAX_STANDARD_KEY_SIZE)
-
-/*
- * FSCRYPT_MAX_KEY_SIZE is defined in the UAPI header, but the addition of
- * hardware-wrapped keys has made it misleading as it's only for standard keys.
- * Don't use it in kernel code; use one of the above constants instead.
- */
-#undef FSCRYPT_MAX_KEY_SIZE
-
 /*
  * This mask is passed as the third argument to the crypto_alloc_*() functions
  * to prevent fscrypt from using the Crypto API drivers for non-inline crypto
