@@ -882,29 +882,7 @@ static bool ep_remove_epi(struct eventpoll *ep, struct epitem *epi)
  */
 static void ep_remove(struct eventpoll *ep, struct epitem *epi)
 {
-	struct file *file __free(fput) = NULL;
-
-	lockdep_assert_irqs_enabled();
-	lockdep_assert_held(&ep->mtx);
-
-	ep_unregister_pollwait(ep, epi);
-
-	/* cheap sync with eventpoll_release_file() */
-	if (unlikely(READ_ONCE(epi->dying)))
-		return;
-
-	/*
-	 * If we manage to grab a reference it means we're not in
-	 * eventpoll_release_file() and aren't going to be.
-	 */
-	file = epi_fget(epi);
-	if (!file)
-		return;
-
-	spin_lock(&file->f_lock);
-	ep_remove_file(ep, epi, file);
-
-	if (ep_remove_epi(ep, epi))
+	if (__ep_remove(ep, epi, false))
 		WARN_ON_ONCE(ep_refcount_dec_and_test(ep));
 }
 
