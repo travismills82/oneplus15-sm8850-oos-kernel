@@ -610,6 +610,9 @@ DECLARE_HOOK(android_vh_filemap_folio_mapped,
 DECLARE_HOOK(android_vh_folio_remove_rmap_ptes,
 	TP_PROTO(struct folio *folio),
 	TP_ARGS(folio));
+DECLARE_HOOK(android_vh_gcma_cc_store_page_bypass,
+	TP_PROTO(bool *bypass),
+	TP_ARGS(bypass));
 #endif /* _TRACE_HOOK_MM_H */
 
 /* This part must be outside protection */
