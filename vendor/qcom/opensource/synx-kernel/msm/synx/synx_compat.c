@@ -15,6 +15,7 @@ struct synx_ops synx_hwfence_ops = {
 	.release = NULL,
 	.release_n = NULL,
 	.signal = NULL,
+	.signal_n = NULL,
 	.async_wait = NULL,
 	.get_fence = NULL,
 	.import = NULL,
@@ -32,6 +33,7 @@ struct synx_ops synx_internal_ops = {
 	.release = NULL,
 	.release_n = NULL,
 	.signal = NULL,
+	.signal_n = NULL,
 	.async_wait = NULL,
 	.get_fence = NULL,
 	.import = NULL,
@@ -234,8 +236,20 @@ EXPORT_SYMBOL_GPL(synx_enable_resources);
 
 int synx_get(struct synx_session *session, struct synx_get_params *params)
 {
-	if (IS_ERR_OR_NULL(session) || !session->ops || !session->ops->get)
+	if (IS_ERR_OR_NULL(session) || !session->ops || !session->ops->get) {
+		dprintk(SYNX_ERR, "invalid session or operation or function pointer\n");
 		return -SYNX_INVALID;
+	}
 	return session->ops->get(session, params);
 }
 EXPORT_SYMBOL_GPL(synx_get);
+
+int synx_signal_n(struct synx_session *session, struct synx_signal_n_params *params)
+{
+	if (IS_ERR_OR_NULL(session) || !session->ops || !session->ops->signal_n) {
+		dprintk(SYNX_ERR, "invalid session or operation or function pointer\n");
+		return -SYNX_INVALID;
+	}
+	return session->ops->signal_n(session, params);
+}
+EXPORT_SYMBOL_GPL(synx_signal_n);
