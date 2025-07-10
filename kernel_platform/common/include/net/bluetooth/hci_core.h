@@ -341,7 +341,6 @@ struct adv_monitor {
 
 struct hci_dev {
 	struct list_head list;
-	struct srcu_struct srcu;
 	struct mutex	lock;
 
 	struct ida	unset_handle_ida;
