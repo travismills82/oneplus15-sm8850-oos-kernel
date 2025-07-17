@@ -1838,7 +1838,6 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 	int error;
 	size_t len;
 	struct blk_plug plug;
-	struct madvise_behavior madv_behavior = {.behavior = behavior};
 	bool bypass = false;
 
 	if (!madvise_behavior_valid(behavior))
@@ -1878,7 +1877,20 @@ int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int beh
 	}
 #endif
 
-	start = get_untagged_addr(mm, start);
+	trace_android_vh_mm_do_madvise_bypass(mm, start, len, behavior,
+					      &error, &bypass);
+	if (bypass)
+		return error;
+
+	write = madvise_need_mmap_write(behavior);
+	if (write) {
+		if (mmap_write_lock_killable(mm))
+			return -EINTR;
+	} else {
+		mmap_read_lock(mm);
+	}
+
+	start = untagged_addr_remote(mm, start);
 	end = start + len;
 
 	blk_start_plug(&plug);
