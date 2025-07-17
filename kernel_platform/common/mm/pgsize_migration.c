@@ -305,6 +305,17 @@ static const struct vm_operations_struct pad_vma_ops = {
  */
 static void init_pad_vma(struct vm_area_struct *vma, struct vm_area_struct *pad)
 {
+	struct vm_area_struct *pad;
+
+	if (!is_pgsize_migration_enabled() || !(vma->vm_flags & VM_PAD_MASK))
+		return NULL;
+
+	pad = kzalloc(sizeof(struct vm_area_struct), GFP_KERNEL);
+	if (!pad) {
+		pr_warn("Page size migration: Failed to allocate padding VMA");
+		return NULL;
+	}
+
 	memcpy(pad, vma, sizeof(struct vm_area_struct));
 
 	/* Remove file */
@@ -351,7 +362,9 @@ void show_map_pad_vma(struct vm_area_struct *vma, struct seq_file *m,
 	if (smaps)
 		((show_pad_smaps_fn)func)(m, &pad);
 	else
-		((show_pad_maps_fn)func)(m, &pad);
+		((show_pad_maps_fn)func)(m, pad);
+
+	kfree(pad);
 }
 
 /*
