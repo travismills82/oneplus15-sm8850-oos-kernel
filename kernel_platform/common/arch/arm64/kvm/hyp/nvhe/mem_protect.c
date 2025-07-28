@@ -425,14 +425,14 @@ int __pkvm_guest_relinquish_to_host(struct pkvm_hyp_vcpu *vcpu,
 		goto end;
 	}
 
-	hyp_poison_page(phys, PAGE_SIZE);
-	psci_mem_protect_dec(1);
-
 	/* Zap the guest stage2 pte and return ownership to the host */
 	ret = kvm_pgtable_stage2_annotate(&vm->pgt, ipa, PAGE_SIZE,
 					  &vcpu->vcpu.arch.stage2_mc, 0);
 	if (ret)
 		goto end;
+
+	hyp_poison_page(phys, PAGE_SIZE);
+	psci_mem_protect_dec(1);
 
 	WARN_ON(host_stage2_set_owner_locked(phys, PAGE_SIZE, PKVM_ID_HOST));
 
