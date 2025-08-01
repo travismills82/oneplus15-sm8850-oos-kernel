@@ -1418,11 +1418,6 @@ static int smmu_detach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 				ret = -ENOENT;
 				goto out_unlock;
 			}
-			domain_id = FIELD_GET(CTXDESC_CD_0_ASID, cd[0]);
-			if (domain->domain_id != domain_id) {
-				ret = -EACCES;
-				goto out_unlock;
-			}
 			cd[0] = 0;
 			smmu_sync_cd(smmu, sid, pasid);
 			cd[1] = 0;
