@@ -179,11 +179,6 @@ impl ProcessInner {
         }
     }
 
-    /// Push work to be cancelled. Only used during process teardown.
-    pub(crate) fn push_work_for_release(&mut self, work: DLArc<dyn DeliverToRead>) {
-        self.work.push_back(work);
-    }
-
     pub(crate) fn remove_node(&mut self, ptr: u64) {
         self.nodes.remove(&ptr);
     }
@@ -916,7 +911,10 @@ impl Process {
                 refs.by_node.remove(&id);
             }
         } else {
-            pr_warn!("{}: no such ref {handle}\n", self.pid_in_current_ns());
+            // All refs are cleared in process exit, so this warning is expected in that case.
+            if !self.inner.lock().is_dead {
+                pr_warn!("{}: no such ref {handle}\n", self.pid_in_current_ns());
+            }
         }
         Ok(())
     }
@@ -1271,23 +1269,32 @@ impl Process {
         let binderfs_file = self.inner.lock().binderfs_file.take();
         drop(binderfs_file);
 
-        // Move oneway_todo into the process todolist.
-        {
+        // Release threads.
+        let threads = {
             let mut inner = self.inner.lock();
-            let nodes = take(&mut inner.nodes);
-            for node in nodes.values() {
-                node.release(&mut inner);
+            let threads = take(&mut inner.threads);
+            let ready = take(&mut inner.ready_threads);
+            drop(inner);
+            drop(ready);
+
+            for thread in threads.values() {
+                thread.release();
+            }
+            threads
+        };
+
+        // Release nodes.
+        {
+            while let Some(node) = {
+                let mut lock = self.inner.lock();
+                lock.nodes.cursor_front().map(|c| c.remove_current().1)
+            } {
+                node.to_key_value().1.release();
             }
             inner.nodes = nodes;
         }
 
-        // Cancel all pending work items.
-        while let Some(work) = self.get_work() {
-            work.into_arc().cancel();
-        }
-
-        // Drop all references. We do this dance with `swap` to avoid destroying the references
-        // while holding the lock.
+        // Clean up death listeners and remove nodes from external node info lists.
         for info in self.node_refs.lock().by_handle.values_mut() {
             // SAFETY: We are removing the `NodeRefInfo` from the right node.
             unsafe { info.node_ref2().node.remove_node_info(&info) };
@@ -1301,31 +1308,30 @@ impl Process {
             death.set_cleared(false);
         }
 
-        // Do similar dance for the state lock.
-        let mut inner = self.inner.lock();
-        let threads = take(&mut inner.threads);
-        let nodes = take(&mut inner.nodes);
-        drop(inner);
+        // Clean up freeze listeners.
+        let freeze_listeners = take(&mut self.node_refs.lock().freeze_listeners);
+        for listener in freeze_listeners.values() {
+            listener.on_process_exit(&self);
+        }
+        drop(freeze_listeners);
 
-        // Release all threads.
-        for thread in threads.values() {
-            thread.release();
+        // Release refs on foreign nodes.
+        {
+            let mut refs = self.node_refs.lock();
+            let by_handle = take(&mut refs.by_handle);
+            let by_node = take(&mut refs.by_node);
+            drop(refs);
+            drop(by_node);
+            drop(by_handle);
         }
 
-        // Deliver death notifications.
-        for node in nodes.values() {
-            loop {
-                let death = {
-                    let mut inner = self.inner.lock();
-                    if let Some(death) = node.next_death(&mut inner) {
-                        death
-                    } else {
-                        break;
-                    }
-                };
-                death.set_dead();
-            }
+        // Cancel all pending work items.
+        while let Some(work) = self.get_work() {
+            work.into_arc().cancel();
         }
+
+        let delivered_deaths = take(&mut self.inner.lock().delivered_deaths);
+        drop(delivered_deaths);
 
         // Free any resources kept alive by allocated buffers.
         let omapping = self.inner.lock().mapping.take();
@@ -1347,6 +1353,9 @@ impl Process {
                     drop(alloc)
                 });
         }
+
+        // calls to synchronize_rcu() in thread drop will happen here
+        drop(threads);
     }
 
     pub(crate) fn drop_outstanding_txn(&self) {
