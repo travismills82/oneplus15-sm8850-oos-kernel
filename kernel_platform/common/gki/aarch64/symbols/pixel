@@ -2496,6 +2496,7 @@
   __traceiter_android_rvh_set_task_comm
   __traceiter_android_rvh_set_task_cpu
   __traceiter_android_rvh_set_user_nice_locked
+  __traceiter_android_rvh_swap_read_folio_bdev_sync
   __traceiter_android_rvh_try_to_wake_up_success
   __traceiter_android_rvh_uclamp_eff_get
   __traceiter_android_rvh_ufs_complete_init
@@ -2509,6 +2510,7 @@
   __traceiter_android_vh_cpu_idle_exit
   __traceiter_android_vh_enable_thermal_genl_check
   __traceiter_android_vh_filemap_get_folio
+  __traceiter_android_vh_free_one_page_flag_check
   __traceiter_android_vh_free_pages_prepare_init
   __traceiter_android_vh_ipi_stop
   __traceiter_android_vh_mm_compaction_begin
@@ -2518,6 +2520,7 @@
   __traceiter_android_vh_rmqueue
   __traceiter_android_vh_scheduler_tick
   __traceiter_android_vh_si_meminfo_adjust
+  __traceiter_android_vh_swap_writepage
   __traceiter_android_vh_sysrq_crash
   __traceiter_android_vh_tune_swappiness
   __traceiter_android_vh_ufs_check_int_errors
@@ -2584,6 +2587,7 @@
   __tracepoint_android_rvh_set_task_comm
   __tracepoint_android_rvh_set_task_cpu
   __tracepoint_android_rvh_set_user_nice_locked
+  __tracepoint_android_rvh_swap_read_folio_bdev_sync
   __tracepoint_android_rvh_try_to_wake_up_success
   __tracepoint_android_rvh_uclamp_eff_get
   __tracepoint_android_rvh_ufs_complete_init
@@ -2597,6 +2601,7 @@
   __tracepoint_android_vh_cpu_idle_exit
   __tracepoint_android_vh_enable_thermal_genl_check
   __tracepoint_android_vh_filemap_get_folio
+  __tracepoint_android_vh_free_one_page_flag_check
   __tracepoint_android_vh_free_pages_prepare_init
   __tracepoint_android_vh_ipi_stop
   __tracepoint_android_vh_mm_compaction_begin
@@ -2606,6 +2611,7 @@
   __tracepoint_android_vh_rmqueue
   __tracepoint_android_vh_scheduler_tick
   __tracepoint_android_vh_si_meminfo_adjust
+  __tracepoint_android_vh_swap_writepage
   __tracepoint_android_vh_sysrq_crash
   __tracepoint_android_vh_tune_swappiness
   __tracepoint_android_vh_ufs_check_int_errors
