@@ -2152,6 +2152,7 @@
   simple_attr_read
   simple_attr_release
   simple_attr_write
+  simple_attr_write_signed
   simple_open
   simple_read_from_buffer
   simple_strtol
@@ -2477,6 +2478,22 @@
   __traceiter_android_rvh_mapping_shrinkable
   __traceiter_android_rvh_meminfo_proc_show
   __traceiter_android_rvh_reclaim_folio_list
+  __traceiter_android_rvh_remove_entity_load_avg
+  __traceiter_android_rvh_rtmutex_prepare_setprio
+  __traceiter_android_rvh_sched_newidle_balance
+  __traceiter_android_rvh_sched_setaffinity
+  __traceiter_android_rvh_select_task_rq_fair
+  __traceiter_android_rvh_select_task_rq_rt
+  __traceiter_android_rvh_set_cpus_allowed_by_task
+  __traceiter_android_rvh_set_cpus_allowed_ptr
+  __traceiter_android_rvh_set_iowait
+  __traceiter_android_rvh_setscheduler
+  __traceiter_android_rvh_setscheduler_prio
+  __traceiter_android_rvh_set_task_comm
+  __traceiter_android_rvh_set_task_cpu
+  __traceiter_android_rvh_set_user_nice_locked
+  __traceiter_android_rvh_try_to_wake_up_success
+  __traceiter_android_rvh_uclamp_eff_get
   __traceiter_android_rvh_ufs_complete_init
   __traceiter_android_rvh_ufs_reprogram_all_keys
   __traceiter_android_rvh_vmscan_kswapd_done
@@ -2549,6 +2566,22 @@
   __tracepoint_android_rvh_mapping_shrinkable
   __tracepoint_android_rvh_meminfo_proc_show
   __tracepoint_android_rvh_reclaim_folio_list
+  __tracepoint_android_rvh_remove_entity_load_avg
+  __tracepoint_android_rvh_rtmutex_prepare_setprio
+  __tracepoint_android_rvh_sched_newidle_balance
+  __tracepoint_android_rvh_sched_setaffinity
+  __tracepoint_android_rvh_select_task_rq_fair
+  __tracepoint_android_rvh_select_task_rq_rt
+  __tracepoint_android_rvh_set_cpus_allowed_by_task
+  __tracepoint_android_rvh_set_cpus_allowed_ptr
+  __tracepoint_android_rvh_set_iowait
+  __tracepoint_android_rvh_setscheduler
+  __tracepoint_android_rvh_setscheduler_prio
+  __tracepoint_android_rvh_set_task_comm
+  __tracepoint_android_rvh_set_task_cpu
+  __tracepoint_android_rvh_set_user_nice_locked
+  __tracepoint_android_rvh_try_to_wake_up_success
+  __tracepoint_android_rvh_uclamp_eff_get
   __tracepoint_android_rvh_ufs_complete_init
   __tracepoint_android_rvh_ufs_reprogram_all_keys
   __tracepoint_android_rvh_vmscan_kswapd_done
