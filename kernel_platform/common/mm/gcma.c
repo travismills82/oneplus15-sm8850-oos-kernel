@@ -633,6 +633,13 @@ void gcma_alloc_range(unsigned long start_pfn, unsigned long end_pfn)
 		set_page_count(pfn_to_page(pfn), 1);
 
 	gcma_stat_add(ALLOCATED_PAGE, end_pfn - start_pfn + 1);
+
+	/*
+	 * GCMA returns pages with refcount 1 and expects them to have
+	 * the same refcount 1 whet they are freed.
+	 */
+	for (pfn = start_pfn; pfn <= end_pfn; pfn++)
+		set_page_count(pfn_to_page(pfn), 1);
 }
 EXPORT_SYMBOL_GPL(gcma_alloc_range);
 
