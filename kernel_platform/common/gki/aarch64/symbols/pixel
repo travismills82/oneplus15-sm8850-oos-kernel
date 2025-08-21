@@ -1432,6 +1432,9 @@
   loops_per_jiffy
   lru_cache_disable
   lru_disable_count
+  LZ4_compress_HC_continue
+  LZ4_loadDictHC
+  LZ4_resetStreamHC
   mac_pton
   mbox_chan_received_data
   mbox_chan_txdone
@@ -2931,4 +2934,15 @@
   xhci_resume
   xhci_run
   xhci_suspend
+  zstd_compress_using_cdict
+  zstd_create_cctx_advanced
+  zstd_create_cdict_byreference
+  zstd_create_dctx_advanced
+  zstd_create_ddict_byreference
+  zstd_decompress_using_ddict
   zstd_default_clevel
+  zstd_free_cctx
+  zstd_free_cdict
+  zstd_free_dctx
+  zstd_free_ddict
+  zstd_get_cparams
