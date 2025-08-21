@@ -609,8 +609,7 @@ static bool hidinput_update_battery_charge_status(struct hid_device *dev,
 	return false;
 }
 
-static void hidinput_update_battery(struct hid_device *dev, unsigned int usage,
-				    int value)
+static void hidinput_update_battery(struct hid_device *dev, int value)
 {
 	int capacity;
 
@@ -651,8 +650,13 @@ static void hidinput_cleanup_battery(struct hid_device *dev)
 {
 }
 
-static void hidinput_update_battery(struct hid_device *dev, unsigned int usage,
-				    int value)
+static bool hidinput_update_battery_charge_status(struct hid_device *dev,
+					       unsigned int usage, int value)
+{
+	return false;
+}
+
+static void hidinput_update_battery(struct hid_device *dev, int value)
 {
 }
 #endif	/* CONFIG_HID_BATTERY_STRENGTH */
@@ -1519,7 +1523,11 @@ void hidinput_hid_event(struct hid_device *hid, struct hid_field *field, struct 
 		return;
 
 	if (usage->type == EV_PWR) {
-		hidinput_update_battery(hid, usage->hid, value);
+		bool handled = hidinput_update_battery_charge_status(hid, usage->hid, value);
+
+		if (!handled)
+			hidinput_update_battery(hid, value);
+
 		return;
 	}
 
