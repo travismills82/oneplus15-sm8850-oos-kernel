@@ -449433,6 +449433,15 @@ elf_symbol {
   full_name: "delayed_work_timer_fn"
 }
 elf_symbol {
+  id: 0x1ed910b6
+  name: "delete_from_swap_cache"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xc286f4b6
+  type_id: 0x18c46588
+  full_name: "delete_from_swap_cache"
+}
+elf_symbol {
   id: 0xd5335bc5
   name: "dentry_open"
   is_defined: true
@@ -510144,6 +510153,7 @@ interface {
   symbol_id: 0x44b5caf9
   symbol_id: 0x4ba4968c
   symbol_id: 0xc1583575
+  symbol_id: 0x1ed910b6
   symbol_id: 0xd5335bc5
   symbol_id: 0x431b7cda
   symbol_id: 0x1ef313dc
