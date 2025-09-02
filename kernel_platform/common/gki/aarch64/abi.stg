@@ -405159,6 +405159,13 @@ function {
   parameter_id: 0x3e10b518
 }
 function {
+  id: 0x9b402ff7
+  return_type_id: 0x6720d32f
+  parameter_id: 0x18bd6530
+  parameter_id: 0x38d23361
+  parameter_id: 0x33756485
+}
+function {
   id: 0x9b41a786
   return_type_id: 0x6720d32f
   parameter_id: 0x18bd6530
@@ -431459,6 +431466,15 @@ elf_symbol {
   full_name: "__traceiter_android_vh_printk_hotplug"
 }
 elf_symbol {
+  id: 0x988fab13
+  name: "__traceiter_android_vh_printk_save_irq"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x14bce433
+  type_id: 0x9b402ff7
+  full_name: "__traceiter_android_vh_printk_save_irq"
+}
+elf_symbol {
   id: 0xeba1d6c7
   name: "__traceiter_android_vh_prio_inheritance"
   is_defined: true
@@ -438270,6 +438286,15 @@ elf_symbol {
   crc: 0x7c5aa8a7
   type_id: 0x18ccbd2c
   full_name: "__tracepoint_android_vh_printk_hotplug"
+}
+elf_symbol {
+  id: 0xcf7a0ca9
+  name: "__tracepoint_android_vh_printk_save_irq"
+  is_defined: true
+  symbol_type: OBJECT
+  crc: 0x7c5aa8a7
+  type_id: 0x18ccbd2c
+  full_name: "__tracepoint_android_vh_printk_save_irq"
 }
 elf_symbol {
   id: 0x2bfccca9
@@ -507985,6 +508010,7 @@ interface {
   symbol_id: 0xb2fed205
   symbol_id: 0xc20b8539
   symbol_id: 0x7d499dab
+  symbol_id: 0x988fab13
   symbol_id: 0xeba1d6c7
   symbol_id: 0x204c04f7
   symbol_id: 0x46ce0353
@@ -508742,6 +508768,7 @@ interface {
   symbol_id: 0x3fef4323
   symbol_id: 0x3f700433
   symbol_id: 0x49b95a49
+  symbol_id: 0xcf7a0ca9
   symbol_id: 0x2bfccca9
   symbol_id: 0x2a85f575
   symbol_id: 0x2f640519
