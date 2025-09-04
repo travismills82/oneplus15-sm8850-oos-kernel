@@ -49501,6 +49501,16 @@ member {
   offset: 64
 }
 member {
+  id: 0x36e813fe
+  type_id: 0x548e0512
+  offset: 16
+}
+member {
+  id: 0x36f9a33b
+  type_id: 0x54c8c897
+  offset: 1120
+}
+member {
   id: 0x370ba7cf
   type_id: 0x5300f6cb
   offset: 640
@@ -136186,6 +136196,11 @@ member {
   name: "internal_flags"
   type_id: 0x295c7202
   offset: 296
+}
+member {
+  id: 0x085b39e2
+  name: "internal_flags"
+  type_id: 0x4585663f
 }
 member {
   id: 0x589ca94a
@@ -266844,6 +266859,15 @@ struct_union {
   }
 }
 struct_union {
+  id: 0x54c8c897
+  kind: UNION
+  definition {
+    bytesize: 4
+    member_id: 0x085b39e2
+    member_id: 0x936cb8af
+  }
+}
+struct_union {
   id: 0x5509d7db
   kind: UNION
   definition {
@@ -296962,6 +296986,7 @@ struct_union {
     member_id: 0x0ac87879
     member_id: 0x2b586065
     member_id: 0x2d0fa9fb
+    member_id: 0x36f9a33b
     member_id: 0x1b7ec59b
     member_id: 0x75d7270a
   }
