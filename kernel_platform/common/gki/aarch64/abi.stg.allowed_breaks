@@ -15,3 +15,6 @@ type 'struct io_kiocb' changed
   member 'struct hlist_node hash_node' was removed
   member 'union { struct hlist_node hash_node; struct callback_head callback_head; }' was added
 
+type 'struct drm_bridge' changed
+  member 'union { bool support_hdcp; unsigned char __kabi_ignored0; }' was added
+
