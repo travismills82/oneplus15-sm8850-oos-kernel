@@ -1190,7 +1190,7 @@ static __printf(3, 4) void slab_err(struct kmem_cache *s, struct slab *slab,
 	va_start(args, fmt);
 	__slab_bug(s, fmt, args);
 	va_end(args);
-
+	slab_bug(s, "%s", buf);
 	__slab_err(slab);
 }
 
