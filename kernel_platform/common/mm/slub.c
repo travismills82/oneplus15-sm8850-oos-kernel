@@ -1190,7 +1190,7 @@ static __printf(3, 4) void slab_err(struct kmem_cache *s, struct slab *slab,
 	va_start(args, fmt);
 	__slab_bug(s, fmt, args);
 	va_end(args);
-	slab_bug(s, "%s", buf);
+
 	__slab_err(slab);
 }
 
@@ -1243,7 +1243,7 @@ static void restore_bytes(struct kmem_cache *s, const char *message, u8 data,
 
 static pad_check_attributes int
 check_bytes_and_report(struct kmem_cache *s, struct slab *slab,
-		       u8 *object, char *what, u8 *start, unsigned int value,
+		       u8 *object, const char *what, u8 *start, unsigned int value,
 		       unsigned int bytes, bool slab_obj_print)
 {
 	u8 *fault;
