@@ -25704,6 +25704,11 @@ pointer_reference {
   pointee_type_id: 0x9106691b
 }
 pointer_reference {
+  id: 0x2ed1f389
+  kind: POINTER
+  pointee_type_id: 0x910728b8
+}
+pointer_reference {
   id: 0x2ed26c2f
   kind: POINTER
   pointee_type_id: 0x91095623
@@ -27147,6 +27152,11 @@ pointer_reference {
   id: 0x2f764d18
   kind: POINTER
   pointee_type_id: 0x9799d2fd
+}
+pointer_reference {
+  id: 0x2f76aeeb
+  kind: POINTER
+  pointee_type_id: 0x979a5d33
 }
 pointer_reference {
   id: 0x2f78c9b9
@@ -29162,6 +29172,11 @@ pointer_reference {
   id: 0x321c87ab
   kind: POINTER
   pointee_type_id: 0xe232f831
+}
+pointer_reference {
+  id: 0x321f2e5d
+  kind: POINTER
+  pointee_type_id: 0xe23c5fe9
 }
 pointer_reference {
   id: 0x322396fa
@@ -32932,6 +32947,11 @@ pointer_reference {
   id: 0x38a2dee9
   kind: POINTER
   pointee_type_id: 0xc8cb9d39
+}
+pointer_reference {
+  id: 0x38a8f89b
+  kind: POINTER
+  pointee_type_id: 0xc8e304f0
 }
 pointer_reference {
   id: 0x38aab014
@@ -41764,6 +41784,11 @@ qualified {
   qualified_type_id: 0xf865cc2f
 }
 qualified {
+  id: 0xe23c5fe9
+  qualifier: CONST
+  qualified_type_id: 0xf8b6c92c
+}
+qualified {
   id: 0xe25a62d2
   qualifier: CONST
   qualified_type_id: 0xf92e3dc3
@@ -48137,6 +48162,10 @@ member {
   type_id: 0x09fe2b42
 }
 member {
+  id: 0x21c53df9
+  type_id: 0x083a87f4
+}
+member {
   id: 0x21ff060a
   type_id: 0x08d2683b
 }
@@ -49451,6 +49480,10 @@ member {
   offset: 1552
 }
 member {
+  id: 0x36752b74
+  type_id: 0x56faddc1
+}
+member {
   id: 0x3697c485
   type_id: 0x55715975
   offset: 1152
@@ -49640,6 +49673,11 @@ member {
   id: 0x38f9d2be
   type_id: 0x6cc91de2
   offset: 128
+}
+member {
+  id: 0x390b0141
+  type_id: 0x6b027e54
+  offset: 3904
 }
 member {
   id: 0x39193324
@@ -54795,12 +54833,6 @@ member {
   name: "__kabi_reserved1"
   type_id: 0x92233392
   offset: 1408
-}
-member {
-  id: 0x415b0e6c
-  name: "__kabi_reserved1"
-  type_id: 0x92233392
-  offset: 3904
 }
 member {
   id: 0x415b0e73
@@ -200990,6 +201022,11 @@ member {
   offset: 1408
 }
 member {
+  id: 0xf7c37d1c
+  name: "register_guest_trng_ops"
+  type_id: 0x2ed1f389
+}
+member {
   id: 0xa7bbc494
   name: "register_host_perm_fault_handler"
   type_id: 0x2f283e8e
@@ -239163,6 +239200,17 @@ member {
   type_id: 0x6720d32f
 }
 member {
+  id: 0x61901dd3
+  name: "trng_rnd64"
+  type_id: 0x2f76aeeb
+  offset: 64
+}
+member {
+  id: 0x4b7fe990
+  name: "trng_uuid"
+  type_id: 0x38a8f89b
+}
+member {
   id: 0x028c1c9f
   name: "true_list"
   type_id: 0xdc39b636
@@ -261364,6 +261412,14 @@ struct_union {
   }
 }
 struct_union {
+  id: 0x083a87f4
+  kind: STRUCT
+  definition {
+    bytesize: 8
+    member_id: 0x415b0cbc
+  }
+}
+struct_union {
   id: 0x086f0af0
   kind: STRUCT
   definition {
@@ -266990,6 +267046,12 @@ struct_union {
   }
 }
 struct_union {
+  id: 0x56faddc1
+  kind: UNION
+  definition {
+  }
+}
+struct_union {
   id: 0x571cd963
   kind: UNION
   definition {
@@ -268361,6 +268423,16 @@ struct_union {
     bytesize: 8
     member_id: 0xf29527a4
     member_id: 0x270727dd
+  }
+}
+struct_union {
+  id: 0x6b027e54
+  kind: UNION
+  definition {
+    bytesize: 8
+    member_id: 0xf7c37d1c
+    member_id: 0x21c53df9
+    member_id: 0x36752b74
   }
 }
 struct_union {
@@ -321034,7 +321106,7 @@ struct_union {
     member_id: 0x98146249
     member_id: 0x0c603bb0
     member_id: 0x85355360
-    member_id: 0x415b0e6c
+    member_id: 0x390b0141
     member_id: 0xb116ef40
     member_id: 0xf0d6543e
     member_id: 0x049932fe
@@ -321076,6 +321148,18 @@ struct_union {
     bytesize: 16
     member_id: 0x46038e35
     member_id: 0x8217e2f8
+  }
+}
+struct_union {
+  id: 0xf8b6c92c
+  kind: STRUCT
+  name: "pkvm_module_trng_ops"
+  definition {
+    bytesize: 32
+    member_id: 0x4b7fe990
+    member_id: 0x61901dd3
+    member_id: 0x415b057e
+    member_id: 0xb116e281
   }
 }
 struct_union {
@@ -391245,6 +391329,11 @@ function {
   parameter_id: 0x0beab59b
 }
 function {
+  id: 0x910728b8
+  return_type_id: 0x6720d32f
+  parameter_id: 0x321f2e5d
+}
+function {
   id: 0x910902f7
   return_type_id: 0x6720d32f
   parameter_id: 0x3176a085
@@ -399408,6 +399497,12 @@ function {
   return_type_id: 0x6720d32f
   parameter_id: 0x29c600bb
   parameter_id: 0x1a2c7f0e
+}
+function {
+  id: 0x979a5d33
+  return_type_id: 0x6720d32f
+  parameter_id: 0x2e18f543
+  parameter_id: 0x6720d32f
 }
 function {
   id: 0x979ed47c
