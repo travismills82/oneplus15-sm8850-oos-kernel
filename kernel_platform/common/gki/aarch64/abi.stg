@@ -355822,6 +355822,10 @@ enumeration {
       name: "IIO_CHROMATICITY"
       value: 38
     }
+    enumerator {
+      name: "IIO_ATTENTION"
+      value: 39
+    }
   }
 }
 enumeration {
