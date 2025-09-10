@@ -45510,6 +45510,11 @@ array {
   element_type_id: 0x4af075c4
 }
 array {
+  id: 0x65707d1f
+  number_of_elements: 2
+  element_type_id: 0x2764f7f1
+}
+array {
   id: 0x659b07f0
   number_of_elements: 16
   element_type_id: 0xa6a31584
@@ -90998,6 +91003,18 @@ member {
   offset: 320
 }
 member {
+  id: 0xff2ed536
+  name: "data_blocks"
+  type_id: 0xd0b3a203
+  offset: 960
+}
+member {
+  id: 0x26c0bf41
+  name: "data_bufio"
+  type_id: 0x00843aa8
+  offset: 64
+}
+member {
   id: 0xc3c8ed87
   name: "data_byte_offset"
   type_id: 0xe62ebf07
@@ -106482,6 +106499,12 @@ member {
   name: "error_list_count"
   type_id: 0x74d29cf1
   offset: 800
+}
+member {
+  id: 0x87cd5bc4
+  name: "error_mode"
+  type_id: 0xf56ed753
+  offset: 1248
 }
 member {
   id: 0xfa96bf5e
@@ -137382,6 +137405,12 @@ member {
   name: "io_size"
   type_id: 0xe62ebf07
   offset: 800
+}
+member {
+  id: 0xc4f056bc
+  name: "io_size"
+  type_id: 0xf435685e
+  offset: 192
 }
 member {
   id: 0xca2ca1b1
