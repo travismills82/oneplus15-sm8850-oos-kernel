@@ -25,6 +25,7 @@
 #include <linux/kmemleak.h>
 #include <linux/cma.h>
 #include <linux/dma-map-ops.h>
+ANDROID_KABI_DECLONLY(dma_map_ops);
 
 #include "of_private.h"
 
