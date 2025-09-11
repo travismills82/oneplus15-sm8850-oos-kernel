@@ -1437,10 +1437,9 @@ errout:
  * and Tunnel endpoint.
  * Return true if packet is bogus and should be dropped.
  */
-static enum skb_drop_reason vxlan_snoop(struct net_device *dev,
-					union vxlan_addr *src_ip,
-					const u8 *src_mac, u32 src_ifindex,
-					__be32 vni)
+static bool vxlan_snoop(struct net_device *dev,
+			union vxlan_addr *src_ip, const u8 *src_mac,
+			u32 src_ifindex, __be32 vni)
 {
 	struct vxlan_dev *vxlan = netdev_priv(dev);
 	struct vxlan_fdb *f;
@@ -1448,7 +1447,7 @@ static enum skb_drop_reason vxlan_snoop(struct net_device *dev,
 
 	/* Ignore packets from invalid src-address */
 	if (!is_valid_ether_addr(src_mac))
-		return SKB_DROP_REASON_MAC_INVALID_SOURCE;
+		return true;
 
 #if IS_ENABLED(CONFIG_IPV6)
 	if (src_ip->sa.sa_family == AF_INET6 &&
@@ -1462,15 +1461,15 @@ static enum skb_drop_reason vxlan_snoop(struct net_device *dev,
 
 		if (likely(vxlan_addr_equal(&rdst->remote_ip, src_ip) &&
 			   rdst->remote_ifindex == ifindex))
-			return SKB_NOT_DROPPED_YET;
+			return false;
 
 		/* Don't migrate static entries, drop packets */
 		if (f->state & (NUD_PERMANENT | NUD_NOARP))
-			return SKB_DROP_REASON_VXLAN_ENTRY_EXISTS;
+			return true;
 
 		/* Don't override an fdb with nexthop with a learnt entry */
 		if (rcu_access_pointer(f->nh))
-			return SKB_DROP_REASON_VXLAN_ENTRY_EXISTS;
+			return true;
 
 		if (net_ratelimit())
 			netdev_info(dev,
@@ -1498,7 +1497,7 @@ static enum skb_drop_reason vxlan_snoop(struct net_device *dev,
 		spin_unlock(&vxlan->hash_lock[hash_index]);
 	}
 
-	return SKB_NOT_DROPPED_YET;
+	return false;
 }
 
 static bool __vxlan_sock_release_prep(struct vxlan_sock *vs)
