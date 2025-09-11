@@ -48908,6 +48908,11 @@ member {
   offset: 192
 }
 member {
+  id: 0x30fc5a4b
+  type_id: 0x4cdf1458
+  offset: 328
+}
+member {
   id: 0x310f528c
   type_id: 0x4b1329a6
   offset: 64
@@ -52951,6 +52956,12 @@ member {
   type_id: 0xa5a81958
 }
 member {
+  id: 0xaa6fff3f
+  name: "__bindgen_anon_1"
+  type_id: 0xa5554ffc
+  offset: 328
+}
+member {
   id: 0xaa7187b0
   name: "__bindgen_anon_1"
   type_id: 0xbb28e03e
@@ -54099,6 +54110,21 @@ member {
   id: 0x289a9b79
   name: "__iov"
   type_id: 0x3ea6bd8c
+}
+member {
+  id: 0x936cb8af
+  name: "__kabi_ignored0"
+  type_id: 0x5d8155a5
+}
+member {
+  id: 0x52ad2439
+  name: "__kabi_ignored1"
+  type_id: 0x5d8155a5
+}
+member {
+  id: 0x52dd8aff
+  name: "__kabi_ignored1"
+  type_id: 0x2d2f93e0
 }
 member {
   id: 0x4140f02a
@@ -101664,6 +101690,16 @@ member {
   name: "drop_unsolicited_na"
   type_id: 0x0faae5b1
   offset: 1472
+}
+member {
+  id: 0x68c58b42
+  name: "dropbehind"
+  type_id: 0x6d7f5ff6
+}
+member {
+  id: 0x68ca5aa2
+  name: "dropbehind"
+  type_id: 0x62aebfd4
 }
 member {
   id: 0xcc3805c6
@@ -266881,6 +266917,15 @@ struct_union {
   }
 }
 struct_union {
+  id: 0x4cdf1458
+  kind: UNION
+  definition {
+    bytesize: 1
+    member_id: 0x68c58b42
+    member_id: 0x52ad2439
+  }
+}
+struct_union {
   id: 0x4d52b36b
   kind: UNION
   definition {
@@ -280248,8 +280293,19 @@ struct_union {
     member_id: 0x2c04d695
     member_id: 0x3ca88d1f
     member_id: 0xa8b75809
+    member_id: 0xaa6fff3f
     member_id: 0x151bc175
     member_id: 0xd66a307a
+  }
+}
+struct_union {
+  id: 0xa5554ffc
+  kind: UNION
+  name: "bindings::bindings_raw::readahead_control__bindgen_ty_1"
+  definition {
+    bytesize: 1
+    member_id: 0x68ca5aa2
+    member_id: 0x52dd8aff
   }
 }
 struct_union {
@@ -324441,6 +324497,7 @@ struct_union {
     member_id: 0x2c95e938
     member_id: 0x3c39b2b2
     member_id: 0xa8b889e9
+    member_id: 0x30fc5a4b
     member_id: 0x1517dd06
     member_id: 0xd671c19a
   }
