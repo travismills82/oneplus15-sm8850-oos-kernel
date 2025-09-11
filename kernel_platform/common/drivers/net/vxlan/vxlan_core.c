@@ -1047,8 +1047,10 @@ static int vxlan_fdb_update_existing(struct vxlan_dev *vxlan,
 		notify |= rc;
 	}
 
-	if (ndm_flags & NTF_USE)
+	if (ndm_flags & NTF_USE) {
+		WRITE_ONCE(f->used, jiffies);
 		WRITE_ONCE(f->updated, jiffies);
+	}
 
 	if (notify) {
 		if (rd == NULL)
@@ -1292,7 +1294,7 @@ int __vxlan_fdb_delete(struct vxlan_dev *vxlan,
 	struct vxlan_fdb *f;
 	int err = -ENOENT;
 
-	f = __vxlan_find_mac(vxlan, addr, src_vni);
+	f = vxlan_find_mac(vxlan, addr, src_vni);
 	if (!f)
 		return err;
 
@@ -1456,7 +1458,7 @@ static enum skb_drop_reason vxlan_snoop(struct net_device *dev,
 		ifindex = src_ifindex;
 #endif
 
-	f = __vxlan_find_mac(vxlan, src_mac, vni);
+	f = vxlan_find_mac(vxlan, src_mac, vni);
 	if (likely(f)) {
 		struct vxlan_rdst *rdst = first_remote_rcu(f);
 
@@ -4716,7 +4718,7 @@ vxlan_fdb_offloaded_set(struct net_device *dev,
 
 	spin_lock_bh(&vxlan->hash_lock[hash_index]);
 
-	f = __vxlan_find_mac(vxlan, fdb_info->eth_addr, fdb_info->vni);
+	f = vxlan_find_mac(vxlan, fdb_info->eth_addr, fdb_info->vni);
 	if (!f)
 		goto out;
 
@@ -4772,7 +4774,7 @@ vxlan_fdb_external_learn_del(struct net_device *dev,
 	hash_index = fdb_head_index(vxlan, fdb_info->eth_addr, fdb_info->vni);
 	spin_lock_bh(&vxlan->hash_lock[hash_index]);
 
-	f = __vxlan_find_mac(vxlan, fdb_info->eth_addr, fdb_info->vni);
+	f = vxlan_find_mac(vxlan, fdb_info->eth_addr, fdb_info->vni);
 	if (!f)
 		err = -ENOENT;
 	else if (f->flags & NTF_EXT_LEARNED)
