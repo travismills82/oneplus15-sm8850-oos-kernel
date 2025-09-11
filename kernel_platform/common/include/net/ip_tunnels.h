@@ -439,8 +439,7 @@ int ip_tunnel_encap_del_ops(const struct ip_tunnel_encap_ops *op,
 int ip_tunnel_encap_setup(struct ip_tunnel *t,
 			  struct ip_tunnel_encap *ipencap);
 
-static inline enum skb_drop_reason
-pskb_inet_may_pull_reason(struct sk_buff *skb)
+static inline bool pskb_inet_may_pull(struct sk_buff *skb)
 {
 	int nhlen;
 
@@ -457,12 +456,7 @@ pskb_inet_may_pull_reason(struct sk_buff *skb)
 		nhlen = 0;
 	}
 
-	return pskb_network_may_pull_reason(skb, nhlen);
-}
-
-static inline bool pskb_inet_may_pull(struct sk_buff *skb)
-{
-	return pskb_inet_may_pull_reason(skb) == SKB_NOT_DROPPED_YET;
+	return pskb_network_may_pull(skb, nhlen);
 }
 
 /* Variant of pskb_inet_may_pull().
