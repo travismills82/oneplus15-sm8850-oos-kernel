@@ -11,6 +11,7 @@ type 'enum gunyah_rm_vm_status' changed
   'int __traceiter_android_vh_f2fs_printk(void*, struct f2fs_sb_info*, struct va_format*, int, bool)'
   'int __traceiter_f2fs_submit_folio_write(void*, struct folio*, struct f2fs_io_info*)'
 
-2 variable symbol(s) removed
-  'struct tracepoint __tracepoint_android_vh_f2fs_printk'
-  'struct tracepoint __tracepoint_f2fs_submit_folio_write'
+type 'struct io_kiocb' changed
+  member 'struct hlist_node hash_node' was removed
+  member 'union { struct hlist_node hash_node; struct callback_head callback_head; }' was added
+
