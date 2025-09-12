@@ -995,6 +995,10 @@ static int ___host_check_page_state_range(u64 addr, u64 size,
 	struct hyp_page *p;
 	struct memblock_region *reg;
 	struct kvm_mem_range range;
+	u64 end;
+
+	if (check_add_overflow(addr, size, &end))
+		return -EINVAL;
 
 	/* Can't check the state of both MMIO and memory regions at once */
 	reg = find_mem_range(addr, &range);
