@@ -461,25 +461,6 @@ static void xhci_dbc_ring_init(struct xhci_ring *ring)
 	xhci_initialize_ring_info(ring);
 }
 
-static int xhci_dbc_reinit_ep_rings(struct xhci_dbc *dbc)
-{
-	struct xhci_ring *in_ring = dbc->eps[BULK_IN].ring;
-	struct xhci_ring *out_ring = dbc->eps[BULK_OUT].ring;
-
-	if (!in_ring || !out_ring || !dbc->ctx) {
-		dev_warn(dbc->dev, "Can't re-init unallocated endpoints\n");
-		return -ENODEV;
-	}
-
-	xhci_dbc_ring_init(in_ring);
-	xhci_dbc_ring_init(out_ring);
-
-	/* set ep context enqueue, dequeue, and cycle to initial values */
-	xhci_dbc_init_ep_contexts(dbc);
-
-	return 0;
-}
-
 static struct xhci_ring *
 xhci_dbc_ring_alloc(struct device *dev, enum xhci_ring_type type, gfp_t flags)
 {
@@ -509,7 +490,9 @@ xhci_dbc_ring_alloc(struct device *dev, enum xhci_ring_type type, gfp_t flags)
 	seg->dma = dma;
 
 	INIT_LIST_HEAD(&ring->td_list);
-	xhci_initialize_ring_info(ring);
+
+	xhci_dbc_ring_init(ring);
+
 	return ring;
 dma_fail:
 	kfree(seg);
