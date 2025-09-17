@@ -509,9 +509,7 @@ xhci_dbc_ring_alloc(struct device *dev, enum xhci_ring_type type, gfp_t flags)
 	seg->dma = dma;
 
 	INIT_LIST_HEAD(&ring->td_list);
-
-	xhci_dbc_ring_init(ring);
-
+	xhci_initialize_ring_info(ring);
 	return ring;
 dma_fail:
 	kfree(seg);
