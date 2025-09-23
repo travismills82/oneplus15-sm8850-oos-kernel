@@ -634,11 +634,11 @@ ffa_setup_and_transmit(u32 func_id, void *buffer, u32 max_fragsize,
 
 	for (idx = 0; idx < args->nattrs; idx++) {
 		ep_offset = ffa_mem_desc_offset(buffer, idx, drv_info->version);
-		if (ep_offset > max_fragsize - sizeof(struct ffa_mem_region_attributes))
+		if (ep_offset > max_fragsize - ffa_emad_size_get(drv_info->version))
 			return -ENXIO;
 
 		ep_mem_access = buffer + ep_offset;
-		memset(ep_mem_access, 0, sizeof(*ep_mem_access));
+		memset(ep_mem_access, 0, ffa_emad_size_get(drv_info->version));
 		ep_mem_access->receiver = args->attrs[idx].receiver;
 		ep_mem_access->attrs = args->attrs[idx].attrs;
 		ep_mem_access->composite_off = composite_offset;
