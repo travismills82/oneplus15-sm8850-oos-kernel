@@ -6257,6 +6257,9 @@ static void hdd_get_max_rate_he(struct hdd_station_info *stainfo,
 				mcsidx = stats->tx_rate.mcs;
 		}
 
+		if (mcsidx > MAX_HT_MCS_INDEX)
+			mcsidx = MAX_HT_MCS_INDEX;
+
 		if (rate_flags & TX_RATE_HE160)
 			tmprate =
 		   supported_he_mcs_rate[mcsidx].supported_HE160_rate[dcm][sgi];
