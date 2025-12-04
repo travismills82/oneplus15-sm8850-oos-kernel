@@ -4120,7 +4120,10 @@ void *vrealloc_noprof(const void *p, size_t size, gfp_t flags)
 		if (want_init_on_alloc(flags))
 			memset((void *)p + size, 0, old_size - size);
 		kasan_poison_vmalloc(p + size, old_size - size);
-		kasan_unpoison_vmalloc(p, size, KASAN_VMALLOC_PROT_NORMAL);
+		kasan_unpoison_vmalloc(p, size,
+				       KASAN_VMALLOC_PROT_NORMAL |
+				       KASAN_VMALLOC_VM_ALLOC |
+				       KASAN_VMALLOC_KEEP_TAG);
 		return (void *)p;
 	}
 
