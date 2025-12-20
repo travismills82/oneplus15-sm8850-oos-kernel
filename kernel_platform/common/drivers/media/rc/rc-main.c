@@ -1611,6 +1611,7 @@ static void rc_dev_release(struct device *device)
 {
 	struct rc_dev *dev = to_rc_dev(device);
 
+	ir_raw_event_free(dev);
 	kfree(dev);
 }
 
@@ -2055,9 +2056,6 @@ void rc_unregister_device(struct rc_dev *dev)
 	device_del(&dev->dev);
 
 	ida_free(&rc_ida, dev->minor);
-
-	if (!dev->managed_alloc)
-		rc_free_device(dev);
 }
 
 EXPORT_SYMBOL_GPL(rc_unregister_device);
