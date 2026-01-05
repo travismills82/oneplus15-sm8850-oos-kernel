@@ -484,9 +484,19 @@ static inline bool blk_req_bio_is_zone_append(struct request *rq,
 void blk_zone_write_plug_bio_merged(struct bio *bio);
 void blk_zone_write_plug_init_request(struct request *rq);
 void blk_zone_append_update_request_bio(struct request *rq, struct bio *bio);
+void blk_zone_mgmt_bio_endio(struct bio *bio);
 void blk_zone_write_plug_bio_endio(struct bio *bio);
 static inline void blk_zone_bio_endio(struct bio *bio)
 {
+	/*
+	 * Zone management BIOs may impact zone write plugs but do not go
+	 * through zone write plugging. Update present plugs on completion.
+	 */
+	if (op_is_zone_mgmt(bio_op(bio))) {
+		blk_zone_mgmt_bio_endio(bio);
+		return;
+	}
+
 	/*
 	 * For write BIOs to zoned devices, signal the completion of the BIO so
 	 * that the next write BIO can be submitted by zone write plugging.
