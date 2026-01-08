@@ -56,9 +56,10 @@ int dm_blk_report_zones(struct gendisk *disk, sector_t sector,
 {
 	struct mapped_device *md = disk->private_data;
 	struct dm_table *map;
+	struct dm_table *zone_revalidate_map = READ_ONCE(md->zone_revalidate_map);
 	int srcu_idx, ret;
 
-	if (!md->zone_revalidate_map) {
+	if (!zone_revalidate_map) {
 		/* Regular user context */
 		map = dm_get_live_table(md, &srcu_idx);
 		if (!map)
@@ -70,13 +71,13 @@ int dm_blk_report_zones(struct gendisk *disk, sector_t sector,
 		}
 	} else {
 		/* Zone revalidation during __bind() */
-		map = md->zone_revalidate_map;
+		map = zone_revalidate_map;
 	}
 
 	ret = dm_blk_do_report_zones(md, map, sector, nr_zones, cb, data);
 
 put_live_table:
-	if (!md->zone_revalidate_map)
+	if (!zone_revalidate_map)
 		dm_put_live_table(md, srcu_idx);
 
 	return ret;
