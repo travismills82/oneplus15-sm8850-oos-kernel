@@ -60,12 +60,14 @@ int dm_blk_report_zones(struct gendisk *disk, sector_t sector,
 
 	if (!md->zone_revalidate_map) {
 		/* Regular user context */
-		if (dm_suspended_md(md))
-			return -EAGAIN;
-
 		map = dm_get_live_table(md, &srcu_idx);
 		if (!map)
 			return -EIO;
+
+		if (dm_suspended_md(md)) {
+			ret = -EAGAIN;
+			goto put_live_table;
+		}
 	} else {
 		/* Zone revalidation during __bind() */
 		map = md->zone_revalidate_map;
@@ -73,6 +75,7 @@ int dm_blk_report_zones(struct gendisk *disk, sector_t sector,
 
 	ret = dm_blk_do_report_zones(md, map, sector, nr_zones, cb, data);
 
+put_live_table:
 	if (!md->zone_revalidate_map)
 		dm_put_live_table(md, srcu_idx);
 
