@@ -264,10 +264,7 @@ static inline int tty_port_users(struct tty_port *port)
  * @port: tty port
  * @check_clocal: hang only ttys with %CLOCAL unset?
  */
-static inline void tty_port_tty_hangup(struct tty_port *port, bool check_clocal)
-{
-	__tty_port_tty_hangup(port, check_clocal, true);
-}
+void tty_port_tty_hangup(struct tty_port *port, bool check_clocal);
 
 /**
  * tty_port_tty_vhangup - helper to hang up a tty synchronously
