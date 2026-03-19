@@ -179,12 +179,12 @@ static int xsk_rcv_zc(struct xdp_sock *xs, struct xdp_buff *xdp, u32 len)
 
 	__xsk_rcv_zc(xs, xskb, len, contd);
 	xskb_list = &xskb->pool->xskb_list;
-	list_for_each_entry_safe(pos, tmp, xskb_list, free_list_node) {
+	list_for_each_entry_safe(pos, tmp, xskb_list, xskb_list_node) {
 		if (list_is_singular(xskb_list))
 			contd = 0;
 		len = pos->xdp.data_end - pos->xdp.data;
 		__xsk_rcv_zc(xs, pos, len, contd);
-		list_del_init(&pos->free_list_node);
+		list_del_init(&pos->xskb_list_node);
 	}
 
 	return 0;
