@@ -4751,6 +4751,7 @@ int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 		u64 trigger_ssr_val)
 {
 	struct msm_vidc_ssr *ssr;
+	u32 ssr_type;
 
 	ssr = &core->ssr;
 	/*
@@ -4763,14 +4764,15 @@ int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 	d_vpr_e("%s: trigger ssr is called. trigger ssr val: %#llx\n",
 		__func__, trigger_ssr_val);
 
-	ssr->ssr_type = (trigger_ssr_val &
+	ssr_type = (trigger_ssr_val &
 		(unsigned long)SSR_TYPE) >> SSR_TYPE_SHIFT;
 
-	if (!is_ssr_type_allowed(core, ssr->ssr_type)) {
-		d_vpr_h("SSR Type %#x is not allowed\n", ssr->ssr_type);
+	if (!is_ssr_type_allowed(core, ssr_type)) {
+		d_vpr_h("SSR Type %#x is not allowed\n", ssr_type);
 		return 0;
 	}
 
+	ssr->ssr_type = ssr_type;
 	ssr->sub_client_id = (trigger_ssr_val &
 			(unsigned long)SSR_SUB_CLIENT_ID) >> SSR_SUB_CLIENT_ID_SHIFT;
 	ssr->test_addr = (trigger_ssr_val &
