@@ -23,9 +23,30 @@
 #include <linux/fs.h>
 #include <linux/mm.h>
 #include <linux/sockptr.h>
+#include <linux/uio.h>
 #include <linux/android_kabi.h>
 
 #include <uapi/linux/net.h>
+
+/**
+ * struct sockopt - socket option value container
+ * @iter_in: iov_iter for reading optval with the content from the caller.
+ *	     Use copy_from_iter() given this iov direction is ITER_SOURCE
+ * @iter_out: iov_iter for protocols to update optval data to userspace
+ *	      Use _copy_to_iter() given iov direction is ITER_DEST
+ * @optlen: serves as both input (buffer size) and output (returned data size).
+ *
+ * Type-safe wrapper for socket option data that works with both
+ * user and kernel buffers.
+ *
+ * The optlen field allows callbacks to return a specific length value
+ * independent of the bytes written via copy_to_iter().
+ */
+typedef struct sockopt {
+	struct iov_iter iter_in;
+	struct iov_iter iter_out;
+	int optlen;
+} sockopt_t;
 
 struct poll_table_struct;
 struct pipe_inode_info;
@@ -227,7 +248,8 @@ struct proto_ops {
 					  size_t size);
 	int		(*set_rcvlowat)(struct sock *sk, int val);
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, int (*getsockopt_iter)(struct socket *sock, int level,
+						  int optname, sockopt_t *opt));
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
