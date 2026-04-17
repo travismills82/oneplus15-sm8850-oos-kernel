@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #ifndef __CAM_SYNC_DMA_FENCE_H__
 #define __CAM_SYNC_DMA_FENCE_H__
@@ -142,15 +142,22 @@ int cam_dma_fence_register_cb(int32_t *sync_obj,
 	int32_t *dma_fence_row_idx, cam_sync_callback_for_dma_fence sync_cb);
 
 /**
- * @brief: get/put on dma fence
+ * @brief:              Get or put the reference count of a DMA fence
+ *                      at the given row index.
  *
- * @get_or_put              : True for get, false for put
- * @param dma_fence_row_idx : Idx in the dma fence table pertaining to
- *                            the dma fence on which get/put ref is invoked
+ * @get_or_put:         true  = get (increment refcount)
+ *                      false = put (decrement refcount, may free fence)
+ * @dma_fence_row_idx:  Index into the DMA fence table rows[]
+ * @expected_fence:     The fence pointer the caller found during its
+ *                      earlier lookup. The function will verify the row
+ *                      still holds this exact pointer before acting.
+ *                      Pass NULL to skip this check (only safe when
+ *                      there is no gap between lookup and this call).
  *
  * @return Status of operation. Negative in case of error. Zero otherwise.
  */
-int cam_dma_fence_get_put_ref(bool get_or_put, int32_t dma_fence_row_idx);
+int cam_dma_fence_get_put_ref(bool get_or_put, int32_t dma_fence_row_idx,
+	struct dma_fence *expected_fence);
 
 /**
  * @brief: dma fence driver open

@@ -610,7 +610,7 @@ int cam_sync_deinit_object(struct sync_table_row *table, uint32_t idx,
 
 	/* Decrement ref cnt for imported dma fence */
 	if (test_bit(CAM_GENERIC_FENCE_TYPE_DMA_FENCE, &row->ext_fence_mask)) {
-		cam_dma_fence_get_put_ref(false, row->dma_fence_info.dma_fence_row_idx);
+		cam_dma_fence_get_put_ref(false, row->dma_fence_info.dma_fence_row_idx, NULL);
 
 		/* Check if same dma fence is being released with the sync obj */
 		if (check_for_dma_release) {

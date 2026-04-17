@@ -114,7 +114,8 @@ static int cam_sync_create_util(
 
 		/* Association refcnt for non-import cases */
 		if (dma_sync_create_info->sync_created_with_dma) {
-			rc = cam_dma_fence_get_put_ref(true, row->dma_fence_info.dma_fence_row_idx);
+			rc = cam_dma_fence_get_put_ref(true,
+				row->dma_fence_info.dma_fence_row_idx, NULL);
 			if (rc)
 				CAM_ERR(CAM_SYNC,
 					"Failed to getref on dma fence idx: %u fd: %d sync_obj: %d rc: %d",
@@ -1356,7 +1357,7 @@ static int cam_generic_fence_handle_dma_import(
 			fence_cfg->reason_code = rc;
 
 			/* put on the import refcnt */
-			cam_dma_fence_get_put_ref(false, dma_fence_row_idx);
+			cam_dma_fence_get_put_ref(false, dma_fence_row_idx, fence);
 			goto out_copy;
 		}
 
