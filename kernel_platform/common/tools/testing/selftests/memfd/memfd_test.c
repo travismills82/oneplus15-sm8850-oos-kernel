@@ -42,12 +42,14 @@
 		    F_SEAL_EXEC)
 
 #define MFD_NOEXEC_SEAL	0x0008U
+#ifndef __ANDROID__
 union semun {
 	int val;
 	struct semid_ds *buf;
 	unsigned short int *array;
 	struct seminfo *__buf;
 };
+#endif
 
 /*
  * we use semaphores on nested wait tasks due the use of CLONE_NEWPID: the
