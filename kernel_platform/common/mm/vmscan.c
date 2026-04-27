@@ -4589,7 +4589,6 @@ static bool sort_folio(struct lruvec *lruvec, struct folio *folio, struct scan_c
 		       int tier_idx)
 {
 	bool success;
-	bool dirty, writeback;
 	int gen = folio_lru_gen(folio);
 	int type = folio_is_file_lru(folio);
 	int zone = folio_zonenum(folio);
@@ -4639,21 +4638,6 @@ static bool sort_folio(struct lruvec *lruvec, struct folio *folio, struct scan_c
 		return true;
 	}
 
-	dirty = folio_test_dirty(folio);
-	writeback = folio_test_writeback(folio);
-	if (type == LRU_GEN_FILE && dirty) {
-		sc->nr.file_taken += delta;
-		if (!writeback)
-			sc->nr.unqueued_dirty += delta;
-	}
-
-	/* waiting for writeback */
-	if (writeback || (type == LRU_GEN_FILE && dirty)) {
-		gen = folio_inc_gen(lruvec, folio, true);
-		list_move(&folio->lru, &lrugen->folios[gen][type][zone]);
-		return true;
-	}
-
 	return false;
 }
 
@@ -4663,7 +4647,7 @@ bool isolate_folio(struct lruvec *lruvec, struct folio *folio, struct scan_contr
 
 	/* swap constrained */
 	if (!(sc->gfp_mask & __GFP_IO) &&
-	    (folio_test_dirty(folio) ||
+	    ((folio_test_dirty(folio) && !folio_is_file_lru(folio)) ||
 	     (folio_test_anon(folio) && !folio_test_swapcache(folio))))
 		return false;
 
@@ -4681,8 +4665,7 @@ bool isolate_folio(struct lruvec *lruvec, struct folio *folio, struct scan_contr
 	if (!folio_test_referenced(folio))
 		folio_clear_lru_refs(folio);
 
-	/* for shrink_folio_list() */
-	folio_clear_reclaim(folio);
+	folio_clear_referenced(folio);
 
 	success = lru_gen_del_folio(lruvec, folio, true);
 	VM_WARN_ON_ONCE_FOLIO(!success, folio);
