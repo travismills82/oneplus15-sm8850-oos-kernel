@@ -1253,9 +1253,9 @@ static int nxp_fspi_probe(struct platform_device *pdev)
 	pm_runtime_use_autosuspend(dev);
 
 	/* enable clock */
-	ret = pm_runtime_get_sync(f->dev);
+	ret = pm_runtime_resume_and_get(f->dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(dev);
+		ret = dev_err_probe(dev, ret, "Failed to enable clock");
 		goto err_disable_runtime;
 	}
 
@@ -1296,6 +1296,7 @@ err_destroy_mutex:
 	mutex_destroy(&f->lock);
 
 err_disable_runtime:
+	pm_runtime_dont_use_autosuspend(dev);
 	pm_runtime_disable(dev);
 
 err_put_ctrl:
