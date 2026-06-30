@@ -1,5 +1,5 @@
 /* Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -959,6 +959,8 @@ static void rmnet_map_segment_coal_skb(struct sk_buff *coal_skb,
 	u16 pkt_len;
 	u8 pkt, total_pkt = 0;
 	u8 nlo;
+	u32 total_data_len = 0;
+	u32 hlen;
 	bool gro = coal_skb->dev->features & NETIF_F_GRO_HW;
 	bool zero_csum = false;
 
@@ -970,21 +972,48 @@ static void rmnet_map_segment_coal_skb(struct sk_buff *coal_skb,
 		   rmnet_map_data_ptr(coal_skb);
 	pskb_pull(coal_skb, sizeof(*coal_hdr));
 
+	/* Ensure at least one byte to access the IP version */
+	if (!coal_skb->len)
+		return;
+
 	iph = (struct iphdr *)rmnet_map_data_ptr(coal_skb);
 
 	if (iph->version == 4) {
+		/* Check first for the base IP header length */
+		if (coal_skb->len < sizeof(*iph)) {
+			priv->stats.coal.coal_ip_invalid++;
+			return;
+		}
+
 		coal_meta.ip_proto = 4;
 		coal_meta.ip_len = iph->ihl * 4;
 		coal_meta.trans_proto = iph->protocol;
 		coal_meta.ip_header = iph;
 
+		/* Then validate the header length field, and that it
+		 * doesn't claim more bytes than the descriptor actually has.
+		 */
+		if (coal_meta.ip_len < sizeof(struct iphdr) ||
+		    coal_skb->len < coal_meta.ip_len) {
+			priv->stats.coal.coal_ip_invalid++;
+			return;
+		}
+
 		/* Don't allow coalescing of any packets with IP options */
 		if (iph->ihl != 5)
 			gro = false;
 	} else if (iph->version == 6) {
-		struct ipv6hdr *ip6h = (struct ipv6hdr *)iph;
+		struct ipv6hdr *ip6h;
 		__be16 frag_off;
-		u8 protocol = ip6h->nexthdr;
+		u8 protocol;
+
+		if (coal_skb->len < sizeof(*ip6h)) {
+			priv->stats.coal.coal_ip_invalid++;
+			return;
+		}
+
+		ip6h = (struct ipv6hdr *)iph;
+		protocol = ip6h->nexthdr;
 
 		coal_meta.ip_proto = 6;
 		coal_meta.ip_len = ipv6_skip_exthdr(coal_skb, sizeof(*ip6h),
@@ -996,7 +1025,8 @@ static void rmnet_map_segment_coal_skb(struct sk_buff *coal_skb,
 		 * (which should technically not be possible, if the HW
 		 * works as intended...), bail.
 		 */
-		if (coal_meta.ip_len < 0 || frag_off) {
+		if (coal_meta.ip_len < 0 || frag_off ||
+		    coal_skb->len < coal_meta.ip_len) {
 			priv->stats.coal.coal_ip_invalid++;
 			return;
 		} else if (coal_meta.ip_len > sizeof(*ip6h)) {
@@ -1013,11 +1043,27 @@ static void rmnet_map_segment_coal_skb(struct sk_buff *coal_skb,
 	if (coal_meta.trans_proto == IPPROTO_TCP) {
 		struct tcphdr *th;
 
+		if (coal_skb->len < coal_meta.ip_len + sizeof(*th)) {
+			priv->stats.coal.coal_trans_invalid++;
+			return;
+		}
+
 		th = (struct tcphdr *)((u8 *)iph + coal_meta.ip_len);
 		coal_meta.trans_len = th->doff * 4;
 		coal_meta.trans_header = th;
+
+		if (coal_meta.trans_len < sizeof(struct tcphdr) ||
+		    coal_skb->len < coal_meta.ip_len + coal_meta.trans_len) {
+			priv->stats.coal.coal_trans_invalid++;
+			return;
+		}
 	} else if (coal_meta.trans_proto == IPPROTO_UDP) {
 		struct udphdr *uh;
+
+		if (coal_skb->len < coal_meta.ip_len + sizeof(*uh)) {
+			priv->stats.coal.coal_trans_invalid++;
+			return;
+		}
 
 		uh = (struct udphdr *)((u8 *)iph + coal_meta.ip_len);
 		coal_meta.trans_len = sizeof(*uh);
@@ -1040,16 +1086,62 @@ static void rmnet_map_segment_coal_skb(struct sk_buff *coal_skb,
 		return;
 	}
 
+	/* Validate every NLO before delivering any packet. Checking and
+	 * delivering in the same pass lets earlier NLOs queue their skbs
+	 * onto list before a later NLO's failure is detected, so packets
+	 * already handed toward the stack cannot be recalled. Bound-check
+	 * all NLOs first; only deliver once the whole frame is known-safe.
+	 *
+	 * This also covers the single-NLO GRO fast-forward case below: for
+	 * num_nlos == 1, this loop's bound (pkt_len <= hlen, then
+	 * hlen + total_data_len > coal_skb->len) reduces to the exact same
+	 * formula the fast path would otherwise check on its own, just
+	 * computed once here instead of duplicated there.
+	 */
+	hlen = coal_meta.ip_len + coal_meta.trans_len;
+	for (nlo = 0; nlo < coal_hdr->num_nlos; nlo++) {
+		u8 num_packets = coal_hdr->nl_pairs[nlo].num_packets;
+
+		if (!num_packets)
+			continue;
+
+		pkt_len = ntohs(coal_hdr->nl_pairs[nlo].pkt_len);
+		if (pkt_len <= hlen) {
+			priv->stats.coal.coal_hdr_pkt_err++;
+			return;
+		}
+		pkt_len -= hlen;
+
+		/* hlen (the shared IP + transport header) appears once in
+		 * the frame, not once per packet. Track real cumulative
+		 * payload bytes claimed so far and make sure they fit
+		 * within the bytes actually present in coal_skb, which is
+		 * what guards the memcpy/skb_put_data calls below against
+		 * an out-of-bounds read.
+		 */
+		total_data_len += (u32)pkt_len * num_packets;
+		if (hlen + total_data_len > coal_skb->len) {
+			priv->stats.coal.coal_hdr_pkt_err++;
+			return;
+		}
+	}
+
 	/* Fast-forward the case where we have 1 NLO (i.e. 1 packet length),
 	 * no checksum errors, and are allowing GRO. We can just reuse this
-	 * SKB unchanged.
+	 * SKB unchanged. The loop above already validated this NLO's
+	 * pkt_len/cumulative bound -- except when num_packets == 0, which
+	 * the loop above skips entirely (nothing to validate against an
+	 * empty NLO). Guard against that case explicitly here.
 	 */
-	if (gro && coal_hdr->num_nlos == 1 && coal_hdr->csum_valid) {
+	if (gro && coal_hdr->num_nlos == 1 && coal_hdr->csum_valid &&
+	    coal_hdr->nl_pairs[0].num_packets) {
+		u16 gro_pkt_len = ntohs(coal_hdr->nl_pairs[0].pkt_len);
+		u8 gro_pkt_count = coal_hdr->nl_pairs[0].num_packets;
+
 		rmnet_map_move_headers(coal_skb);
 		coal_skb->ip_summed = CHECKSUM_UNNECESSARY;
-		coal_meta.data_len = ntohs(coal_hdr->nl_pairs[0].pkt_len);
-		coal_meta.data_len -= coal_meta.ip_len + coal_meta.trans_len;
-		coal_meta.pkt_count = coal_hdr->nl_pairs[0].num_packets;
+		coal_meta.data_len = gro_pkt_len - hlen;
+		coal_meta.pkt_count = gro_pkt_count;
 		if (coal_meta.pkt_count > 1) {
 			rmnet_map_partial_csum(coal_skb, &coal_meta);
 			rmnet_map_gso_stamp(coal_skb, &coal_meta);
@@ -1061,8 +1153,7 @@ static void rmnet_map_segment_coal_skb(struct sk_buff *coal_skb,
 
 	/* Segment the coalesced SKB into new packets */
 	for (nlo = 0; nlo < coal_hdr->num_nlos; nlo++) {
-		pkt_len = ntohs(coal_hdr->nl_pairs[nlo].pkt_len);
-		pkt_len -= coal_meta.ip_len + coal_meta.trans_len;
+		pkt_len = ntohs(coal_hdr->nl_pairs[nlo].pkt_len) - hlen;
 		coal_meta.data_len = pkt_len;
 		for (pkt = 0; pkt < coal_hdr->nl_pairs[nlo].num_packets;
 		     pkt++, total_pkt++, nlo_err_mask >>= 1) {
@@ -1169,6 +1260,7 @@ static int rmnet_map_data_check_coal_header(struct sk_buff *skb,
 	struct rmnet_map_v5_coal_header *coal_hdr;
 	unsigned char *data = rmnet_map_data_ptr(skb);
 	struct rmnet_priv *priv = netdev_priv(skb->dev);
+	u32 available;
 	u64 mask = 0;
 	int i;
 	u8 veid, pkts = 0;
@@ -1179,6 +1271,16 @@ static int rmnet_map_data_check_coal_header(struct sk_buff *skb,
 
 	if (coal_hdr->num_nlos == 0 ||
 	    coal_hdr->num_nlos > RMNET_MAP_V5_MAX_NLOS) {
+		priv->stats.coal.coal_hdr_nlo_err++;
+		return -EINVAL;
+	}
+
+	/* MAP pkt_len must be at least large enough to hold the coal header
+	 * itself, or later derivations of "bytes available for packets"
+	 * underflow.
+	 */
+	available = ntohs(((struct rmnet_map_header *)data)->pkt_len);
+	if (available < sizeof(*coal_hdr)) {
 		priv->stats.coal.coal_hdr_nlo_err++;
 		return -EINVAL;
 	}
