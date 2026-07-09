@@ -2413,6 +2413,9 @@ struct sock *sk_clone_lock(const struct sock *sk, const gfp_t priority)
 		goto out;
 
 	sock_copy(newsk, sk);
+#ifdef CONFIG_BPF_SYSCALL
+	RCU_INIT_POINTER(newsk->sk_bpf_storage, NULL);
+#endif
 	trace_android_vh_sk_clone_lock(newsk);
 
 	newsk->sk_prot_creator = prot;
