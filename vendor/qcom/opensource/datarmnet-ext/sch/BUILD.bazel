@@ -1,0 +1,11 @@
+load(":define_sch.bzl", "define_sch")
+load("//build/kernel/kleaf:kernel.bzl", "ddk_module")
+
+define_sch("sun", "consolidate")
+define_sch("sun", "perf")
+
+define_sch("canoe", "consolidate")
+define_sch("canoe", "perf")
+
+define_sch("vienna", "consolidate")
+define_sch("vienna", "perf")

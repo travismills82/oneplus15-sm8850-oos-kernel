@@ -1,0 +1,11 @@
+/dts-v1/;
+/plugin/;
+
+#include "seraph-hfi-core.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Seraph SoC";
+	compatible = "qcom,seraph";
+	qcom,msm-id = <672 0x10000>, <673 0x10000>;
+	qcom,board-id = <0 0>,<15 0>;
+};

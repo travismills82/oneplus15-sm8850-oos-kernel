@@ -1,0 +1,10 @@
+################################################################################
+## Inheriting MSM configs
+. ${KERNEL_DIR}/build.config.msm.canoe.vm
+################################################################################
+## Setting parameter to build only OEMVM images
+
+MKDTIMGDTBS=()
+MKDTIMGDTBS["canoe_oemvm"]="canoe-oemvm"
+
+################################################################################

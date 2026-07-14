@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "hw_fence/canoe-hw-fence.dtsi"
+#include "hfi_core/canoe-hfi-core.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Alor Interposer QRD + ST54L + Pandeiro";
+	compatible = "qcom,canoe-qrd", "qcom,canoe", "qcom,canoep-cdp",
+		     "qcom,canoep", "qcom,qrd";
+	qcom,msm-id = <704 0x10000>, <704 0x20000>,
+		      <0x10002C0 0x10000>, <0x10002C0 0x20000>;
+	qcom,board-id = <0x2000b 0>;
+};
+

@@ -1,0 +1,11 @@
+/dts-v1/;
+/plugin/;
+#include "../display/canoe-sde-display-mtp-overlay.dts"
+#include "canoe-display-overlay-common.dtsi"
+#include "infiniti-24831-display-canoe-overlay.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Canoe MTP,infiniti";
+
+	oplus,project-id = <24831 24863>;
+};

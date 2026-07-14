@@ -1,0 +1,99 @@
+#include "panel/dsi-panel-AC180-P-3-A0020-dsc-cmd.dtsi"
+#include "panel/dsi-panel-AD296-P-3-A0020-dsc-cmd.dtsi"
+#include "panel/dsi-panel-AD296-P-3-A0020-dsc-cmd-evt.dtsi"
+#include "panel/dsi-panel-AA601-P-7-A0020-dsc-cmd.dtsi"
+
+&soc {
+	oplus,dsi-display-dev {
+		oplus,dsi-panel-primary = <
+			&dsi_vtdr6130_amoled_video
+			&dsi_panel_AC180_P_3_A0020_dsc_cmd
+			&dsi_panel_AD296_P_3_A0020_dsc_cmd
+			&dsi_panel_AD296_P_3_A0020_dsc_cmd_evt
+			&dsi_panel_AA601_P_7_A0020_dsc_cmd
+		>;
+		oplus,dsi-panel-secondary = <
+		>;
+		oplus,dsi-panel-extended = <>;
+	};
+
+	oplus_dsi_panel_custom_pwr_supply: oplus_dsi_panel_custom_pwr_supply {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,panel-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "vddio";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1800000>;
+			qcom,supply-enable-load = <220000>;
+			qcom,supply-disable-load = <8000>;
+			qcom,supply-post-on-sleep = <2>;
+			qcom,supply-pre-off-sleep = <30>;
+		};
+
+		qcom,panel-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "vdd";
+			qcom,supply-min-voltage = <1200000>;
+			qcom,supply-max-voltage = <1200000>;
+			qcom,supply-enable-load = <10000>;
+			qcom,supply-disable-load = <300>;
+			qcom,supply-pre-on-sleep = <1>;
+			qcom,supply-post-on-sleep = <15>;
+			qcom,supply-pre-off-sleep = <1>;
+		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "vci";
+			qcom,supply-min-voltage = <3000000>;
+			qcom,supply-max-voltage = <3000000>;
+			qcom,supply-enable-load = <10000>;
+			qcom,supply-disable-load = <300>;
+			qcom,supply-pre-on-sleep = <1>;
+			qcom,supply-post-on-sleep = <15>;
+			qcom,supply-pre-off-sleep = <1>;
+		};
+	};
+};
+
+&pmh0101_l11 {
+	regulator-min-microvolt = <1200000>;
+	regulator-max-microvolt = <1200000>;
+	qcom,init-voltage = <1200000>;
+};
+
+&pmk8850_gpios {
+	oplus_pmic_reset_active: oplus_pmic_reset_active {
+		pins = "gpio1";
+		power-source = <0>; /* 1.8V */
+	};
+
+	oplus_pmic_reset_suspend: oplus_pmic_reset_suspend  {
+		pins = "gpio1";
+		power-source = <0>; /* 1.8V */
+	};
+};
+
+&pmh0101_gpios {
+	oplus_vddr_en_active: oplus_vddr_en_active {
+		pins = "gpio4";
+		power-source = <0>; /* 1.8V */
+
+	};
+
+	oplus_vddr_en_suspend: oplus_vddr_en_suspend  {
+		pins = "gpio4";
+		power-source = <0>; /* 1.8V */
+
+	};
+};
+
+&sde_dsi {
+	pinctrl-names = "panel_active", "panel_suspend";
+	pinctrl-0 = <&sde_te_active &oplus_sde_dsi_active
+				&oplus_pmic_reset_active &oplus_vddr_en_active>;
+	pinctrl-1 = <&sde_te_suspend &oplus_sde_dsi_suspend
+				&oplus_pmic_reset_suspend &oplus_vddr_en_suspend>;
+};

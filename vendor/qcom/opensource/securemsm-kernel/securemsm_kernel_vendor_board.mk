@@ -1,0 +1,134 @@
+ENABLE_SECUREMSM_DLKM := true
+ENABLE_SECUREMSM_QTEE_DLKM := true
+ENABLE_QCEDEV_FE := false
+
+ifeq ($(TARGET_KERNEL_DLKM_DISABLE), true)
+  ifeq ($(TARGET_KERNEL_DLKM_SECURE_MSM_OVERRIDE), false)
+      ENABLE_SECUREMSM_DLKM := false
+  endif
+  ifeq ($(TARGET_KERNEL_DLKM_SECUREMSM_QTEE_OVERRIDE), false)
+      ENABLE_SECUREMSM_QTEE_DLKM := false
+  endif
+endif
+
+ifeq ($(ENABLE_SECUREMSM_DLKM), true)
+  ENABLE_QCRYPTO_DLKM := true
+  ENABLE_HDCP_QSEECOM_DLKM := true
+  ENABLE_QRNG_DLKM := true
+  ifeq ($(TARGET_USES_SMMU_PROXY), true)
+    ENABLE_SMMU_PROXY := true
+  endif #TARGET_USES_SMMU_PROXY
+  ifeq ($(filter $(TARGET_BOARD_PLATFORM), canoe vienna),$(TARGET_BOARD_PLATFORM))
+    ENABLE_TMECOM_INTF_DLKM := true
+  endif
+endif #ENABLE_SECUREMSM_DLKM
+
+ifeq ($(ENABLE_SECUREMSM_QTEE_DLKM), true)
+  ENABLE_SMCINVOKE_DLKM := true
+  ENABLE_TZLOG_DLKM := true
+  #Enable Qseecom if TARGET_ENABLE_QSEECOM or TARGET_BOARD_AUTO is set to true
+  ifneq (, $(filter true, $(TARGET_ENABLE_QSEECOM) $(TARGET_BOARD_AUTO)))
+    ENABLE_QSEECOM_DLKM := true
+  endif #TARGET_ENABLE_QSEECOM OR TARGET_BOARD_AUTO
+endif #ENABLE_SECUREMSM_QTEE_DLKM
+
+#Module configuration for gen3 targets on HQX platform.
+ifeq ($(TARGET_BOARD_PLATFORM), msmnile)
+  ifeq ($(ENABLE_HYP), true)
+    ENABLE_TZLOG_DLKM := false
+    ENABLE_QCRYPTO_DLKM := false
+    ENABLE_HDCP_QSEECOM_DLKM := false
+    ENABLE_SMCINVOKE_DLKM := false
+  endif
+endif
+
+#Module configuration for gen4.5 targets on HGY platform.
+ifeq ($(TARGET_BOARD_PLATFORM), gen4)
+  ifeq ($(ENABLE_HYP), true)
+    ifeq ($(TARGET_USES_GY), true)
+      ENABLE_TZLOG_DLKM := false
+      ENABLE_QCRYPTO_DLKM := false
+      ENABLE_HDCP_QSEECOM_DLKM := false
+      ENABLE_QSEECOM_DLKM := false
+    endif
+  endif
+endif
+
+#Module configuration for gen4.5 targets on HQX platform.
+ifeq ($(TARGET_BOARD_PLATFORM), gen4)
+  ifeq ($(ENABLE_HYP), true)
+    ifneq ($(TARGET_USES_GY), true)
+      ENABLE_TZLOG_DLKM := false
+      ENABLE_QCRYPTO_DLKM := false
+      ENABLE_HDCP_QSEECOM_DLKM := false
+      ENABLE_SMCINVOKE_DLKM := false
+      ENABLE_QCEDEV_FE := true
+    endif
+  endif
+endif
+
+#Module configuration for gen5 targets on HQX/HGY platforms.
+ifeq ($(TARGET_BOARD_PLATFORM), gen5)
+  ifeq ($(ENABLE_HYP), true)
+    ENABLE_TZLOG_DLKM := false
+    ENABLE_QCRYPTO_DLKM := false
+    ENABLE_HDCP_QSEECOM_DLKM := false
+    ENABLE_QSEECOM_DLKM := false
+    ENABLE_SMCINVOKE_DLKM := true
+  endif
+endif
+
+
+ifeq ($(ENABLE_QCRYPTO_DLKM), true)
+BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qcedev-mod_dlkm.ko \
+      $(KERNEL_MODULES_OUT)/qcrypto-msm_dlkm.ko \
+      $(KERNEL_MODULES_OUT)/qce50_dlkm.ko
+endif #ENABLE_QCRYPTO_DLKM
+
+ifeq ($(ENABLE_QRNG_DLKM), true)
+  BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qrng_dlkm.ko
+  ifeq ($(ENABLE_HYP), true)
+    BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qrng_dlkm.ko
+    BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/qrng_dlkm.ko
+  endif # ENABLE_HYP
+endif #ENABLE_QRNG_DLKM
+
+ifeq ($(ENABLE_HDCP_QSEECOM_DLKM), true)
+BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/hdcp_qseecom_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/hdcp_qseecom_dlkm.ko
+endif #ENABLE_HDCP_QSEECOM_DLKM
+
+ifeq ($(ENABLE_SMMU_PROXY), true)
+BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/smmu_proxy_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/smmu_proxy_dlkm.ko
+endif #ENABLE_SMMU_PROXY
+
+ifeq ($(ENABLE_SMCINVOKE_DLKM), true)
+BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/smcinvoke_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/smcinvoke_dlkm.ko
+BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/smcinvoke_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/smcinvoke_dlkm.ko
+endif #ENABLE_SMCINVOKE_DLKM
+
+ifeq ($(ENABLE_TMECOM_INTF_DLKM), true)
+BOARD_VENDOR_KERNEL_MODULES +=  $(KERNEL_MODULES_OUT)/tmecom-intf_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/tmecom-intf_dlkm.ko
+endif # ENABLE_TMECOM_INTF_DLKM
+
+ifeq ($(ENABLE_TZLOG_DLKM), true)
+BOARD_VENDOR_KERNEL_MODULES +=  $(KERNEL_MODULES_OUT)/tz_log_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/tz_log_dlkm.ko
+endif # ENABLE_TZLOG_DLKM
+
+ifeq ($(ENABLE_QSEECOM_DLKM), true)
+BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qseecom_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qseecom_dlkm.ko
+BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/qseecom_dlkm.ko
+endif #ENABLE_QSEECOM_DLKM
+
+ifeq ($(ENABLE_QCEDEV_FE), true)
+BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qcedev_fe_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/qcedev_fe_dlkm.ko
+BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/qcedev_fe_dlkm.ko
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/qcedev_fe_dlkm.ko
+endif #ENABLE_QCEDEV_FE

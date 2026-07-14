@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: GPL-2.0
+
+load(
+    "//build/kernel/kleaf:kernel.bzl",
+    "ddk_headers",
+)
+
+ddk_headers(
+    name = "headers",
+    hdrs = glob([
+        "drivers/trusty/*.h",
+        "include/**/*.h",
+    ]),
+    includes = [
+        "drivers/trusty",
+        "include",
+    ],
+    visibility = [
+        ":__subpackages__",
+    ],
+)

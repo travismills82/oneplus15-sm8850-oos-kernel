@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Serial device configuration
+#
+
+menu "Serial drivers"
+	depends on HAS_IOMEM
+
+comment "Non-8250 serial port support"
+
+config SERIAL_MSM_GENI
+    tristate "MSM on-chip GENI HW based serial port support"
+    depends on ARCH_QCOM
+    depends on QCOM_GENI_SE
+
+config SERIAL_QCOM_GENI_MSM
+	tristate "QCOM on-chip GENI based serial port support with SCMI"
+	depends on ARCH_QCOM || COMPILE_TEST
+	depends on QCOM_GENI_SE_MSM
+	select SERIAL_CORE
+	help
+	  This driver supports GENI serial engine based Serial controller
+	  on the Qualcomm Technologies Inc.'s SoCs. If you say yes to this
+	  option, support will be included for the built-in Serial
+	  interface on the Qualcomm Technologies Inc.'s SoCs.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called qcom_geni_serial_msm.
+
+endmenu

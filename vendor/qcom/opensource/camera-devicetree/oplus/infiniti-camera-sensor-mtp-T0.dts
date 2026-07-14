@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/clock/qcom,gcc-canoe.h>
+#include <dt-bindings/clock/qcom,camcc-canoe.h>
+#include <dt-bindings/clock/qcom,cambistmclkcc-canoe.h>
+#include <dt-bindings/interconnect/qcom,canoe.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/oplus/hw-id.h>
+
+#include "infiniti-camera-sensor-mtp-T0.dtsi"
+/ {
+	model = "Qualcomm Technologies, Inc. canoe/honu/infiniti MTP";
+	compatible = "qcom,canoe", "qcom,canoep", "qcom,canoe-mtp",
+		"qcom,canoep-mtp", "qcom,mtp";
+		oplus,project-id = <24831 24863>;
+		oplus,hw-id = <OPLUS_T0 OPLUS_T1 OPLUS_EVT1 OPLUS_EVT2 OPLUS_DVT1 OPLUS_DVT2 OPLUS_PVT1>;
+};

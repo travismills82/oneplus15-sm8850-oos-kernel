@@ -1,0 +1,37 @@
+{
+    "homepage": "https://github.com/chainguard-dev/rules_apko",
+    "maintainers": [
+        {
+            "email": "alex@aspect.dev",
+            "github": "alexeagle",
+            "name": "Alex Eagle",
+            "github_user_id": 47395
+        },
+        {
+            "email": "sahin@aspect.dev",
+            "github": "thesayyn",
+            "name": "Şahin Yort",
+            "github_user_id": 20563340
+        },
+        {
+            "email": "jason@chainguard.dev",
+            "github": "imjasonh",
+            "name": "Jason Hall",
+            "github_user_id": 210737
+        }
+    ],
+    "repository": [
+        "github:chainguard-dev/rules_apko"
+    ],
+    "versions": [
+        "0.2.3",
+        "1.0.0-rc1",
+        "1.0.0",
+        "1.1.1",
+        "1.2.1",
+        "1.2.3",
+        "1.4.0",
+        "1.4.2"
+    ],
+    "yanked_versions": {}
+}

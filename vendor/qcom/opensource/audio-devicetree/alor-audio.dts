@@ -1,0 +1,21 @@
+//
+/* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *  SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/clock/qcom,alor-gcc.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interconnect/qcom,alor.h>
+#include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
+
+#include "alor-audio.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Alor";
+	compatible = "qcom,Alor", "qcom, Alorp";
+	qcom,msm-id = <685 0x10000>, <727 0x10000>;
+	qcom,board-id = <0 0>;
+};
+

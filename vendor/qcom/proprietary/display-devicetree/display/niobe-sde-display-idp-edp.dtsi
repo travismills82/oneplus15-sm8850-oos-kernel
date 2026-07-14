@@ -1,0 +1,138 @@
+#include "niobe-sde-display-idp-4kdisp.dtsi"
+
+&mdss_mdp0 {
+	status = "disabled";
+};
+
+&mdss_dsi0 {
+	status = "disabled";
+};
+
+&mdss_dsi1 {
+	status = "disabled";
+};
+
+&mdss_dsi2 {
+	status = "disabled";
+};
+
+&mdss_dsi3 {
+	status = "disabled";
+};
+
+&mdss_dsi_phy0 {
+	status = "disabled";
+};
+
+&mdss_dsi_phy1 {
+	status = "disabled";
+};
+
+&mdss_dsi_phy2 {
+	status = "disabled";
+};
+
+&mdss_dsi_phy3 {
+	status = "disabled";
+};
+
+&sde_dsi {
+	status = "disabled";
+};
+
+&sde_dsi1 {
+	status = "disabled";
+};
+
+&sde_dp_pll {
+	status = "disabled";
+};
+
+&sde_dp {
+	status = "disabled";
+};
+
+&sde_edp0 {
+	status = "no";
+	qcom,dp-low-power-hw-hpd;
+	pinctrl-names = "mdss_dp_hpd_active", "mdss_dp_hpd_tlmm", "mdss_dp_hpd_ctrl", "mdss_dp_active", "mdss_dp_sleep";
+	pinctrl-0 = <&edp0_hpd_ctrl>;
+	pinctrl-1 = <&edp0_hpd_ctrl>;
+	pinctrl-2 = <&edp0_hpd_ctrl>;
+	pinctrl-3 = <&edp0_hpd_ctrl>;
+	pinctrl-4 = <&edp0_hpd_ctrl>;
+	qcom,dp-hpd-gpio = <&tlmm 156 0>;
+	qcom,edp-vcc-en-gpio = <&tlmm 25 0>;
+	qcom,edp-backlight-pwr-gpio = <&pm8550ve_gpios 8 0>;
+	qcom,edp-pwm-en-gpio =  <&pmxr2230_gpios 5 0>;
+	qcom,edp-backlight-en-gpio = <&pm8550ve_d_gpios 7 0>;
+};
+
+&sde_edp1 {
+	status = "ok";
+	qcom,dp-low-power-hw-hpd;
+	pinctrl-names = "mdss_dp_hpd_active", "mdss_dp_hpd_tlmm", "mdss_dp_hpd_ctrl", "mdss_dp_active", "mdss_dp_sleep";
+	pinctrl-0 = <&edp1_hpd_ctrl>;
+	pinctrl-1 = <&edp1_hpd_ctrl>;
+	pinctrl-2 = <&edp1_hpd_ctrl>;
+	pinctrl-3 = <&edp1_hpd_ctrl>;
+	pinctrl-4 = <&edp1_hpd_ctrl>;
+	qcom,dp-hpd-gpio = <&tlmm 157 0>;
+	qcom,edp-vcc-en-gpio = <&tlmm 160 0>;
+	qcom,edp-backlight-pwr-gpio = <&pmxr2230_gpios 10 0>;
+	qcom,edp-pwm-en-gpio =  <&pmxr2230_gpios 9 0>;
+	qcom,edp-backlight-en-gpio = <&pm8550vs_c_gpios 3 0>;
+};
+
+&tlmm {
+	edp0_hpd_ctrl: hpd_ctrl@156 {
+		mux {
+			pins = "gpio156";
+			function = "edp0_hot";
+		};
+
+		config {
+			pins = "gpio156";
+			bias-disable;
+			input-enable;
+			drive-strength = <2>;
+		};
+	};
+
+	edp1_hpd_ctrl: hpd_ctrl@157 {
+		mux {
+			pins = "gpio157";
+			function = "edp1_hot";
+		};
+
+		config {
+			pins = "gpio157";
+			bias-disable;
+			input-enable;
+			drive-strength = <2>;
+		};
+	};
+
+};
+
+&sde_edp0_pll {
+	status = "no";
+};
+
+&sde_edp1_pll {
+	status = "ok";
+};
+
+&mdss_mdp0 {
+	qcom,sde-cac-version = " ";
+	connectors = <&sde_edp0 &smmu_sde_unsec &smmu_sde_sec &sde_rscc0 &sde_wb1>;
+	clock-rate = <0 0 550000000 550000000 19200000 550000000>;
+	clock-max-rate = <0 0 550000000 550000000 19200000 550000000>;
+};
+
+&mdss_mdp1 {
+	qcom,sde-cac-version = " ";
+	connectors = <&sde_edp1 &smmu_sde_unsec1 &smmu_sde_sec1 &sde_rscc1>;
+	clock-rate = <0 0 550000000 550000000 19200000 550000000>;
+	clock-max-rate = <0 0 550000000 550000000 19200000 550000000>;
+};

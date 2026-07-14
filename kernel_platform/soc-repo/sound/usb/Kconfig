@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# ALSA USB drivers
+
+if SND_USB && USB
+
+config SND_USB_AUDIO_QMI
+	tristate "USB Audio QMI Service driver"
+	depends on QCOM_QMI_HELPERS && SND_USB_AUDIO
+	help
+	  Starts USB Audio QMI server to communicate with remote entity
+	  to perform operations like enable or disable particular audio
+	  stream on a connected USB device, subsystem restart and
+	  device disconnect.
+
+endif	# SND_USB

@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+&soc {
+	msm_vidc: qcom,vidc@aaa1000 {
+		compatible = "qcom,sa8797-vidc";
+		status = "okay";
+
+		/* IOMMU Config */
+		#address-cells = <1>;
+		#isize-cells = <1>;
+
+		/* VMID */
+		vmid = <1>;
+
+		reg = <0x0aaa1000 0x1000>;
+		interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL_HIGH>;
+
+		/* MMUs */
+		/* FW accesible CB0-VM1 */
+		non_secure_cb {
+			compatible = "qcom,vidc,cb-ns";
+			iommus = <&apps_smmu_1 0x0948 0x0020>;
+			qcom,iommu-dma-addr-pool = <0x92400000 0x1F400000>;
+			qcom,iommu-faults = "non-fatal";
+			qcom,iova-best-fit;
+			qcom,iova-max-align-shift = <8>; /* 1 MB */
+			dma-coherent;
+		};
+
+		non_secure_bitstream_cb {
+			compatible = "qcom,vidc,cb-ns-bitstream";
+			iommus = <&apps_smmu_1 0x094C 0x0000>;
+			qcom,iommu-dma-addr-pool = <0x01000000 0xDF000000>;
+			qcom,iommu-faults = "non-fatal";
+			qcom,iova-best-fit;
+			qcom,iova-max-align-shift = <8>; /* 1 MB */
+			dma-coherent;
+		};
+
+		non_secure_pixel_cb {
+			compatible = "qcom,vidc,cb-ns-pxl";
+			iommus = <&apps_smmu_1 0x094B 0x0000>;
+			qcom,iommu-dma-addr-pool = <0x01000000 0xDF000000>;
+			qcom,iommu-faults = "non-fatal";
+			qcom,iova-best-fit;
+			qcom,iova-max-align-shift = <8>; /* 1 MB */
+			dma-coherent;
+		};
+	};
+};

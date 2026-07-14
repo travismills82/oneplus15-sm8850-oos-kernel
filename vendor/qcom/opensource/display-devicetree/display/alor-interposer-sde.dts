@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "alor-interposer-sde.dtsi"
+
+/ {
+	qcom,msm-id = <704 0x10000>, <0x10002C0 0x10000>,
+			<704 0x20000>, <0x10002C0 0x20000>;
+	qcom,board-id = <0 0>;
+};

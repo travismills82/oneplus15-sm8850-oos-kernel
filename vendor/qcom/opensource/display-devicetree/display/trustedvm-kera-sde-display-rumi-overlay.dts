@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "trustedvm-kera-sde.dtsi"
+#include "trustedvm-kera-sde-display-rumi.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Kera SVM RUMI";
+	compatible = "qcom,kera-rumi", "qcom,kera", "qcom,rumi";
+	qcom,msm-id = <659 0x10000>;
+	qcom,board-id = <15 0>;
+};

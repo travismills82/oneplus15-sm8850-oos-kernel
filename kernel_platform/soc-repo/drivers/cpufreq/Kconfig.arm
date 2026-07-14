@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# ARM CPU Frequency scaling drivers
+#
+
+config ARM_QCOM_CPUFREQ_NVMEM
+	tristate "Qualcomm nvmem based CPUFreq"
+	depends on ARCH_QCOM || COMPILE_TEST
+	depends on NVMEM_QCOM_QFPROM
+	depends on QCOM_SMEM
+	select PM_OPP
+	help
+	  This adds the CPUFreq driver for Qualcomm Kryo SoC based boards.
+
+	  If in doubt, say N.
+
+config ARM_QCOM_CPUFREQ_HW
+	tristate "QCOM CPUFreq HW driver"
+	depends on ARCH_QCOM || COMPILE_TEST
+	depends on COMMON_CLK
+	help
+	  Support for the CPUFreq HW driver.
+	  Some QCOM chipsets have a HW engine to offload the steps
+	  necessary for changing the frequency of the CPUs. Firmware loaded
+	  in this engine exposes a programming interface to the OS.
+	  The driver implements the cpufreq interface for this HW engine.
+	  Say Y if you want to support CPUFreq HW.
+
+config ARM_QCOM_CPUFREQ_HW_DEBUG
+	tristate "QCOM CPUFreq HW debug"
+	depends on ARM_QCOM_CPUFREQ_HW
+	help
+	  Support for the CPUFreq HW debug.
+	  CPUFreq HW debug provide the support to print the CPUFreq HW debug
+	  registers.
+	  Say Y if you want to support CPUFreq HW Debug.
+
+config ARM_QCOM_CPUFREQ_THERMAL
+	tristate "QCOM CPUFreq thermal notification driver"
+	depends on ARCH_QCOM || COMPILE_TEST
+	help
+	  Support for the CPUFreq thermal pressure notification driver. Some
+	  QCOM chipsets have a separate firmware entity that monitors the
+	  current thermal limits of the CPUs. The firmware communicates the
+	  thermal limits to HLOS through dedicated mailboxes. This driver
+	  registers for those mailbox notification and informs the scheduler.
+	  Say Y if you want to support these mailbox thermal notifications.

@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "x1p42100-dsp.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. x1p42100 SoC";
+	compatible = "qcom,x1p42100";
+	qcom,msm-id = <0x635 0x10000>;
+	qcom,board-id = <0 0>;
+};

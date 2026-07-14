@@ -1,0 +1,215 @@
+#include "niobe-sde-display-idp.dtsi"
+
+&pmxr2230_gpios {
+	display_boe_elvss_default: display_boe_elvss_default {
+		pins = "gpio1";
+		function = "gpio";
+		input-disable;
+		output-enable;
+		bias-disable;
+		power-source = <1>;
+		qcom,drive-strength = <2>;
+	};
+
+	display_boe_sec_vcom_default: display_boe_sec_vcom_default {
+		pins = "gpio2";
+		function = "gpio";
+		input-disable;
+		output-enable;
+		bias-disable;
+		power-source = <1>;
+		qcom,drive-strength = <2>;
+	};
+};
+
+&tlmm {
+	display_boe_avdd_default: display_boe_avdd_default {
+		mux {
+			pins = "gpio65";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio65";
+			drive-strength = <8>;
+			bias-disable = <0>;
+		};
+	};
+
+	display_boe_vcom_default: display_boe_vcom_default {
+		mux {
+			pins = "gpio14";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio14";
+			drive-strength = <8>;
+			bias-disable = <0>;
+		};
+	};
+
+	display_boe_sec_elvss_default: display_boe_sec_elvss_default {
+		mux {
+			pins = "gpio73";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio73";
+			drive-strength = <8>;
+			bias-disable = <0>;
+		};
+	};
+
+	display_boe_sec_avdd_default: display_boe_sec_avdd_default {
+		mux {
+			pins = "gpio115";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio115";
+			drive-strength = <8>;
+			bias-disable = <0>;
+		};
+	};
+};
+
+&soc {
+
+	display_boe_avdd: display_gpio_regulator@3 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_boe_avdd";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&tlmm 65 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_boe_avdd>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_boe_avdd_default>;
+	};
+
+	display_boe_elvss: display_gpio_regulator@4 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_boe_elvss";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&pmxr2230_gpios 1 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_boe_elvss>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_boe_elvss_default>;
+	};
+
+	display_boe_vcom: display_gpio_regulator@5 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_boe_vcom";
+		regulator-min-microvolt = <9000000>;
+		regulator-max-microvolt = <9000000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&tlmm 14 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_boe_vcom>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_boe_vcom_default>;
+	};
+
+	display_boe_sec_avdd: display_gpio_regulator@6 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_boe_sec_avdd";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&tlmm 115 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_boe_sec_avdd>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_boe_sec_avdd_default>;
+	};
+
+	display_boe_sec_elvss: display_gpio_regulator@7 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_boe_sec_elvss";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&tlmm 73 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_boe_sec_elvss>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_boe_sec_elvss_default>;
+	};
+
+	display_boe_sec_vcom: display_gpio_regulator@8 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_boe_sec_vcom";
+		regulator-min-microvolt = <9000000>;
+		regulator-max-microvolt = <9000000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&pmxr2230_gpios 2 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_boe_sec_vcom>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_boe_sec_vcom_default>;
+	};
+};
+
+&dsi_boe_dual_dsc_3552x3840_90hz_video {
+	qcom,panel-supply-entries = <&dsi_panel_pre_pwr_supply>;
+	qcom,panel-sec-supply-entries = <&dsi_panel_pre_pwr_supply>;
+	qcom,panel-post-supply-entries = <&dsi_panel_post_pwr_supply>;
+	qcom,panel-sec-post-supply-entries = <&dsi_panel_sec_post_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-sec-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <8191>;
+	qcom,mdss-dsi-bl-inverted-dbv;
+	qcom,platform-reset-gpio = <&pm8550b_gpios 2 0>;
+	qcom,platform-sec-reset-gpio = <&pm8550b_gpios 2 0>;
+	qcom,platform-oled-en-gpio = <&tlmm 67 0>;
+	qcom,platform-sec-oled-en-gpio = <&tlmm 60 0>;
+};
+
+&sde_dp {
+	qcom,dp-aux-switch = <&redriver0>;
+};
+
+&sde_dsi {
+	iovcc-supply = <&L5B>;
+	avdd-supply = <&display_boe_avdd>;
+	avdd-sec-supply = <&display_boe_sec_avdd>;
+	elvdd-supply = <&L12B>;
+	elvss-supply = <&display_boe_elvss>;
+	elvss-sec-supply = <&display_boe_sec_elvss>;
+	vcom-supply = <&display_boe_vcom>;
+	vcom-sec-supply = <&display_boe_sec_vcom>;
+	qcom,dsi-default-panel = <&dsi_boe_dual_dsc_3552x3840_90hz_video>;
+};
+
+&sde_dsi1 {
+	iovcc-supply = <&L5B>;
+	avdd-supply = <&display_boe_avdd>;
+	avdd-sec-supply = <&display_boe_sec_avdd>;
+	elvdd-supply = <&L12B>;
+	elvss-supply = <&display_boe_elvss>;
+	elvss-sec-supply = <&display_boe_sec_elvss>;
+	vcom-supply = <&display_boe_vcom>;
+	vcom-sec-supply = <&display_boe_sec_vcom>;
+	qcom,dsi-default-panel = <&dsi_boe_dual_dsc_3552x3840_90hz_video>;
+};

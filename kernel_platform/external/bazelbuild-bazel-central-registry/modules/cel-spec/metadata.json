@@ -1,0 +1,22 @@
+{
+    "homepage": "https://cel.dev",
+    "maintainers": [
+        {
+            "email": "cel-lang-discuss@googlegroups.com",
+            "github": "cel-expr",
+            "name": "CEL Team",
+            "github_user_id": 186625994
+        }
+    ],
+    "repository": [
+        "github:google/cel-spec"
+    ],
+    "versions": [
+        "0.14.0",
+        "0.15.0",
+        "0.19.2",
+        "0.21.2",
+        "0.23.0"
+    ],
+    "yanked_versions": {}
+}

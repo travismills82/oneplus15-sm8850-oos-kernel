@@ -1,0 +1,33 @@
+#include "seraph-sde-display.dtsi"
+
+&mdss_mdp {
+	qcom,sde-emulated-env;
+};
+
+&mdss_dsi_phy0 {
+	qcom,dsi-phy-pll-bypass;
+};
+
+&mdss_dsi_phy1 {
+	qcom,dsi-phy-pll-bypass;
+};
+
+&mdss_dsi0 {
+	qcom,dsi-phy-pll-bypass;
+};
+
+&mdss_dsi1 {
+	qcom,dsi-phy-pll-bypass;
+};
+
+&dsi_rdp370f_rgb_vid {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
+	qcom,platform-reset-gpio = <&tlmm 12 0>;
+};
+
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_rdp370f_rgb_vid>;
+	//clocks = <&dispcc DISP_CC_MDSS_MDP_CLK>;
+	//clock-names = "mdp_core_clk";
+};

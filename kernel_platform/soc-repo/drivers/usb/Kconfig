@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# USB device configuration
+#
+
+if USB_SUPPORT
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/dwc3/Kconfig"
+
+comment "USB port drivers"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/phy/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/gadget/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/typec/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/repeater/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/redriver/Kconfig"
+
+endif # USB_SUPPORT

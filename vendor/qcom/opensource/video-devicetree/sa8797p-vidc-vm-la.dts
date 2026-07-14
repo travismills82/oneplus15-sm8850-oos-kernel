@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "sa8797p-vidc-vm-la.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SA8797p QAM Gunyah VM";
+	compatible = "qcom,sa8797p", "qcom,qam";
+	qcom,msm-id = <690 0x10000>, <690 0x20000>, <690 0x10001>;
+	qcom,board-id = <0x10025 0x0>;
+};

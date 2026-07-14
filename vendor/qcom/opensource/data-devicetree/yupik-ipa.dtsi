@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+#include "ipa.dtsi"
+
+&ipa_hw {
+        mboxes = <&qmp_aop 0>;
+        reg =
+                <0x1e00000 0x84000>,
+                <0x1e04000 0x23000>;
+        firmware-names = "yupik_ipa_fws";
+        memory-regions = <&pil_ipa_gsi_mem>;
+        interrupts =
+                <0 654 IRQ_TYPE_LEVEL_HIGH>,
+                <0 432 IRQ_TYPE_LEVEL_HIGH>;
+        qcom,ipa-hw-ver = <20>; /* IPA core version = IPAv4.11 */
+        qcom,eth-bridging-not-supported;
+        qcom,bw-monitor-supported;
+        qcom,use-gsi-ipa-fw = "yupik_ipa_fws";
+        /delete-property/ qcom,rmnet-ll-enable;
+        /delete-property/ qcom,ulso-supported;
+        /delete-property/ qcom,ulso-ip-id-min-linux-val;
+        /delete-property/ qcom,ulso-ip-id-max-linux-val;
+        /delete-property/ qcom,ulso-ip-id-min-windows-val;
+        /delete-property/ qcom,ulso-ip-id-max-windows-val;
+        /delete-property/ qcom,ipa-uc-holb-monitor;
+        /delete-property/ qcom,ipa-holb-monitor-poll-period;
+        /delete-property/ qcom,ipa-holb-monitor-max-cnt-wlan;
+        /delete-property/ qcom,ipa-holb-monitor-max-cnt-usb;
+        /delete-property/ qcom,ipa-holb-monitor-max-cnt-11ad;
+        /delete-property/ qcom,register-collection-on-crash;
+        /delete-property/ qcom,testbus-collection-on-crash;
+        /delete-property/ qcom,non-tn-collection-on-crash;
+        /delete-property/ qcom,mhi-event-ring-id-limits;
+        /delete-property/ qcom,entire-ipa-block-size;
+        /delete-property/ qcom,ipa-cfg-offset;
+
+        qcom,interconnect,num-cases = <5>;
+        qcom,interconnect,num-paths = <3>;
+        interconnects = <&aggre2_noc MASTER_IPA &gem_noc SLAVE_LLCC>,
+                <&mc_virt MASTER_LLCC &mc_virt SLAVE_EBI1>,
+                <&gem_noc MASTER_APPSS_PROC &cnoc2 SLAVE_IPA_CFG>;
+        interconnect-names = "ipa_to_llcc", "llcc_to_ebi1", "appss_to_ipa";
+        /* No vote */
+        qcom,no-vote =
+        <0 0 0 0 0 0>;
+
+        /* SVS2 */
+        qcom,svs2 =
+        <150000 600000 150000 1804000 0 74000>;
+
+        /* SVS */
+        qcom,svs =
+        <625000 1200000 625000 3072000 0 150000>;
+
+
+        /* NOMINAL */
+        qcom,nominal =
+        <1250000 2400000 1250000 6220800 0 400000>;
+
+        /* TURBO */
+        qcom,turbo =
+        <2000000 3500000 2000000 7219200 0 400000>;
+
+        qcom,bus-vector-names = "MIN", "SVS2", "SVS", "NOMINAL",
+                "TURBO";
+        qcom,throughput-threshold = <600 2500 5000>;
+
+        ipa_smmu_ap: ipa_smmu_ap {
+                /delete-property/ qcom,iommu-dma-addr-pool;
+		qcom,ipa-dma-addr-pool = <0x20000000 0x20000000>;
+                iommus = <&apps_smmu 0x480 0x0>;
+                qcom,iommu-dma = "fastmap";
+                qcom,ipa-q6-smem-size = <36864>;
+                memory-region = <&ipa_smmu_ap_partition>;
+        };
+
+        ipa_smmu_wlan: ipa_smmu_wlan {
+                iommus = <&apps_smmu 0x481 0x0>;
+        };
+
+        ipa_smmu_uc: ipa_smmu_uc {
+                /delete-property/ qcom,iommu-dma-addr-pool;
+		qcom,ipa-dma-addr-pool = <0x20000000 0x20000000>;
+                iommus = <&apps_smmu 0x482 0x0>;
+                memory-region = <&ipa_smmu_uc_partition>;
+               /delete-property/ dma-coherent;
+        };
+
+        ipa_smmu_11ad: ipa_smmu_11ad {
+                iommus = <&apps_smmu 0x483 0x0>;
+        };
+
+	ipa_smmu_ap_partition: ipa_smmu_ap_partition {
+		iommu-addresses = <&ipa_smmu_ap 0x0 0x20000000>,
+			<&ipa_smmu_ap 0x40000000 0xC0000000>;
+	};
+
+	ipa_smmu_uc_partition: ipa_smmu_uc_partition {
+		iommu-addresses = <&ipa_smmu_uc 0x0 0x20000000>,
+			<&ipa_smmu_uc 0x40000000 0xC0000000>;
+	};
+
+};

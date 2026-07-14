@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "vienna-hfi-core.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Vienna SoC";
+	compatible = "qcom,vienna";
+	qcom,msm-id = <669 0x10000>, <670 0x10000>;
+	qcom,board-id = <0 0>;
+};

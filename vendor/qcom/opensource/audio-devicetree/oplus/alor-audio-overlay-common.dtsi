@@ -1,0 +1,127 @@
+
+&lpass_cdc {
+	qcom,num-macros = <3>;
+	lpass-cdc-clk-rsc-mngr {
+	    clock-names = "tx_core_clk", "rx_core_clk", "rx_tx_core_clk", "va_core_clk";
+	    clocks = <&clock_audio_tx_1 0>, <&clock_audio_rx_1 0>,
+		    <&clock_audio_rx_tx 0>, <&clock_audio_va_1 0>;
+	};
+};
+
+&wsa_macro {
+	status = "disabled";
+};
+
+// resolve gpio121 conflict
+&sdhc_2 {
+	status = "disabled";
+};
+
+/*
+&wsa884x_0220 {
+	status = "disabled";
+};
+
+&wsa884x_0221 {
+	status = "disabled";
+};
+*/
+
+&wsa_swr_gpios {
+	status = "disabled";
+};
+
+&wsa2_swr_gpios {
+	status = "disabled";
+};
+
+&cdc_dmic01_gpios {
+	status = "disabled";
+};
+
+&cdc_dmic23_gpios {
+	status = "disabled";
+};
+
+&cdc_dmic45_gpios {
+	status = "disabled";
+};
+
+&cdc_dmic67_gpios {
+	status = "disabled";
+};
+/*
+&wsa_spkr_en02 {
+	status = "disabled";
+};
+
+&wsa_spkr_en13 {
+	status = "disabled";
+};
+*/
+&clock_audio_wsa_1 {
+	status = "disabled";
+};
+
+&clock_audio_wsa_2 {
+	status = "disabled";
+};
+
+&clock_audio_wsa_tx {
+	status = "disabled";
+};
+
+&clock_audio_wsa2_tx {
+	status = "disabled";
+};
+/*
+&swr_haptics {
+	status = "disabled";
+};
+*/
+&lpass_bt_swr {
+	status = "disabled";
+};
+
+&wcd939x_tx_slave {
+	status = "disabled";
+};
+
+&wcd939x_rx_slave {
+	status = "disabled";
+};
+
+&wcd939x_codec {
+	status = "disabled";
+};
+
+&wcd_usbss {
+	status = "disabled";
+};
+
+&cdc_pri_mi2s_gpios {
+	status = "disabled";
+};
+
+&wcd9378_codec {
+	status = "ok";
+	compatible = "qcom,wcd9378-codec";
+	qcom,wcd-rst-gpio-node = <&wcd939x_rst_gpio>;
+	qcom,rx-slave = <&wcd9378_rx_slave>;
+	qcom,tx-slave = <&wcd9378_tx_slave>;
+	qcom,cdc-micbias1-mv = <2700>;
+	qcom,cdc-micbias2-mv = <2700>;
+	qcom,cdc-micbias3-mv = <2700>;
+};
+
+&audio_gpr {
+	qcom,ch-sched-rt;
+	qcom,cb-irq;
+};
+
+&tx_macro {
+	/* Adapt block tuning registers and its values
+		for amic and headset-mic */
+	adapt-tuning-reg-values = < 0x0818 0x7C 0x74
+				0x081C 0x3C 0xB5 >;
+};

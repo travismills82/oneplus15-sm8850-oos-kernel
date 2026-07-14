@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# This library does not depend on NEW_LEDS and must be independent so it can be
+# selected from other subsystems (specifically backlight).
+if NEW_LEDS
+
+comment "LED drivers"
+
+config LEDS_QTI_FLASH
+	tristate "Support for QTI Flash LEDs"
+	depends on LEDS_CLASS_FLASH
+	depends on MFD_SPMI_PMIC
+	select LEDS_TRIGGERS
+	help
+	  This driver supports flash LED peripheral that is present on
+	  some Qualcomm Technologies, Inc. PMICs (e.g. PM8350C).  It can
+	  configure the flash LED target current for several independent
+	  channels. It also supports various over current and over
+	  temperature mitigation features.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called leds-qti-flash.
+
+config LEDS_QPNP_VIBRATOR_LDO
+        tristate "Vibrator-LDO support for QPNP PMIC"
+        depends on LEDS_CLASS && MFD_SPMI_PMIC
+        help
+          This option enables device driver support for the vibrator-ldo
+          peripheral found on Qualcomm Technologies, Inc. QPNP PMICs.
+          The vibrator-ldo peripheral is capable of driving ERM vibrators.
+
+          To compile this driver as a module, choose M here: the module
+          will be called leds-qpnp-vibrator-ldo.
+
+endif # NEW_LEDS

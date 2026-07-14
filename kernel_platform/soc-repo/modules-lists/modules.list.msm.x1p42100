@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+qcom-scm.ko
+arm_smmu.ko
+smem.ko
+qcom_iommu_util.ko
+llcc-qcom.ko
+socinfo.ko
+qcom_tzmem.ko
+qcom_hwspinlock.ko
+qcom_aoss.ko
+msm_qmp.ko
+qcom_ipc_logging.ko
+qcom_glink_smem.ko
+qcom_glink.ko
+smp2p.ko
+qcom-ipcc.ko
+pinctrl-msm.ko
+pinctrl-x1e80100.ko
+cmd-db.ko
+qcom_rpmh.ko
+qcom-pdc.ko
+qcom_wdt_core.ko
+gh_virt_wdt.ko
+nvmem_qfprom.ko
+debug_symbol.ko
+minidump.ko
+qcom-dcvs.ko
+memory_dump_v2.ko
+dcc_v2.ko
+debug-regulator.ko
+proxy-consumer.ko
+qti-fixed-regulator.ko
+rpmh-regulator.ko
+qcom-dload-mode.ko

@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "alor-sde-display-cdp.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Alor RCM + wcn7750 WLAN + Kundu";
+	compatible = "qcom,alor-rcm", "qcom,alor", "qcom,rcm";
+	qcom,msm-id = <685 0x10000>, <727 0x10000>;
+	qcom,board-id = <0x10015 0>, <0x20015 0>;
+};

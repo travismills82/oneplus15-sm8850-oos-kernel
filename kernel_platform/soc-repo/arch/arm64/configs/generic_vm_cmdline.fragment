@@ -1,0 +1,2 @@
+CONFIG_CMDLINE="nokaslr console=hvc0 loglevel=8 swiotlb=noforce root=/dev/ram rw init=/init memhp_default_state=online_movable memory_hotplug.memmap_on_memory=force rcupdate.rcu_expedited=1 rcu_nocbs=0-1 fw_devlink.strict=1 stack_depot_disable=on pcie_ports=compat no_hash_pointers module.sig_enforce=1"
+CONFIG_CMDLINE_EXTEND=y

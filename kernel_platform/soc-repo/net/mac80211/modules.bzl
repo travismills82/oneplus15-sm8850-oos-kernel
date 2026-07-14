@@ -1,0 +1,123 @@
+def register_modules(registry):
+    registry.register(
+        name = "net/mac80211/mac80211",
+        out = "mac80211.ko",
+        config = "CONFIG_MAC80211",
+        srcs = [
+            # do not sort
+            "net/mac80211/aead_api.c",
+            "net/mac80211/aead_api.h",
+            "net/mac80211/aes_ccm.h",
+            "net/mac80211/aes_cmac.c",
+            "net/mac80211/aes_cmac.h",
+            "net/mac80211/aes_gcm.h",
+            "net/mac80211/aes_gmac.c",
+            "net/mac80211/aes_gmac.h",
+            "net/mac80211/agg-rx.c",
+            "net/mac80211/agg-tx.c",
+            "net/mac80211/airtime.c",
+            "net/mac80211/cfg.c",
+            "net/mac80211/chan.c",
+            "net/mac80211/debug.h",
+            "net/mac80211/debugfs.h",
+            "net/mac80211/debugfs_key.h",
+            "net/mac80211/debugfs_netdev.h",
+            "net/mac80211/debugfs_sta.h",
+            "net/mac80211/driver-ops.c",
+            "net/mac80211/driver-ops.h",
+            "net/mac80211/drop.h",
+            "net/mac80211/eht.c",
+            "net/mac80211/ethtool.c",
+            "net/mac80211/fils_aead.c",
+            "net/mac80211/fils_aead.h",
+            "net/mac80211/he.c",
+            "net/mac80211/ht.c",
+            "net/mac80211/ibss.c",
+            "net/mac80211/ieee80211_i.h",
+            "net/mac80211/iface.c",
+            "net/mac80211/key.c",
+            "net/mac80211/key.h",
+            "net/mac80211/led.h",
+            "net/mac80211/link.c",
+            "net/mac80211/main.c",
+            "net/mac80211/mesh.h",
+            "net/mac80211/michael.c",
+            "net/mac80211/michael.h",
+            "net/mac80211/mlme.c",
+            "net/mac80211/ocb.c",
+            "net/mac80211/offchannel.c",
+            "net/mac80211/parse.c",
+            "net/mac80211/rate.c",
+            "net/mac80211/rate.h",
+            "net/mac80211/rx.c",
+            "net/mac80211/s1g.c",
+            "net/mac80211/scan.c",
+            "net/mac80211/spectmgmt.c",
+            "net/mac80211/sta_info.c",
+            "net/mac80211/sta_info.h",
+            "net/mac80211/status.c",
+            "net/mac80211/tdls.c",
+            "net/mac80211/tkip.c",
+            "net/mac80211/tkip.h",
+            "net/mac80211/trace.c",
+            "net/mac80211/trace.h",
+            "net/mac80211/trace_msg.h",
+            "net/mac80211/tx.c",
+            "net/mac80211/util.c",
+            "net/mac80211/vht.c",
+            "net/mac80211/wbrf.c",
+            "net/mac80211/wep.c",
+            "net/mac80211/wep.h",
+            "net/mac80211/wme.c",
+            "net/mac80211/wme.h",
+            "net/mac80211/wpa.c",
+            "net/mac80211/wpa.h",
+        ],
+        conditional_srcs = {
+            "CONFIG_MAC80211_LEDS": {
+                True: [
+                    # do not sort
+                    "net/mac80211/led.c",
+                ],
+            },
+            "CONFIG_MAC80211_DEBUGFS": {
+                True: [
+                    # do not sort
+                    "net/mac80211/debugfs.c",
+                    "net/mac80211/debugfs_sta.c",
+                    "net/mac80211/debugfs_netdev.c",
+                    "net/mac80211/debugfs_key.c",
+                ],
+            },
+            "CONFIG_MAC80211_MESH": {
+                True: [
+                    # do not sort
+                    "net/mac80211/mesh.c",
+                    "net/mac80211/mesh_pathtbl.c",
+                    "net/mac80211/mesh_plink.c",
+                    "net/mac80211/mesh_hwmp.c",
+                    "net/mac80211/mesh_sync.c",
+                    "net/mac80211/mesh_ps.c",
+                ],
+            },
+            "CONFIG_PM": {
+                True: [
+                    # do not sort
+                    "net/mac80211/pm.c",
+                ],
+            },
+            "CONFIG_MAC80211_RC_MINSTREL": {
+                True: [
+                    # do not sort
+                    "net/mac80211/rc80211_minstrel_ht.c",
+                    "net/mac80211/rc80211_minstrel_ht.h",
+                ],
+            },
+        },
+        deps = [
+            # do not sort
+            "net/wireless/cfg80211",
+            "net/rfkill/rfkill",
+            "lib/crypto/libarc4",
+        ],
+    )

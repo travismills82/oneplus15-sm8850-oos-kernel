@@ -1,0 +1,112 @@
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers")
+
+package(
+    default_visibility = [
+        "//visibility:public"],
+)
+
+ddk_headers(
+    name = "uapi_headers",
+    hdrs = glob([
+        "include/uapi/vidc/media/*.h",
+    ]),
+    includes = ["include/uapi/vidc"]
+)
+
+ddk_headers(
+    name = "niobe_headers",
+    hdrs = glob([
+      "driver/platform/niobe/inc/*.h",
+    ]),
+    includes = ["driver/platform/niobe/inc"]
+)
+
+ddk_headers(
+    name = "iris3_headers",
+    hdrs = glob([
+      "driver/variant/iris3/inc/*.h",
+    ]),
+    includes = ["driver/variant/iris3/inc"]
+)
+
+ddk_headers(
+    name = "pineapple_headers",
+    hdrs = glob([
+      "driver/platform/pineapple/inc/*.h",
+    ]),
+    includes = ["driver/platform/pineapple/inc"]
+)
+
+ddk_headers(
+    name = "sun_headers",
+    hdrs = glob([
+      "driver/platform/sun/inc/*.h",
+    ]),
+    includes = ["driver/platform/sun/inc"]
+)
+
+ddk_headers(
+    name = "canoe_headers",
+    hdrs = glob([
+      "driver/platform/canoe/inc/*.h",
+    ]),
+    includes = ["driver/platform/canoe/inc"]
+)
+
+ddk_headers(
+    name = "seraph_headers",
+    hdrs = glob([
+      "driver/platform/seraph/inc/*.h",
+    ]),
+    includes = ["driver/platform/seraph/inc"]
+)
+
+ddk_headers(
+    name = "alor_headers",
+    hdrs = glob([
+      "driver/platform/alor/inc/*.h",
+    ]),
+    includes = ["driver/platform/alor/inc"]
+)
+
+ddk_headers(
+    name = "iris33_headers",
+    hdrs = glob([
+      "driver/variant/iris33/inc/*.h",
+    ]),
+    includes = ["driver/variant/iris33/inc"]
+)
+
+ddk_headers(
+    name = "iris35_headers",
+    hdrs = glob([
+      "driver/variant/iris35/inc/*.h",
+    ]),
+    includes = ["driver/variant/iris35/inc"]
+)
+
+ddk_headers(
+    name = "iris4_headers",
+    hdrs = glob([
+      "driver/variant/iris4/inc/*.h",
+    ]),
+    includes = ["driver/variant/iris4/inc"]
+)
+
+ddk_headers(
+    name = "vidc_headers",
+    hdrs = glob([
+      "driver/vidc/inc/*.h",
+      "driver/variant/common/inc/*.h",
+      "driver/platform/common/inc/*.h"
+    ]),
+    includes = ["driver/vidc/inc", "driver/variant/common/inc", "driver/platform/common/inc"]
+)
+
+ddk_headers(
+    name = "video_driver_headers",
+    hdrs = [":uapi_headers", "niobe_headers", "pineapple_headers", "sun_headers", "canoe_headers", "seraph_headers", "alor_headers", "iris3_headers", "iris33_headers", "iris35_headers", "iris4_headers", "vidc_headers"]
+)
+
+load(":target.bzl", "define_target_modules")
+define_target_modules()

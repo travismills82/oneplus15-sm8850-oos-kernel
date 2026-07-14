@@ -1,0 +1,20 @@
+# This project was upgraded with external_updater.
+# Usage: tools/external_updater/updater.sh update external/python/absl-py
+# For more info, check https://cs.android.com/android/platform/superproject/+/main:tools/external_updater/README.md
+
+name: "abseil-py"
+description: ""
+third_party {
+  license_type: NOTICE
+  last_upgrade_date {
+    year: 2024
+    month: 3
+    day: 27
+  }
+  homepage: "https://github.com/abseil/abseil-py"
+  identifier {
+    type: "Git"
+    value: "https://github.com/abseil/abseil-py.git"
+    version: "v2.1.0"
+  }
+}

@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/qcom,gcc-lemans.h>
+#include <dt-bindings/interconnect/qcom,lemans.h>
+#include <dt-bindings/clock/qcom,videocc-lemans.h>
+#include "lemans-vidc.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Lemans";
+	compatible = "qcom,lemans";
+	qcom,msm-id = <532 0x10000>, <533 0x10000>, <534 0x10000>;
+	qcom,board-id = <0 0>;
+};

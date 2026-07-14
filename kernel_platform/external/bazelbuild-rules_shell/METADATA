@@ -1,0 +1,15 @@
+name: "rules_shell"
+description: "This repository contains the Bazel ruleset for shell scripts."
+
+third_party {
+  homepage: "https://github.com/bazelbuild/rules_shell"
+  identifier {
+    type: "Git"
+    value: "https://github.com/bazelbuild/rules_shell"
+    primary_source: true
+    version: "104505faea10e1fe50bb7f7a5b3142b63181e644"
+  }
+  version: "104505faea10e1fe50bb7f7a5b3142b63181e644"
+  last_upgrade_date { year: 2024 month: 12 day: 10 }
+  license_type: NOTICE
+}

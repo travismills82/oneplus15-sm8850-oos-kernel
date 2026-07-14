@@ -1,0 +1,16 @@
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers")
+load(":define_hfi_core.bzl", "define_hfi_core")
+
+package(
+    default_visibility = [
+      "//visibility:public"
+    ],
+)
+
+ddk_headers(
+    name = "hfi_core_headers",
+    hdrs = glob(["inc/*.h"]),
+    includes = ["inc"]
+)
+
+define_hfi_core()

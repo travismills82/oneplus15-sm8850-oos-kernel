@@ -1,0 +1,180 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The IOVA library may also be used by non-IOMMU_API users
+# IOMMU_API always gets selected by whoever wants it.
+if IOMMU_SUPPORT
+
+menu "Generic IOMMU Pagetable Support"
+
+# Selected by the actual pagetable implementations
+config IOMMU_IO_PGTABLE
+	bool
+
+config IOMMU_IO_PGTABLE_LPAE
+	bool "ARMv7/v8 Long Descriptor Format"
+	select IOMMU_IO_PGTABLE
+	depends on ARM || ARM64 || COMPILE_TEST
+	depends on !GENERIC_ATOMIC64	# for cmpxchg64()
+	help
+	  Enable support for the ARM long descriptor pagetable format.
+	  This allocator supports 4K/2M/1G, 16K/32M and 64K/512M page
+	  sizes at both stage-1 and stage-2, as well as address spaces
+	  up to 48-bits in size.
+
+config IOMMU_IO_PGTABLE_LPAE_SELFTEST
+	bool "LPAE selftests"
+	depends on IOMMU_IO_PGTABLE_LPAE
+	help
+	  Enable self-tests for LPAE page table allocator. This performs
+	  a series of page-table consistency checks during boot.
+
+	  If unsure, say N here.
+
+config IOMMU_IO_PGTABLE_CONTIG_HINT
+	bool "Enable contig hint"
+	depends on IOMMU_IO_PGTABLE_LPAE
+	help
+	  Enable config hint for LPAE page table allocator. This would
+	  allow multiple TLB entries to be combined into a single entry
+	  which optimizes TLB lookups.
+
+	  If unsure, say N here.
+
+config IOMMU_IO_PGTABLE_FAST
+	bool "Fast ARMv7/v8 Long Descriptor Format"
+	depends on (ARM || ARM64) && IOMMU_DMA
+	help
+          Enable support for a subset of the ARM long descriptor pagetable
+	  format.  This allocator achieves fast performance by
+	  pre-allocating and pre-populating page table memory up front.
+	  only supports a 32 bit virtual address space.
+
+          This implementation is mainly optimized for use cases where the
+          buffers are small (<= 64K) since it only supports 4K page sizes.
+
+endmenu
+
+# ARM IOMMU support
+config ARM_SMMU
+	tristate "ARM Ltd. System MMU (SMMU) Support"
+	depends on ARM64 || ARM || COMPILE_TEST
+	depends on !GENERIC_ATOMIC64	# for IOMMU_IO_PGTABLE_LPAE
+	select IOMMU_API
+	select IOMMU_IO_PGTABLE_LPAE
+	select ARM_DMA_USE_IOMMU if ARM
+	help
+	  Support for implementations of the ARM System MMU architecture
+	  versions 1 and 2.
+
+	  Say Y here if your SoC includes an IOMMU device implementing
+	  the ARM SMMU architecture.
+
+config ARM_SMMU_LEGACY_DT_BINDINGS
+	bool "Support the legacy \"mmu-masters\" devicetree bindings"
+	depends on ARM_SMMU=y && OF
+	help
+	  Support for the badly designed and deprecated "mmu-masters"
+	  devicetree bindings. This allows some DMA masters to attach
+	  to the SMMU but does not provide any support via the DMA API.
+	  If you're lucky, you might be able to get VFIO up and running.
+
+	  If you say Y here then you'll make me very sad. Instead, say N
+	  and move your firmware to the utopian future that was 2016.
+
+config ARM_SMMU_DISABLE_BYPASS_BY_DEFAULT
+	bool "Default to disabling bypass on ARM SMMU v1 and v2"
+	depends on ARM_SMMU
+	default y
+	help
+	  Say Y here to (by default) disable bypass streams such that
+	  incoming transactions from devices that are not attached to
+	  an iommu domain will report an abort back to the device and
+	  will not be allowed to pass through the SMMU.
+
+	  Any old kernels that existed before this KConfig was
+	  introduced would default to _allowing_ bypass (AKA the
+	  equivalent of NO for this config).  However the default for
+	  this option is YES because the old behavior is insecure.
+
+	  There are few reasons to allow unmatched stream bypass, and
+	  even fewer good ones.  If saying YES here breaks your board
+	  you should work on fixing your board.  This KConfig option
+	  is expected to be removed in the future and we'll simply
+	  hardcode the bypass disable in the code.
+
+	  NOTE: the kernel command line parameter
+	  'arm-smmu.disable_bypass' will continue to override this
+	  config.
+
+config ARM_SMMU_QCOM
+	def_tristate y
+	depends on ARM_SMMU && ARCH_QCOM
+	select QCOM_SCM
+	help
+	  When running on a Qualcomm platform that has the custom variant
+	  of the ARM SMMU, this needs to be built into the SMMU driver.
+
+config ARM_SMMU_QCOM_DEBUG
+	bool "ARM SMMU QCOM implementation defined debug support"
+	depends on ARM_SMMU_QCOM=y
+	help
+	  Support for implementation specific debug features in ARM SMMU
+	  hardware found in QTI platforms. This include support for
+	  the Translation Buffer Units (TBU) that can be used to obtain
+	  additional information when debugging memory management issues
+	  like context faults.
+
+	  Say Y here to enable debug for issues such as context faults
+	  or TLB sync timeouts which requires implementation defined
+	  register dumps.
+
+config QTI_IOMMU_SUPPORT
+	tristate "Support for QTI iommu drivers"
+	help
+	  The QTI GPU device may switch between multiple iommu domains,
+	  depending on usecase. This introduces a need to track all such
+	  domains in a non-driver specific manner.
+	  If in doubt say N.
+
+config QCOM_IOMMU_UTIL
+	tristate "Support for qcom additions to the iommu framework"
+	help
+	  QCOM iommu drivers support a general set of functionality in
+	  addition to the functions provided by the iommu framework.
+	  This includes devicetree properties for configuring iommu
+	  groups and iova ranges.
+
+	  Say N here if unsure.
+
+config QCOM_IOMMU_DEBUG
+	tristate "IOMMU debugging and testing"
+	depends on QCOM_IOMMU_UTIL
+	depends on DEBUG_FS
+	help
+	  This option is used to enable profiling and debugging in
+	  the IOMMU framework code. IOMMU profiling and debugging
+	  can be done through the debugfs nodes which this option
+	  makes available.
+
+config ARM_SMMU_SELFTEST
+	bool "ARM SMMU self test support"
+	depends on ARM_SMMU
+	help
+	  Enables self tests for arm smmu. Tests basic hardware
+	  configurations like interrupts. Note that enabling this
+	  option can marginally increase the boot time.
+
+	  If unsure, say N.
+
+config QCOM_LAZY_MAPPING
+	tristate "Reference counted iommu-mapping support"
+	depends on QCOM_DMABUF_HEAPS
+	depends on IOMMU_API
+	help
+	  DMA-BUFs may be shared between several software clients.
+	  Reference counting the mapping may simplify coordination between
+	  these clients, and decrease latency by preventing multiple
+	  map/unmaps of the same region.
+
+	  If unsure, say N here.
+
+endif # IOMMU_SUPPORT

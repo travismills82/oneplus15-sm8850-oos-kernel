@@ -1,0 +1,48 @@
+/***************************************************************
+** Copyright (C), 2024, OPLUS Mobile Comm Corp., Ltd
+**
+** Description : display common config
+** Version : NA
+** Date : 2025/06/03
+** Author : Oplus Display
+******************************************************************/
+				qcom,mipi-err-check-page-command = [
+					39 00 00 00 00 00 04 FF 5A A5 00
+				];
+
+				qcom,dsi-panel-date-switch-command = [
+					39 00 00 00 00 00 04 FF 5A A5 1D
+				];
+
+				qcom,dsi-panel-btb-switch-command = [
+                    39 00 00 00 00 00 04 FF 5A A5 1D
+                ];
+
+				qcom,mdss-dsi-default-switch-page-command = [
+					/*switch default page*/
+					39 00 00 00 00 00 04 FF 5A A5 00
+				];
+				qcom,mdss-dsi-off-command = [
+					05 00 00 00 14 00 01 28
+					05 00 00 00 78 00 01 10
+				];
+
+				qcom,lm-split = <570 570>;
+				qcom,compression-mode = "dsc";
+				qcom,mdss-dsc-encoders = <2>;
+				qcom,mdss-dsc-slice-height = <12>;
+				qcom,mdss-dsc-slice-width = <570>;
+				qcom,mdss-dsc-slice-per-pkt = <2>;
+				qcom,mdss-dsc-bit-per-component = <10>;
+				qcom,mdss-dsc-bit-per-pixel = <8>;
+				qcom,mdss-dsc-block-prediction-enable;
+				/* SPR CONFIG */
+				qcom,src-chroma-format = <1>;
+
+				qcom,mipi-err-check-page-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-timing-switch-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
+				qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
+				qcom,dsi-panel-date-switch-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-default-switch-page-command-state = "dsi_hs_mode";
+				qcom,dsi-panel-btb-switch-command-state = "dsi_hs_mode";

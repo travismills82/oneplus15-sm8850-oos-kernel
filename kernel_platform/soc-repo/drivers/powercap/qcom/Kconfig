@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config QCOM_POWER_TELEMETRY_FRAMEWORK
+	tristate "Qualcomm Technologies, Inc. Power Telemetry Hardware Framework"
+	depends on POWERCAP
+	help
+	  This enables Qualcomm Technologies, Inc. power telemetry framework.
+	  It provides a framework support to register for different power
+	  capable device channels. Based on devicetree power-zones hierarchy,
+	  it binds different channels to power-zone node (aka qptm). Each
+	  qptm node registers with powercap framework as powercap zones.
+
+config QCOM_POWER_TELEMETRY_HW
+	tristate "Qualcomm Technologies, Inc. Power Telemetry Hardware driver"
+	depends on NVMEM_SPMI_SDAM
+	depends on QCOM_POWER_TELEMETRY_FRAMEWORK
+	help
+	  This enables Qualcomm Technologies, Inc. power telemetry
+	  hardware device driver. It provides power and energy data for different
+	  power devices like pmic regulator, bobs etc. It registers each power/energy
+	  channel to power telemetry framework.
+
+config QCOM_POWER_TELEMETRY_DATA_SHARE
+	tristate "Qualcomm Technologies, Inc. Power Telemetry Data Sharing module"
+	depends on QCOM_POWER_TELEMETRY_FRAMEWORK
+	help
+	  This enables Qualcomm Technologies, Inc. power telemetry
+	  data sharing module. It allows sharing of power and energy data collected
+	  by the Power Telemetry Hardware driver with other components via a
+	  dedicated shared memory data structure.

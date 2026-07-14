@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+#include "canoe-peach-bt.dtsi"
+
+&bluetooth {
+	/delete-property/ qcom,bt-ant-ldo-supply;
+	/delete-property/ qcom,bt-ant-ldo-config;
+};

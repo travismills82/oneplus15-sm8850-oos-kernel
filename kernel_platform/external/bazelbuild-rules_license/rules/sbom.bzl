@@ -1,0 +1,1 @@
+../rules_gathering/generate_sbom.bzl

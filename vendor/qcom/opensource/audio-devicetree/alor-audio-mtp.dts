@@ -1,0 +1,13 @@
+//
+/* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *  SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+/dts-v1/;
+/plugin/;
+#include "alor-audio-mtp.dtsi"
+/ {
+	model = "Qualcomm Technologies, Inc. Alor MTP + Tambora + Pandeiro";
+	compatible = "qcom,alor-mtp", "qcom,alor", "qcom,mtp", "qcom,alorp-mtp", "qcom,alorp";
+	qcom,msm-id = <685 0x10000>, <727 0x10000>;
+	qcom,board-id = <0x10008 0>, <0x20008 0>;
+};

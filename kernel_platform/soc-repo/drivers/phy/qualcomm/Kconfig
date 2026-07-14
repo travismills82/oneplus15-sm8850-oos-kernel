@@ -1,0 +1,114 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Phy drivers for Qualcomm and Atheros platforms
+#
+
+config PHY_QCOM_UFS
+	tristate "Qualcomm Technologies, Inc. UFS PHY driver"
+	depends on OF && ARCH_QCOM
+	select GENERIC_PHY
+	help
+	  Enables support for UFS PHY on Qualcomm Technologies, Inc.
+	  chipsets.
+	  This driver together with the UFS PHY controller specific
+	  driver enables the UFS PHY support for Qualcomm Technologies, Inc.
+	  chips.
+
+if PHY_QCOM_UFS
+
+config PHY_QCOM_UFS_V4
+	tristate "Qualcomm Technologies, Inc. UFS V4"
+	depends on PHY_QCOM_UFS
+	help
+	  Support for 7nm UFS QMP phy present on QCOM chipsets.
+	  This is required to enable UFS on QCOM chipset.
+	  To compile this driver as a module, choose M here.
+
+config PHY_QCOM_UFS_V4_GEN3AUTO
+	tristate "Qualcomm Technologies, Inc. UFS gen3auto Phy Driver"
+	depends on PHY_QCOM_UFS
+	help
+	  Support for 7nm UFS QMP phy present on QCOM chipsets.
+	  This is required to enable UFS on QCOM chipset.
+	  To compile this driver as a module, choose M here.
+
+config PHY_QCOM_UFS_QRBTC_SDM845
+	tristate "Qualcomm Technologies, Inc. UFS Presil Phy Driver"
+	depends on PHY_QCOM_UFS && REGULATOR_STUB
+	help
+	  Enable this to support UFS PHY on pre-silicon platforms.
+	  The support is restricted to HS-G1 only on both Tx and Rx.
+	  No low power mode support is present.
+	  Doesn't restrict number of lanes.
+
+config PHY_QCOM_UFS_V4_SUN
+	tristate "Qualcomm Technologies, Inc. UFS Sun Phy Driver"
+	depends on PHY_QCOM_UFS
+	help
+	  Support for UFS phy present on QCOM Sun chipsets.
+	  This is required to enable UFS on Sun chipset.
+	  To compile this driver as a module, choose M here.
+
+config PHY_QCOM_UFS_V4_CANOE
+	tristate "Qualcomm Technologies, Inc. UFS Canoe Phy Driver"
+	depends on PHY_QCOM_UFS
+	help
+	  This configuration option adds support for the UFS
+	  PHY present on QCOM Canoe chipsets.
+	  This is required to enable UFS on Canoe chipset.
+	  To compile this driver as a module, choose M here.
+
+config PHY_QCOM_UFS_V4_YUPIK
+	tristate "Qualcomm Technologies, Inc. UFS Yupik Phy Driver"
+	depends on PHY_QCOM_UFS
+	help
+	  This configuration option adds support for the UFS
+	  PHY present on QCOM Yupik chipsets.
+	  This is required to enable UFS on Yupik chipset.
+	  To compile this driver as a module, choose M here.
+
+config PHY_QCOM_UFS_V4_WAIPIO
+	tristate "Qualcomm Technologies, Inc. UFS Waipio Phy Driver"
+	depends on PHY_QCOM_UFS
+	help
+	  This configuration option adds support for the UFS
+	  PHY present on QCOM Waipio chipsets.
+	  This is required to enable UFS on Waipio chipset.
+	  To compile this driver as a module, choose M here.
+
+endif
+
+config PHY_QCOM_EUSB2_REPEATER
+	tristate "Qualcomm eUSB2 Repeater Driver"
+	depends on OF && (ARCH_QCOM || COMPILE_TEST)
+	select GENERIC_PHY
+	help
+	  Enable support for the USB high-speed eUSB2 repeater on Qualcomm
+	  PMICs. The repeater is paired with an eUSB2 Phy on Qualcomm SOCs.
+	  This is required for voltage inter-operability between the eUSB2
+	  phy and the DP/DM lines connecting the USB host.
+	  PMICs. The repeater is paired with a eUSB2 Phy
+	  on Qualcomm SOCs.
+
+config PHY_QCOM_M31_EUSB2
+	tristate "Qualcomm M31 eUSB2 PHY Driver"
+	depends on OF && (ARCH_QCOM || COMPILE_TEST)
+	select GENERIC_PHY
+	help
+	  Enable support for the USB high-speed M31 eUSB2 phy on Qualcomm
+	  chipsets. The PHY is paired with a Synopsys DWC3 USB controller
+	  on Qualcomm SOCs. This is required for the USB controller to
+	  communicate with the USB host in High-Speed mode.
+
+config PHY_QCOM_QMP_COMBO
+	tristate "Qualcomm QMP Combo PHY Driver"
+	depends on OF && COMMON_CLK && (ARCH_QCOM || COMPILE_TEST)
+	depends on TYPEC || TYPEC=n
+	depends on DRM || DRM=n
+	select GENERIC_PHY
+	select MFD_SYSCON
+	help
+	  Enable this to support the QMP Combo PHY transceiver that is used
+	  with USB3 and DisplayPort controllers on Qualcomm chips. This is
+	  required for the USB controller to communicate with the USB host
+	  in Super-Speed mode.

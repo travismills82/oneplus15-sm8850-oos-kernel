@@ -1,0 +1,10 @@
+# Generated build products
+/kernel_platform/out/
+/kernel_platform/bazel-*/
+/kernel_platform/bazel-bin
+/kernel_platform/bazel-kernel_platform
+/kernel_platform/bazel-out
+/kernel_platform/bazel-testlogs
+
+# Upstream binary toolchains; retrieve these from the original manifest.
+/kernel_platform/prebuilts/

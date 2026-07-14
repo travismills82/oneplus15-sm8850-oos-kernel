@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/soc/qcom,ipcc.h>
+#include <dt-bindings/interconnect/qcom,yupik.h>
+#include <dt-bindings/clock/qcom,gcc-sc7280.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include "yupik-ipa.dtsi"
+
+/{
+        model = "Qualcomm Technologies, Inc. YUPIK-IOT";
+        compatible = "qcom,yupik-iot";
+        qcom,msm-id = <497 0x10000>;
+        qcom,board-id = <0 0>;
+};

@@ -1,0 +1,26 @@
+{
+    "homepage": "https://github.com/bufbuild/protovalidate",
+    "maintainers": [
+        {
+            "name": "Protovalidate Team",
+            "email": "bcr-github@buf.build",
+            "github": "bcr-buf",
+            "github_user_id": 196968995
+        }
+    ],
+    "repository": [
+        "github:bufbuild/protovalidate"
+    ],
+    "versions": [
+        "0.10.0",
+        "0.10.2",
+        "0.10.3",
+        "0.10.4",
+        "0.10.5",
+        "0.10.6",
+        "0.10.7",
+        "0.11.0",
+        "0.11.1"
+    ],
+    "yanked_versions": {}
+}

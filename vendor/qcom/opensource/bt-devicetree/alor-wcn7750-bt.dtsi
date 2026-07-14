@@ -1,0 +1,105 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+#include <dt-bindings/interconnect/qcom,alor.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+
+&pm8550ve_d_gpios {
+	bt_en: bt_en {
+		pins = "gpio3";
+		function = "normal";
+		input-disable;
+		output-enable;
+		bias-disable;
+		power-source = <1>;
+	};
+	bt_fmd_clk_en: bt_fmd_clk_en {
+		pins = "gpio6";
+		function = "normal";
+		input-enable;
+		output-disable;
+		bias-disable;
+		power-source = <1>;
+	};
+};
+
+&tlmm {
+	cnss_bt_sw_ctrl: cnss_wlan_sw_ctrl {
+		mux {
+			pins = "gpio18";
+			function = "wcn_sw_ctrl";
+		};
+	};
+};
+&soc {
+	bluetooth: bt_kera {
+		compatible = "qcom,wcn7750-bt";
+		qcom,wcn7750-bt;
+
+		nvmem-cell-names = "fmd_set", "fmd_chg_pon", "fmd_cnt2_stop";
+		nvmem-cells = <&fmd_set>, <&fmd_chg_pon>, <&fmd_cnt2_stop>;
+
+		pinctrl-names = "bt_en", "sw_ctrl", "bt_fmd_clk_en";
+		pinctrl-0 = <&bt_en>;
+		pinctrl-1 = <&cnss_bt_sw_ctrl>;
+		pinctrl-2 = <&bt_fmd_clk_en>;
+
+		clock-names = "bt_rf_clk1";
+		clocks = <&rpmhcc RPMH_RF_CLK1>;
+
+		mpm_wake_set_gpios = <18>;
+		qcom,wl-reset-gpio = <&tlmm 16 0>; /* WL_EN */
+		qcom,bt-sw-ctrl-gpio = <&tlmm 18 0>; /* SW_CTRL */
+		qcom,bt-fmd-clk-gpio = <&pm8550ve_d_gpios 6 0>; /* FMD_CLK_CTRL */
+		qcom,bt-reset-gpio = <&pm8550ve_d_gpios 3 0>; /* BT_EN */
+
+		qcom,bt-vdd-io-supply      = <&L3D>; /* WCN_1P8_IO */
+		qcom,bt-vdd-aon-supply     = <&L2D>; /* AON LDO */
+		qcom,bt-vdd-rfacmn-supply  = <&S2D>; /* RF 0p8/CMN */
+		qcom,bt-vdd-dig-supply     = <&S2D>; /* BT LDO/BT_CX_MX */
+		qcom,bt-vdd-rfa-0p8-supply = <&L6K>; /* RFA 0p8 / AV91C_VDD */
+		qcom,bt-vdd-rfa1-supply    = <&S4D>; /* RFA 1p7 */
+		qcom,bt-vdd-rfa2-supply    = <&S4F>; /* RFA 1p2 */
+		qcom,bt-vdd-ipa-2p2-supply = <&S3D>; /* WCN_2p2_RFA */
+
+		qcom,bt-vdd-io-config      = <1200000 1200000 0 1 1>;
+		qcom,bt-vdd-aon-config     = <1800000 1800000 0 1 1>;
+		qcom,bt-vdd-rfacmn-config  = <864000 1100000 0 1 1>;
+		qcom,bt-vdd-dig-config     = <864000 1100000 0 1 1>;
+		qcom,bt-vdd-rfa-0p8-config = <1050000 2000000 0 1 1>;
+		qcom,bt-vdd-rfa1-config    = <1840000 2100000 0 1 1>;
+		qcom,bt-vdd-rfa2-config    = <1256000 1400000 0 1 1>;
+		qcom,bt-vdd-ipa-2p2-config = <2156000 2700000 0 1 1>;
+	};
+};
+
+&swr4 {
+	btswr_slave: btswr-slave {
+		compatible = "qcom,btfmswr_slave";
+		reg = <0x02 0x08170220>;
+	};
+};
+
+//#ifndef OPLUS_BUG_COMPATIBILITY
+// FM changes
+//&qupv3_se20_i2c {
+//    status = "ok";
+//	fm_rtc6226: nq@64 {
+//		compatible = "rtc6226";
+//		reg = <0x64>;
+//		fmint-gpio = <&tlmm 22 0>;
+//		vdd-supply = <&L16B>;
+//		rtc6226,vdd-supply-voltage = <2800000 2800000>;
+//		rtc6226,vdd-load = <15000>;
+//		vio-supply = <&L15B>;
+//		rtc6226,vio-supply-voltage = <1800000 1800000>;
+//	};
+//};
+//#endif /* OPLUS_BUG_COMPATIBILITY */
+
+//uart instance
+&qupv3_se14_4uart {
+	status = "ok";
+};

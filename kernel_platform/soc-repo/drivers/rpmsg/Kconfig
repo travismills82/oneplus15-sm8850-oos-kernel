@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: GPL-2.0
+
+menu "Rpmsg drivers"
+
+# RPMSG always gets selected by whoever wants it
+config RPMSG_QCOM_GLINK
+	tristate
+	select RPMSG
+
+config RPMSG_QCOM_GLINK_RPM
+	tristate "Qualcomm RPM Glink driver"
+	select RPMSG_QCOM_GLINK
+	depends on HAS_IOMEM
+	depends on MAILBOX
+	help
+	  Say y here to enable support for the GLINK RPM communication driver,
+	  which serves as a channel for communication with the RPM in GLINK
+	  enabled systems.
+
+config RPMSG_QCOM_GLINK_SMEM
+	tristate "Qualcomm SMEM Glink driver"
+	select RPMSG_QCOM_GLINK
+	depends on MAILBOX
+	depends on QCOM_SMEM
+	help
+	  Say y here to enable support for the GLINK SMEM communication driver,
+	  which provides support for using the GLINK communication protocol
+	  over SMEM.
+
+config RPMSG_QCOM_GLINK_SPSS
+	tristate "QTI SPSS Glink driver"
+	select RPMSG_QCOM_GLINK_NATIVE
+	depends on MAILBOX
+	depends on QCOM_SMEM
+	help
+	  Say y here to enable support for the GLINK SPSS communication driver,
+	  which provides support for using the GLINK communication protocol
+	  over SMEM. This protocol maps the smem and then shares the mapped
+	  region with the remote proc by writing the smem descriptor location
+	  and size into shared registers.
+
+config QCOM_GLINK_PKT
+	tristate "Enable device interface for GLINK packet channels"
+	depends on RPMSG_QCOM_GLINK_SMEM || RPMSG_QCOM_GLINK_SLATECOM
+	help
+	  G-link packet driver provides the interface for the userspace
+	  clients to communicate over G-Link via device nodes.
+	  This enable the userspace clients to read and write to
+	  some glink packets channel.
+
+config RPMSG_QCOM_SMD
+	tristate "Qualcomm Shared Memory Driver (SMD)"
+	depends on MAILBOX
+	depends on QCOM_SMEM
+	select RPMSG
+	help
+	  Say y here to enable support for the Qualcomm Shared Memory Driver
+	  providing communication channels to remote processors in Qualcomm
+	  platforms.
+
+config RPMSG_QCOM_GLINK_CMA
+        tristate "Qualcomm Technologies, Inc. CMA Glink driver"
+        select RPMSG_QCOM_GLINK
+        depends on MAILBOX
+        help
+          Say y here to enable support for the GLINK CMA communication driver.
+          This provides support for using the GLINK communication protocol over
+          share CMA region and IPC signaling. Enables communication channels
+          to remote processors.
+endmenu

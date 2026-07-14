@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Performance Monitor Drivers
+#
+
+menu "Performance monitor support"
+	depends on PERF_EVENTS
+
+config QCOM_LLCC_PMU
+	tristate "Qualcomm Technologies LLCC PMU"
+	depends on ARCH_QCOM && ARM64
+	help
+	   Provides support for the LLCC performance monitor unit (PMU) in
+	   Qualcomm Technologies processors.
+	   Adds the LLCC PMU into the perf events subsystem for monitoring
+	   LLCC miss events.
+
+config ARM_SMMU_PMU
+        tristate "ARM SMMU PMU"
+        depends on PERF_EVENTS && ARM64 && ARM_SMMU
+          help
+          Provides support for the SMMU performance monitor unit (PMU)
+          on ARM-based systems.
+          Adds the SMMU PMU into the perf events subsystem for
+          monitoring SMMU performance events.
+
+endmenu

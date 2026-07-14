@@ -1,0 +1,27 @@
+load(":define_perf.bzl", "define_perf")
+load("//build/kernel/kleaf:kernel.bzl",  "ddk_headers", "ddk_module")
+
+define_perf("sun", "consolidate")
+define_perf("sun", "perf")
+
+define_perf("canoe", "consolidate")
+define_perf("canoe", "perf")
+
+define_perf("vienna", "consolidate")
+define_perf("vienna", "perf")
+
+define_perf("lahaina", "consolidate")
+define_perf("lahaina", "perf")
+
+ddk_headers(
+    name = "include_headers",
+    hdrs = glob([
+        "include/linux/*.h",
+        "include/uapi/linux/*.h",
+    ]),
+    includes = [
+        "include",
+        "include/linux",
+        "include/uapi",
+    ],
+)

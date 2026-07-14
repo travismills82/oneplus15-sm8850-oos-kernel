@@ -1,0 +1,11 @@
+/dts-v1/;
+/plugin/;
+
+#include "seraph-sde-display-rumi.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Seraph RUMI";
+	compatible = "qcom,seraph-rumi", "qcom,seraph", "qcom,rumi";
+	qcom,msm-id = <672 0x10000>;
+	qcom,board-id = <15 0>;
+};

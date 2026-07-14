@@ -1,0 +1,25 @@
+{
+    "homepage": "https://jpa.kapsi.fi/nanopb/",
+    "maintainers": [
+        {
+            "email": "jpa@git.mail.kapsi.fi",
+            "github": "PetteriAimonen",
+            "name": "Petteri Aimonen",
+            "github_user_id": 922265
+        },
+        {
+            "email": "tpudlik@google.com",
+            "github": "tpudlik",
+            "name": "Ted Pudlik",
+            "github_user_id": 4148295
+        }
+    ],
+    "repository": [
+        "https://jpa.kapsi.fi/nanopb"
+    ],
+    "versions": [
+        "0.4.9",
+        "0.4.9.1"
+    ],
+    "yanked_versions": {}
+}

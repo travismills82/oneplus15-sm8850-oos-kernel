@@ -1,0 +1,48 @@
+config OPLUS_FEATURE_GEAS
+        tristate "geas"
+        default n
+        help
+          turning for game
+
+config OPLUS_FEATURE_GEAS_EMI
+        tristate "geas cpu"
+        depends on OPLUS_FEATURE_GEAS
+        default n
+        help
+          turning for game
+
+config OPLUS_FEATURE_GEAS_FDRIVE
+        tristate "geas frame drive"
+        depends on OPLUS_FEATURE_GEAS
+        default n
+        help
+          turning for game
+
+config OPLUS_FEATURE_GEAS_BWMON
+        tristate "geas bwmon"
+        depends on OPLUS_FEATURE_GEAS
+        default n
+        help
+          turning for game
+
+config OPLUS_FEATURE_GEAS_GPU
+        tristate "geas gpu"
+        depends on OPLUS_FEATURE_GEAS
+        default n
+        help
+          turning for game
+
+config OPLUS_FEATURE_GEAS_MEMLAT
+        tristate "geas memlat"
+        depends on OPLUS_FEATURE_GEAS
+        default n
+        help
+          turning for game
+
+config OPLUS_FEATURE_GEAS_NPU
+        tristate "geas emi"
+        depends on OPLUS_FEATURE_GEAS
+        default n
+        help
+          turning for game
+

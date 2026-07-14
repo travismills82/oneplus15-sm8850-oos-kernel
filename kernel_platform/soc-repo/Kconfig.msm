@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: GPL-2.0
+
+menu "Qualcomm SoC Repostiory Configuration"
+
+source "$(KCONFIG_EXT_PREFIX)arch/arm64/gunyah/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)arch/arm64/Kconfig.platforms"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/base/regmap/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/bus/mhi/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/char/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/clk/qcom/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/cpufreq/Kconfig.arm"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/cpuidle/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/devfreq/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/dma-buf/heaps/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/dma/qcom/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/edac/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/firmware/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/gpu/drm/bridge/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/gpu/drm/msm/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/hwmon/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/hwtracing/coresight/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/hwtracing/stm/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/i2c/busses/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/i3c/master/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/iio/adc/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/input/misc/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/interconnect/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/iommu/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/irqchip/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/leds/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/mailbox/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/mfd/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/misc/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/mmc/host/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/net/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/pci/controller/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/perf/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/phy/qualcomm/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/pinctrl/qcom/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/power/reset/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/power/supply/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/powercap/qcom/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/regulator/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/remoteproc/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/rpmsg/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/soc/qcom/dcvs/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/soc/qcom/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/soc/qcom/mem_buf/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/soc/qcom/memshare/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/spi/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/spmi/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/thermal/qcom/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/tty/hvc/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/tty/serial/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/ufs/host/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/uio/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/dwc3/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/gadget/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/usb/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/video/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/virt/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/virtio/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)init/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)kernel/sched/walt/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)kernel/trace/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)net/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)sound/usb/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/block/Kconfig"
+
+source "$(KCONFIG_EXT_PREFIX)Kconfig.qtvm"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/power/oplus/Kconfig"
+source "$(KCONFIG_EXT_PREFIX)Kconfig.oplus"
+source "$(KCONFIG_EXT_PREFIX)drivers/block/zram/Kconfig"
+
+endmenu

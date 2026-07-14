@@ -1,0 +1,25 @@
+load("//build/kernel/kleaf:kernel.bzl", "kernel_dtstree")
+
+kernel_dtstree(
+    name = "msm_dt",
+    srcs = glob(
+        [
+            "Makefile",
+            "qcom/**/*.dtsi",
+            "qcom/**/*.dts",
+            "qcom/**/*.dtso",
+            "oplus/Makefile",
+            "oplus/**/*.dtsi",
+            "oplus/**/*.dts",
+            "oplus/**/*.dtso",
+            "bindings/**/*",
+        ],
+        exclude = [
+            "**/.*",
+            "**/.*/**",
+            "**/*.bazel",
+            "**/*.bzl",
+        ],
+    ) + ["//common:kernel_aarch64_sources"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "CPU Idle"
+
+if CPU_IDLE
+
+config CPU_IDLE_GOV_QCOM_LPM
+    tristate "Qualcomm Technologies, Inc. CPU and Cluster governor"
+    depends on ARCH_QCOM
+    depends on ARM_PSCI_CPUIDLE
+    help
+      This governor implements effective cpu and cluster idle state
+      selection with help of scheduler inputs, cpu idle state prediction
+      and cluster idle state prediction algorithms.
+
+      The predicted sleep time, latency requirement for the
+      CPU and the idle state chosen based on the parameters are all
+      logged in the trace.
+
+endif
+
+endmenu

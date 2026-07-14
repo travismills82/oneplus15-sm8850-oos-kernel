@@ -1,0 +1,16 @@
+load(":arch/arm64/gunyah/modules.bzl", register_ch_arm64_gunyah = "register_modules")
+load(":drivers/modules.bzl", register_ivers = "register_modules")
+load(":kernel/modules.bzl", register_rnel = "register_modules")
+load(":lib/modules.bzl", register_b = "register_modules")
+load(":mm/modules.bzl", register_ = "register_modules")
+load(":net/modules.bzl", register_t = "register_modules")
+load(":sound/modules.bzl", register_und = "register_modules")
+
+def register_modules(registry):
+    register_ch_arm64_gunyah(registry)
+    register_ivers(registry)
+    register_rnel(registry)
+    register_b(registry)
+    register_(registry)
+    register_t(registry)
+    register_und(registry)

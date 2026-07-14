@@ -1,0 +1,137 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "Platform selection"
+
+config ARCH_CANOE
+	bool "Enable support for Qualcomm Technologies, Inc. Canoe"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. Canoe
+	  chipset. If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_ALOR
+	bool "Enable support for Qualcomm Technologies, Inc. Alor"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. Alor
+	  chipset. If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_CHORA
+	bool "Enable support for Qualcomm Technologies, Inc. Chora"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. Chora
+	  chipset. It is based on Kryo cores.
+
+	  If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_MALABAR
+	bool "Enable support for Qualcomm Technologies, Inc. Malabar"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. Malabar
+	  chipset.
+
+	  If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_QTI_VM
+       bool "Enable Virtual Machines Support for Qualcomm Technologies, Inc."
+       depends on ARCH_QCOM
+       help
+         This enables support for the Qualcomm Technologies, Inc.'s
+         Virtual Machines. If you wish to build a kernel that doesn't
+         require VM support or if you are unsure,
+         say 'N' here.
+
+config ARCH_SUN
+	bool "Enable support for Qualcomm Technologies, Inc. Sun"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. Sun
+	  chipset. If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_PINEAPPLE
+	bool "Enable support for Qualcomm Technologies, Inc. Pineapple"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. Pineapple
+	  chipset. If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_VIENNA
+	bool "Enable Support for Qualcomm Technologies, Inc. VIENNA"
+	depends on ARCH_QCOM
+	help
+	  This enables support for the Qualcomm Technologies, Inc.
+	  Vienna chipset.
+	  If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_X1P42100
+	bool "Enable support for Qualcomm Technologies, Inc. X1p42100"
+	depends on ARCH_QCOM
+	help
+	  This enables support for Qualcomm Technologies, Inc. X1p42100
+	  chipset.
+          If you do not wish to build a kernel that runs on this
+	  chipset or if you are unsure, say 'N' here.
+
+config ARCH_YUPIK
+	bool "Enable Support for Qualcomm Technologies, Inc. YUPIK"
+	depends on ARCH_QCOM
+	help
+	  This enables support for the Qualcomm Technologies,
+	  Inc.'s YUPIK chipset. If you do not wish to build a
+	  kernel that runs on this chipset or if you are unsure,
+	  say 'N' here.
+
+
+config ARCH_DIREWOLF
+	bool "Enable Support for Qualcomm Technologies, Inc. DIREWOLF"
+	depends on ARCH_QCOM
+	help
+	  This enables support for the Qualcomm Technologies, Inc.'s
+	  DIREWOLF chipset. If you do not wish to build a kernel that
+	  runs on this chipset or if you are unsure, say 'N' here.
+
+config ARCH_LEMANS
+	bool "Enable Support for Qualcomm Technologies, Inc. LEMANS"
+	depends on ARCH_QCOM
+	help
+	  This enables support for the Qualcomm Technologies, Inc.'s
+	  LEMANS chipset. If you do not wish to build a kernel that
+	  runs on this chipset or if you are unsure, say 'N' here.
+
+config ARCH_MONACO_AUTO
+	bool "Enable Support for Qualcomm Technologies, Inc. MONACO_AUTO"
+	depends on ARCH_QCOM
+	help
+	  This enables support for the Qualcomm Technologies, Inc.'s
+	  MONACO_AUTO chipset. If you do not wish to build a kernel that
+	  runs on this chipset or if you are unsure, say 'N' here.
+
+config ARCH_NORD
+	bool "Enable Support for Qualcomm Technologies, Inc. NORD"
+	depends on ARCH_QCOM
+	help
+	  This enables support for the Qualcomm Technologies, Inc.'s
+	  NORD chipset. If you do not wish to build a kernel that
+	  runs on this chipset or if you are unsure, say 'N' here.
+
+config ARM64_PMEM
+	bool "Enable support for persistent memory"
+	select ARCH_HAS_PMEM_API
+	select ARCH_HAS_UACCESS_FLUSHCACHE
+	help
+	  Say Y to enable support for the persistent memory API based on the
+	  ARMv8.2 DCPoP feature.
+
+	  The feature is detected at runtime, and the kernel will use DC CVAC
+	  operations if DC CVAP is not supported (following the behaviour of
+	  DC CVAP itself if the system does not define a point of persistence).
+
+endmenu # "Platform selection"

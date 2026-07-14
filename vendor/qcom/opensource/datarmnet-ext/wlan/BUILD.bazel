@@ -1,0 +1,27 @@
+load(":define_wlan.bzl", "define_wlan")
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers", "ddk_module")
+
+define_wlan("sun", "consolidate")
+define_wlan("sun", "perf")
+
+define_wlan("canoe", "consolidate")
+define_wlan("canoe", "perf")
+
+define_wlan("vienna", "consolidate")
+define_wlan("vienna", "perf")
+
+define_wlan("lahaina", "consolidate")
+define_wlan("lahaina", "perf")
+
+ddk_headers(
+    name = "include_headers",
+    hdrs = glob([
+        "include/linux/*.h",
+        "include/uapi/linux/*.h",
+    ]),
+    includes = [
+        "include",
+        "include/linux",
+        "include/uapi",
+    ],
+)

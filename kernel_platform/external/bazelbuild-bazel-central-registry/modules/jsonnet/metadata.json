@@ -1,0 +1,20 @@
+{
+    "homepage": "https://jsonnet.org",
+    "maintainers": [
+        {
+            "email": "jpa.bartholomew@gmail.com",
+            "name": "John Bartholomew",
+            "github": "johnbartholomew",
+            "github_user_id": 115749
+        }
+    ],
+    "repository": [
+        "github:google/jsonnet"
+    ],
+    "versions": [
+        "0.20.0",
+        "0.20.0.bcr.1",
+        "0.21.0-rc2"
+    ],
+    "yanked_versions": {}
+}

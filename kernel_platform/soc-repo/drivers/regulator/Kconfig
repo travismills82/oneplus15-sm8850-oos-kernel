@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: GPL-2.0-only
+if REGULATOR
+
+config REGULATOR_DEBUG_CONTROL
+	tristate "Regulator debug control support"
+	depends on DEBUG_FS
+	help
+	  This driver supports debugfs based control of regulators for testing
+	  purposes.  It provides a mechanism to vote on the enable state,
+	  voltage, mode, and load current of regulators that make use of its
+	  interface.  It also extends the monitoring interface for regulators.
+
+config REGULATOR_QTI_FIXED_VOLTAGE
+	tristate "QTI fixed voltage regulator support"
+	help
+	  This driver provides support for fixed voltage regulators which are
+	  controlled via a GPIO.  It also supports proxy consumer voting and
+	  debug features utilized on Qualcomm Technologies, Inc. boards.  Use
+	  this driver in place of the fixed voltage regulator driver if these
+	  additional features are required.
+
+config REGULATOR_PROXY_CONSUMER
+	tristate "Boot time regulator proxy consumer support"
+	help
+	  This library provides support for boot time regulator proxy requests.
+	  It can enforce a specified voltage range, set a minimum current,
+	  and/or keep a regulator enabled.  It is needed in circumstances where
+	  reducing one or more of these three quantities will cause hardware to
+	  stop working if performed before the driver managing the hardware has
+	  probed.
+
+config REGULATOR_PROXY_CONSUMER_LEGACY
+	bool "Legacy proxy consumer unvoting support"
+	depends on REGULATOR_PROXY_CONSUMER
+	help
+	  By default, the proxy consumer library unvotes the proxy requests made
+	  for a given device when the sync_state() callback of the device is
+	  called after all of its consumers have probed.  When this legacy
+	  unvoting feature is enabled, unvoting happens unconditionally at
+	  late_initcall_sync() instead of per-device via sync_state()
+	  callback calls.
+
+config REGULATOR_QCOM_RPMH
+	tristate "Qualcomm Technologies, Inc. RPMh regulator driver"
+	depends on QCOM_RPMH || (QCOM_RPMH=n && COMPILE_TEST)
+	depends on QCOM_COMMAND_DB || (QCOM_COMMAND_DB=n && COMPILE_TEST)
+	help
+	  This driver supports control of PMIC regulators via the RPMh hardware
+	  block found on Qualcomm Technologies Inc. SoCs.  RPMh regulator
+	  control allows for voting on regulator state between multiple
+	  processors within the SoC.
+
+config REGULATOR_QCOM_AMOLED
+	tristate "Qualcomm Technologies, Inc. AMOLED support"
+	depends on SPMI
+	help
+	  Supports the OLEDB/AB/IBB module in the Qualcomm Technologies, Inc.
+	  PMICs. Exposes regulators to control the triple power supply
+	  positive, negative and bias for the AMOLED display panel. It also
+	  allows configurability for the various bias-voltage parameters.
+
+config REGULATOR_REFGEN
+	tristate "Qualcomm Technologies, Inc. REFGEN regulator driver"
+	depends on OF
+	help
+	  This driver supports control of the REFGEN reference bias generator
+	  block found on some Qualcomm Technologies Inc. SoCs.  A REFGEN
+	  is used by various PHY blocks found inside of the SoC.  It supports
+	  enable/disable control.
+
+config REGULATOR_QPNP_LCDB
+        tristate "Qualcomm Technologies, Inc. QPNP LCDB support"
+        depends on SPMI
+        help
+          Supports the LCDB module in the Qualcomm Technologies, Inc.
+          QPNP PMICs. Exposes regulators to control the positive and
+          negative voltage bias for the LCD display panel. It also
+          allows configurability for the various bias-voltage parameters.
+
+config REGULATOR_RPMH
+	tristate "Qualcomm Technologies, Inc. Legacy RPMh regulator driver"
+	depends on QCOM_RPMH
+	help
+	  This driver supports control of PMIC regulators via the RPMh hardware
+	  block found on Qualcomm Technologies Inc. SoCs.  RPMh regulator
+	  control allows for voting on regulator state between multiple
+	  processors within the SoC.
+
+config REGULATOR_STUB
+	tristate "Stub Regulator"
+	help
+	  This driver adds stub regulator support. It allows for consumers to
+	  request their regulator devices and to use all of the standard
+	  regulator functions. It is useful for bringing up new platforms when
+	  the real hardware based regulator implementation is not yet available.
+	  Consumers can use stub regulator device with proper constraint
+	  checking while the real regulator driver is being developed.
+
+config REGULATOR_QTI_OCP_NOTIFIER
+	tristate "Qualcomm Technologies, Inc. Regulator OCP Notifier Driver"
+	help
+	  This driver provides support for logging and notifying consumers about
+	  regulator over-current (OCP) events on certain Qualcomm Technologies,
+	  Inc. PMIC devices.  This is useful for debugging as well as for
+	  providing a more graceful recovery mechanism than resetting the entire
+	  system.
+
+config VIRTIO_REGULATOR
+        tristate "Virtio regulator driver"
+        depends on VIRTIO
+        help
+          This is the virtual regulator driver for virtio. It can be used on
+          Qualcomm Technologies Inc. virtual machine. Virtio regulator can vote
+          regulator for pass through peripheral devices via regulator backend in
+          host.
+
+endif

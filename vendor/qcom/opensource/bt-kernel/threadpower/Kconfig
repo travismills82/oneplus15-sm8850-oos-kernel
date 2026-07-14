@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config CONFIG_MSM_THREAD_POWER
+	tristate "MSM Thread Power Control"
+	depends on ARCH_QCOM
+	help
+		MSM Thread Power control driver.
+		This provides a parameter to switch on/off power from PMIC
+		to Thread device. This will control LDOs/Clock/GPIOs to
+		control Thread Chipset based on power on/off sequence.
+
+		Say Y here to compile support for Thread Power driver
+		into the kernel or say M to compile as a module.

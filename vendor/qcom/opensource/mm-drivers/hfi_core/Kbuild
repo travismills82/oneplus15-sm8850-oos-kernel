@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+#KDIR := $(TOP)/kernel_platform/soc-repo
+include $(MSM_HFI_CORE_ROOT)/config/kalamammdrivers.conf
+LINUXINCLUDE += -include $(MSM_HFI_CORE_ROOT)/config/kalamammdriversconf.h \
+		-I$(MSM_HFI_CORE_ROOT)hfi_core/inc/
+
+ifdef CONFIG_QTI_HFI_CORE
+obj-m += msm_hfi_core.o
+
+msm_hfi_core-y := src/hfi_transport/hfi_queue.o \
+        src/hfi_transport/hfi_ipc.o \
+        src/hfi_transport/hfi_smmu.o \
+        src/hfi_transport/hfi_swi.o \
+        src/hfi_transport/hfi_queue_controller.o \
+        src/hfi_transport/hfi_if_abstraction.o \
+        src/hfi_base/hfi_core.o \
+        src/hfi_dbg_packet.o \
+        src/hfi_core_debug.o \
+        src/hfi_core_probe.o
+
+CDEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
+endif
+EXTRA_CFLAGS += -Wformat-extra-args -Wstrict-prototypes -Wformat-insufficient-args \
+		-Wformat-invalid-specifier -Wformat-zero-length -Wnonnull

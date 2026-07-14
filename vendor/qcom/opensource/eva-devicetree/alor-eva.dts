@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/soc/qcom,ipcc.h>
+#include <dt-bindings/interconnect/qcom,alor.h>
+#include <dt-bindings/clock/qcom,videocc-canoe.h>
+#include <dt-bindings/clock/qcom,alor-gcc.h>
+#include <dt-bindings/clock/qcom,evacc-canoe.h>
+#include <dt-bindings/arm/msm/qti-smmu-proxy-dt-ids.h>
+#include "alor-eva.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Alor";
+	compatible = "qcom,alor", "qcom,alorp";
+	qcom,msm-id = <685 0x10000>, <727 0x10000>;
+	qcom,board-id = <0 0>, <1 0>, <8 0>, <11 0>, <15 0>;
+};

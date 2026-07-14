@@ -1,0 +1,33 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/oplus/hw-id.h>
+#include "../canoe-audio-mtp.dts"
+
+#include "canoe-audio-overlay-common.dtsi"
+#include "infiniti-24831-audio-canoe-overlay.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Canoe MTP,infiniti";
+
+	oplus,project-id = <24831 24863>;
+	oplus,hw-id = <OPLUS_EVB1 OPLUS_EVB2 OPLUS_EVB3 OPLUS_PRE_T0 OPLUS_T0>;
+};
+
+&pmh0110_f_gpios {
+	hp_det_1p2_active: hp-det-1p2-active-state {
+		pins = "gpio5";
+		function = "paired";
+		input-enable;
+		output-disable;
+		power-source = <2>; /* 1.2v */
+	};
+
+	hp_det_1p8_active: hp-det-1p8-active-state {
+		pins = "gpio6";
+		function = "paired";
+		input-disable;
+		output-enable;
+		power-source = <1>; /* 1.8v */
+	};
+};

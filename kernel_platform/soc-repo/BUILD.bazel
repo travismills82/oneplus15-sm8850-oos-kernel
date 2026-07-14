@@ -1,0 +1,309 @@
+# SPDX-License-Identifier: GPL-2.0
+
+load(":kleaf-scripts/msm_kernel_extensions.bzl", "define_top_level_rules")
+load("//build/kernel/kleaf:hermetic_tools.bzl", "hermetic_genrule")
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers", "ddk_uapi_headers")
+load(":common_sources.bzl", "define_common_upstream_files")
+load(":kleaf-scripts/android_build.bzl", "define_common_android_rules")
+load(":kleaf-scripts/ddk_uapi_headers_cc_library.bzl", "ddk_uapi_headers_cc_library")
+load(":kleaf-scripts/dtbs.bzl", "define_qcom_dtb_setup")
+load(":kleaf-scripts/generic_qtvm.bzl", "define_qtvm")
+load(":kleaf-scripts/targets/autogvm.bzl", "define_autogvm")
+load(
+    ":kleaf-scripts/targets/canoe.bzl",
+    "define_canoe",
+    "define_canoe_oemvm",
+    "define_canoe_tuivm",
+)
+load(":kleaf-scripts/targets/canoe_vms.bzl", "define_canoe_vms")
+load(":kleaf-scripts/targets/lahaina.bzl", "define_lahaina")
+load(
+    ":kleaf-scripts/targets/sun.bzl",
+    "define_sun",
+    "define_sun_oemvm",
+    "define_sun_tuivm",
+)
+load(":kleaf-scripts/targets/sun_vms.bzl", "define_sun_vms")
+load(":kleaf-scripts/targets/vienna.bzl", "define_vienna")
+load(":kleaf-scripts/targets/x1p42100.bzl", "define_x1p42100")
+
+exports_files(["android/abi_gki_aarch64_qcom"])
+
+define_top_level_rules()
+
+define_common_android_rules()
+
+define_common_upstream_files()
+
+define_qcom_dtb_setup()
+
+define_qtvm()
+
+cc_binary(
+    name = "unifdef",
+    srcs = ["scripts/unifdef.c"],
+    copts = [],
+)
+
+genrule(
+    name = "gen-headers_install.sh",
+    srcs = ["scripts/headers_install.sh"],
+    outs = ["generated_headers_install.sh"],
+    cmd = "sed 's+scripts/unifdef+$${LOC_UNIFDEF:-$$(dirname $$0)/unifdef}+g' $(SRCS) > $(OUTS)",
+    tools = [":unifdef"],
+)
+
+sh_binary(
+    name = "headers_install.sh",
+    srcs = [":gen-headers_install.sh"],
+    deps = [":unifdef"],
+)
+
+wireless_certs_cmd = """
+    (echo '#include "reg.h"'; \
+    echo 'const u8 shipped_regdb_certs[] = {'; \
+    echo | cat - $(SRCS) ; \
+    echo '};'; \
+    echo 'unsigned int shipped_regdb_certs_len = sizeof(shipped_regdb_certs);'; \
+    ) > $@
+"""
+
+hermetic_genrule(
+    name = "net/wireless/shipped-certs",
+    srcs = glob(
+        ["net/wireless/certs/*.hex"],
+        allow_empty = True,
+    ),
+    outs = ["net/wireless/shipped-certs.c"],
+    cmd = """
+        (echo '#include "reg.h"'; \
+        echo 'const u8 shipped_regdb_certs[] = {'; \
+        echo | cat - $(SRCS) ; \
+        echo '};'; \
+        echo 'unsigned int shipped_regdb_certs_len = sizeof(shipped_regdb_certs);'; \
+        ) > $@
+        """,
+)
+
+filegroup(
+    name = "dt_bindings_headers",
+    srcs = glob([
+        "include/dt-bindings/**/*.h",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+ddk_headers(
+    name = "dt_bindings",
+    hdrs = [
+        # do not sort
+        ":dt_bindings_headers",
+    ],
+    includes = [
+        "include",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "additional_msm_headers_aarch64_globs",
+    srcs = glob(
+        [
+            "arch/arm64/include/**/*.h",
+            "include/**/*.h",
+            "arch/arm/include/**/*.h",
+            "include/uapi/**",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:private"],
+)
+
+ddk_headers(
+    name = "additional_msm_headers",
+    hdrs = [
+        # do not sort
+        ":additional_msm_headers_aarch64_globs",
+    ],
+    linux_includes = [
+        "arch/arm64/include",
+        "arch/arm64/include/uapi",
+        "include",
+        "include/uapi",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+ddk_headers(
+    name = "all_headers",
+    hdrs = [
+        # do not sort
+        ":additional_msm_headers",
+        "//common:all_headers",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+ddk_uapi_headers(
+    name = "msm_uapi_headers",
+    srcs = glob(["include/uapi/**/*.h"]),
+    out = "msm_uapi_headers.tar.gz",
+    kernel_build = ":msm_kernel_build",
+    visibility = ["//visibility:public"],
+)
+
+ddk_uapi_headers_cc_library(
+    name = "ddk_uapi_headers",
+    header_archive = ":msm_uapi_headers",
+)
+
+hermetic_genrule(
+    name = "kconfig.msm.generated",
+    srcs = glob(["**/Kconfig*"]),
+    outs = ["Kconfig.ext"],
+    cmd = "KCONFIG_EXT_PREFIX=soc-repo/ $(location flatten_kconfig.sh) $(location Kconfig.msm) >$@",
+    tools = ["flatten_kconfig.sh"],
+)
+
+filegroup(
+    name = "unsafe_headers_qcom_group",
+    srcs = [
+        "//common:drivers/android/binder_alloc.h",
+	"//common:kernel/irq/internals.h",
+	"//common:kernel/irq/settings.h",
+        "//common:drivers/android/binder_internal.h",
+        "//common:drivers/android/binder_trace.h",
+        "//common:drivers/android/dbitmap.h",
+        "//common:drivers/android/debug_kinfo.h",
+        "//common:drivers/base/regmap/internal.h",
+        "//common:drivers/clk/clk.h",
+        "//common:drivers/devfreq/governor.h",
+        "//common:drivers/dma/dmaengine.h",
+        "//common:drivers/dma/virt-dma.h",
+        "//common:drivers/edac/edac_device.h",
+        "//common:drivers/edac/edac_mc.h",
+        "//common:drivers/firmware/arm_scmi/common.h",
+        "//common:drivers/firmware/arm_scmi/notify.h",
+        "//common:drivers/firmware/arm_scmi/protocols.h",
+        "//common:drivers/gpu/drm/virtio/virtgpu_trace.h",
+        "//common:drivers/hwspinlock/hwspinlock_internal.h",
+        "//common:drivers/interconnect/internal.h",
+        "//common:drivers/interconnect/qcom/icc-common.h",
+        "//common:drivers/iommu/dma-iommu.h",
+        "//common:drivers/iommu/iommu-pages.h",
+        "//common:drivers/iommu/iommu-priv.h",
+        "//common:drivers/leds/leds.h",
+        "//common:drivers/mmc/core/core.h",
+        "//common:drivers/mmc/host/sdhci.h",
+        "//common:drivers/mmc/host/sdhci-cqhci.h",
+        "//common:drivers/mmc/host/sdhci-pltfm.h",
+        "//common:drivers/pci/pci.h",
+        "//common:drivers/pinctrl/core.h",
+        "//common:drivers/pinctrl/pinconf.h",
+        "//common:drivers/pinctrl/pinctrl-utils.h",
+        "//common:drivers/regulator/internal.h",
+        "//common:drivers/remoteproc/remoteproc_elf_helpers.h",
+        "//common:drivers/remoteproc/remoteproc_internal.h",
+        "//common:drivers/rpmsg/rpmsg_internal.h",
+        "//common:drivers/scsi/scsi_logging.h",
+        "//common:drivers/thermal/thermal_core.h",
+        "//common:drivers/thermal/thermal_debugfs.h",
+        "//common:drivers/thermal/thermal_hwmon.h",
+        "//common:drivers/thermal/thermal_netlink.h",
+        "//common:drivers/thermal/thermal_thresholds.h",
+        "//common:drivers/tty/hvc/hvc_console.h",
+        "//common:drivers/ufs/host/ufshcd-pltfrm.h",
+        "//common:drivers/usb/dwc3/core.h",
+        "//common:drivers/usb/dwc3/debug.h",
+        "//common:drivers/usb/dwc3/gadget.h",
+        "//common:drivers/usb/dwc3/io.h",
+        "//common:drivers/usb/dwc3/trace.h",
+        "//common:drivers/usb/gadget/function/u_ether.h",
+        "//common:drivers/usb/gadget/function/u_fs.h",
+        "//common:drivers/usb/host/pci-quirks.h",
+        "//common:drivers/usb/host/xhci.h",
+        "//common:drivers/usb/host/xhci-caps.h",
+        "//common:drivers/usb/host/xhci-ext-caps.h",
+        "//common:drivers/usb/host/xhci-port.h",
+        "//common:drivers/usb/typec/ucsi/ucsi.h",
+        "//common:drivers/virt/gunyah/rsc_mgr.h",
+        "//common:fs/proc/internal.h",
+        "//common:kernel/futex/futex.h",
+        "//common:kernel/locking/mutex.h",
+        "//common:kernel/power/power.h",
+        "//common:kernel/printk/printk_ringbuffer.h",
+        "//common:kernel/rcu/rcu.h",
+        "//common:kernel/sched/cpudeadline.h",
+        "//common:kernel/sched/cpupri.h",
+        "//common:kernel/sched/ext.h",
+        "//common:kernel/sched/features.h",
+        "//common:kernel/sched/sched.h",
+        "//common:kernel/sched/stats.h",
+        "//common:kernel/time/tick-internal.h",
+        "//common:kernel/time/tick-sched.h",
+        "//common:kernel/time/timekeeping.h",
+        "//common:kernel/workqueue_internal.h",
+        "//common:mm/cma.h",
+        "//common:mm/internal.h",
+        "//common:mm/slab.h",
+        "//common:mm/vma.h",
+        "//common:sound/usb/card.h",
+        "//common:sound/usb/endpoint.h",
+        "//common:sound/usb/helper.h",
+        "//common:sound/usb/pcm.h",
+        "//common:sound/usb/power.h",
+        "//common:sound/usb/usbaudio.h",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+label_flag(
+    name = "msm_kernel_build",
+    build_setting_default = "//common:kernel_aarch64",
+    visibility = [
+        "//private/devices/google/aarch64/qcom:__subpackages__",
+        "//private/google-modules/qcom:__subpackages__",
+    ],
+)
+
+label_flag(
+    name = "msm_kernel_build_gki_artifacts",
+    build_setting_default = "//common:kernel_aarch64_gki_artifacts",
+    visibility = [
+        "//private/devices/google/aarch64/qcom:__subpackages__",
+        "//private/google-modules/qcom:__subpackages__",
+    ],
+)
+
+label_flag(
+    name = "msm_kernel_build_images",
+    build_setting_default = "//common:kernel_aarch64_images",
+    visibility = [
+        "//private/devices/google/aarch64/qcom:__subpackages__",
+        "//private/google-modules/qcom:__subpackages__",
+    ],
+)
+
+define_canoe()
+
+define_sun()
+
+define_autogvm()
+
+define_sun_tuivm()
+
+define_sun_oemvm()
+
+define_sun_vms()
+
+define_canoe_tuivm()
+
+define_canoe_oemvm()
+
+define_canoe_vms()
+
+define_vienna()
+
+define_lahaina()
+
+define_x1p42100()

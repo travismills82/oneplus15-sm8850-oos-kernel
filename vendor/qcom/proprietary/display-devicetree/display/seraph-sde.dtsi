@@ -1,0 +1,72 @@
+#include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
+//#include <dt-bindings/clock/qcom,dispcc-seraph.h>
+#include <dt-bindings/clock/qcom,gcc-seraph.h>
+#include <dt-bindings/interconnect/qcom,seraph.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "seraph-sde-common.dtsi"
+
+&soc {
+	smmu_sde_iommu_region_partition: smmu_sde_iommu_region_partition {
+		iommu-addresses = <&smmu_sde_unsec 0x0 0x00020000>;
+	};
+
+	smmu_sde_unsec: qcom,smmu_sde_unsec_cb {
+		compatible = "qcom,smmu_sde_unsec";
+		iommus = <&apps_smmu 0x1C00 0x0002>;
+		memory-region = <&smmu_sde_iommu_region_partition>;
+		qcom,iommu-faults = "non-fatal";
+		qcom,iommu-earlymap; /* for cont-splash */
+		dma-coherent;
+	};
+};
+
+&mdss_mdp {
+	/* data and reg bus scale settings */
+	interconnects = <&mmss_noc MASTER_MDP &gem_noc SLAVE_LLCC>,
+			<&mc_virt MASTER_LLCC &mc_virt SLAVE_EBI1>,
+			<&gem_noc MASTER_APPSS_PROC &cnoc_main SLAVE_DISPLAY_CFG>;
+	interconnect-names = "qcom,sde-data-bus0",
+			"qcom,sde-ebi-bus", "qcom,sde-reg-bus";
+
+	qcom,sde-ib-bw-vote = <2500000 0 800000>;
+	qcom,sde-has-idle-pc;
+};
+
+&mdss_dsi0 {
+	vdda-1p2-supply = <&L6A>;
+	/*
+	 * clocks = <&dispcc DISP_CC_MDSS_BYTE0_CLK>,
+	 *	 <&dispcc DISP_CC_MDSS_BYTE0_CLK_SRC>,
+	 *	 <&dispcc DISP_CC_MDSS_BYTE0_INTF_CLK>,
+	 *	 <&dispcc DISP_CC_MDSS_PCLK0_CLK>,
+	 *	 <&dispcc DISP_CC_MDSS_PCLK0_CLK_SRC>,
+	 *	 <&dispcc DISP_CC_MDSS_ESC0_CLK>,
+	 *	 <&rpmhcc RPMH_CXO_CLK>;
+	 * clock-names = "byte_clk", "byte_clk_rcg", "byte_intf_clk",
+	 *		"pixel_clk", "pixel_clk_rcg", "esc_clk", "xo";
+	 */
+};
+
+&mdss_dsi1 {
+	vdda-1p2-supply = <&L6A>;
+	/*
+	 * clocks = <&dispcc DISP_CC_MDSS_BYTE1_CLK>,
+	 *	 <&dispcc DISP_CC_MDSS_BYTE1_CLK_SRC>,
+	 *	 <&dispcc DISP_CC_MDSS_BYTE1_INTF_CLK>,
+	 *	 <&dispcc DISP_CC_MDSS_PCLK1_CLK>,
+	 *	 <&dispcc DISP_CC_MDSS_PCLK1_CLK_SRC>,
+	 *	 <&dispcc DISP_CC_MDSS_ESC1_CLK>,
+	 *	 <&rpmhcc RPMH_CXO_CLK>;
+	 * clock-names = "byte_clk", "byte_clk_rcg", "byte_intf_clk",
+	 *		"pixel_clk", "pixel_clk_rcg", "esc_clk", "xo";
+	 */
+};
+
+&mdss_dsi_phy0 {
+	vdda-0p9-supply = <&L9A>;
+};
+
+&mdss_dsi_phy1 {
+	vdda-0p9-supply = <&L9A>;
+};

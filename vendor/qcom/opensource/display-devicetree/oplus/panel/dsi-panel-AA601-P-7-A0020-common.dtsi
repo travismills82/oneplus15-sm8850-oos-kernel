@@ -1,0 +1,128 @@
+/***************************************************************
+** Copyright (C), 2025, OPLUS Mobile Comm Corp., Ltd
+**
+** Description : diplay common config
+** Version : NA
+** Date : 2025/02/18
+** Author : Oplus Display
+******************************************************************/
+                qcom,mdss-dsi-h-right-border = <0>;
+                qcom,mdss-dsi-v-top-border = <0>;
+                qcom,mdss-dsi-v-bottom-border = <0>;
+                qcom,mdss-dsi-h-left-border = <0>;
+
+                qcom,lm-split = <636 636>;
+                qcom,compression-mode = "dsc";
+                qcom,mdss-dsc-encoders = <2>;
+                qcom,mdss-dsc-slice-height = <22>;
+                qcom,mdss-dsc-slice-width = <636>;
+                qcom,mdss-dsc-slice-per-pkt = <2>;
+                qcom,mdss-dsc-bit-per-component = <10>;
+                qcom,mdss-dsc-bit-per-pixel = <8>;
+                qcom,mdss-dsc-block-prediction-enable;
+
+                qcom,dsi-panel-date-switch-command = [
+                    39 00 00 00 00 00 04 FF 5A A5 1D
+                ];
+                qcom,mdss-dsi-esd-switch-page-command = [
+                    39 00 00 00 00 00 04 FF 5A A5 00
+                ];
+                qcom,mdss-dsi-default-switch-page-command = [
+                    39 00 00 00 00 00 04 FF 5A A5 00
+                ];
+                qcom,mdss-dsi-panel-info-switch-page-command = [
+                    39 00 00 00 00 00 04 FF 5A A5 00
+                ];
+                qcom,mdss-dsi-hbm-max-command = [
+                    39 00 00 00 00 00 03 51 10 ED
+                ];
+                qcom,mdss-dsi-hbm-exit-max-command = [
+                    39 00 00 00 00 00 03 51 0F FE
+                ];
+                qcom,mdss-dsi-off-command = [
+                    05 00 00 00 14 00 01 28
+                    05 00 00 00 78 00 01 10
+                ];
+                qcom,dsi-panel-btb-switch-command = [
+                    39 00 00 00 00 00 04 FF 5A A5 1D
+                ];
+                qcom,mdss-dsi-lp1-command = [
+                    39 00 00 40 00 00 04 FF 5A A5 00
+                    15 00 00 40 00 00 02 39 00
+                    39 00 00 40 00 00 04 FF 5A A5 2D
+                    39 00 00 40 00 00 03 8A 00 00
+                    //AOD Skip Voltage
+                    39 00 00 40 00 00 04 FF 5A A5 51
+                    // AOD DVHB
+                    39 00 00 40 00 00 07 A5 CC CC CC CC 22 22
+                    39 00 00 40 00 00 07 A6 CC CC CC C9 22 22
+                    39 00 00 40 00 00 07 A7 C9 C9 00 00 22 00
+                    39 00 00 40 00 00 04 FF 5A A5 52
+                    // AOD VarB
+                    39 00 00 40 00 00 07 85 47 47 47 47 00 00
+                    39 00 00 40 00 00 07 86 48 48 48 46 00 00
+                    39 00 00 40 00 00 07 87 46 46 00 00 00 00
+                    39 00 00 40 00 00 04 FF 5A A5 00
+                    39 00 00 00 00 00 05 51 00 00 03 DD
+                ];
+                qcom,mdss-dsi-nolp-command = [
+                    39 00 00 40 00 00 04 FF 5A A5 00
+                    15 00 00 40 00 00 02 38 00
+                    //Normal Skip Voltage
+                    39 00 00 40 00 00 04 FF 5A A5 51
+                    // Normal DVHB
+                    39 00 00 40 00 00 07 A5 CC CC CC C7 22 22
+                    39 00 00 40 00 00 07 A6 C7 C7 C7 C7 22 22
+                    39 00 00 40 00 00 07 A7 C7 C7 00 00 22 00
+                    39 00 00 40 00 00 04 FF 5A A5 52
+                    // Normal VarB
+                    39 00 00 40 00 00 07 85 47 47 47 48 00 00
+                    39 00 00 40 00 00 07 86 48 48 48 48 00 00
+                    39 00 00 40 00 00 07 87 48 48 00 00 00 00
+                    39 00 00 40 00 00 04 FF 5A A5 53
+                    // Normal DMR
+                    15 00 00 40 00 00 02 F0 01
+                    39 00 00 40 00 00 04 FF 5A A5 63
+                    39 00 00 40 00 00 11 F1 20 20 20 20 20 00 00 00 00 00 00 00 00 00 00 00
+                    39 00 00 40 00 00 11 F2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+                    39 00 00 40 00 00 11 F3 00 00 00 00 00 20 20 20 20 20 00 00 00 00 00 00
+                    39 00 00 40 00 00 11 F4 00 00 00 00 00 F0 F0 F0 F0 F0 00 00 00 00 00 00
+                    39 00 00 40 00 00 04 FF 5A A5 53
+                    15 00 00 00 00 00 02 F0 00
+                ];
+                qcom,mdss-dsi-aod-high-mode-command = [
+                    39 00 00 40 00 00 04 FF 5A A5 00
+                    39 00 00 00 00 00 05 51 00 00 03 DD
+                ];
+                qcom,mdss-dsi-aod-low-mode-command = [
+                    39 00 00 40 00 00 04 FF 5A A5 00
+                    39 00 00 00 00 00 05 51 00 00 01 CA
+                ];
+                qcom,mdss-dsi-ultra-low-power-aod-on-command = [
+                    39 00 00 40 00 00 04 FF 5A A5 2D
+                    39 00 00 00 00 00 02 8A 1D
+                ];
+                qcom,mdss-dsi-ultra-low-power-aod-off-command = [
+                    39 00 00 40 00 00 04 FF 5A A5 2D
+                    39 00 00 00 00 00 02 8A 00
+                ];
+
+                qcom,mdss-dsi-lp1-command-state = "dsi_hs_sync2_mode";
+                qcom,mdss-dsi-nolp-command-state = "dsi_hs_sync2_mode";
+                qcom,mdss-dsi-aod-off-pwm-mode2-command-state = "dsi_hs_sync2_mode";
+                qcom,mdss-dsi-aod-on-pwm-mode2-command-state = "dsi_hs_sync2_mode";
+                qcom,mdss-dsi-panel-info-switch-page-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-timing-switch-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
+                qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
+
+                qcom,dsi-panel-date-switch-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-esd-switch-page-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-default-switch-page-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-hbm-max-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-hbm-exit-max-command-state = "dsi_hs_mode";
+                qcom,dsi-panel-btb-switch-command-state = "dsi_hs_mode";
+                qcom,mdss-dsi-timing-switch-compensation-command-state = "dsi_hs_sync2_mode";
+
+                /* SPR CONFIG */
+                qcom,src-chroma-format = <1>;

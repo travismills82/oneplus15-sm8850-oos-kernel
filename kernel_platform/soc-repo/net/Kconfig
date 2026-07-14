@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Network configuration
+#
+
+if NET
+
+menu "Networking options"
+
+source "$(KCONFIG_EXT_PREFIX)net/qrtr/Kconfig"
+source "$(KCONFIG_EXT_PREFIX)net/qmsgq/Kconfig"
+
+endmenu
+
+endif   # if NET

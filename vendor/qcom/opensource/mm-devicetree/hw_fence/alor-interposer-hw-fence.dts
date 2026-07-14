@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "canoe-hw-fence.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Alor Interposer SoC";
+	compatible = "qcom,canoe";
+	qcom,msm-id = <704 0x10000>, <0x10002C0 0x10000>,
+		      <704 0x20000>, <0x10002C0 0x20000>;
+	qcom,board-id = <0 0>;
+};

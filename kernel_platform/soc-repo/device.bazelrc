@@ -1,0 +1,15 @@
+# Disable target visibility check for techpack modules build
+common --check_visibility=false
+# Disable debug symbol compression for dump parsing tools
+common --no//build/kernel/kleaf:zstd_dwarf_compression
+# Unsafe headers needed by our modules
+common --//build/kernel/kleaf:allow_ddk_unsafe_headers
+build --flag_alias=socrepo=//build/kernel/kleaf:socrepo
+build --//build/kernel/kleaf:socrepo=true
+common --//build/kernel/kleaf:user_ddk_unsafe_headers=//soc-repo:unsafe_headers_qcom_group
+
+#martin.li set oplus_platform_name default qcom
+build --//build/kernel/kleaf:oplus_platform_name=qcom
+# Allocate default 80% heap for bazel
+startup --host_jvm_args=-XX:MaxRAMPercentage=80.0
+

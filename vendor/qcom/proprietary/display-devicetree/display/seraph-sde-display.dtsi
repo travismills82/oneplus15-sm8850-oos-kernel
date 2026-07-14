@@ -1,0 +1,78 @@
+#include "seraph-sde.dtsi"
+#include "seraph-sde-display-common.dtsi"
+
+&soc {
+	display_verg_pwr_en: display_gpio_regulator@0 {
+		compatible = "qti-regulator-fixed";
+		regulator-name = "display_verg_pwr_en";
+		regulator-min-microvolt = <5500000>;
+		regulator-max-microvolt = <5500000>;
+		regulator-enable-ramp-delay = <233>;
+		gpio = <&tlmm 13 0>;
+		enable-active-high;
+		regulator-boot-on;
+		proxy-supply = <&display_verg_pwr_en>;
+		qcom,proxy-consumer-enable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_verg_pwr_en_default>;
+	};
+};
+
+&sde_dsi {
+	clocks = <&mdss_dsi_phy0 0>,
+		 <&mdss_dsi_phy0 1>,
+		 <&mdss_dsi_phy1 0>,
+		 <&mdss_dsi_phy1 1>;
+		 /*
+		  * Currently the dsi clock handles are under the dsi
+		  * controller DT node. As soon as the controller probe
+		  * finishes, the dispcc sync state can get called before
+		  * the dsi_display probe potentially disturbing the clock
+		  * votes for cont_splash use case. Hence we are no longer
+		  * protected by the component model in this case against the
+		  * disp cc sync state getting triggered after the dsi_ctrl
+		  * probe. To protect against this incorrect sync state trigger
+		  * add this dummy MDP clk vote handle to the dsi_display
+		  * DT node. Since the dsi_display driver does not parse
+		  * MDP clock nodes, no actual vote shall be added and this
+		  * change is done just to satisfy sync state requirements.
+		  */
+		 //<&dispcc DISP_CC_MDSS_MDP_CLK>;
+	clock-names = "pll_byte_clk0", "pll_dsi_clk0",
+		      "pll_byte_clk1", "pll_dsi_clk1";
+		     // "mdp_core_clk";
+
+	dispverg-supply = <&display_verg_pwr_en>;
+};
+
+&sde_dsi1 {
+	clocks = <&mdss_dsi_phy0 0>,
+		 <&mdss_dsi_phy0 1>,
+		 <&mdss_dsi_phy1 0>,
+		 <&mdss_dsi_phy1 1>;
+		 /*
+		  * Currently the dsi clock handles are under the dsi
+		  * controller DT node. As soon as the controller probe
+		  * finishes, the dispcc sync state can get called before
+		  * the dsi_display probe potentially disturbing the clock
+		  * votes for cont_splash use case. Hence we are no longer
+		  * protected by the component model in this case against the
+		  * disp cc sync state getting triggered after the dsi_ctrl
+		  * probe. To protect against this incorrect sync state trigger
+		  * add this dummy MDP clk vote handle to the dsi_display
+		  * DT node. Since the dsi_display driver does not parse
+		  * MDP clock nodes, no actual vote shall be added and this
+		  * change is done just to satisfy sync state requirements.
+		  */
+		 //<&dispcc DISP_CC_MDSS_MDP_CLK>;
+	clock-names = "pll_byte_clk0", "pll_dsi_clk0",
+		      "pll_byte_clk1", "pll_dsi_clk1";
+		      //"mdp_core_clk";
+
+	dispverg-supply = <&display_verg_pwr_en>;
+};
+
+&mdss_mdp {
+	connectors = <&sde_dsi &smmu_sde_unsec>;
+};
+

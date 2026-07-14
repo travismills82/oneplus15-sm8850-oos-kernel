@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0
+
+config ZSMALLOC_NO_ZONE_NORMAL
+	bool "Prevent zsmalloc pages from being allocated from Normal zone"
+	help
+	  This feature, when enabled, helps prevent zsmalloc pages from being
+	  allocated from the Normal zone. ZRAM ignores the min_watermark when
+	  allocating memory. This presents a problem because that makes it
+	  possible for zram to completely deplete the memory in a zone.
+	  To prevent ZRAM from depleting the ZONE_NOMRAL memory when it fallsback,
+	  this feature stops zram from allocating any memory from the normal zone.
+	  if unsure, say No here.
+

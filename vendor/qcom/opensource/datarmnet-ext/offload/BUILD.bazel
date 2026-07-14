@@ -1,0 +1,14 @@
+load(":define_offload.bzl", "define_offload")
+load("//build/kernel/kleaf:kernel.bzl", "ddk_module")
+
+define_offload("sun", "consolidate")
+define_offload("sun", "perf")
+
+define_offload("canoe", "consolidate")
+define_offload("canoe", "perf")
+
+define_offload("vienna", "consolidate")
+define_offload("vienna", "perf")
+
+define_offload("lahaina", "consolidate")
+define_offload("lahaina", "perf")

@@ -1,0 +1,212 @@
+# SPDX-License-Identifier: GPL-2.0
+
+load("@rules_pkg//pkg:install.bzl", "pkg_install")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
+load(
+    "//build/kernel/kleaf:kernel.bzl",
+    "ddk_module",
+    "kernel_build",
+    "kernel_compile_commands",
+    "kernel_module_group",
+)
+
+kernel_build(
+    name = "trusty_aarch64",
+    srcs = ["//common:kernel_aarch64_sources"],
+    outs = [],
+    base_kernel = "//common:kernel_aarch64",
+    defconfig = "//common:arch/arm64/configs/gki_defconfig",
+    make_goals = [
+        "modules",
+    ],
+    makefile = "//common:Makefile",
+    module_outs = [
+        "ffa-core.ko",
+        "ffa-module.ko",
+        "system_heap.ko",
+    ],
+    post_defconfig_fragments = [
+        "arm_ffa.fragment",
+        "system_heap.fragment",
+    ],
+    strip_modules = True,
+)
+
+ddk_module(
+    name = "trusty-core",
+    srcs = [
+        "drivers/trusty/trusty.c",
+        "drivers/trusty/trusty-irq.c",
+        "drivers/trusty/trusty-mem.c",
+        "drivers/trusty/trusty-sched-share.c",
+    ],
+    out = "trusty-core.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-ffa",
+    srcs = [
+        "drivers/trusty/trusty-ffa-transport.c",
+    ],
+    out = "trusty-ffa.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        "//common:all_headers_aarch64",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-smc",
+    srcs = [
+        "drivers/trusty/trusty-smc-arm64.S",
+        "drivers/trusty/trusty-smc-transport.c",
+    ],
+    out = "trusty-smc.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        ":trusty-ffa",
+        "//common:all_headers_aarch64",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-ipc",
+    srcs = [
+        "drivers/trusty/trusty-ipc.c",
+    ],
+    out = "trusty-ipc.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-log",
+    srcs = [
+        "drivers/trusty/trusty-log.c",
+    ],
+    out = "trusty-log.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-test",
+    srcs = [
+        "drivers/trusty/trusty-test-arm64.S",
+        "drivers/trusty/trusty-test-main.c",
+    ],
+    out = "trusty-test.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-virtio",
+    srcs = [
+        "drivers/trusty/trusty-virtio.c",
+    ],
+    out = "trusty-virtio.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-virtio-polling",
+    srcs = [
+        "drivers/trusty/trusty-virtio.c",
+    ],
+    out = "trusty-virtio-polling.ko",
+    defconfig = "trusty_virtio_poll_vqueues.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        ":trusty-core",
+        "//common-modules/trusty:headers",
+    ],
+)
+
+ddk_module(
+    name = "trusty-populate",
+    srcs = [
+        "drivers/trusty/trusty-populate.c",
+    ],
+    out = "trusty-populate.ko",
+    defconfig = "trusty_defconfig.fragment",
+    kconfig = "Kconfig",
+    kernel_build = ":trusty_aarch64",
+    deps = [
+        "//common:all_headers_aarch64",
+    ],
+)
+
+kernel_module_group(
+    name = "trusty_aarch64_external_modules",
+    srcs = [
+        ":trusty-core",
+        ":trusty-ffa",
+        ":trusty-ipc",
+        ":trusty-log",
+        ":trusty-populate",
+        ":trusty-smc",
+        ":trusty-test",
+        ":trusty-virtio",
+        ":trusty-virtio-polling",
+    ],
+)
+
+kernel_compile_commands(
+    name = "trusty_aarch64_compile_commands",
+    deps = [
+        ":trusty_aarch64",
+        ":trusty_aarch64_external_modules",
+    ],
+)
+
+pkg_files(
+    name = "trusty_aarch64_dist_files",
+    srcs = [
+        ":trusty_aarch64",
+        ":trusty_aarch64_external_modules",
+    ],
+    strip_prefix = strip_prefix.files_only(),
+    visibility = ["//visibility:private"],
+)
+
+pkg_install(
+    name = "trusty_aarch64_dist",
+    srcs = [":trusty_aarch64_dist_files"],
+)

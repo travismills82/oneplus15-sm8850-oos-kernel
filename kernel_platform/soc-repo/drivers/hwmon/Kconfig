@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Hardware monitoring chip drivers configuration
+#
+
+if HWMON
+
+comment "Native drivers"
+
+config SENSORS_QTI_AMOLED_ECM
+	tristate "Qualcomm Technologies, Inc. AMOLED Current Monitor"
+	depends on SPMI
+	help
+	  Qualcomm Technologies, Inc. ECM driver supports measurement of
+	  OLED display power with a time granularity in sub-frame or
+	  multiple frames of image data. The measurement can be for a short
+	  period (N frames) or a long period (continuous mode).
+
+	  To compile this driver as module, choose M here: the module will
+	  be called qti_amoled_ecm.
+
+config SENSORS_QTI_BTL
+	tristate "Qualcomm Technologies, Inc. Battery Temperature Logging"
+	depends on SPMI
+	help
+	  Qualcomm Technologies, Inc. Battery temperature logging driver
+	  supports reading back how long device spends within a given
+	  set of temperature ranges.
+
+	  To compile this driver as module, choose M here: the module will
+	  be called qti_btl.
+
+endif # HWMON

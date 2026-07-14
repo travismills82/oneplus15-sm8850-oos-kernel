@@ -1,0 +1,34 @@
+//
+/* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *  SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
+#include "lpass-audio-cdc-1.0.dtsi"
+#include "alor-lpi.dtsi"
+#include "lpass-audio-bt-swr.dtsi"
+#include "lpass-cdc-gpio.dtsi"
+#include "alor-audio-lpass-reg.dtsi"
+#include "wsa884x.dtsi"
+#include "wcd939x.dtsi"
+
+&alor_snd {
+	qcom,model = "alor-rumi-snd-card";
+	compatible = "qcom,canoe-asoc-snd-stub";
+	asoc-codec = <&stub_codec>;
+	asoc-codec-names = "msm-stub-codec.1";
+};
+
+&lpi_tlmm {
+	status = "disabled";
+	hap_swr_slave_reg: hap_swr_slave_reg {
+
+	};
+};
+
+&lpass_cdc {
+	status = "disabled";
+};
+
+&lpass_bt_swr {
+	status = "disabled";
+};

@@ -1,0 +1,28 @@
+load(":define_modules.bzl", "define_modules")
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers")
+
+define_modules("sun", "consolidate")
+define_modules("sun", "perf")
+
+define_modules("canoe", "consolidate")
+define_modules("canoe", "perf")
+
+define_modules("vienna", "consolidate")
+define_modules("vienna", "perf")
+
+define_modules("lahaina", "consolidate")
+define_modules("lahaina", "perf")
+
+package(
+    default_visibility = [
+        "//visibility:public",
+    ],
+)
+
+ddk_headers(
+    name = "rmnet_core_headers",
+    hdrs = glob([
+        "core/*.h",
+    ]),
+    includes = ["core"],
+)

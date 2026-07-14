@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Virtualization support drivers
+#
+
+if VIRT_DRIVERS
+
+source "$(KCONFIG_EXT_PREFIX)drivers/virt/gunyah/Kconfig"
+
+endif

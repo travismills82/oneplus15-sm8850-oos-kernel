@@ -1,0 +1,35 @@
+headers_src = [
+    "include/uapi/linux/*.h",
+]
+
+rmnet_headers_out = [
+    "linux/rmnet_mem_uapi.h",
+]
+
+rmnet_kernel_headers_verbose = "--verbose "
+
+genrule {
+    name: "qti_generate_rmnet_mem_kernel_headers",
+    tools: ["headers_install.sh",
+            "unifdef"
+    ],
+    tool_files: [
+         "rmnet_kernel_headers.py",
+    ],
+    srcs: headers_src,
+    cmd: "python3 -u $(location rmnet_kernel_headers.py) " +
+        rmnet_kernel_headers_verbose +
+        "--gen_dir $(genDir) " +
+        "--rmnet_include_uapi $(locations include/uapi/linux/*.h) " +
+        "--unifdef $(location unifdef) " +
+        "--headers_install $(location headers_install.sh)",
+    out: rmnet_headers_out,
+}
+
+cc_library_headers {
+    name: "qti_rmnet_mem_kernel_headers",
+    generated_headers: ["qti_generate_rmnet_mem_kernel_headers"],
+    export_generated_headers: ["qti_generate_rmnet_mem_kernel_headers"],
+    vendor: true,
+    recovery_available: true
+}

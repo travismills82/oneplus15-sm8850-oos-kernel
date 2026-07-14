@@ -1,0 +1,17 @@
+package(
+    default_visibility = [
+        "//visibility:public",
+    ],
+)
+
+load(":oplus_local_modules.bzl", "define_oplus_local_modules")
+
+filegroup(
+    name = "srcs",
+    srcs = glob([
+        "**/*.c",
+        "**/*.h",
+        ]),
+)
+
+define_oplus_local_modules()

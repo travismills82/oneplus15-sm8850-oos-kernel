@@ -1,0 +1,175 @@
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers")
+
+package(
+    default_visibility = [
+      "//visibility:public"],
+)
+
+ddk_headers(
+    name = "linux_includes",
+    hdrs = glob([
+      "include/linux/*.h",
+    ]),
+    includes = ["include"]
+)
+
+ddk_headers(
+    name = "uapi_headers",
+    hdrs = glob([
+      "include/uapi/display/drm/*.h",
+      "include/uapi/display/hdcp/*.h",
+      "include/uapi/display/media/*.h",
+    ]),
+    includes = ["include/uapi/display"]
+)
+
+ddk_headers(
+    name = "dp_headers",
+    hdrs = glob([
+      "msm/dp/*.h",
+    ]),
+    includes = ["msm/dp"]
+)
+
+ddk_headers(
+    name = "dsi_hfi_headers",
+    hdrs = glob([
+      "msm/dsi/hfi/*.h",
+    ]),
+    includes = ["msm/dsi/hfi"]
+)
+
+ddk_headers(
+    name = "dsi_headers",
+    hdrs = glob([
+      "msm/dsi/*.h",
+    ]),
+    includes = ["msm/dsi"]
+)
+
+ddk_headers(
+    name = "hdmi_headers",
+    hdrs = glob([
+      "msm/hdmi/*.h",
+    ]),
+    includes = ["msm/hdmi"]
+)
+
+ddk_headers(
+    name = "hfi_headers",
+    hdrs = glob([
+      "msm/hfi/*.h",
+    ]),
+    includes = ["msm/hfi"]
+)
+
+ddk_headers(
+    name = "sde_hfi_headers",
+    hdrs = glob([
+      "msm/sde/hfi/*.h",
+    ]),
+    includes = ["msm/sde/hfi"]
+)
+
+ddk_headers(
+    name = "iris_core_headers",
+    hdrs = glob([
+      "msm/iris/core/*.h",
+      "msm/iris/core/include/*.h",
+      "msm/iris/core/common/*.h",
+      "msm/iris/core/iris7p/*.h",
+    ]),
+    includes = [
+      "msm/iris/core/include",
+      "msm/iris/core",
+      "msm/iris/core/common",
+      "msm/iris/core/iris7p",
+     ]
+)
+
+ddk_headers(
+    name = "iris_vendor_headers",
+    hdrs = glob([
+      "msm/iris/vendor/*.h",
+      "msm/iris/vendor/include/*.h",
+      "msm/iris/vendor/common/*.h",
+      "msm/iris/vendor/iris7p/*.h",
+    ]),
+    includes = [
+      "msm/iris/vendor",
+      "msm/iris/vendor/common",
+      "msm/iris/vendor/iris7p",
+     ]
+)
+
+ddk_headers(
+    name = "sde_headers",
+    hdrs = glob([
+      "msm/sde/*.h",
+    ]),
+    includes = ["msm/sde"]
+)
+
+ddk_headers(
+    name = "rotator_headers",
+    hdrs = glob([
+      "rotator/*.h",
+    ]),
+    includes = ["rotator"]
+)
+
+ddk_headers(
+    name = "msm_headers",
+    hdrs = glob([
+      "msm/*.h",
+    ]),
+    includes = ["msm"]
+)
+
+#ifdef OPLUS_FEATURE_DISPLAY
+ddk_headers(
+    name = "oplus_drm_headers",
+    hdrs = glob([
+      "oplus/SM8850/include/*.h",
+      "oplus/SM8850/*.h",
+      "oplus/common/trackpoint/*.h",
+    ]),
+    includes = ["oplus/SM8850/include", "oplus/SM8850", "oplus/common/trackpoint"]
+)
+#endif /* OPLUS_FEATURE_DISPLAY */
+
+ddk_headers(
+    name = "display_drivers_headers",
+#ifdef OPLUS_FEATURE_DISPLAY
+    hdrs = [ ":linux_includes", ":uapi_headers", ":msm_headers",":dp_headers", ":dsi_hfi_headers", ":dsi_headers",":hfi_headers",":sde_hfi_headers",":sde_headers",":rotator_headers",":hdmi_headers",":iris_core_headers",":iris_vendor_headers", ":oplus_drm_headers"]
+#else /* OPLUS_FEATURE_DISPLAY */
+#    hdrs = [ ":linux_includes", ":uapi_headers", ":msm_headers",":dp_headers", ":dsi_hfi_headers", ":dsi_headers",":hfi_headers",":sde_hfi_headers",":sde_headers",":rotator_headers",":hdmi_headers"]
+#endif /* OPLUS_FEATURE_DISPLAY */
+)
+
+load(":targets/sun.bzl", "define_sun")
+define_sun()
+
+load(":targets/sunvm.bzl", "define_sunvm")
+define_sunvm()
+
+load(":targets/canoevm.bzl", "define_canoevm")
+define_canoevm()
+
+load(":targets/pineapple.bzl", "define_pineapple")
+define_pineapple()
+
+load(":targets/niobe.bzl", "define_niobe")
+define_niobe()
+
+load(":targets/monaco.bzl", "define_monaco")
+define_monaco()
+
+load(":targets/canoe.bzl", "define_canoe")
+define_canoe()
+
+load(":targets/vienna.bzl", "define_vienna")
+define_vienna()
+
+load(":targets/seraph.bzl", "define_seraph")
+define_seraph()

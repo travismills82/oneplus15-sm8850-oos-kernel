@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "alor-peach-bt.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Alor MTP + Peach WLAN + PMIH010X SMB1398 + SN220U + Panderio";
+	compatible = "qcom,alor-atp", "qcom,alor", "qcom,atp", "qcom,alor-mtp", "qcom,mtp",
+		     "qcom,alor-rcm", "qcom,rcm", "qcom,alor-qrd", "qcom,qrd", "qcom,alor-cdp", "qcom,cdp";
+	qcom,msm-id = <685 0x10000>, <727 0x10000>;
+	qcom,board-id = <0x10021 0>, <0x30008 0>, <0x20015 0>, <0x2000B 0>, <0x20001 0>;
+};

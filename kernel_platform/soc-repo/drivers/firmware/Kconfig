@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# For a description of the syntax of this configuration file,
+# see Documentation/kbuild/kconfig-language.rst.
+#
+
+menu "Firmware Drivers"
+
+source "$(KCONFIG_EXT_PREFIX)drivers/firmware/arm_scmi/Kconfig"
+source "$(KCONFIG_EXT_PREFIX)drivers/firmware/qcom/Kconfig"
+
+endmenu

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Ethernet LAN device configuration
+#
+
+menuconfig ETHERNET
+	bool "Ethernet driver support"
+	depends on NET
+	default y
+	help
+	  This section contains all the Ethernet device drivers.
+
+if ETHERNET
+source "$(KCONFIG_EXT_PREFIX)drivers/net/ethernet/stmicro/Kconfig"
+endif # ETHERNET

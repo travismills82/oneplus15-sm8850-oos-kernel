@@ -1,0 +1,13 @@
+/dts-v1/;
+/plugin/;
+
+#include "canoe-dsp_v2.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. canoe v2 SoC";
+	compatible = "qcom,canoe";
+	qcom,msm-id = <0x294 0x20000>, <0x295 0x20000>,
+			<0x1000294 0x20000>, <0x1000295 0x20000>,
+			<0x2C0 0x20000>, <0x10002C0 0x20000>;
+	qcom,board-id = <0 0>;
+};

@@ -1,0 +1,15 @@
+diff --git a/drivers/dma/qcom/gpi.c b/drivers/dma/qcom/gpi.c
+index 52a7c8f2498f..24b7765de7f7 100644
+--- a/drivers/dma/qcom/gpi.c
++++ b/drivers/dma/qcom/gpi.c
+@@ -14,8 +14,8 @@
+ #include <linux/dma/qcom-gpi-dma.h>
+ #include <linux/scatterlist.h>
+ #include <linux/slab.h>
+-#include "../dmaengine.h"
+-#include "../virt-dma.h"
++#include "dmaengine.h"
++#include "virt-dma.h"
+
+ #define TRE_TYPE_DMA		0x10
+ #define TRE_TYPE_GO		0x20

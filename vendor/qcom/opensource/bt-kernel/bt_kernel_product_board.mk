@@ -1,0 +1,22 @@
+# Build BT kernel drivers
+
+ifeq ($(TARGET_USES_QMAA_OVERRIDE_BLUETOOTH), true)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btpower.ko
+endif
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko
+
+ifeq ($(TARGET_USES_QMAA_OVERRIDE_BLUETOOTH_AUDIO), true)
+ifeq ($(TARGET_BOARD_PLATFORM), sun canoe)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btfmcodec.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btfm_slim_codec.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
+else
+BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
+endif
+endif
+ifeq ($(TARGET_USES_QTI_UWB), true)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/spi_cnss_proto.ko
+endif
+ifeq ($(BOARD_HAVE_STANDALONE_THREAD), true)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/thqspi_proto.ko
+endif

@@ -1,0 +1,16 @@
+/*
+ *   <author>     <data>      <desc>
+ *   LiFenfen   2024/09/09  , select BDF by device-tree , bug id 7902090
+ */
+
+/dts-v1/;
+/plugin/;
+#include <dt-bindings/interconnect/qcom,canoe.h>
+#include "../canoe-peach-cnss.dts"
+
+&wlan_peach {
+	//#ifdef OPLUS_FEATURE_WIFI_BEAM
+	vdd-wlan-ant-share-supply = <&L8B>;
+	qcom,vdd-wlan-ant-share-config = <2500000 2500000 0 0 1>;
+	//#endif /* OPLUS_FEATURE_WIFI_BEAM */
+};
