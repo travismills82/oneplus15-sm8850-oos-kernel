@@ -27,13 +27,32 @@ OnePlus packaging tree: `kernel_aarch64` does not require the OnePlus-only
 16, fingerprint, and June 2026 security-patch AVB properties.
 
 `//soc-repo:canoe_perf_dist` completed successfully with this configuration.
-The staged `boot.img` (SHA-256
-`3a85c055984df69d800f0d76b4423fd04b95fe58821c54e7c174744733bcc16f`) was
-flashed alone to `boot_a` on an unlocked CPH2747, booted Android normally, and
-allowed TWRP to map encrypted userdata and detect the device PIN.
 
-Do not flash the source-generated `vendor_boot.img`, `dtbo.img`, or
-`vendor_dlkm.img` for this test configuration. They do not match the stock
-partition layouts; retain the matching stock images while testing this boot
-image. The generated boot image uses the source tree's test AVB key, so it is
-only suitable for an unlocked device.
+## Built-in CIFS and verified module pairing
+
+CIFS is built into the kernel (`CONFIG_CIFS=y`), with UTF-8 NLS enabled. The
+NetFS dependency is also built in, so neither `cifs.ko` nor `netfs.ko` is
+required in `system_dlkm`.
+
+The source boot image and its source-built GKI modules must be flashed as a
+pair. Flashing the boot image alone leaves Android mounting the stock GKI
+module image; the stock module signature is then rejected by the source
+kernel, which causes Wi-Fi and Bluetooth to turn off.
+
+On an unlocked CPH2747 running OxygenOS 16.0.8.300, the verified pair is:
+
+- `boot.img` flashed to `boot_a`;
+- `system_dlkm.flatten.ext4.img` flashed in fastbootd to `system_dlkm_a`;
+- the matching stock `vbmeta_a` flashed with fastboot's
+  `--disable-verity --disable-verification` flags for this custom-image test.
+
+Fastbootd expands `system_dlkm_a` to the companion image's 88,518,656-byte
+layout. Keep backups of the stock `system_dlkm_a` and `vbmeta_a` before doing
+this. Do not flash the source-generated `vendor_boot.img`, `dtbo.img`, or
+`vendor_dlkm.img`; they do not match the stock partition layouts.
+
+This exact pairing booted Android successfully, mounted `/system_dlkm` as
+source ext4, loaded `rfkill`, `6lowpan`, Bluetooth, and `cfg80211` without
+signature errors, connected Wi-Fi, and kept Bluetooth connected. Runtime
+verification also showed `nodev cifs` in `/proc/filesystems`, `cifs_mount` in
+the kernel symbol table, and no `cifs` module loaded.
