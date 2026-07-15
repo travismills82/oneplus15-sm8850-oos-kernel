@@ -232,9 +232,15 @@ write_file(
     visibility = ["//visibility:private"],
 )
 
+# The stock CPH2747 OxygenOS 16.0.8.300 GKI commit is an upstream Android
+# Common Kernel release. Unlike the OnePlus-patched common tree, it does not
+# produce the optional vmlinux_oki artifact. Keep the normal GKI output set
+# intact for the other targets and make only the stock-compatible arm64 build
+# omit that non-upstream output.
+_STOCK_GKI_AARCH64_OUTS = [out for out in DEFAULT_GKI_OUTS if out != "vmlinux_oki"]
 common_kernel(
     name = "kernel_aarch64",
-    outs = DEFAULT_GKI_OUTS,
+    outs = _STOCK_GKI_AARCH64_OUTS,
     abi_definition_stg = "gki/aarch64/abi.stg",
     additional_kmi_symbol_lists = [":aarch64_additional_kmi_symbol_lists"],
     arch = "arm64",

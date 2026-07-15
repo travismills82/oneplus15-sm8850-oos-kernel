@@ -165,8 +165,9 @@ def define_single_android_build(
         avbtool = "//prebuilts/kernel-build-tools:avbtool",
         key = "//tools/mkbootimg:gki/testdata/testkey_rsa4096.pem",
         props = [
-            "com.android.build.boot.os_version:13",
-            "com.android.build.boot.security_patch:2023-05-05",
+            "com.android.build.boot.os_version:16",
+            "com.android.build.boot.fingerprint:qti/canoe/canoe:16/BP2A.250605.015/1780323679878:user/release-keys",
+            "com.android.build.boot.security_patch:2026-06-01",
         ],
         boot_partition_size = build_img_opts.boot_partition_size,
     )

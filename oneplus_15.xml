@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
   <remote fetch="https://git.codelinaro.org/clo/la" name="clo-la"/>
+  <remote fetch="https://android.googlesource.com" name="aosp-gki"/>
   <remote fetch="https://github.com/OnePlusOSS" name="origin"/>
   <default remote="clo-la" revision="dummy_revision" sync-c="true" sync-tags="false"/>
-  <project remote="origin" name="android_kernel_common_oneplus_sm8850" path="kernel_platform/common" revision="oneplus/sm8850_b_16.0.0_oneplus_15">
+  <project remote="aosp-gki" name="kernel/common" path="kernel_platform/common" revision="b2a876903b495c444a94b16f50d1463ffe953957" upstream="refs/tags/android16-6.12-2025-06_r53">
     <linkfile dest="kernel_platform/.source_date_epoch_dir" src="."/>
   </project>
   <project remote="origin" name="android_kernel_oneplus_sm8850" path="kernel_platform/soc-repo" revision="oneplus/sm8850_b_16.0.0_oneplus_15">
