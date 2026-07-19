@@ -178,6 +178,10 @@ struct fscrypt_operations {
 	 */
 	bool (*has_stable_inodes)(struct super_block *sb);
 
+	/* No longer used.  Must not be set. */
+	struct block_device **(*get_devices)(struct super_block *sb,
+					     unsigned int *num_devs);
+
 	/*
 	 * Retrieve the list of block devices to which the filesystem may write
 	 * encrypted file contents.
@@ -190,11 +194,10 @@ struct fscrypt_operations {
 	 * external journal devices), and wants to support inline encryption,
 	 * then it must implement this function.  Otherwise it's not needed.
 	 */
-	unsigned int (*get_devices)(
+	ANDROID_KABI_USE(1, unsigned int (*get_devices_new)(
 		struct super_block *sb,
-		struct block_device *devs[FSCRYPT_MAX_DEVICES]);
+		struct block_device *devs[FSCRYPT_MAX_DEVICES]));
 
-	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
