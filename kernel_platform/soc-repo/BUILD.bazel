@@ -144,6 +144,13 @@ ddk_headers(
     visibility = ["//visibility:public"],
 )
 
+ddk_headers(
+    name = "pinctrl_msm_internal_headers",
+    hdrs = ["drivers/pinctrl/qcom/pinctrl-msm.h"],
+    linux_includes = ["drivers/pinctrl/qcom"],
+    visibility = ["//visibility:public"],
+)
+
 ddk_uapi_headers(
     name = "msm_uapi_headers",
     srcs = glob(["include/uapi/**/*.h"]),

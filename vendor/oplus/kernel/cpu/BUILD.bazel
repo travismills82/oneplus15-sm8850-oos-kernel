@@ -4,6 +4,13 @@ package(
     ],
 )
 
+load("//build/kernel/kleaf:kernel.bzl", "ddk_headers")
 load(":oplus_local_modules.bzl", "define_oplus_local_modules")
+
+ddk_headers(
+    name = "oplus_geas_bwmon_headers",
+    hdrs = ["geas/system/bwmon_geas.h"],
+    includes = ["geas/system"],
+)
 
 define_oplus_local_modules()

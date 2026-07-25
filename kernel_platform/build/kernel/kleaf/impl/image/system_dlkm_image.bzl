@@ -91,6 +91,8 @@ def _system_dlkm_image_impl(ctx):
 
     additional_inputs.extend(ctx.files.modules_list)
     additional_inputs.extend(ctx.files.modules_blocklist)
+    if ctx.file.modules_load:
+        additional_inputs.append(ctx.file.modules_load)
     additional_inputs.extend(ctx.files.props)
     additional_inputs.extend(ctx.files.internal_extra_archive_files)
 
@@ -138,6 +140,7 @@ def _system_dlkm_image_impl(ctx):
                    (
                      MODULES_LIST={modules_list}
                      MODULES_BLOCKLIST={modules_blocklist}
+                     SYSTEM_DLKM_MODULES_LOAD_LIST="{system_dlkm_modules_load_list}"
                      SYSTEM_DLKM_PROPS={system_dlkm_props}
                      MODULES_STAGING_DIR={modules_staging_dir}
                      SYSTEM_DLKM_FS_TYPE={fs_type}
@@ -171,6 +174,7 @@ def _system_dlkm_image_impl(ctx):
             modules_staging_dir = modules_staging_dir,
             modules_list = utils.optional_single_path(ctx.files.modules_list),
             modules_blocklist = utils.optional_single_path(ctx.files.modules_blocklist),
+            system_dlkm_modules_load_list = ctx.file.modules_load.path if ctx.file.modules_load else "",
             system_dlkm_props = utils.optional_path(ctx.file.props),
             fs_type = fs_type,
             system_dlkm_staging_dir = system_dlkm_staging_dir,
@@ -275,6 +279,11 @@ When included in a `pkg_files` target included by `pkg_install`, this rule copie
             ```
             blocklist module_name
             ```
+        """),
+        "modules_load": attr.label(allow_single_file = True, doc = """
+            An optional file whose contents replace `modules.load` in the
+            system_dlkm image after its module set has been staged. This keeps
+            module inclusion separate from the device's boot-time load policy.
         """),
         "fs_types": attr.string_list(
             doc = """List of file systems type for `system_dlkm` images.

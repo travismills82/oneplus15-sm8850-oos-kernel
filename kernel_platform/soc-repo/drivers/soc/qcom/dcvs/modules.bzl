@@ -31,6 +31,7 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
+            "//vendor/oplus/kernel/cpu:oplus_geas_bwmon_headers",
         ],
         copts = ["-DCONFIG_OPLUS_FEATURE_GEAS_FDRIVE"],
     )

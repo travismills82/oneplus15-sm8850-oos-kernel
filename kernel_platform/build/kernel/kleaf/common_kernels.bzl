@@ -74,6 +74,7 @@ def common_kernel(
         module_implicit_outs = None,
         protected_module_names_list = None,
         gki_system_dlkm_modules = None,
+        system_dlkm_modules_load = None,
         make_goals = None,
         abi_definition_stg = None,
         kmi_enforced = None,
@@ -150,6 +151,8 @@ def common_kernel(
         page_size: See [kernel_build.page_size](kernel.md#kernel_build-page_size)
         ddk_module_headers: See [kernel_build.ddk_module_headers](kernel.md#kernel_build-ddk_module_headers)
         gki_system_dlkm_modules: system_dlkm module_list
+        system_dlkm_modules_load: Optional replacement for the generated
+            `modules.load` file in the system_dlkm image.
         build_gki_artifacts: nonconfigurable. If true, build GKI artifacts under
             target name `<name>_gki_artifacts`.
         gki_boot_img_sizes: gki_artifacts.boot_img_sizes
@@ -179,6 +182,7 @@ def common_kernel(
         module_implicit_outs = module_implicit_outs,
         protected_module_names_list = protected_module_names_list,
         gki_system_dlkm_modules = gki_system_dlkm_modules,
+        system_dlkm_modules_load = system_dlkm_modules_load,
         make_goals = make_goals,
         abi_definition_stg = abi_definition_stg,
         kmi_enforced = kmi_enforced,
@@ -323,6 +327,7 @@ def common_kernel(
         kernel_modules_install = name + "_modules_install",
         build_flatten = True,
         modules_list = gki_system_dlkm_modules,
+        modules_load = system_dlkm_modules_load,
         fs_types = ["erofs", "ext4"],
         internal_extra_archive_files = system_dlkm_extra_archive_files,
     )

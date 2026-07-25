@@ -25,7 +25,13 @@ def define_test_kit_module():
     kernel_version = oplus_ddk_get_kernel_version()
 
     if bazel_support_platform == "qcom":
-        ddk_header_deps = []
+        # test-kit.c uses GPIO core internals from gpiolib.h.  Declare the
+        # dependency explicitly so Kleaf stages the header in its sandbox and
+        # generates the matching include path.
+        ddk_header_deps = [
+            "//common:gpiolib_internal_headers",
+            "//soc-repo:pinctrl_msm_internal_headers",
+        ]
         kconfig = None
         defconfig = None
         if version_compare(kernel_version, "6.12") :
@@ -54,9 +60,6 @@ def define_test_kit_module():
             local_defines = [],
             conditional_defines = {
             },
-            copts = [
-                "-I$(srctree)/drivers/gpio"
-            ],
             hdrs = [
                 ":oplus_chg_v2_headers"
             ],
@@ -80,9 +83,6 @@ def define_test_kit_module():
             local_defines = [],
             conditional_defines = {
             },
-            copts = [
-                "-I$(srctree)/drivers/gpio"
-            ],
             hdrs = [
                 ":oplus_chg_v2_headers"
             ],

@@ -100,6 +100,14 @@ write_file(
     ],
 )
 
+# Match stock OxygenOS packaging: keep the GKI module set intact but leave
+# system_dlkm's load list empty so userspace controls device-specific order.
+write_file(
+    name = "oplus_system_dlkm_modules_load",
+    out = "android/oplus_system_dlkm_modules_load",
+    content = [],
+)
+
 write_file(
     name = "gki_aarch64_protected_module_names",
     out = "gki/aarch64/protected_module_names",
@@ -254,6 +262,7 @@ common_kernel(
     ],
     gki_boot_img_sizes = _GKI_AARCH64_BOOT_IMAGE_SIZES,
     gki_system_dlkm_modules = "android/gki_system_dlkm_modules_arm64",
+    system_dlkm_modules_load = ":oplus_system_dlkm_modules_load",
     kcflags = COMMON_KCFLAGS,
     kmi_enforced = True,
     kmi_symbol_list = "gki/aarch64/symbols/base",
@@ -1574,6 +1583,13 @@ pkg_install(
 alias(
     name = "all_headers",
     actual = "all_headers_aarch64",
+    visibility = ["//visibility:public"],
+)
+
+ddk_headers(
+    name = "gpiolib_internal_headers",
+    hdrs = ["drivers/gpio/gpiolib.h"],
+    linux_includes = ["drivers/gpio"],
     visibility = ["//visibility:public"],
 )
 

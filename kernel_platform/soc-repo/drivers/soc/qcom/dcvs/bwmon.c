@@ -26,7 +26,7 @@
 #include <soc/qcom/dcvs.h>
 #include <trace/hooks/sched.h>
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_GEAS_FDRIVE)
-#include <linux/bwmon_geas.h>
+#include <bwmon_geas.h>
 #endif
 #include "bwmon.h"
 #include "trace-dcvs.h"

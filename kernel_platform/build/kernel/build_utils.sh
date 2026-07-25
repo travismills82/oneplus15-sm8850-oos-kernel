@@ -377,6 +377,18 @@ function build_system_dlkm() {
     "" "" "-e"
 
   local system_dlkm_root_dir=$(echo ${SYSTEM_DLKM_STAGING_DIR}/lib/modules/*)
+  # Some device init flows load system_dlkm modules on demand.  Preserve their
+  # stock load policy while still packaging the selected modules in the image.
+  if [[ -n "${SYSTEM_DLKM_MODULES_LOAD_LIST}" ]]; then
+    local system_dlkm_modules_load_list="${SYSTEM_DLKM_MODULES_LOAD_LIST}"
+    if [[ -f "${ROOT_DIR}/${system_dlkm_modules_load_list}" ]]; then
+      system_dlkm_modules_load_list="${ROOT_DIR}/${system_dlkm_modules_load_list}"
+    elif [[ "${system_dlkm_modules_load_list}" != /* || ! -f "${system_dlkm_modules_load_list}" ]]; then
+      echo "ERROR: Failed to find SYSTEM_DLKM_MODULES_LOAD_LIST: ${system_dlkm_modules_load_list}" >&2
+      exit 1
+    fi
+    cp "${system_dlkm_modules_load_list}" "${system_dlkm_root_dir}/modules.load"
+  fi
   cp ${system_dlkm_root_dir}/modules.load ${DIST_DIR}/system_dlkm.modules.load
   local system_dlkm_props_file
   local system_dlkm_file_contexts
