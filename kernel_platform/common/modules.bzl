@@ -204,7 +204,13 @@ def get_kunit_modules_list(arch = None):
 
 _COMMON_UNPROTECTED_MODULES_LIST = [
     "drivers/block/zram/zram.ko",
+    "drivers/bluetooth/btbcm.ko",
+    "drivers/bluetooth/btqca.ko",
+    "drivers/bluetooth/hci_uart.ko",
+    "drivers/power/sequencing/pwrseq-core.ko",
     "mm/zsmalloc.ko",
+    "net/bluetooth/bluetooth.ko",
+    "net/rfkill/rfkill.ko",
 ]
 
 # buildifier: disable=unnamed-macro
