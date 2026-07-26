@@ -69,7 +69,7 @@ def define_canoe():
         name = "canoe_perf_abi",
         kernel_build = "//common:kernel_aarch64",
         kernel_modules = [
-            ":canoe_perf_all_modules",
+            ":canoe_perf_abi_modules",
         ],
     )
 

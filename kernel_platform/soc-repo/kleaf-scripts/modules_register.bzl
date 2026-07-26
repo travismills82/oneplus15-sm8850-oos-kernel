@@ -13,6 +13,30 @@ load(
     "fragment_menuconfig",
 )
 
+# zram and zsmalloc are provided by both the GKI base and the registered DDK
+# module set. Image assembly keeps the GKI copies; exclude only the duplicate
+# DDK copies from ABI extraction so STG does not merge identical symbols.
+_GKI_OWNED_ABI_MODULES = [
+    "drivers/block/zram/zram",
+    "mm/zsmalloc",
+]
+
+_OPLUS_MODULES = [
+    "//vendor/oplus/kernel/storage:ufs-oplus-dbg",
+    "//vendor/oplus/kernel/device_info/device_info/bazel:device_info",
+    "//vendor/oplus/kernel/storage:oplus_bsp_storage_io_metrics",
+    "//vendor/oplus/kernel/storage:storage_log",
+    "//vendor/oplus/kernel/storage:oplus_uprobe",
+    "//vendor/oplus/kernel/storage:oplus_file_record",
+    "//vendor/oplus/kernel/boot:oplus_bsp_dfr_qcom_enhance_watchdog",
+    "//vendor/oplus/kernel/cpu:oplus_bsp_sched_assist",
+    "//vendor/oplus/kernel/cpu:oplus_bsp_frame_boost",
+    "//vendor/oplus/kernel/mm:oplus_bsp_mm_osvelte",
+    "//vendor/oplus/kernel/cpu:cpufreq_bouncing",
+    "//vendor/oplus/kernel/cpu:oplus_bsp_task_overload",
+    "//vendor/oplus/kernel/storage:oplus_wq_dynamic_priority",
+]
+
 def signing_genrule(name, module, base_kernel, target_variant):
     native.genrule(
         name = name,
@@ -141,23 +165,21 @@ def _generate_ddk_target(
             actual = ":all_headers",
             visibility = ["//visibility:public"],
         )
+    all_modules = module_names.values() + _OPLUS_MODULES
+
     kernel_module_group(
         name = "{}_all_modules".format(target_variant),
-        srcs = module_names.values() + [
-            "//vendor/oplus/kernel/storage:ufs-oplus-dbg",
-            "//vendor/oplus/kernel/device_info/device_info/bazel:device_info",
-            "//vendor/oplus/kernel/storage:oplus_bsp_storage_io_metrics",
-            "//vendor/oplus/kernel/storage:storage_log",
-            "//vendor/oplus/kernel/storage:oplus_uprobe",
-            "//vendor/oplus/kernel/storage:oplus_file_record",
-            "//vendor/oplus/kernel/boot:oplus_bsp_dfr_qcom_enhance_watchdog",
-            "//vendor/oplus/kernel/cpu:oplus_bsp_sched_assist",
-            "//vendor/oplus/kernel/cpu:oplus_bsp_frame_boost",
-            "//vendor/oplus/kernel/mm:oplus_bsp_mm_osvelte",
-            "//vendor/oplus/kernel/cpu:cpufreq_bouncing",
-            "//vendor/oplus/kernel/cpu:oplus_bsp_task_overload",
-            "//vendor/oplus/kernel/storage:oplus_wq_dynamic_priority",
-        ],
+        srcs = all_modules,
+        visibility = ["//visibility:public"],
+    )
+
+    kernel_module_group(
+        name = "{}_abi_modules".format(target_variant),
+        srcs = [
+            label
+            for name, label in module_names.items()
+            if name not in _GKI_OWNED_ABI_MODULES
+        ] + _OPLUS_MODULES,
         visibility = ["//visibility:public"],
     )
 
