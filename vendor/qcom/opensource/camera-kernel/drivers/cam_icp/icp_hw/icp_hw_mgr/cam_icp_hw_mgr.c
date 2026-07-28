@@ -7889,6 +7889,13 @@ static int cam_icp_mgr_hw_dump(void *hw_priv, void *hw_dump_args)
 	remain_len = icp_dump_args.buf_len - dump_args->offset;
 	min_len = sizeof(struct cam_icp_dump_header) +
 			(CAM_ICP_DUMP_NUM_WORDS_MGR * sizeof(uint32_t));
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_ICP, "[%s] dump buffer exhaust remain %zu min %u",
+			hw_mgr->hw_mgr_name, remain_len, min_len);
+		rc = -ENOSPC;
+		goto put_cpu_buf;
+	}
+
 	/* Dumping hw mgr info */
 	dst = (uint8_t *)icp_dump_args.cpu_addr + dump_args->offset;
 	hdr = (struct cam_icp_dump_header *)dst;
@@ -7910,6 +7917,13 @@ static int cam_icp_mgr_hw_dump(void *hw_priv, void *hw_dump_args)
 	remain_len = icp_dump_args.buf_len - dump_args->offset;
 	min_len = sizeof(struct cam_icp_dump_header) +
 			(CAM_ICP_DUMP_NUM_WORDS_REQ * sizeof(uint64_t));
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_ICP, "[%s] dump buffer exhaust remain %zu min %u",
+			hw_mgr->hw_mgr_name, remain_len, min_len);
+		rc = -ENOSPC;
+		goto put_cpu_buf;
+	}
+
 	/* Dumping time info */
 	dst = (uint8_t *)icp_dump_args.cpu_addr + dump_args->offset;
 	hdr = (struct cam_icp_dump_header *)dst;
