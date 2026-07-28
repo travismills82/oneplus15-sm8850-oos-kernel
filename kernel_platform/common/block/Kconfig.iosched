@@ -26,9 +26,11 @@ config MQ_IOSCHED_ADIOS
 config MQ_IOSCHED_DEFAULT_ADIOS
 	bool "Enable ADIOS I/O scheduler as default MQ I/O scheduler"
 	depends on MQ_IOSCHED_ADIOS=y
-	default y
+	default n
 	help
 	  Enable the ADIOS I/O scheduler as the default scheduler for MQ I/O.
+	  Leave this disabled to keep the existing default scheduler policy and
+	  select ADIOS explicitly per block device.
 
 config IOSCHED_BFQ
 	tristate "BFQ I/O scheduler"
