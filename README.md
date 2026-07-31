@@ -100,10 +100,14 @@ physical super-partition space before resizing. Leave `system_dlkm_oki`,
 validated procedure specifically requires them.
 
 The validated boot log had no panic, oops, MODVERSIONS mismatch, signature
-failure, or unknown-symbol failure. It does contain existing downstream-style
-Oplus warnings (including PMIC-arbiter and duplicate proc/sysfs registrations)
-that should be compared against a stock 16.0.9.400 boot before claiming a
-production-quality release.
+failure, or unknown-symbol failure. A clean boot of the matched custom pair
+was compared directly with a clean boot of the stock 16.0.9.400 `boot.img` and
+`system_dlkm.img` pair on the same CPH2747 and slot. Both logs have the exact
+same 14 `WARNING: CPU` entries and 15 call traces: two PMIC-arbiter warnings,
+eight duplicate proc registrations, one duplicate sysfs group, one GIC warning,
+one unbalanced IRQ enable, and one touch HBP warning. The UFS query-attribute
+retry is also present once in both logs. These are therefore stock firmware
+baseline warnings rather than a regression introduced by this custom kernel.
 
 ## Build environment
 
