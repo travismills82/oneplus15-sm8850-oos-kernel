@@ -97,6 +97,15 @@ static int audio_ext_clk_prepare(struct clk_hw *hw)
 			if (__ratelimit(&rtl))
 				pr_err_ratelimited("%s prm set lpass clk failed\n",
 				__func__);
+			/*
+			 * On timeout (-ETIMEDOUT), the DSP may have already
+			 * processed the enable request. Send a disable request
+			 * to keep DSP state consistent with the kernel-side failure.
+			 */
+#ifdef CONFIG_AUDIO_PRM
+			if (ret == -ETIMEDOUT)
+				audio_prm_set_lpass_clk_cfg(&clk_priv->prm_clk_cfg, 0);
+#endif
 			return ret;
 		}
 		clk_priv->enable = 1;
