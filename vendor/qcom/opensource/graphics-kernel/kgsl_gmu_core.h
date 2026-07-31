@@ -395,6 +395,7 @@ struct trace_pwr_constraint {
 	u32 type;
 	u32 value;
 	u32 status;
+	u32 owner_ctx_id;
 } __packed;
 /**
  * struct kgsl_gmu_trace  - wrapper for gmu trace memory object

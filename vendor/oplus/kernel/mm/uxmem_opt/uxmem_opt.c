@@ -40,6 +40,7 @@
 #include "../../mm/internal.h"
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
 #include "../mm_osvelte/mm-config.h"
+#include "../mm_osvelte/sys-memstat.h"
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 
 #include <linux/sa_group.h>
@@ -54,6 +55,8 @@ static const unsigned int orders[] = {0, 1};
 /* 96M for order 0, 8M  for order 1 by default */
 static unsigned int page_pool_nr_pages[] = {((SZ_64M + SZ_32M) >> PAGE_SHIFT), (SZ_8M >> PAGE_SHIFT)};
 #define NUM_ORDERS ARRAY_SIZE(orders)
+
+static bool ezr_enabled;
 static struct page_pool *pools[NUM_ORDERS];
 static struct task_struct *ux_page_pool_tsk = NULL;
 static wait_queue_head_t kworkthread_waitq;
@@ -311,7 +314,8 @@ struct page *ux_page_pool_alloc_pages(unsigned int order, int migratetype)
 retry:
 	/* Fast-path: Get a page from cache */
 	page = page_pool_remove(pool, migratetype);
-	if (!page && retries < MAX_UXMEM_POOL_ALLOC_RETRIES) {
+	/* if erm is enabled, we don't need to retry */
+	if (!page && retries < MAX_UXMEM_POOL_ALLOC_RETRIES && !ezr_enabled) {
 		retries++;
 		goto retry;
 	}
@@ -604,6 +608,10 @@ static void __nocfi get_page_from_uxmempool(void *data, gfp_t gfp_mask, int orde
 {
 	struct page *page = NULL;
 
+	/* page allocated by erm, just return */
+	if (*p_page)
+		return;
+
 	if (current_is_key_task() && !(gfp_mask & __GFP_DMA32)) {
 		page = ux_page_pool_alloc_pages(order, migratetype);
 		if (page) {
@@ -732,6 +740,10 @@ static void meminfo_adjust(void *data, unsigned long *totalram, unsigned long *f
 	if (unlikely(!ux_page_pool_enabled))
 		return;
 
+	/* if ezr is enabled, do not add this to free */
+	if (ezr_enabled)
+		return;
+
 	/* make sure totalram is a kernel address */
 	if ((unsigned long)totalram > PAGE_SIZE) {
 		*freeram += total_pool_pages();
@@ -745,6 +757,20 @@ static void mem_available_adjust(void *data, unsigned long *available)
 
 	*available += total_pool_pages();
 }
+
+static long read_uxmem_pool_usage(enum mtrack_subtype type)
+{
+	if (unlikely(!ux_page_pool_enabled))
+		return 0;
+
+	if (type == MTRACK_UXMEM_POOL_TOTAL)
+		return total_pool_pages();
+	return 0;
+}
+
+static struct mtrack_debugger uxmem_pool_mtrack_debugger = {
+	.mem_usage = read_uxmem_pool_usage,
+};
 
 static int register_uxmem_opt_vendor_hooks(void)
 {
@@ -838,7 +864,12 @@ static int __init uxmem_opt_init(void)
 	int ret = 0;
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+	struct config_ezreclaimd *config_ezr;
 	struct config_oplus_bsp_uxmem_opt *config;
+
+	config_ezr = oplus_read_mm_config(module_name_ezreclaimd);
+	if (config_ezr && config_ezr->enable)
+		ezr_enabled = true;
 
 	config = oplus_read_mm_config(module_name_uxmem_opt);
 	if (config && !config->enable) {
@@ -867,6 +898,7 @@ static int __init uxmem_opt_init(void)
 	if (ret != 0)
 		return ret;
 
+	register_mtrack_debugger(MTRACK_UXMEM_POOL, &uxmem_pool_mtrack_debugger);
 	pr_info("uxmem_opt_init succeed!\n");
 	return 0;
 }

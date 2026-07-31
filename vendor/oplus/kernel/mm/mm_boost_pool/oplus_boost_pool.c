@@ -29,6 +29,19 @@
 #include "oplus_boost_pool.h"
 #include "mm_osvelte/mm-config.h"
 
+#include <trace/hooks/vmscan.h>
+#include <trace/hooks/mm.h>
+
+#include "mm_osvelte/mm-hooks.h"
+#include "mm_osvelte/sys-memstat.h"
+#include "mm_osvelte/common.h"
+
+extern long read_mtrack_mem_usage(enum mtrack_type t, enum mtrack_subtype s);
+static bool ezr_enabled;
+static bool cam_scene;
+static unsigned long cam_scene_timeout;
+static struct dynamic_boost_pool *cached_boostpool;
+
 #define MAX_BOOST_POOL_HIGH (1024 * 256)
 
 #define K(x) ((x) << (PAGE_SHIFT-10))
@@ -233,6 +246,21 @@ static int dynamic_boost_pool_nr_pages(struct dynamic_boost_pool *pool)
 	return count;
 }
 
+static int all_pool_nr_pages(struct dynamic_boost_pool *pool, bool dump)
+{
+	int nr_dmabuf_pool = read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_POOL);
+	int nr_erm_lru = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU);
+	int nr_erm_free = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE);
+	int nr_boost_pool = dynamic_boost_pool_nr_pages(pool);
+
+	if (dump) {
+		pr_info("all_pool_nr_pages: dmabuf_pool: %dMib erm_lru: %dMib erm_free: %dMib boost_pool: %dMib\n",
+			M(nr_dmabuf_pool), M(nr_erm_lru), M(nr_erm_free), M(nr_boost_pool));
+	}
+
+	return nr_dmabuf_pool + nr_erm_lru + nr_erm_free + nr_boost_pool;
+}
+
 static int dynamic_boost_page_pool_refill(struct dynamic_page_pool *pool)
 {
 	struct page *page;
@@ -313,9 +341,10 @@ static int dynamic_boost_pool_prefill_kworkthread(void *p)
 
 		pr_info("prefill start >>>>> nr_page: %dMib high: %dMib.\n",
 			M(dynamic_boost_pool_nr_pages(pool)), M(pool->high));
+		all_pool_nr_pages(pool, true);
 
 		for (i = 0; i < NUM_ORDERS; i++) {
-			while (!pool->force_stop && dynamic_boost_pool_nr_pages(pool) < pool->high) {
+			while (!pool->force_stop && all_pool_nr_pages(pool, false) < pool->high) {
 				/* support timeout to limit alloc pages. */
 				if (time_after64(get_jiffies_64(), timeout_jiffies)) {
 					pr_warn("prefill timeout.\n");
@@ -330,6 +359,7 @@ static int dynamic_boost_pool_prefill_kworkthread(void *p)
 		pr_info("prefill end <<<<< nr_page: %dMib high:%dMib use %dms\n",
 			M(dynamic_boost_pool_nr_pages(pool)), M(pool->high),
 			jiffies_to_msecs(jiffies - begin));
+		all_pool_nr_pages(pool, true);
 
 		pool->high = max(dynamic_boost_pool_nr_pages(pool), pool->low);
 		pool->prefill = false;
@@ -385,6 +415,40 @@ static void dynamic_boost_pool_dec_high(struct dynamic_boost_pool *pool, int nr_
 
 	return;
 }
+
+static int calc_dyn_camera_pages(struct dynamic_boost_pool *boost_pool)
+{
+	int dyn_camera_pages;
+	int camera_pages = boost_pool->camera_pages;
+	int nr_erm_lru, nr_erm_free, nr_erm_pages;
+
+	if (!ezr_enabled || cam_scene)
+		return camera_pages;
+
+	nr_erm_lru = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU);
+	nr_erm_free = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE);
+
+	camera_pages = boost_pool->camera_origin_pages;
+	nr_erm_pages = min(nr_erm_lru + nr_erm_free, camera_pages);
+	dyn_camera_pages = camera_pages - nr_erm_pages;
+
+	return dyn_camera_pages;
+}
+
+static int calc_dyn_boost_pool_wm(struct dynamic_boost_pool *boost_pool)
+{
+	int dyn_camera_pages;
+
+	if (!ezr_enabled || cam_scene)
+		return boost_pool->low;
+
+	if (time_before(jiffies, cam_scene_timeout))
+		dyn_camera_pages = boost_pool->camera_origin_pages;
+	else
+		dyn_camera_pages = calc_dyn_camera_pages(boost_pool);
+	return boost_pool->sf_pages + dyn_camera_pages;
+}
+
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
 void dynamic_boost_pool_alloc_pack(struct dynamic_boost_pool *boost_pool, unsigned long *size_remaining_p,
 					unsigned int *max_order_p, struct list_head *pages_p, int *i_p,
@@ -393,12 +457,14 @@ void dynamic_boost_pool_alloc_pack(struct dynamic_boost_pool *boost_pool, unsign
 	struct page *page;
 	unsigned long alloc_sz = 0;
 	bool cached = false;
+	int dyn_camera_pages;
 
 	if (boost_pool == NULL)
 		return;
 
+	dyn_camera_pages = calc_dyn_camera_pages(boost_pool);
 	if (boost_pool->camera_pid && current->tgid != boost_pool->camera_pid &&
-	    dynamic_boost_pool_nr_pages(boost_pool) < boost_pool->camera_pages)
+	    dynamic_boost_pool_nr_pages(boost_pool) < dyn_camera_pages)
 		return;
 
 	while (*size_remaining_p > 0) {
@@ -446,12 +512,14 @@ void dynamic_boost_pool_alloc_pack(struct dynamic_boost_pool *boost_pool, unsign
 {
 	struct page *page;
 	unsigned long alloc_sz = 0;
+	int dyn_camera_pages;
 
 	if (boost_pool == NULL)
 		return;
 
+	dyn_camera_pages = calc_dyn_camera_pages(boost_pool);
 	if (boost_pool->camera_pid && current->tgid != boost_pool->camera_pid &&
-	    dynamic_boost_pool_nr_pages(boost_pool) < boost_pool->camera_pages)
+	    dynamic_boost_pool_nr_pages(boost_pool) < dyn_camera_pages)
 		return;
 
 	while (*size_remaining_p > 0) {
@@ -502,25 +570,19 @@ static int dynamic_page_pool_do_shrink(struct dynamic_page_pool *pool, gfp_t gfp
 				       int nr_to_scan)
 {
 	int freed = 0;
-	bool high;
 	struct page *page, *tmp;
 	LIST_HEAD(pages);
 	int ret = DYNAMIC_POOL_SUCCESS;
 	unsigned long flags;
 
-	if (current_is_kswapd())
-		high = true;
-	else
-		high = !!(gfp_mask & __GFP_HIGHMEM);
-
 	if (nr_to_scan == 0)
-		return dynamic_page_pool_total(pool, high);
+		return dynamic_page_pool_total(pool, true);
 
 	while (freed < nr_to_scan) {
 		spin_lock_irqsave(&pool->lock, flags);
 		if (pool->low_count) {
 			page = boost_page_pool_remove(pool, false);
-		} else if (high && pool->high_count) {
+		} else if (pool->high_count) {
 			page = boost_page_pool_remove(pool, true);
 		} else {
 			spin_unlock_irqrestore(&pool->lock, flags);
@@ -564,6 +626,8 @@ static void dynamic_boost_pool_all_free(struct dynamic_boost_pool *pool, gfp_t g
 int dynamic_boost_pool_free(struct dynamic_boost_pool *pool, struct page *page,
 		    int index)
 {
+	int wm_pages;
+
 	if (!boost_pool_enable) {
 		dynamic_boost_pool_all_free(pool, __GFP_HIGHMEM, MAX_BOOST_POOL_HIGH);
 		return -1;
@@ -574,7 +638,8 @@ int dynamic_boost_pool_free(struct dynamic_boost_pool *pool, struct page *page,
 		return -1;
 	}
 
-	if (dynamic_boost_pool_nr_pages(pool) > pool->low)
+	wm_pages = calc_dyn_boost_pool_wm(pool);
+	if (dynamic_boost_pool_nr_pages(pool) > wm_pages)
 		return -1;
 
 	boost_page_pool_free(pool->pools[index], page);
@@ -603,8 +668,12 @@ static int dynamic_boost_pool_do_shrink(struct dynamic_boost_pool *boost_pool,
 	if (!nr_to_scan) {
 		only_scan = 1;
 	} else {
-		nr_max_free = dynamic_boost_pool_nr_pages(boost_pool) -
-			(boost_pool->high + LOWORDER_WATER_MASK);
+		if (!ezr_enabled || cam_scene) {
+			nr_max_free = dynamic_boost_pool_nr_pages(boost_pool) -
+				(boost_pool->high + LOWORDER_WATER_MASK);
+		} else {
+			nr_max_free = dynamic_boost_pool_nr_pages(boost_pool) - boost_pool->sf_pages - calc_dyn_camera_pages(boost_pool);
+		}
 		nr_to_free = min(nr_max_free, nr_to_scan);
 		if (nr_to_free <= 0)
 			return 0;
@@ -719,6 +788,17 @@ static int dynamic_boost_pool_proc_open(struct inode *inode, struct file *file)
 	return single_open(file, dynamic_boost_pool_proc_show, data);
 }
 
+static inline void dynamic_boost_pool_reset_wmark(struct dynamic_boost_pool *boost_pool)
+{
+	boost_pool->high = boost_pool->low = boost_pool->origin;
+
+	if (ezr_enabled) {
+		boost_pool->camera_pages = 0;
+
+		boost_pool->low = boost_pool->camera_pages + boost_pool->sf_pages;
+	}
+}
+
 static ssize_t dynamic_boost_pool_proc_write(struct file *file,
 				     const char __user *buf,
 				     size_t count, loff_t *ppos)
@@ -744,8 +824,8 @@ static ssize_t dynamic_boost_pool_proc_write(struct file *file,
 
 	if (nr_pages == 0) {
 		pr_info("%s: reset flag.\n", current->comm);
-		boost_pool->high = boost_pool->low = boost_pool->origin;
 		boost_pool->force_stop = false;
+		dynamic_boost_pool_reset_wmark(boost_pool);
 		return count;
 	}
 
@@ -792,8 +872,12 @@ static int dynamic_boost_pool_low_proc_show(struct seq_file *s, void *v)
 {
 	struct dynamic_boost_pool *boost_pool = s->private;
 
-	seq_printf(s, "low %dMib.\n", M(boost_pool->camera_pages));
-
+	seq_printf(s, "camera %dMib.\n", M(boost_pool->camera_pages));
+	seq_printf(s, "camera_origin %dMib.\n", M(boost_pool->camera_origin_pages));
+	seq_printf(s, "dyn_camera %dMib.\n", M(calc_dyn_camera_pages(boost_pool)));
+	seq_printf(s, "avail_delta %dMib.\n",
+		   M(dynamic_boost_pool_nr_pages(boost_pool) -
+		     calc_dyn_boost_pool_wm(boost_pool)));
 	return 0;
 }
 
@@ -829,7 +913,13 @@ static ssize_t dynamic_boost_pool_pages_proc_write(struct file *file,
 	if (nr_pages <= 0 || nr_pages >= MAX_BOOST_POOL_HIGH)
 		return -EINVAL;
 
-	boost_pool->camera_pages = nr_pages;
+	boost_pool->camera_origin_pages = nr_pages;
+	/* always set camera_pages to 0 when ezr is enabled */
+	if (ezr_enabled)
+		boost_pool->camera_pages = 0;
+	else
+		boost_pool->camera_pages = nr_pages;
+
 	nr_pages = boost_pool->camera_pages + boost_pool->sf_pages;
 	boost_pool->origin = nr_pages;
 	boost_pool->high = nr_pages;
@@ -1001,6 +1091,79 @@ static int camera_pid_show(struct seq_file *s, void *unused)
 }
 DEFINE_BOOST_POOL_PROC_RW_ATTRIBUTE(camera_pid);
 
+static void update_cam_scene_timeout(void)
+{
+	cam_scene_timeout = jiffies + 5 * HZ;
+}
+
+static void boost_pool_vh_available_adjust(void *data, unsigned long *available)
+{
+	struct dynamic_boost_pool *boost_pool = data;
+	int delta;
+	int wm_pages = calc_dyn_boost_pool_wm(boost_pool);
+
+	delta = dynamic_boost_pool_nr_pages(boost_pool) - wm_pages;
+	if (delta < 0)
+		delta = 0;
+
+	*available += delta;
+}
+
+static void oplus_mm_vh_set_or_clear_scene(void *data, bool set, unsigned long nr_bit)
+{
+	struct dynamic_boost_pool *boost_pool = data;
+
+	if (nr_bit == MM_SCENE_DISPLAY_OFF && set) {
+		pr_info("display off, reset wmark\n");
+		dynamic_boost_pool_reset_wmark(boost_pool);
+		cam_scene = false;
+		update_cam_scene_timeout();
+		return;
+	}
+
+	if (nr_bit != MM_SCENE_CAMERA || !boost_pool)
+		return;
+
+	if (set) {
+		int nr_pages;
+
+		boost_pool->camera_pages = boost_pool->camera_origin_pages;
+		nr_pages = boost_pool->camera_pages + boost_pool->sf_pages;
+		boost_pool->high = nr_pages;
+		boost_pool->low = nr_pages;
+	} else {
+		dynamic_boost_pool_reset_wmark(boost_pool);
+		update_cam_scene_timeout();
+	}
+	cam_scene = set;
+
+	/* this happen on prefill thread */
+	boost_pool->high = max(boost_pool->low, boost_pool->high);
+}
+
+struct page *cached_boostpool_fetch_page(gfp_t gfp_mask_unused, int order_unsed)
+{
+	struct dynamic_boost_pool *pool = cached_boostpool;
+	int i = 2;
+	struct page *page = NULL;
+	unsigned long flags;
+
+	BUG_ON(orders[i] != 0);
+	if (!pool) {
+		pr_err("cached_boostpool is NULL\n");
+		return NULL;
+	}
+
+	spin_lock_irqsave(&pool->pools[i]->lock, flags);
+	if (pool->pools[i]->high_count)
+		page = boost_page_pool_remove(pool->pools[i], true);
+	else if (pool->pools[i]->low_count)
+		page = boost_page_pool_remove(pool->pools[i], false);
+	spin_unlock_irqrestore(&pool->pools[i]->lock, flags);
+	return page;
+}
+EXPORT_SYMBOL_GPL(cached_boostpool_fetch_page);
+
 static struct dynamic_boost_pool *dynamic_boost_pool_create(int sf_pages,
 							    int camera_pages,
 							    struct proc_dir_entry *root_dir,
@@ -1122,6 +1285,13 @@ static struct dynamic_boost_pool *dynamic_boost_pool_create(int sf_pages,
 	mutex_lock(&boost_pool_list_lock);
 	list_add(&boost_pool->list, &boost_pool_list);
 	mutex_unlock(&boost_pool_list_lock);
+	if (ezr_enabled) {
+		cached_boostpool = boost_pool;
+		osvelte_register_symbol(OPLUS_MM_TASK_CACHED_BOOSTPOOL_PREFILL, tsk);
+		register_trace_oplus_mm_vh_set_or_clear_scene(oplus_mm_vh_set_or_clear_scene, boost_pool);
+		register_trace_android_vh_si_mem_available_adjust(boost_pool_vh_available_adjust, boost_pool);
+		pr_info("init erm feature success\n");
+	}
 	return boost_pool;
 
 destroy_proc_pid:
@@ -1153,6 +1323,11 @@ struct dynamic_boost_pool *dynamic_boost_pool_create_pack(void)
 		pr_info("%s is disabled in config\n", module_name_boost_pool);
 		return NULL;
 	}
+	struct config_ezreclaimd *config;
+
+	config = oplus_read_mm_config(module_name_ezreclaimd);
+	if (config)
+		ezr_enabled = config->enable;
 
 	boost_root_dir = proc_mkdir("boost_pool", NULL);
 	if (!IS_ERR_OR_NULL(boost_root_dir)) {
@@ -1164,6 +1339,8 @@ struct dynamic_boost_pool *dynamic_boost_pool_create_pack(void)
 			camera_pages = PAGES(SZ_128M);
 		}
 
+		if (ezr_enabled)
+			camera_pages = 0;
 		boost_pool = dynamic_boost_pool_create(sf_pages, camera_pages,
 						       boost_root_dir, "camera");
 		if (NULL == boost_pool)

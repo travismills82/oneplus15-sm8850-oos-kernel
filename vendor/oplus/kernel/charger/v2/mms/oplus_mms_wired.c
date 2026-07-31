@@ -252,6 +252,7 @@ struct oplus_mms_wired {
 
 	bool wired_present;
 	bool wired_online;
+	bool wired_online_init_flag;
 	bool vooc_started;
 	bool vooc_online;
 	bool vooc_charging;
@@ -4950,6 +4951,45 @@ static void oplus_mms_update_real_chg_type(struct oplus_mms_wired *chip)
 	}
 }
 
+static void oplus_mms_wired_rerun_present_elections(struct oplus_mms_wired *chip,
+						    bool online, bool present,
+						    bool present_changed)
+{
+	chip->usbtemp_curr_status = 0;
+	/*
+	 * the ICL current needs to be reconfigured when the VBUS is
+	 * reconnected and there is no online notification to ensure
+	 * that the ICL is configured correctly.
+	 */
+	if (online && present_changed && present &&
+	    is_chg_icl_votable_available(chip))
+		rerun_election(chip->chg_icl_votable, true);
+	/* Ensure the charging status and current are reset */
+	if (present && is_chg_suspend_votable_available(chip))
+		rerun_election(chip->chg_suspend_votable, false);
+	/* some IC will auto enable charge when vbus rise, ensure the charing status reset */
+	if (present && is_chg_disable_votable_available(chip))
+		rerun_election(chip->chg_disable_votable, false);
+}
+
+static bool oplus_mms_wired_same_online_skip_publish(struct oplus_mms_wired *chip,
+						     bool online, bool present,
+						     bool present_changed)
+{
+	if (chip->wired_online != online)
+		return false;
+
+	if (chip->wired_online_init_flag) {
+		chg_info("Booted with USB connected\n");
+		chip->wired_online_init_flag = false;
+		return false;
+	}
+
+	oplus_mms_wired_rerun_present_elections(chip, online, present,
+						present_changed);
+	return true;
+}
+
 static void oplus_mms_wired_plugin_handler_work(struct work_struct *work)
 {
 	struct oplus_mms_wired *chip =
@@ -5022,47 +5062,32 @@ skip_present:
 		cancel_delayed_work_sync(&chip->wam.online_status_err_work);
 		chip->wam.online_status_err_count = 0;
 	}
-	if (chip->wired_online == online) {
-		chip->usbtemp_curr_status = 0;
-		/*
-		 * the ICL current needs to be reconfigured when the VBUS is
-		 * reconnected and there is no online notification to ensure
-		 * that the ICL is configured correctly.
-		 */
-		if (online && present_changed && present &&
-		    is_chg_icl_votable_available(chip))
-			rerun_election(chip->chg_icl_votable, true);
-		/* Ensure the charging status and current are reset */
-		if (present && is_chg_suspend_votable_available(chip))
-			rerun_election(chip->chg_suspend_votable, false);
-		/* some IC will auto enable charge when vbus rise, ensure the charing status reset */
-		if (present && is_chg_disable_votable_available(chip))
-			rerun_election(chip->chg_disable_votable, false);
-		goto check_data_role;
-	}
 
-	if (is_pd_svooc_votable_available(chip) && !online)
-		vote(chip->pd_svooc_votable, SVID_VOTER, false, 0, false);
+	if (!oplus_mms_wired_same_online_skip_publish(chip, online, present,
+						      present_changed)) {
+		if (is_pd_svooc_votable_available(chip) && !online)
+			vote(chip->pd_svooc_votable, SVID_VOTER, false, 0, false);
 
-	chip->wired_online = online;
-	chip->usbtemp_check = online;
-	if (chip->usbtemp_check)
-		oplus_wake_up_usbtemp_thread(chip);
-	/* TODO: add otg */
+		chip->wired_online = online;
+		chip->usbtemp_check = online;
+		if (chip->usbtemp_check)
+			oplus_wake_up_usbtemp_thread(chip);
+		/* TODO: add otg */
 
-	/* before publish online status, need to update the real chg type */
-	oplus_mms_update_real_chg_type(chip);
+		/* before publish online status, need to update the real chg type */
+		oplus_mms_update_real_chg_type(chip);
 
-	msg = oplus_mms_alloc_msg(MSG_TYPE_ITEM, MSG_PRIO_MEDIUM,
-				  WIRED_ITEM_ONLINE);
-	if (msg == NULL) {
-		chg_err("alloc msg error\n");
-		goto check_data_role;
-	}
-	rc = oplus_mms_publish_msg(chip->wired_topic, msg);
-	if (rc < 0) {
-		chg_err("publish wired online msg error, rc=%d\n", rc);
-		kfree(msg);
+		msg = oplus_mms_alloc_msg(MSG_TYPE_ITEM, MSG_PRIO_MEDIUM,
+					  WIRED_ITEM_ONLINE);
+		if (msg == NULL) {
+			chg_err("alloc msg error\n");
+			goto check_data_role;
+		}
+		rc = oplus_mms_publish_msg(chip->wired_topic, msg);
+		if (rc < 0) {
+			chg_err("publish wired online msg error, rc=%d\n", rc);
+			kfree(msg);
+		}
 	}
 
 check_data_role:
@@ -6827,6 +6852,7 @@ static int oplus_mms_wired_topic_init(struct oplus_mms_wired *chip)
 	}
 
 	chip->wired_online = oplus_wired_is_present();
+	chip->wired_online_init_flag = chip->wired_online ? true : false;
 	chip->wired_topic = devm_oplus_mms_register(chip->dev, &oplus_mms_wired_desc, &mms_cfg);
 	if (IS_ERR(chip->wired_topic)) {
 		chg_err("Couldn't register wired topic\n");

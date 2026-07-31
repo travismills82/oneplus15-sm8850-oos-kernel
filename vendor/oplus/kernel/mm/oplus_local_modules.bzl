@@ -10,8 +10,6 @@ def define_oplus_local_modules():
     if bazel_support_platform == "qcom" :
         zram_opt_ko_deps = ["//soc-repo:{}/drivers/block/zram/zram".format(kernel_build_variant),"//vendor/oplus/kernel/cpu:oplus_bsp_sched_assist",":oplus_bsp_mm_osvelte"]
         hybridswap_zram_ko_deps = []
-    else :
-        zram_opt_ko_deps = ["//vendor/oplus/kernel/mm:oplus_bsp_hybridswap_zram","//vendor/oplus/kernel/cpu:oplus_bsp_sched_assist",":oplus_bsp_mm_osvelte"]
 
 #    define_oplus_ddk_module(
 #        name = "oplus_bsp_memleak_detect_simple",
@@ -40,7 +38,7 @@ def define_oplus_local_modules():
         ]),
         includes = ["."],
         ko_deps = zram_opt_ko_deps,
-        local_defines = ["CONFIG_DYNAMIC_TUNING_SWAPPINESS", "CONFIG_OPLUS_BALANCE_ANON_FILE_RECLAIM", "CONFIG_HYBRIDSWAP_SWAPD"],
+        local_defines = ["CONFIG_DYNAMIC_TUNING_SWAPPINESS", "CONFIG_OPLUS_BALANCE_ANON_FILE_RECLAIM", "CONFIG_HYBRIDSWAP_SWAPD", "CONFIG_OPLUS_EXTRA_FREE_KBYTES"],
 #        copts = select({
 #            "//build/kernel/kleaf:kocov_is_true": ["-fprofile-arcs", "-ftest-coverage"],
 #            "//conditions:default": [],
@@ -56,18 +54,6 @@ def define_oplus_local_modules():
         includes = ["."],
     )
 
-#    define_oplus_ddk_module(
-#        name = "oplus_bsp_lz4k",
-#        srcs = native.glob([
-#            "**/*.h",
-#            "hybridswap_zram/lz4k/lz4k.c",
-#            "hybridswap_zram/lz4k/lz4k_compress.c",
-#            "hybridswap_zram/lz4k/lz4k_decompress.c",
-#        ]),
-#        includes = ["."],
-#        local_defines = ["CONFIG_CRYPTO_LZ4K"],
-#        )
-#
     define_oplus_ddk_module(
         name = "oplus_bsp_kshrink_slabd",
         srcs = native.glob([
@@ -86,6 +72,17 @@ def define_oplus_local_modules():
         includes = ["."],
         local_defines = ["CONFIG_OPLUS_FEATURE_UXMEM_OPT"],
         ko_deps = [":oplus_bsp_mm_osvelte", "//vendor/oplus/kernel/cpu:oplus_bsp_sched_assist"],
+    )
+
+    define_oplus_ddk_module(
+        name = "oplus_bsp_mglru_opt",
+        srcs = native.glob([
+            "**/*.h",
+            "mglru_opt/mglru_opt.c",
+        ]),
+        includes = ["."],
+        local_defines = ["CONFIG_OPLUS_FEATURE_MGLRU_OPT"],
+        ko_deps = ["//vendor/oplus/kernel/mm:oplus_bsp_mm_osvelte"],
     )
 
     define_oplus_ddk_module(
@@ -193,9 +190,52 @@ def define_oplus_local_modules():
             "mm_osvelte/mm-trace.h",
             "mm_osvelte/proc-memstat.h",
             "mm_osvelte/sys-memstat.h",
+            "mm_osvelte/mm-hooks.h",
+            "mm_osvelte/hooks.c",
         ]),
         includes = ["."],
+        conditional_defines = {
+            "qcom":  [ "CONFIG_OPLUS_VENDOR_QCOM" ],
+            "mtk": [ "CONFIG_OPLUS_VENDOR_MTK" ],
+        },
         local_defines = ["CONFIG_OPLUS_FEATURE_MM_BOOSTPOOL"],
+    )
+
+    define_oplus_ddk_module(
+        name = "oplus_bsp_zstdn_o",
+        srcs = native.glob([
+            "**/*.h",
+            "zstd_o/include/*.h",
+            "zstd_o/common/*.h",
+            "zstd_o/compress/*.h",
+            "zstd_o/decompress/*.h",
+            "zstd_o/crypto_zstd.c",
+            "zstd_o/zstd_compress_module.c",
+            "zstd_o/xxhash.c",
+            "zstd_o/common/debug.c",
+            "zstd_o/common/entropy_common.c",
+            "zstd_o/common/error_private.c",
+            "zstd_o/common/fse_decompress.c",
+            "zstd_o/common/zstd_common.c",
+            "zstd_o/compress/fse_compress.c",
+            "zstd_o/compress/hist.c",
+            "zstd_o/compress/huf_compress.c",
+            "zstd_o/compress/zstd_compress.c",
+            "zstd_o/compress/zstd_compress_literals.c",
+            "zstd_o/compress/zstd_compress_sequences.c",
+            "zstd_o/compress/zstd_compress_superblock.c",
+            "zstd_o/compress/zstd_double_fast.c",
+            "zstd_o/compress/zstd_fast.c",
+            "zstd_o/compress/zstd_lazy.c",
+            "zstd_o/compress/zstd_ldm.c",
+            "zstd_o/compress/zstd_opt.c",
+            "zstd_o/zstd_decompress_module.c",
+            "zstd_o/decompress/huf_decompress.c",
+            "zstd_o/decompress/zstd_ddict.c",
+            "zstd_o/decompress/zstd_decompress.c",
+            "zstd_o/decompress/zstd_decompress_block.c"
+        ]),
+        includes = ["."],
     )
 
     ddk_copy_to_dist_dir(
@@ -206,21 +246,15 @@ def define_oplus_local_modules():
             "oplus_bsp_zram_opt",
             "oplus_bsp_proactive_compact",
 #            "oplus_bsp_hybridswap_zram",
-#            "oplus_bsp_zsmalloc",
-#            "oplus_bsp_lz4k",
-#            "oplus_bsp_kshrink_slabd",
             "oplus_bsp_uxmem_opt",
             "oplus_bsp_dynamic_readahead",
             "oplus_bsp_kswapd_opt",
             "oplus_bsp_pcppages_opt",
-           "oplus_bsp_kshrink_slabd",
-#           "oplus_bsp_uxmem_opt",
-#           "oplus_bsp_dynamic_readahead",
-#           "oplus_bsp_pcppages_opt",
-#           "oplus_bsp_kswapd_opt",
-#            "oplus_bsp_look_around",
+            "oplus_bsp_kshrink_slabd",
             "oplus_bsp_memleak_detect",
             "oplus_bsp_zstdn",
             "oplus_bsp_mm_osvelte",
+            "oplus_bsp_zstdn_o",
+            "oplus_bsp_mglru_opt",
         ],
     )

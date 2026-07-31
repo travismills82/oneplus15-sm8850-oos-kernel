@@ -837,6 +837,30 @@ static void _gmu_trace_dcvs_pwrstats(struct kgsl_device *device, struct gmu_trac
 	pwr->aggr_max_pwrlevel = data->aggr_max_pwrlevel;
 }
 
+static void _gmu_trace_pwr_constraint(struct kgsl_device *device,
+		struct gmu_trace_packet *pkt)
+{
+	struct trace_pwr_constraint data = {};
+	u32 pkt_words = TRACE_PKT_GET_SIZE(pkt->hdr);
+	u32 hdr_words = offsetof(struct gmu_trace_packet, payload) >> 2;
+	u32 payload_words = pkt_words - hdr_words;
+	u32 payload_bytes = payload_words * sizeof(u32);
+
+	memcpy(&data, pkt->payload, min_t(u32, payload_bytes, sizeof(data)));
+
+	{
+		struct kgsl_context *ctx = kgsl_context_get(device, data.owner_ctx_id);
+
+		trace_kgsl_constraint(device, data.type, data.value,
+			data.status, pkt->ticks,
+			data.owner_ctx_id,
+			ctx ? ctx->tid : 0,
+			_context_comm(ctx));
+		if (ctx)
+			kgsl_context_put(ctx);
+	}
+}
+
 static void stream_trace_data(struct kgsl_device *device, struct gmu_trace_packet *pkt)
 {
 	switch (pkt->trace_id) {
@@ -884,10 +908,7 @@ static void stream_trace_data(struct kgsl_device *device, struct gmu_trace_packe
 		break;
 		}
 	case GMU_TRACE_PWR_CONSTRAINT: {
-		struct trace_pwr_constraint *data =
-			(struct trace_pwr_constraint *)pkt->payload;
-
-		trace_kgsl_constraint(device, data->type, data->value, data->status, pkt->ticks);
+		_gmu_trace_pwr_constraint(device, pkt);
 		break;
 		}
 	default: {

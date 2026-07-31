@@ -2805,7 +2805,10 @@ int adreno_set_constraint(struct kgsl_device *device,
 	if ((status == 0) &&
 		(context->id == device->pwrctrl.constraint.owner_id)) {
 		trace_kgsl_constraint(device, device->pwrctrl.constraint.type,
-					device->pwrctrl.active_pwrlevel, 0, 0);
+			device->pwrctrl.active_pwrlevel, 0, 0,
+			device->pwrctrl.constraint.owner_id,
+			device->pwrctrl.constraint.owner_tid,
+			device->pwrctrl.constraint.owner_comm);
 		device->pwrctrl.constraint.type = KGSL_CONSTRAINT_NONE;
 	}
 

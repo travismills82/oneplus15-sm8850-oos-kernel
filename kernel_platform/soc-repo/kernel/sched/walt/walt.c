@@ -329,6 +329,7 @@ void walt_rq_dump(int cpu)
 				wrq->load_subs[i].new_subs);
 	}
 	walt_task_dump(tsk);
+	put_task_struct(tsk);
 }
 
 void walt_dump(void)

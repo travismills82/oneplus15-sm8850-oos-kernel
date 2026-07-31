@@ -251,7 +251,7 @@ static void createOrDestroyMemPools(void) {
 					/* Try to allocate memory with retry mechanism */
 					int retry_count = 0;
 					do {
-						mem_pools[i][j].address = kmalloc(current_block_size, GFP_KERNEL);
+						mem_pools[i][j].address = kvmalloc(current_block_size, GFP_KERNEL);
 						if (mem_pools[i][j].address) {
 							break; /* Success, exit retry loop */
 						}
@@ -325,7 +325,7 @@ static void createOrDestroyMemPools(void) {
 									j, i, block_sizes[i], mem_pools[i][j].address);
 						} else if (mem_pools[i][j].address) {
 							/* Free unused block */
-							kfree(mem_pools[i][j].address);
+							kvfree(mem_pools[i][j].address);
 							mem_pools[i][j].address = NULL;
 							total_freed++;
 						}

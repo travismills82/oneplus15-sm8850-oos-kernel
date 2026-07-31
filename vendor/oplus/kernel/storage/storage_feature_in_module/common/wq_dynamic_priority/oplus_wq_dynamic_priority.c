@@ -18,6 +18,21 @@
 static struct workqueue_attrs *ux_wq_attrs;
 static struct workqueue_attrs *ux_wq_attrs_kblockd;
 static struct workqueue_struct *oplus_kblockd_workqueue;
+static struct workqueue_struct *oplus_fsverity_read_workqueue;
+
+/* ---------fsverity_enqueue_verify_work--------- */
+
+static int handler_fsverity_work(struct kprobe *p, struct pt_regs *regs)
+{
+	regs->regs[1] = (u64)oplus_fsverity_read_workqueue;
+	return 0;
+}
+
+static struct kprobe oplus_fsverity_enqueue_verify_work_kp = {
+	.symbol_name = "fsverity_enqueue_verify_work",
+	.offset = 0x1c,
+	.pre_handler = handler_fsverity_work,
+};
 
 struct config_wq_flags {
 	char *target_str;
@@ -27,7 +42,7 @@ struct config_wq_flags {
 static void android_rvh_alloc_and_link_pwqs_handler(void *unused,
 	struct workqueue_struct *wq, int *ret, bool *skip)
 {
-	if (WQ_CMP("loop") || WQ_CMP("kverityd")) {
+	if (WQ_CMP("loop") || WQ_CMP("kverityd") || WQ_CMP("oplusfsverity")) {
 		*ret = apply_workqueue_attrs_locked(wq, ux_wq_attrs);
 		*skip = true;
 	} else if (WQ_CMP("opluskblockd")) {
@@ -40,6 +55,7 @@ static struct config_wq_flags oplus_wq_config[] = {
     { "loop", WQ_UNBOUND | WQ_FREEZABLE | WQ_HIGHPRI },
     { "kverityd", WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND },
     { "opluskblockd", WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND },
+	{ "oplusfsverity", WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND },
     // Add more strings and flags as needed.
     { NULL, 0 } // Terminate array with NULL
 };
@@ -214,7 +230,7 @@ static int __init oplus_wq_hook_init(void)
 		goto err_free_kblockd_attrs;
 
 	oplus_kblockd_workqueue =  alloc_workqueue("opluskblockd",
-  					    WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND, 0);
+					    WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND, 0);
 
 	if (!oplus_kblockd_workqueue) {
 		err = -ENOMEM;
@@ -226,8 +242,25 @@ static int __init oplus_wq_hook_init(void)
 	if (err)
 		goto err_free_wq;
 
+	oplus_fsverity_read_workqueue = alloc_workqueue("oplusfsverity",
+		WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND, 0);
+	if (!oplus_fsverity_read_workqueue) {
+		err = -ENOMEM;
+		pr_err("%s alloc oplusfsverity fail!",__func__);
+		goto err_free_wq;
+	}
+
+	/* kprobe register */
+	err = register_kprobe(&oplus_fsverity_enqueue_verify_work_kp);
+	if (err < 0) {
+		printk(KERN_ERR "register_kprobe fsverity_enqueue_verify_work failed, returned %d\n", err);
+		goto err_free_fsverity_wq;
+	}
+
 	return err;
 
+err_free_fsverity_wq:
+	destroy_workqueue(oplus_fsverity_read_workqueue);
 err_free_wq:
 	destroy_workqueue(oplus_kblockd_workqueue);
 err_free_kblockd_attrs:
@@ -235,11 +268,14 @@ err_free_kblockd_attrs:
 err_free_attrs:
 	free_workqueue_attrs(ux_wq_attrs);
 out:
-    return err;
+	unregister_kprobe(&oplus_alloc_workqueue_kp);
+	return err;
 }
 
 static void __exit oplus_wq_hook_exit(void)
 {
+	unregister_kprobe(&oplus_fsverity_enqueue_verify_work_kp);
+	destroy_workqueue(oplus_fsverity_read_workqueue);
 	destroy_workqueue(oplus_kblockd_workqueue);
 	wq_uninstall_tracepoints();
 	free_workqueue_attrs(ux_wq_attrs);

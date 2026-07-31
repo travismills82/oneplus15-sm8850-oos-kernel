@@ -18,7 +18,12 @@
 #include <linux/cred.h>
 #include <linux/mm_inline.h>
 
+#ifdef CONFIG_HYBRIDSWAP_OPLUS_ZRAM
+#include "../zram_drv.h"
+#include "../zram_drv_internal.h"
+#else
 #include "hybridswap_zram_drv.h"
+#endif
 #include "internal.h"
 #include "hybridswap.h"
 #include "header_dup.h"
@@ -29,6 +34,7 @@
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
 #include "mm_osvelte/mm-config.h"
+#include "mm_osvelte/common.h"
 #endif
 
 static const char *swapd_text[NR_EVENT_ITEMS] = {
@@ -372,24 +378,6 @@ static void unregister_all_hook(void)
 #endif
 }
 
-/*
- * the reason why not use memcg_page_state because memcg use use_hierarchy
- * always true from kernel-5.15
- */
-static unsigned long memcg_page_state_local(struct mem_cgroup *memcg, int idx)
-{
-	long x = 0;
-	int cpu;
-
-	for_each_possible_cpu(cpu)
-		x += per_cpu(memcg->vmstats_percpu->state[idx], cpu);
-#ifdef CONFIG_SMP
-	if (x < 0)
-		x = 0;
-#endif
-	return x;
-}
-
 unsigned long memcg_anon_pages(struct mem_cgroup *memcg)
 {
 	return memcg_page_state_local(memcg, NR_INACTIVE_ANON) +
@@ -411,11 +399,22 @@ static int force_shrink_batch(struct mem_cgroup * memcg,
 	int ret = 0;
 	gfp_t gfp_mask = GFP_KERNEL;
 	bool file = !(reclaim_options & MEMCG_RECLAIM_MAY_SWAP);
+	int mglru_anon_swappiness = MAX_SWAPPINESS + 1;
+	unsigned int opts = reclaim_options | MEMCG_RECLAIM_PROACTIVE;
+	int *swappiness = NULL;
+
+	/* use lru_gen_enabled instead */
+	if (ezreclaimd_enable && !file)
+		swappiness = &mglru_anon_swappiness;
 
 	while (*nr_reclaimed < nr_need_reclaim) {
 		unsigned long reclaimed;
+
+		if (!free_zram_is_ok())
+			break;
+
 		reclaimed = try_to_free_mem_cgroup_pages(memcg, batch, gfp_mask,
-							 reclaim_options, NULL);
+							 opts, swappiness);
 
 		if (reclaimed == 0)
 			break;
@@ -1048,13 +1047,13 @@ static int hybridswap_enable(struct zram *zram)
 	}
 
 #ifdef CONFIG_HYBRIDSWAP_SWAPD
+	swapd_zram = zram;
 	ret = hybridswapd_ops->init(zram);
 	if (ret)
 		return ret;
 #endif
 
 #ifdef CONFIG_HYBRIDSWAP_CORE
-	swapd_zram = zram;
 	ret = hybridswap_core_enable();
 	if (ret)
 		goto hybridswap_core_enable_fail;
@@ -1156,9 +1155,6 @@ ssize_t hybridswap_enable_store(struct device *dev,
 int __init hybridswap_pre_init(void)
 {
 	int ret;
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD)
-	struct config_ezreclaimd *config;
-#endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE && CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD */
 
 	INIT_LIST_HEAD(&score_head);
 	log_level = HS_LOG_INFO;
@@ -1185,21 +1181,9 @@ int __init hybridswap_pre_init(void)
 	if (!hybridswapd_ops)
 		goto error_out;
 
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD)
-	config = oplus_read_mm_config(module_name_ezreclaimd);
-	if (config)
-		ezreclaimd_enable = config->enable;
-	if (ezreclaimd_enable) {
-		log_info("using ezreclaimd as reclaimer\n");
-		ezr_ops_init(hybridswapd_ops);
-		goto pre_init;
-	}
-#endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE && CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD */
-	log_info("using origin hybridswapd\n");
+	log_info("using hybridswapd\n");
 	hybridswapd_ops_init(hybridswapd_ops);
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD)
-pre_init:
-#endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE && CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD */
+	hybridswapd_ops->pre_init();
 	ret = hybridswapd_ops->pre_init();
 	if (ret) {
 		log_err("pre init failed\n");

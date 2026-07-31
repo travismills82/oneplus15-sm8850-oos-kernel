@@ -124,7 +124,7 @@ static int deferred_freelist_init(void)
 		pr_err("Creating thread for deferred free failed\n");
 		return PTR_ERR(freelist_task);
 	}
-	sched_set_normal(freelist_task, 19);
+	sched_set_normal(freelist_task, -10);
 
 	freelist_shrinker = shrinker_alloc(0, "dmabuf-deferred-free-shrinker");
 	if (!freelist_shrinker) {

@@ -53,6 +53,8 @@ struct kgsl_pwr_constraint {
 	unsigned long expires;
 	uint32_t owner_id;
 	u32 owner_timestamp;
+	pid_t owner_tid;
+	char owner_comm[TASK_COMM_LEN];
 };
 
 /**

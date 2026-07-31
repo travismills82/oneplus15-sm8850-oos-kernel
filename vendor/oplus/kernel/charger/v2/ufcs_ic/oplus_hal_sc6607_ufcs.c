@@ -43,6 +43,7 @@
 #include <oplus_chg_monitor.h>
 #include <oplus_chg_module.h>
 #include "oplus_hal_sc6607_ufcs.h"
+#include "../voocphy/oplus_voocphy.h"
 
 struct sc6607 {
 	struct device *dev;
@@ -60,6 +61,9 @@ struct sc6607 {
 	struct oplus_mms *err_topic;
 	struct mms_subscribe *err_subs;
 	struct work_struct ufcs_regdump_work;
+	struct oplus_voocphy_manager *voocphy;
+	struct delayed_work get_voocphy_client_work;
+	int found_voocphy_client_count;
 };
 
 #define ERR_MSG_BUF	PAGE_SIZE
@@ -256,6 +260,22 @@ static int sc6607_ufcs_init(struct ufcs_dev *ufcs)
 	return 0;
 }
 
+static int sc6607_ufcs_get_adc_value(struct sc6607_ufcs *chip)
+{
+	struct oplus_voocphy_manager *voocphy;
+
+	if (!chip)
+		return -EINVAL;
+
+	voocphy = chip->voocphy;
+	if (voocphy == NULL)
+		return -EINVAL;
+
+	if (voocphy->ops && voocphy->ops->update_data)
+		voocphy->ops->update_data(voocphy);
+	return 0;
+}
+
 static int sc6607_ufcs_write_msg(struct ufcs_dev *ufcs, unsigned char *buf, int len)
 {
 	int rc;
@@ -281,6 +301,8 @@ static int sc6607_ufcs_write_msg(struct ufcs_dev *ufcs, unsigned char *buf, int 
 		chg_err("write tx buf send cmd error, rc=%d\n", rc);
 		return rc;
 	}
+	usleep_range(4000, 4000);
+	sc6607_ufcs_get_adc_value(chip);
 	return rc;
 }
 
@@ -378,6 +400,23 @@ static int sc6607_ufcs_set_baud_rate(struct ufcs_dev *ufcs, enum ufcs_baud_rate 
 	return rc;
 }
 
+static int sc6607_set_ufcs_enable(struct sc6607_ufcs *chip, bool enable)
+{
+	struct oplus_voocphy_manager *voocphy;
+
+	if (!chip)
+		return -EINVAL;
+
+	voocphy = chip->voocphy;
+	if (voocphy == NULL)
+		return -EINVAL;
+
+	if (voocphy->ops && voocphy->ops->set_ufcs_enable)
+		voocphy->ops->set_ufcs_enable(voocphy, enable);
+
+	return 0;
+}
+
 static int sc6607_ufcs_enable(struct ufcs_dev *ufcs)
 {
 	u8 addr_buf[SC6607_ENABLE_REG_NUM] = {
@@ -398,10 +437,13 @@ static int sc6607_ufcs_enable(struct ufcs_dev *ufcs)
 
 	chip = ufcs->drv_data;
 
+	sc6607_set_ufcs_enable(chip, true);
+
 	for (i = 0; i < SC6607_ENABLE_REG_NUM; i++) {
 		rc = sc6607_write_byte(chip, addr_buf[i], cmd_buf[i]);
 		if (rc < 0) {
 			chg_err("write i2c failed!\n");
+			sc6607_set_ufcs_enable(chip, false);
 			return rc;
 		}
 	}
@@ -430,8 +472,11 @@ static int sc6607_ufcs_disable(struct ufcs_dev *ufcs)
 	rc = sc6607_write_byte(chip, SC6607_ADDR_UFCS_CTRL0, SC6607_CMD_DIS_CHIP);
 	if (rc < 0) {
 		chg_err("write i2c failed\n");
+		sc6607_set_ufcs_enable(chip, false);
 		return rc;
 	}
+
+	sc6607_set_ufcs_enable(chip, false);
 
 	return 0;
 }
@@ -503,6 +548,33 @@ static int sc6607_ufcs_event_handler(struct ufcs_dev *ufcs)
 
 	sc6607_retrieve_reg_flags(chip);
 	rc = ufcs_msg_handler(ufcs);
+	return rc;
+}
+
+static int sc6607_retrieve_flags(struct ufcs_dev *ufcs)
+{
+	int rc = 0;
+	int err_type = 0;
+	struct sc6607_ufcs *chip;
+	struct oplus_voocphy_manager *voocphy;
+
+	if (!ufcs || !ufcs->drv_data)
+		return -EINVAL;
+
+	chip = ufcs->drv_data;
+
+	voocphy = chip->voocphy;
+	if (voocphy == NULL)
+		return -EINVAL;
+
+	if (voocphy->ops && voocphy->ops->get_int_value &&
+	    voocphy->ops->get_cp_error_type && voocphy->ops->upload_cp_error) {
+		voocphy->ops->get_int_value(voocphy);
+		rc = voocphy->ops->get_cp_error_type(voocphy, &err_type);
+		if (rc == 0)
+			rc = voocphy->ops->upload_cp_error(voocphy, err_type);
+	}
+
 	return rc;
 }
 
@@ -593,6 +665,7 @@ static struct ufcs_dev_ops ufcs_ops = {
 	.enable = sc6607_ufcs_enable,
 	.disable = sc6607_ufcs_disable,
 	.irq_event_handler = sc6607_ufcs_event_handler,
+	.retrieve_flags = sc6607_retrieve_flags,
 };
 
 static int sc6607_charger_choose(struct sc6607 *chip)
@@ -664,6 +737,26 @@ static struct regmap_config sc6607_regmap_config = {
 	.volatile_reg = sc6607_is_volatile_reg,
 };
 
+static void sc6607_get_voocphy_client_work(struct work_struct *work)
+{
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct sc6607_ufcs *chip = container_of(dwork, struct sc6607_ufcs, get_voocphy_client_work);
+
+	oplus_voocphy_get_chip(&chip->voocphy);
+	chip->found_voocphy_client_count++;
+
+	if (!chip->voocphy && chip->found_voocphy_client_count < FOUND_VOOCPHY_CLIENT_MAX_COUNT)
+		schedule_delayed_work(&chip->get_voocphy_client_work, msecs_to_jiffies(FOUND_VOOCPHY_CLIENT_MAX_DELAY));
+}
+
+static void sc6607_cp_init_work_queues(struct sc6607_ufcs *chip)
+{
+	INIT_WORK(&chip->ufcs_regdump_work, sc6607_ufcs_regdump_work);
+	INIT_DELAYED_WORK(&chip->get_voocphy_client_work, sc6607_get_voocphy_client_work);
+	oplus_mms_wait_topic("error", sc6607_subscribe_error_topic, chip);
+	schedule_delayed_work(&chip->get_voocphy_client_work, msecs_to_jiffies(FOUND_VOOCPHY_CLIENT_MAX_DELAY));
+}
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
 static int sc6607_ufcs_probe(struct i2c_client *client)
 #else
@@ -697,14 +790,13 @@ static int sc6607_ufcs_probe(struct i2c_client *client, const struct i2c_device_
 		goto regmap_init_err;
 	}
 
-	INIT_WORK(&chip->ufcs_regdump_work, sc6607_ufcs_regdump_work);
 	chip->ufcs = ufcs_device_register(chip->dev, &ufcs_ops, chip, &sc6607_ufcs_config);
 	if (IS_ERR_OR_NULL(chip->ufcs)) {
 		chg_err("ufcs device register error\n");
 		rc = -ENODEV;
 		goto regmap_init_err;
 	}
-	oplus_mms_wait_topic("error", sc6607_subscribe_error_topic, chip);
+	sc6607_cp_init_work_queues(chip);
 	chg_info("end!\n");
 	return 0;
 

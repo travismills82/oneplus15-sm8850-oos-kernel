@@ -276,6 +276,8 @@ void qrtr_print_wakeup_reason(const void *data)
 		(unsigned int)preview, (unsigned int)(preview >> 32),
 		service_id, ipc == NULL ? "null" : ipc->owner_comm,
 		ipc == NULL ? 0 : ipc->owner_pid);
+	if (ipc)
+		qrtr_port_put(ipc);
 }
 EXPORT_SYMBOL_GPL(qrtr_print_wakeup_reason);
 

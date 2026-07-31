@@ -959,6 +959,7 @@ struct oplus_voocphy_manager {
 	u8 last_vooc_vbus_status;
 	struct oplus_chg_strategy *ccd_strategy;
 	bool twice_request_current_enable;
+	bool ufcs_enable;
 };
 
 struct oplus_voocphy_operations {
@@ -1005,6 +1006,7 @@ struct oplus_voocphy_operations {
 	int (*set_sstimeout_ucp_enable)(struct oplus_voocphy_manager *chip, bool enable);
 	int (*cp_set_vac2v2x_uvp)(struct oplus_voocphy_manager *chip, bool enable);
 	int (*set_usb_dischg_enable)(struct oplus_voocphy_manager *chip, bool enable);
+	int (*set_ufcs_enable)(struct oplus_voocphy_manager *chip, bool enable);
 };
 
 #define VOOCPHY_LOG_BUF_LEN 1024

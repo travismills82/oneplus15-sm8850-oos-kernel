@@ -1585,7 +1585,7 @@ static int fts_fwupg_ecc_cal_host(u8 *buf, u32 len)
 	return (int)ecc;
 }
 
-int fts_fwupg_ecc_cal_tp(struct chip_data_ft3683g *ts_data, u32 saddr, u32 len)
+static int fts_fwupg_ecc_cal_tp(struct chip_data_ft3683g *ts_data, u32 saddr, u32 len)
 {
 	int ret = 0;
 	u8 wbuf[7] = { 0 };
@@ -2396,9 +2396,24 @@ static int fts_enable_black_gesture(struct chip_data_ft3683g *ts_data,
 	u8 gesture_config_D1 = 0xBF;
 	u8 gesture_config_D2 = 0x07;
 	u8 gesture_config_D6 = 0x3E;
+	u8 ucReadD0 = 0;
+	int i = 0;
 
 	TPD_INFO("MODE_GESTURE, write 0xD0=%d", enable);
 	fts_write_reg(FTS_REG_GESTURE_EN, enable);
+	for (i = 0; i < 3; i++) {
+		fts_read_reg(FTS_REG_GESTURE_EN, &ucReadD0);
+		if (ucReadD0 == enable) {
+			TPD_INFO("MODE_GESTURE, Read 0xD0=%d (write success)", ucReadD0);
+			break;
+		} else {
+		    fts_write_reg(FTS_REG_GESTURE_EN, enable);
+		}
+		msleep(10);
+	}
+	if (i >= 3) {
+		TPD_INFO("MODE_GESTURE, Write 0xD0 failed after 3 retries!");
+	}
 
 	if (enable) {
 			SET_GESTURE_BIT(state, DOU_TAP, gesture_config_D1, 4)
@@ -3151,8 +3166,12 @@ static u32 fts_u32_trigger_reason(void *chip_data, int gesture_enable,
 	}
 
 	/*glove mode*/
-	TPD_DEBUG("%s, GloveMode:%d", __func__, touch_buf[0]&0x40 ? 1 : 0);
-
+	TP_SPECIFIC_PRINT(ts_data->tp_index, ts_data->print_count, "GloveMode:%d\n", (touch_buf[0]&0x40) ? 1 : 0);
+	TP_SPECIFIC_PRINT(ts_data->tp_index, ts_data->print_count, "PalmMode:%d, WaterMode:%d\n", (touch_buf[0]&0x02) ? 1 : 0, (touch_buf[0]&0x01) ? 1 : 0);
+	if (buffer_len >= MAX_DIFF_L8) {
+		TP_SPECIFIC_PRINT(ts_data->tp_index, ts_data->print_count, "ResetType:%d, downThd:%d, upThd:%d, idleThd:%d, maxDiff:%d\n",
+			touch_buf[RESET_TYPE], touch_buf[DOWN_THD], touch_buf[UP_THD], touch_buf[IDLE_THD], ((touch_buf[MAX_DIFF_H8] << 8) + touch_buf[MAX_DIFF_L8]));
+	}
 	/*confirm need print debug info*/
 	if (touch_buf[0] != ts_data->irq_type) {
 		SET_BIT(result_event, IRQ_FW_HEALTH);
@@ -3553,6 +3572,11 @@ static void fts_health_report(void *chip_data, struct monitor_data *mon_data)
 	u8 ucMcFreVal[2] = {0};
 	struct chip_data_ft3683g *ts_data = (struct chip_data_ft3683g *)chip_data;
 	char *freq_str = NULL;
+	int tx_num = ts_data->hw_res->tx_num;
+	int rx_num = ts_data->hw_res->rx_num;
+	int event_num = 0;
+	char point_buff[FTS_POINTER_BUFFER_LEN] = {0};
+	char edge_buff[FTS_EDG_BUFFER_LEN] = {0};
 
 	if (IS_ERR_OR_NULL(ts_data) || IS_ERR_OR_NULL(ts_data->monitor_data)) {
 		TPD_INFO("%s:NULL Pointer", __func__);
@@ -3592,6 +3616,13 @@ static void fts_health_report(void *chip_data, struct monitor_data *mon_data)
 	    || ts_data->monitor_data->health_simulate_trigger) {
 		TPD_DETAIL("Health register(0x01):Base Refresh");
 		tp_healthinfo_report(mon_data, HEALTH_REPORT, HEALTH_REPORT_BASELINE_ERR);
+		focal_get_differ_version(ts_data);
+		cmd = FTS_REG_POINTS;
+		ret = fts_read(&cmd, 1, ts_data->touch_buf, ts_data->buffer_len);
+		if ((ts_data->tp_differ_version == FTS_DIFFER_VERSION_V2) && !ret) {
+			TPD_INFO("baseline error ,tp differ print start.\n");
+			fts_print_differ_v2(ts_data, tx_num, rx_num, point_buff, edge_buff, event_num);
+		}
 	}
 	if ((val & 0x10)
 	    || ts_data->monitor_data->health_simulate_trigger) {
@@ -3655,6 +3686,29 @@ static void fts_health_report(void *chip_data, struct monitor_data *mon_data)
 		}
 	}
 	mon_data->work_freq = val;
+
+	/* baseline_negative*/
+	cmd = FTS_REG_HEALTH_BASELINE;
+	ret = fts_read_reg(cmd, &val);
+	if (ret < 0) {
+		TPD_INFO("read baseline_negative reg failed.\n");
+		return;
+	}
+	/* bit4:1---baseline neg */
+	if (val & 0x10) {
+		TPD_INFO("Health register(0x01):baseline_negative:1");
+		tp_healthinfo_report(mon_data, HEALTH_REPORT, HEALTH_REPORT_BASELINE_NEGATIVE);
+		focal_get_differ_version(ts_data);
+		cmd = FTS_REG_POINTS;
+		ret = fts_read(&cmd, 1, ts_data->touch_buf, ts_data->buffer_len);
+		if ((ts_data->tp_differ_version == FTS_DIFFER_VERSION_V2) && !ret) {
+			TPD_INFO("baseline negative, tp differ print start.\n");
+			fts_print_differ_v2(ts_data, tx_num, rx_num, point_buff, edge_buff, event_num);
+			if (ts_data->ts->exception_upload_support) {
+				tp_exception_report(&ts_data->ts->exception_data, EXCEP_BASELINE_ERR, "Baseline_negative", sizeof("Baseline_negative"));
+			}
+		}
+	}
 }
 
 static int fts_get_gesture_info(void *chip_data, struct gesture_info *gesture)
@@ -3864,6 +3918,8 @@ static void fts_enable_fingerprint_underscreen(void *chip_data, uint32_t enable)
 {
 	int ret = 0;
 	u8 val = 0xFF;
+	u8 ucReadCF = 0;
+	int i = 0;
 	struct chip_data_ft3683g *ts_data = (struct chip_data_ft3683g *)chip_data;
 
 
@@ -3902,6 +3958,19 @@ static void fts_enable_fingerprint_underscreen(void *chip_data, uint32_t enable)
 
 	TPD_INFO("%s:write %x=%x.", __func__, FTS_REG_FOD_EN, val);
 	ret = fts_write_reg(FTS_REG_FOD_EN, val);
+	for (i = 0; i < 3; i++) {
+		fts_read_reg(FTS_REG_FOD_EN, &ucReadCF);
+		if (ucReadCF == val) {
+			TPD_INFO("MODE_GESTURE, Read 0xCF=%d (write success)", ucReadCF);
+			break;
+		} else {
+		    ret = fts_write_reg(FTS_REG_FOD_EN, val);
+		}
+		msleep(10);
+	}
+	if (i >= 3) {
+		TPD_INFO("MODE_GESTURE, Write 0xCF failed after 3 retries!");
+	}
 
 	if (ret < 0) {
 		TPD_INFO("%s: write FOD enable(%x=%x) fail", __func__, FTS_REG_FOD_EN, val);
@@ -4010,6 +4079,44 @@ static void fts_force_water_mode(void *chip_data, bool enable)
 	retval = fts_read_reg(FTS_REG_FREQUENCE_WATER_MODE, &regval);
 	if(retval < 0) {
 		TPD_INFO("Failed to get water mode config\n");
+		return;
+	}
+	TPD_INFO("%s: now reg_val=0x%x", __func__, regval);
+}
+
+static void fts_inject_wdt_reset(void *chip_data, int value)
+{
+	int retval = 0;
+	u8 regval = 0;
+
+	if (!chip_data) {
+		TPD_INFO("%s: chip_data is NULL\n", __func__);
+		return;
+	}
+
+	TPD_INFO("%s: %s inject watchdog reset.\n", __func__, value ? "Enter" : "Exit");
+
+	retval = fts_read_reg(FTS_REG_INJECT_WDT_RESET, &regval);
+	if(retval < 0) {
+		TPD_INFO("Failed to get watchdog reset config\n");
+		return;
+	}
+
+	if (value) {
+		regval = regval | 0x03;
+	} else {
+		regval = regval & 0xfc;
+	}
+
+	retval = fts_write_reg(FTS_REG_INJECT_WDT_RESET, regval);
+	if(retval < 0) {
+		TPD_INFO("Failed to write inject watchdog reset\n");
+		return;
+	}
+
+	retval = fts_read_reg(FTS_REG_INJECT_WDT_RESET, &regval);
+	if(retval < 0) {
+		TPD_INFO("Failed to read inject watchdog reset\n");
 		return;
 	}
 	TPD_INFO("%s: now reg_val=0x%x", __func__, regval);
@@ -4564,6 +4671,7 @@ static struct oplus_touchpanel_operations fts_ops = {
 	.get_glove_mode            = fts_get_glove_mode,
 	.aiunit_game_info          = fts_aiunit_game_info,
 	.set_idle_freq_mode        = fts_set_idle_freq_mode,
+	.inject_wdt_reset           = fts_inject_wdt_reset,
 };
 
 static struct focal_auto_test_operations ft3683g_test_ops = {

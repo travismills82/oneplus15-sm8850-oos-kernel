@@ -440,6 +440,7 @@ static void __lowmem_dbg_dump(struct lowmem_dbg_cfg *cfg)
 	unsigned long file, active_file, inactive_file, shmem;
 	unsigned long vmalloc, pgtbl, kernel_stack, kernel_misc_reclaimable;
 	unsigned long dmabuf, dmabuf_pool, gpu, unaccounted;
+	unsigned long uxpool, erm_lru, erm_free;
 	unsigned long shmem_swapped;
 	struct sysinfo si;
 	struct files_acct files_acct;
@@ -475,6 +476,10 @@ static void __lowmem_dbg_dump(struct lowmem_dbg_cfg *cfg)
 	dmabuf_pool = read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_POOL);
 	gpu = read_mtrack_mem_usage(MTRACK_GPU, MTRACK_GPU_TOTAL);
 
+	uxpool = read_mtrack_mem_usage(MTRACK_UXMEM_POOL, MTRACK_UXMEM_POOL_TOTAL);
+	erm_lru = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU);
+	erm_free = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE);
+
 	unaccounted = tot - free - slab_reclaimable - slab_unreclaimable -
 		vmalloc - anon - file - pgtbl - kernel_stack - dmabuf -
 		gpu - kernel_misc_reclaimable;
@@ -497,6 +502,8 @@ static void __lowmem_dbg_dump(struct lowmem_dbg_cfg *cfg)
 		     K(file), K(active_file), K(inactive_file), K(shmem), K(shmem_swapped));
 	osvelte_info("vmalloc: %lu page_tables: %lu kernel_stack: %lu kernel_misc_reclaimable: %lu\n",
 		     K(vmalloc), K(pgtbl), K(kernel_stack), K(kernel_misc_reclaimable));
+	osvelte_info("uxpool: %lu erm_lru: %lu erm_free: %lu\n",
+		     K(uxpool), K(erm_lru), K(erm_free));
 	osvelte_info("dmabuf: %lu dmabuf_pool: %lu gpu: %lu unaccounted: %lu\n",
 		     K(dmabuf), K(dmabuf_pool), K(gpu), K(unaccounted));
 

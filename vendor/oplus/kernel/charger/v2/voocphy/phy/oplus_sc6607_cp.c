@@ -43,6 +43,13 @@
 #define SC6607_CP_STATUS_REG_MAX		2
 #define ERR_MSG_BUF		PAGE_SIZE
 
+enum {
+	REG_CP_FLT_FLG,
+	REG_CP_PMID2OUT_FLG,
+	REG_CP_INT_STAT,
+	REG_CP_MAX, /* REG_CP_MAX maximum is five */
+};
+
 struct sc6607 {
 	s32 chip_id;
 	bool error_reported;
@@ -74,14 +81,16 @@ struct sc6607 {
 	struct work_struct ic_offline_work;
 	struct mutex i2c_rw_lock;
 	struct mutex adc_read_lock;
+	struct delayed_work track_cp_switching_work;
+	int cp_reg_track[SC6607_TRACK_REG_NUM];
+	int cp_reason_seq[SC6607_IRQ_EVNET_NUM];
+	int i2c_err_debug;
 };
 
-static struct irqinfo sc6607_int_flag[SC6607_IRQ_EVNET_NUM] = {
-	{SC6607_VOOCPHY_VBATSNS_OVP_FLAG_MASK, "VBATSNS_OVP", 1},
-	{SC6607_VOOCPHY_VBAT_OVP_FLAG_MASK, "VBAT_OVP", 1},
-	{SC6607_VOOCPHY_IBUS_OCP_FLAG_MASK, "IBUS_OCP", 1},
-	{SC6607_VOOCPHY_IBUS_UCP_FALL_FLAG_MASK , "IBUS_UCP_FALL", 1},
-	{SC6607_VOOCPHY_SS_TIMEOUT_FLAG_MASK, "SS_TIMEOUT", 1},
+struct irq_info {
+	int reg_list_order;
+	u8 mask;
+	int err_type;
 };
 
 static enum oplus_cp_work_mode g_cp_support_work_mode[] = {
@@ -96,12 +105,46 @@ static const struct regmap_config sc6607_regmap_cfg = {
 
 static int sc6607_cp_set_sstimeout_ucp_enable(struct oplus_chg_ic_dev *ic_dev, bool enable);
 static int sc6607_voocphy_set_sstimeout_ucp_enable(struct oplus_voocphy_manager *chip, bool enable);
+static void sc6607_upload_i2c_err_info(struct sc6607 *chip, bool read, s32 *err_info);
+static u8 sc6607_voocphy_get_int_value(struct oplus_voocphy_manager *chip);
+
+static void sc6607_i2c_error(struct sc6607 *chip, bool happen, bool read, s32 *err_info)
+{
+	if (!chip)
+		return;
+
+	if (chip->i2c_err_debug) {
+		chip->i2c_err_debug = 0;
+		happen = true;
+		read = true;
+		err_info[SC6607_I2C_ERR_ADDR] = 0;
+		err_info[SC6607_I2C_ERR_CODE] = -EIO;
+		atomic_set(&chip->i2c_err_count, SC6607_I2C_ERR_NUM);
+	}
+
+	if (happen) {
+		if (chip->error_reported)
+			return;
+		if (atomic_read(&chip->i2c_err_count) < SC6607_I2C_ERR_NUM) {
+			atomic_inc(&chip->i2c_err_count);
+			return;
+		}
+		chip->error_reported = true;
+		vote(chip->disable_votable, IIC_VOTER, true, 1, false);
+		sc6607_upload_i2c_err_info(chip, read, err_info);
+	} else {
+		vote(chip->disable_votable, IIC_VOTER, false, 0, false);
+		chip->error_reported = false;
+		atomic_set(&chip->i2c_err_count, 0);
+	}
+}
 
 static int sc6607_field_read(struct sc6607 *chip, enum sc6607_fields field_id, u8 *data)
 {
 	int ret = 0;
 	int retry = SC6607_I2C_RETRY_READ_MAX_COUNT;
 	int val;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
 
 	if (ARRAY_SIZE(sc6607_reg_fields) <= field_id)
 		return ret;
@@ -122,10 +165,15 @@ static int sc6607_field_read(struct sc6607 *chip, enum sc6607_fields field_id, u
 		}
 	}
 
-	if (ret < 0)
+	if (ret < 0) {
+		err_info[SC6607_I2C_ERR_ADDR] = sc6607_reg_fields[field_id].reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, true, err_info);
 		chg_err("i2c read fail: can't read field %d, %d\n", field_id, ret);
-	else
-		*data = val & 0xff;
+		return ret;
+	}
+	sc6607_i2c_error(chip, false, true, err_info);
+	*data = val & 0xff;
 
 	return ret;
 }
@@ -134,6 +182,7 @@ static int sc6607_field_write(struct sc6607 *chip, enum sc6607_fields field_id, 
 {
 	int ret = 0;
 	int retry = SC6607_I2C_RETRY_WRITE_MAX_COUNT;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
 
 	if (ARRAY_SIZE(sc6607_reg_fields) <= field_id)
 		return ret;
@@ -154,58 +203,43 @@ static int sc6607_field_write(struct sc6607 *chip, enum sc6607_fields field_id, 
 		}
 	}
 
-	if (ret < 0)
-		chg_err("i2c read fail: can't write field %d, %d\n", field_id, ret);
-
-	return ret;
-}
-
-static void sc6607_i2c_error(struct oplus_voocphy_manager *voocphy, bool happen, bool read)
-{
-	struct sc6607 *chip;
-
-	if (!voocphy || !voocphy->priv_data)
-		return;
-
-	chip = voocphy->priv_data;
-
-	if (happen) {
-		if (chip->error_reported)
-			return;
-		if (atomic_read(&chip->i2c_err_count) < I2C_ERR_NUM) {
-			atomic_inc(&chip->i2c_err_count);
-			return;
-		}
-		chip->error_reported = true;
-		vote(chip->disable_votable, IIC_VOTER, true, 1, false);
-		oplus_chg_ic_creat_err_msg(chip->cp_ic, OPLUS_IC_ERR_CP,
-					   CP_ERR_I2C, "%s error",
-					   read ? "read" : "write");
-		oplus_chg_ic_err_trigger_and_clean(chip->cp_ic);
-	} else {
-		vote(chip->disable_votable, IIC_VOTER, false, 0, false);
-		chip->error_reported = false;
-		atomic_set(&chip->i2c_err_count, 0);
+	if (ret < 0) {
+		err_info[SC6607_I2C_ERR_ADDR] = sc6607_reg_fields[field_id].reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, false, err_info);
+		chg_err("i2c read fail: can't read field %d, %d\n", field_id, ret);
+		return ret;
 	}
+	sc6607_i2c_error(chip, false, false, err_info);
+	return ret;
 }
 
 static int __sc6607_voocphy_read_byte(struct i2c_client *client, u8 reg, u8 *data)
 {
 	s32 ret;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
+	struct sc6607 *chip;
 	struct oplus_voocphy_manager *voocphy = i2c_get_clientdata(client);
 
 	if (!voocphy) {
 		chg_err("voocphy is NULL\n");
 		return -EINVAL;
 	}
+	chip = voocphy->priv_data;
+	if (!chip) {
+		chg_err("chip is NULL\n");
+		return -ENODEV;
+	}
 
 	ret = i2c_smbus_read_byte_data(client, reg);
 	if (ret < 0) {
-		sc6607_i2c_error(voocphy, true, true);
+		err_info[SC6607_I2C_ERR_ADDR] = reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, true, err_info);
 		chg_err("i2c read fail: can't read from reg 0x%02X\n", reg);
 		return ret;
 	}
-	sc6607_i2c_error(voocphy, false, true);
+	sc6607_i2c_error(chip, false, true, err_info);
 	*data = (u8)ret;
 
 	return 0;
@@ -214,18 +248,27 @@ static int __sc6607_voocphy_read_byte(struct i2c_client *client, u8 reg, u8 *dat
 static int __sc6607_voocphy_write_byte(struct i2c_client *client, u8 reg, u8 val)
 {
 	s32 ret;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
+	struct sc6607 *chip;
 	struct oplus_voocphy_manager *voocphy = i2c_get_clientdata(client);
 
 	if (!voocphy)
 		return -EINVAL;
+	chip = voocphy->priv_data;
+	if (!chip) {
+		chg_err("chip is NULL\n");
+		return -ENODEV;
+	}
 
 	ret = i2c_smbus_write_byte_data(client, reg, val);
 	if (ret < 0) {
-		sc6607_i2c_error(voocphy, true, false);
+		err_info[SC6607_I2C_ERR_ADDR] = reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, false, err_info);
 		chg_err("i2c write fail: can't write 0x%02X to reg 0x%02X: %d\n", val, reg, ret);
 		return ret;
 	}
-	sc6607_i2c_error(voocphy, false, false);
+	sc6607_i2c_error(chip, false, false, err_info);
 	return 0;
 }
 
@@ -270,6 +313,7 @@ static int sc6607_voocphy_write_byte(struct i2c_client *client, u8 reg, u8 data)
 static s32 sc6607_voocphy_read_word(struct i2c_client *client, u8 reg)
 {
 	s32 ret;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
 	struct sc6607 *chip;
 	struct oplus_voocphy_manager *voocphy = i2c_get_clientdata(client);
 
@@ -282,12 +326,14 @@ static s32 sc6607_voocphy_read_word(struct i2c_client *client, u8 reg)
 	mutex_lock(&chip->i2c_rw_lock);
 	ret = i2c_smbus_read_word_data(client, reg);
 	if (ret < 0) {
-		sc6607_i2c_error(voocphy, true, true);
+		err_info[SC6607_I2C_ERR_ADDR] = reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, true, err_info);
 		chg_err("i2c read word fail: can't read reg:0x%02X \n", reg);
 		mutex_unlock(&chip->i2c_rw_lock);
 		return ret;
 	}
-	sc6607_i2c_error(voocphy, false, true);
+	sc6607_i2c_error(chip, false, true, err_info);
 	mutex_unlock(&chip->i2c_rw_lock);
 	return ret;
 }
@@ -295,6 +341,7 @@ static s32 sc6607_voocphy_read_word(struct i2c_client *client, u8 reg)
 static s32 sc6607_voocphy_write_word(struct i2c_client *client, u8 reg, u16 val)
 {
 	s32 ret;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
 	struct sc6607 *chip;
 	struct oplus_voocphy_manager *voocphy = i2c_get_clientdata(client);
 
@@ -307,12 +354,14 @@ static s32 sc6607_voocphy_write_word(struct i2c_client *client, u8 reg, u16 val)
 	mutex_lock(&chip->i2c_rw_lock);
 	ret = i2c_smbus_write_word_data(client, reg, val);
 	if (ret < 0) {
-		sc6607_i2c_error(voocphy, true, false);
+		err_info[SC6607_I2C_ERR_ADDR] = reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, false, err_info);
 		chg_err("i2c write word fail: can't write 0x%02X to reg:0x%02X \n", val, reg);
 		mutex_unlock(&chip->i2c_rw_lock);
 		return ret;
 	}
-	sc6607_i2c_error(voocphy, false, false);
+	sc6607_i2c_error(chip, false, false, err_info);
 	mutex_unlock(&chip->i2c_rw_lock);
 	return 0;
 }
@@ -343,6 +392,7 @@ static int sc6607_bulk_read(struct sc6607 *chip, u8 reg, u8 *val, size_t count)
 {
 	int ret;
 	int retry = SC6607_I2C_RETRY_READ_MAX_COUNT;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
 
 	ret = regmap_bulk_read(chip->regmap, reg, val, count);
 	if (ret < 0) {
@@ -356,8 +406,14 @@ static int sc6607_bulk_read(struct sc6607 *chip, u8 reg, u8 *val, size_t count)
 		}
 	}
 
-	if (ret < 0)
+	if (ret < 0) {
+		err_info[SC6607_I2C_ERR_ADDR] = reg;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, true, err_info);
 		chg_err("i2c bulk read failed: can't read 0x%0x, ret:%d\n", reg, ret);
+		return ret;
+	}
+	sc6607_i2c_error(chip, false, true, err_info);
 
 	return ret;
 }
@@ -496,8 +552,8 @@ static int sc6607_voocphy_get_adapter_info(struct oplus_voocphy_manager *voocphy
 static void sc6607_voocphy_update_data(struct oplus_voocphy_manager *voocphy)
 {
 	u8 data_block[18] = { 0 };
-	u8 data = 0;
 	s32 ret = 0;
+	s32 err_info[SC6607_I2C_ERR_INFO_NUM] = { 0 };
 	struct sc6607 *chip;
 
 	if (!voocphy || !voocphy->priv_data)
@@ -506,18 +562,19 @@ static void sc6607_voocphy_update_data(struct oplus_voocphy_manager *voocphy)
 	chip = voocphy->priv_data;
 
 	ret = sc6607_field_write(chip, F_WD_TIME_RST, true);
-	sc6607_voocphy_read_byte(voocphy->client, SC6607_REG_CP_FLT_FLG, &data);
-	chip->interrupt_flag = data;
+	chip->interrupt_flag = sc6607_voocphy_get_int_value(voocphy);
 
 	/*parse data_block for improving time of interrupt*/
 	sc6607_field_write(chip, F_ADC_FREEZE, 1);
 	ret = i2c_smbus_read_i2c_block_data(voocphy->client, SC6607_REG_HK_IBUS_ADC, 18, data_block);
 	sc6607_field_write(chip, F_ADC_FREEZE, 0);
 	if (ret < 0) {
-		sc6607_i2c_error(voocphy, true, true);
+		err_info[SC6607_I2C_ERR_ADDR] = SC6607_REG_HK_IBUS_ADC;
+		err_info[SC6607_I2C_ERR_CODE] = ret;
+		sc6607_i2c_error(chip, true, true, err_info);
 		chg_err("read vsys vbat error \n");
 	} else {
-		sc6607_i2c_error(voocphy, false, true);
+		sc6607_i2c_error(chip, false, true, err_info);
 	}
 	voocphy->cp_ichg = (((data_block[0] & SC6607_VOOCPHY_IBUS_POL_H_MASK) << SC6607_VOOCPHY_IBUS_POL_H_SHIFT) |
 			data_block[1]) * SC6607_VOOCPHY_IBUS_ADC_LSB;
@@ -725,27 +782,29 @@ static int sc6607_voocphy_get_cp_vbus(struct oplus_voocphy_manager *voocphy)
 static u8 sc6607_voocphy_get_int_value(struct oplus_voocphy_manager *voocphy)
 {
 	int ret = 0;
-	u8 data = 0;
-	u8 state = 0;
+	u8 data_block[2] = { 0 };
+	struct sc6607 *chip;
 
-	if (!voocphy)
-		return -EINVAL;
-
-	ret = sc6607_voocphy_read_byte(voocphy->client, SC6607_REG_CP_FLT_FLG, &data); /*ibus ucp register*/
-	if (ret < 0) {
-		chg_err("read SC6607_REG_CP_FLT_FLG failed\n");
-		return -EIO;
+	if (!voocphy || !voocphy->priv_data) {
+		chg_err("voocphy is null\n");
+		return 0;
 	}
 
-	ret = sc6607_voocphy_read_byte(voocphy->client, SC6607_REG_CP_PMID2OUT_FLG, &state); /*pmid2out protection*/
+	chip = voocphy->priv_data;
+	/* read 0x6B and 0x6C regs */
+	ret = sc6607_bulk_read(chip, SC6607_REG_CP_FLT_FLG, data_block, sizeof(data_block));
 	if (ret < 0) {
-		chg_err("read SC6607_REG_CP_PMID2OUT_FLG failed\n");
-		return -EIO;
+		chg_err("read reg 0x%02x failed\n", SC6607_REG_CP_FLT_FLG);
+		return 0;
 	}
-	chg_info("SC6607_REG_CP_FLT_FLG 0x6b=0x%x SC6607_REG_CP_PMID2OUT_FLG(0x6c)=0x%x", data, state);
-	return data;
+	memmove(voocphy->int_column_pre, voocphy->int_column, sizeof(voocphy->int_column));
+	voocphy->int_column[REG_CP_FLT_FLG] = data_block[0]; /* read 0x6B reg */
+	voocphy->int_column[REG_CP_PMID2OUT_FLG] = data_block[1]; /* read 0x6C reg */
+
+	return voocphy->int_column[REG_CP_FLT_FLG];
 }
 
+#define CP_SWITCHING_WORK_DELAY_MS	1000
 static int sc6607_voocphy_set_chg_enable(struct oplus_voocphy_manager *voocphy, bool enable)
 {
 	u8 data = 0;
@@ -757,10 +816,14 @@ static int sc6607_voocphy_set_chg_enable(struct oplus_voocphy_manager *voocphy, 
 
 	chip = voocphy->priv_data;
 
-	if (enable)
+	if (enable) {
 		ret = sc6607_field_write(chip, F_CP_EN, true);
-	else
+		schedule_delayed_work(&chip->track_cp_switching_work, msecs_to_jiffies(CP_SWITCHING_WORK_DELAY_MS));
+	} else {
 		ret = sc6607_field_write(chip, F_CP_EN, false);
+		cancel_delayed_work(&chip->track_cp_switching_work);
+	}
+
 	sc6607_voocphy_read_byte(voocphy->client, SC6607_REG_CP_CTRL, &data); /*performance mode , CP mode*/
 	return 0;
 }
@@ -869,6 +932,7 @@ static int sc6607_voocphy_reset_voocphy(struct oplus_voocphy_manager *voocphy)
 	chip = voocphy->priv_data;
 
 	chg_info("reset\n");
+	cancel_delayed_work(&chip->track_cp_switching_work);
 	sc6607_voocphy_write_byte(voocphy->client, SC6607_REG_VOOCPHY_IRQ, 0x7F);
 	/* close CP */
 	sc6607_voocphy_write_byte(voocphy->client, SC6607_REG_CP_CTRL, 0x80);
@@ -1167,22 +1231,502 @@ static int sc6607_voocphy_dump_registers(struct oplus_voocphy_manager *voocphy)
 	return 0;
 }
 
-static bool sc6607_voocphy_check_cp_int_happened(struct oplus_voocphy_manager *voocphy, bool *dump_reg, bool *send_info)
+static int sc6607_reset_reason_seq(struct sc6607 *chip, bool reset)
 {
 	int i = 0;
 
+	if (!chip)
+		return -EINVAL;
+
+	if (reset) {
+		for (i = 0; i < SC6607_IRQ_EVNET_NUM; i++)
+			chip->cp_reason_seq[i] = TRACK_CP_ERR_DEFAULT;
+	}
+
+	return 0;
+}
+
+static bool sc6607_voocphy_check_cp_int_status(
+	struct oplus_voocphy_manager *voocphy, int *err_type, bool check)
+{
+	int i = 0, reason_seq_idx = 0;
+	struct sc6607 *chip;
+	bool dump_err = false;
+	struct irq_info sc6607_flag_info[SC6607_IRQ_EVNET_NUM] = {
+		{REG_CP_PMID2OUT_FLG, SC6607_VOOCPHY_PIN_DIAG_FALL_FLAG_MASK, TRACK_CP_ERR_DIAG_FAIL},
+		{REG_CP_PMID2OUT_FLG, SC6607_VOOCPHY_VBUS_SHORT_FLAG_MASK, TRACK_CP_ERR_VBUS_SHORT},
+		{REG_CP_FLT_FLG, SC6607_VOOCPHY_VBATSNS_OVP_FLAG_MASK, TRACK_CP_ERR_VBATSNS_OVP},
+		{REG_CP_FLT_FLG, SC6607_VOOCPHY_IBUS_OCP_FLAG_MASK, TRACK_CP_ERR_IBUS_OCP},
+		{REG_CP_PMID2OUT_FLG, SC6607_VOOCPHY_PMID2OUT_OVP_FLAG_MASK, TRACK_CP_ERR_PMID2OUT_OVP},
+		{REG_CP_PMID2OUT_FLG, SC6607_VOOCPHY_PMID2OUT_UVP_FLAG_MASK, TRACK_CP_ERR_PMID2OUT_UVP},
+		{REG_CP_FLT_FLG, SC6607_VOOCPHY_SS_TIMEOUT_FLAG_MASK, TRACK_CP_ERR_SS_TIMEOUT},
+	};
+
+	if (NULL == voocphy || NULL == err_type) {
+		chg_err("voocphy or err_type is NULL\n");
+		return false;
+	}
+
+	chip = voocphy->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return false;
+	}
+
+	*err_type = TRACK_CP_ERR_DEFAULT;
+	sc6607_reset_reason_seq(chip, !check);
+	/*If check is true, don't reset the reason sequence*/
+
 	for (i = 0; i < SC6607_IRQ_EVNET_NUM; i++) {
-		if ((sc6607_int_flag[i].mask & voocphy->interrupt_flag) && sc6607_int_flag[i].mark_except) {
-			chg_err("cp int happened %s\n", sc6607_int_flag[i].except_info);
-			if (sc6607_int_flag[i].mask != SC6607_VOOCPHY_VBATSNS_OVP_FLAG_MASK &&
-			    sc6607_int_flag[i].mask != SC6607_VOOCPHY_VBAT_OVP_FLAG_MASK &&
-			    sc6607_int_flag[i].mask != SC6607_VOOCPHY_SS_TIMEOUT_FLAG_MASK)
-				*dump_reg = true;
-			return true;
+		if ((chip->cp_reg_track[sc6607_flag_info[i].reg_list_order] & sc6607_flag_info[i].mask) ||
+		   (sc6607_flag_info[i].mask & voocphy->int_column[sc6607_flag_info[i].reg_list_order])) {
+			dump_err = true;
+			if (check)
+				goto check_out;
+			chip->cp_reason_seq[reason_seq_idx] = sc6607_flag_info[i].err_type;
+			reason_seq_idx++;
+			chip->cp_reg_track[sc6607_flag_info[i].reg_list_order] &= ~sc6607_flag_info[i].mask;
+			if (reason_seq_idx >= SC6607_IRQ_EVNET_NUM)
+				break;
+		}
+	}
+	if (dump_err)
+		*err_type = chip->cp_reason_seq[0];
+
+check_out:
+	return dump_err;
+}
+
+static bool sc6607_voocphy_check_cp_int_happened(
+	struct oplus_voocphy_manager *chip, bool *dump_reg, bool *send_info)
+{
+	int err_type = 0;
+	bool err_happened = false;
+
+	err_happened = sc6607_voocphy_check_cp_int_status(chip, &err_type, true);
+	if (err_happened) {
+		*dump_reg = true;
+		*send_info = true;
+	}
+
+	return err_happened;
+}
+
+#define SC6607_DPDM_CTRL_REG_NUM	3
+static int sc6607a_set_dpdm_ctrl(struct oplus_voocphy_manager *voocphy, bool enable)
+{
+	int ret = 0;
+	int i;
+	u8 addr_buf[SC6607_DPDM_CTRL_REG_NUM] = {
+				SC6607_REG_DPDM_CTRL,
+				SC6607_REG_DPDM_CTRL_2,
+				SC6607_REG_DPDM_NONSTD_STAT };
+	u8 cmd_buf[SC6607_DPDM_CTRL_REG_NUM] = {
+				enable ? 0xB4 : 0x00,
+				enable ? 0x39 : 0x00,
+				enable ? 0x08 : 0x00 };
+
+	if (!voocphy)
+		return -EINVAL;
+
+	for (i = 0; i < SC6607_DPDM_CTRL_REG_NUM; i++) {
+		ret = sc6607_voocphy_write_byte(voocphy->client, addr_buf[i], cmd_buf[i]);
+		if (ret < 0) {
+			chg_err("write dpdm ctrl reg failed\n");
+			return -EINVAL;
 		}
 	}
 
-	return false;
+	return 0;
+}
+
+static int sc6607_set_ufcs_enable(struct oplus_voocphy_manager *voocphy, bool enable)
+{
+	struct sc6607 *chip;
+
+	if (!voocphy || !voocphy->priv_data) {
+		chg_err("chip or err_type is NULL\n");
+		return -EINVAL;
+	}
+
+	chip = voocphy->priv_data;
+
+	voocphy->ufcs_enable = enable;
+	if (enable)
+		sc6607_voocphy_update_data(voocphy);
+	if (chip->is_sc6607a)
+		sc6607a_set_dpdm_ctrl(voocphy, enable);
+	return 0;
+}
+
+static int sc6607_get_cp_error_type(struct oplus_voocphy_manager *chip, int *err_type)
+{
+	bool err_happened = false;
+
+	if (NULL == chip || NULL == err_type) {
+		chg_err("chip or err_type is NULL\n");
+		return -EINVAL;
+	}
+
+	err_happened = sc6607_voocphy_check_cp_int_status(chip, err_type, false);
+	chg_info("err_happened %d err_type %d\n", err_happened, *err_type);
+	if (err_happened && *err_type > 0) {
+		chg_info(" [%d, %d]\n", err_happened, *err_type);
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+#define TRACK_LOCAL_T_NS_TO_S_THD		1000000000
+#define TRACK_UPLOAD_COUNT_MAX			10
+#define TRACK_DEVICE_ABNORMAL_UPLOAD_PERIOD	(24 * 3600)
+#define REASON_LENGTH_MAX			1024
+#define ERR_LENGTH_MAX				64
+#define CHIP_INFO_LENGTH_MAX			128
+#define DUMP_LENGTH_MAX				256
+static int sc6607_track_get_local_time_s(void)
+{
+	int local_time_s;
+
+	local_time_s = local_clock() / TRACK_LOCAL_T_NS_TO_S_THD;
+	return local_time_s;
+}
+
+static int sc6607_get_chip_info(struct oplus_voocphy_manager *voocphy, char *chip_info, int len)
+{
+	int index = 0;
+	struct sc6607 *chip;
+
+	if (!voocphy || !chip_info || len <= 0)
+		return 0;
+
+	chip = voocphy->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return 0;
+	}
+
+	index += scnprintf(&(chip_info[index]), len - index,
+		"$$device_id@@%s$$err_scene@@%s", chip->is_sc6607a ? "sc6607a" : "sc6607",
+		chip->is_sc6607a ? "sc6607a_cp_work_err" : "sc6607_cp_work_err");
+
+	return index;
+}
+
+static int sc6607_get_int_reg_info(struct oplus_voocphy_manager *chip, char *dump_info, int len)
+{
+	int index = 0;
+
+	if (!chip || !dump_info)
+		return 0;
+
+	index += scnprintf(&(dump_info[index]), len - index,
+	    "00: 0x%02x, 6B/6C pre[0x%02x, 0x%02x] 6B/6C [0x%02x, 0x%02x]",
+	   ((struct sc6607 *)chip->priv_data)->chip_id, chip->int_column_pre[REG_CP_FLT_FLG],
+	   chip->int_column_pre[REG_CP_PMID2OUT_FLG], chip->int_column[REG_CP_FLT_FLG],
+	   chip->int_column[REG_CP_PMID2OUT_FLG]);
+	return index;
+}
+
+static int sc6607_format_cp_err_reason(struct oplus_voocphy_manager *voocphy, int err_type,
+				       char *reason_info, int len)
+{
+	int i;
+	int reason_index = 0;
+	struct sc6607 *chip;
+
+	if (!voocphy || !reason_info || len <= 0)
+		return 0;
+
+	chip = voocphy->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return 0;
+	}
+
+	if (err_type == TRACK_CP_ERR_CP_EN_FAIL) {
+		reason_index += scnprintf(&(reason_info[reason_index]), len - reason_index,
+			"%s", track_cp_device_error_str(err_type));
+		return reason_index;
+	}
+
+	for (i = 0; i < SC6607_IRQ_EVNET_NUM; i++) {
+		if (chip->cp_reason_seq[i] <= TRACK_CP_ERR_DEFAULT)
+			break;
+		reason_index += scnprintf(&(reason_info[reason_index]), len - reason_index,
+			"%s%s", reason_index == 0 ? "" : ",",
+			track_cp_device_error_str(chip->cp_reason_seq[i]));
+	}
+	if (reason_index == 0)
+		reason_index += scnprintf(&(reason_info[reason_index]), len - reason_index,
+			"%s", track_cp_device_error_str(err_type));
+
+	sc6607_reset_reason_seq(chip, true);
+
+	return reason_index;
+}
+
+static int sc6607_track_upload_cp_err_info(struct oplus_voocphy_manager *chip, int err_type)
+{
+	int index = 0;
+	int rc = 0;
+	int curr_time;
+	static int upload_count = 0, pre_upload_time = 0;
+	char temp_str[REASON_LENGTH_MAX] = {0}, dump_info[DUMP_LENGTH_MAX] = {0};
+	char reason_info[DUMP_LENGTH_MAX] = {0}, chip_info[CHIP_INFO_LENGTH_MAX] = {0};
+	struct oplus_mms *err_topic;
+	struct mms_msg *msg = NULL;
+
+	if (chip == NULL || err_type <= TRACK_CP_ERR_DEFAULT) {
+		chg_err("chip or priv_data is NULL or err_type is invalid");
+		return -EINVAL;
+	}
+
+	err_topic = oplus_mms_get_by_name("error");
+	if (!err_topic) {
+		chg_err("error topic not found\n");
+		return -EINVAL;
+	}
+
+	curr_time = sc6607_track_get_local_time_s();
+	if (curr_time - pre_upload_time > TRACK_DEVICE_ABNORMAL_UPLOAD_PERIOD)
+		upload_count = 0;
+
+	if (upload_count > TRACK_UPLOAD_COUNT_MAX) {
+		chg_info("cp_err_uploading upload_count = %d > max %d, should return\n",
+			 upload_count, TRACK_UPLOAD_COUNT_MAX);
+		return 0;
+	}
+
+	upload_count++;
+	pre_upload_time = sc6607_track_get_local_time_s();
+
+	sc6607_get_chip_info(chip, chip_info, sizeof(chip_info));
+	index += scnprintf(&(temp_str[index]), REASON_LENGTH_MAX - index, "%s", chip_info);
+	sc6607_format_cp_err_reason(chip, err_type, reason_info, sizeof(reason_info));
+	index += scnprintf(&(temp_str[index]),
+		REASON_LENGTH_MAX - index, "$$err_reason@@%s", reason_info);
+	sc6607_get_int_reg_info(chip, dump_info, sizeof(dump_info));
+	index += scnprintf(&(temp_str[index]),
+		REASON_LENGTH_MAX - index, "$$reg_info@@%s", dump_info);
+
+	msg = oplus_mms_alloc_str_msg(MSG_TYPE_ITEM, MSG_PRIO_MEDIUM,
+		ERR_ITEM_ERR_PHY_CP_INFO, temp_str);
+	if (msg == NULL) {
+		chg_err("alloc msg error\n");
+		return -EINVAL;
+	}
+	rc = oplus_mms_publish_msg_sync(err_topic, msg);
+	if (rc < 0) {
+		chg_err("publish msg error, rc=%d\n", rc);
+		kfree(msg);
+	}
+
+	return 0;
+}
+
+__printf(3, 4)
+static int sc6607_publish_ic_err_msg(int type, int sub_type, const char *format, ...)
+{
+	va_list args;
+	char *buf;
+	int rc;
+	struct mms_msg *topic_msg;
+	struct oplus_mms *err_topic = oplus_mms_get_by_name("error");
+
+	if (!err_topic)
+		return -ENODEV;
+
+	buf = kzalloc(ERR_MSG_BUF, GFP_KERNEL);
+	if (buf == NULL)
+		return -ENOMEM;
+
+	va_start(args, format);
+	vsnprintf(buf, ERR_MSG_BUF, format, args);
+	va_end(args);
+
+	topic_msg =
+		oplus_mms_alloc_str_msg(MSG_TYPE_ITEM, MSG_PRIO_HIGH, ERR_ITEM_IC,
+		"[%s]-[%d]-[%d]:%s", "sc6607", type, sub_type, buf);
+	kfree(buf);
+	if (topic_msg == NULL) {
+		chg_err("alloc topic msg error\n");
+		return -ENOMEM;
+	}
+
+	rc = oplus_mms_publish_msg_sync(err_topic, topic_msg);
+	if (rc < 0) {
+		chg_err("publish error topic msg error, rc=%d\n", rc);
+		kfree(topic_msg);
+	}
+
+	return rc;
+}
+
+static void sc6607_upload_i2c_err_info(struct sc6607 *chip, bool read, s32 *err_info)
+{
+	char *buf;
+	size_t index = 0;
+
+	buf = kzalloc(ERR_MSG_BUF, GFP_KERNEL);
+	if (buf == NULL)
+		return;
+
+	index += scnprintf(buf + index, ERR_MSG_BUF - index,
+		"$$i2c_type@@%s$$err_reg@@0x%x$$err_reason@@%d", read ? "read" : "write", err_info[0], err_info[1]);
+	if (index > 0 && index < ERR_MSG_BUF)
+		buf[index] = 0;
+
+	sc6607_publish_ic_err_msg(OPLUS_IC_ERR_I2C, 0, "%s", buf);
+	kfree(buf);
+}
+
+static ssize_t sc6607_track_reg_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct oplus_voocphy_manager *voocphy_msg = dev_get_drvdata(dev);
+	struct sc6607 *chip;
+
+	if (!buf) {
+		chg_err("buf is NULL\n");
+		return -EINVAL;
+	}
+
+	if (!voocphy_msg) {
+		chg_err("voocphy_msg is NULL\n");
+		return -EINVAL;
+	}
+	chip = voocphy_msg->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return -EINVAL;
+	}
+
+	return snprintf(buf, ERR_MSG_BUF, "0x66/0x6B/0x6C[0x%02x, 0x%02x, 0x%02x]\n", chip->cp_reg_track[REG_CP_INT_STAT],
+	       chip->cp_reg_track[REG_CP_FLT_FLG], chip->cp_reg_track[REG_CP_PMID2OUT_FLG]);
+}
+
+#define SC6607_SSCANF_INPUT_MAX 64
+static ssize_t sc6607_track_reg_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct oplus_voocphy_manager *voocphy_msg = dev_get_drvdata(dev);
+	int track_buf[SC6607_TRACK_REG_NUM] = { 0 };
+	struct sc6607 *chip;
+
+	if (!buf) {
+		chg_err("buf is NULL\n");
+		return -EINVAL;
+	}
+
+	if (count >= SC6607_SSCANF_INPUT_MAX) {
+		chg_err("buf too long, count=%zu\n", count);
+		return -EINVAL;
+	}
+
+	if (!voocphy_msg) {
+		chg_err("voocphy_msg is NULL\n");
+		return -EINVAL;
+	}
+
+	chip = voocphy_msg->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return -EINVAL;
+	}
+
+	if (sscanf(buf, "%x,%x,%x", &track_buf[REG_CP_INT_STAT], &track_buf[REG_CP_FLT_FLG],
+		&track_buf[REG_CP_PMID2OUT_FLG]) != SC6607_TRACK_REG_NUM) {
+		chg_err("invalid buff %s\n", buf);
+		return -EINVAL;
+	}
+
+	if (track_buf[REG_CP_FLT_FLG] > 0xff || track_buf[REG_CP_INT_STAT] > 0xff ||
+		track_buf[REG_CP_PMID2OUT_FLG] > 0xff) {
+		chg_err("0x66/0x6B/0x6C en[0x%02x, 0x%02x, 0x%02x] invalid\n", track_buf[REG_CP_INT_STAT],
+			track_buf[REG_CP_FLT_FLG], track_buf[REG_CP_PMID2OUT_FLG]);
+		return -EINVAL;
+	}
+
+	memmove(chip->cp_reg_track, track_buf, sizeof(track_buf));
+
+	chg_info("0x66/0x6B/0x6C[0x%02x, 0x%02x, 0x%02x]\n", chip->cp_reg_track[REG_CP_INT_STAT],
+	    chip->cp_reg_track[REG_CP_FLT_FLG], chip->cp_reg_track[REG_CP_PMID2OUT_FLG]);
+
+	return count;
+}
+static DEVICE_ATTR(track_reg, 0660, sc6607_track_reg_show, sc6607_track_reg_store);
+
+static ssize_t sc6607_i2c_err_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct oplus_voocphy_manager *voocphy_msg = dev_get_drvdata(dev);
+	struct sc6607 *chip;
+
+	if (!buf) {
+		chg_err("buf is NULL\n");
+		return -EINVAL;
+	}
+
+	if (!voocphy_msg) {
+		chg_err("voocphy_msg is NULL\n");
+		return -EINVAL;
+	}
+	chip = voocphy_msg->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return -EINVAL;
+	}
+
+	return snprintf(buf, ERR_MSG_BUF, "echo %d > i2c_err to inject i2c error report\n", chip->i2c_err_debug);
+}
+
+#define I2C_ERR_DEBUG_TRUE	1
+static ssize_t sc6607_i2c_err_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct oplus_voocphy_manager *voocphy_msg = dev_get_drvdata(dev);
+	struct sc6607 *chip;
+	int val = 0;
+
+	if (!buf) {
+		chg_err("buf is NULL\n");
+		return -EINVAL;
+	}
+
+	if (!voocphy_msg) {
+		chg_err("voocphy_msg is NULL\n");
+		return -EINVAL;
+	}
+
+	chip = voocphy_msg->priv_data;
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return -EINVAL;
+	}
+
+	if (kstrtoint(buf, 0, &val) < 0 || val != I2C_ERR_DEBUG_TRUE) {
+		chg_err("invalid input, echo 1 to i2c_err to inject\n");
+		return -EINVAL;
+	}
+
+	chip->i2c_err_debug = I2C_ERR_DEBUG_TRUE;
+
+	return count;
+}
+static DEVICE_ATTR(i2c_err, 0660, sc6607_i2c_err_show, sc6607_i2c_err_store);
+
+static void sc6607_create_device_node(struct device *dev)
+{
+	device_create_file(dev, &dev_attr_track_reg);
+	device_create_file(dev, &dev_attr_i2c_err);
+}
+
+static void sc6607_remove_device_node(struct device *dev)
+{
+	device_remove_file(dev, &dev_attr_track_reg);
+	device_remove_file(dev, &dev_attr_i2c_err);
 }
 
 static int sc6607_voocphy_set_sstimeout_ucp_enable(struct oplus_voocphy_manager *chip, bool enable)
@@ -1202,6 +1746,65 @@ static int sc6607_voocphy_set_sstimeout_ucp_enable(struct oplus_voocphy_manager 
 	rc = sc6607_cp_set_sstimeout_ucp_enable(dev->cp_ic, enable);
 
 	return rc;
+}
+
+static u8 sc6607_get_vbus_status(struct sc6607 *chip)
+{
+	int ret;
+	u8 value;
+	u8 vbus_status;
+
+	if (!chip) {
+		chg_err("chip is null\n");
+		return VOOC_VBUS_INVALID;
+	}
+
+	ret = sc6607_voocphy_read_byte(chip->client, SC6607_REG_CP_INT_STAT, &value);
+	if (ret < 0) {
+		chg_err("failed to get vbus status(%d)\n", ret);
+		return VOOC_VBUS_INVALID;
+	}
+
+	if (value & SC6607_VOOCPHY_VBUS_ERR_HI_STAT_MASK)
+		vbus_status = VOOC_VBUS_HIGH;
+	else if (value & SC6607_VOOCPHY_VBUS_ERR_LO_STAT_MASK)
+		vbus_status = VOOC_VBUS_LOW;
+	else
+		vbus_status = VOOC_VBUS_NORMAL;
+
+	chg_info("CP_INT_STAT=0x%02x, vbus status: %d\n", value, vbus_status);
+
+	return vbus_status;
+}
+
+static u8 sc6607_voocphy_get_vbus_status(struct oplus_voocphy_manager *voocphy)
+{
+	struct sc6607 *chip;
+
+	if (!voocphy || !voocphy->priv_data) {
+		chg_err("sc6607 chip is NULL\n");
+		return VOOC_VBUS_INVALID;
+	}
+
+	chip = voocphy->priv_data;
+
+	return sc6607_get_vbus_status(chip);
+}
+
+static int sc6607a_get_chip_id(struct oplus_voocphy_manager *chip)
+{
+	struct sc6607 *dev;
+	dev = chip->priv_data;
+
+	if (!dev) {
+		chg_err("sc6607 chip is NULL\n");
+		return CHIP_ID_DEFAULT;
+	}
+
+	if (dev->is_sc6607a)
+		return CHIP_ID_SC6607A;
+	else
+		return CHIP_ID_DEFAULT;
 }
 
 static struct oplus_voocphy_operations sc6607_voocphy_ops = {
@@ -1229,6 +1832,10 @@ static struct oplus_voocphy_operations sc6607_voocphy_ops = {
 	.dump_voocphy_reg = sc6607_voocphy_dump_reg_in_err_issue,
 	.check_cp_int_happened = sc6607_voocphy_check_cp_int_happened,
 	.set_sstimeout_ucp_enable = sc6607_voocphy_set_sstimeout_ucp_enable,
+	.upload_cp_error = sc6607_track_upload_cp_err_info,
+	.get_cp_error_type = sc6607_get_cp_error_type,
+	.get_vbus_status = sc6607_voocphy_get_vbus_status,
+	.set_ufcs_enable = sc6607_set_ufcs_enable,
 };
 
 static int sc6607_voocphy_charger_choose(struct oplus_voocphy_manager *voocphy)
@@ -1767,6 +2374,10 @@ static int sc6607_cp_set_work_start(struct oplus_chg_ic_dev *ic_dev, bool start)
 	oplus_imp_node_set_active(chip->input_imp_node, start);
 	oplus_imp_node_set_active(chip->output_imp_node, start);
 
+	if (start)
+		schedule_delayed_work(&chip->track_cp_switching_work, msecs_to_jiffies(CP_SWITCHING_WORK_DELAY_MS));
+	else
+		cancel_delayed_work(&chip->track_cp_switching_work);
 	return 0;
 }
 
@@ -2108,6 +2719,28 @@ static void sc6607_ic_offline_work(struct work_struct *work)
 	sc6607_cp_enable(chip->cp_ic, false);
 }
 
+static void sc6607_track_cp_switching_work(struct work_struct *work)
+{
+	u8 data;
+	int rc;
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct sc6607 *chip =
+		container_of(dwork, struct sc6607, track_cp_switching_work);
+	struct oplus_voocphy_manager *voocphy = chip->voocphy;
+
+	rc = sc6607_voocphy_read_byte(chip->client, SC6607_REG_CP_INT_STAT, &data);
+	if (rc < 0) {
+		chg_err("read SC6607_REG_CP_INT_STAT error, rc=%d\n", rc);
+		return;
+	}
+
+	if ((data & SC6607_VOOCPHY_CP_SWITCHING_FLAG_MASK) &&
+	   !(chip->cp_reg_track[REG_CP_INT_STAT] & SC6607_VOOCPHY_CP_SWITCHING_FLAG_MASK))
+		return;
+	chip->cp_reg_track[REG_CP_INT_STAT] = 0x00;
+	sc6607_track_upload_cp_err_info(voocphy, TRACK_CP_ERR_CP_EN_FAIL);
+}
+
 static int sc6607_disable_vote_callback(struct votable *votable, void *data,
 					 int disable, const char *client, bool step)
 {
@@ -2254,6 +2887,17 @@ static int sc6607_check_device_id(struct sc6607 *chip)
 	return 0;
 }
 
+static void sc6607_cp_init_work_queues(struct sc6607 *chip)
+{
+	oplus_mms_wait_topic("error", sc6607_subscribe_error_topic, chip);
+	INIT_WORK(&chip->cp_regdump_work, sc6607_cp_regdump_work);
+	INIT_WORK(&chip->ic_offline_work, sc6607_ic_offline_work);
+	INIT_DELAYED_WORK(&chip->track_cp_switching_work, sc6607_track_cp_switching_work);
+}
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+static int sc6607_voocphy_probe(struct i2c_client *client)
+#else
 static int sc6607_voocphy_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct sc6607 *chip;
@@ -2317,6 +2961,7 @@ static int sc6607_voocphy_probe(struct i2c_client *client, const struct i2c_devi
 	chip->ocp_reg = voocphy->ocp_reg;
 	chip->ovp_reg = voocphy->ovp_reg;
 
+	sc6607_create_device_node(&(client->dev));
 	ret = sc6607_ic_register(chip);
 	if (ret < 0) {
 		chg_err("cp ic register error\n");
@@ -2325,12 +2970,11 @@ static int sc6607_voocphy_probe(struct i2c_client *client, const struct i2c_devi
 	vote(chip->disable_votable, DEF_VOTER, false, 0, false);
 
 	sc6607_cp_init(chip->cp_ic);
-	oplus_mms_wait_topic("error", sc6607_subscribe_error_topic, chip);
-	INIT_WORK(&chip->cp_regdump_work, sc6607_cp_regdump_work);
-	INIT_WORK(&chip->ic_offline_work, sc6607_ic_offline_work);
+	sc6607_cp_init_work_queues(chip);
 	chg_info("end!\n");
 	return 0;
 cp_reg_err:
+	sc6607_remove_device_node(chip->dev);
 	if (chip->input_imp_node != NULL)
 		oplus_imp_node_unregister(chip->dev, chip->input_imp_node);
 	if (chip->output_imp_node != NULL)
@@ -2409,6 +3053,8 @@ static int sc6607_voocphy_remove(struct i2c_client *client)
 
 	if (voocphy && voocphy->priv_data) {
 		chip = voocphy->priv_data;
+		cancel_delayed_work_sync(&chip->track_cp_switching_work);
+		sc6607_remove_device_node(chip->dev);
 		if (chip->input_imp_node != NULL)
 			oplus_imp_node_unregister(chip->dev, chip->input_imp_node);
 		if (chip->output_imp_node != NULL)

@@ -121,4 +121,23 @@ struct memcg_vmstats_percpu {
 	long			state_prev[MEMCG_VMSTAT_SIZE];
 	unsigned long		events_prev[NR_MEMCG_EVENTS];
 } ____cacheline_aligned;
+
+/*
+ * the reason why not use memcg_page_state because memcg use use_hierarchy
+ * always true from kernel-5.15
+ */
+static unsigned long memcg_page_state_local(struct mem_cgroup *memcg, int idx)
+{
+	long x = 0;
+	int cpu;
+
+	for_each_possible_cpu(cpu)
+		x += per_cpu(memcg->vmstats_percpu->state[idx], cpu);
+#ifdef CONFIG_SMP
+	if (x < 0)
+		x = 0;
+#endif
+	return x;
+}
+
 #endif /* HYBRIDSWAP_HEADER_DUP_H */

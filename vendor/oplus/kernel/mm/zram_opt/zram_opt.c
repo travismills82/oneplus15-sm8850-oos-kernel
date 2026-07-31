@@ -24,13 +24,11 @@
 #include "../mm_osvelte/common.h"
 
 static struct config_oplus_bsp_zram_opt *config;
+static bool ezr_enabled;
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 
 static int g_direct_swappiness = 60;
 static int g_swappiness = 160;
-
-#define INACTIVE_FILE_PAGES_LOW_THRESHOLD (500 << 8)  //500MB
-#define INACTIVE_FILE_PAGES_LOW_SWAPPINESS (160)
 
 #ifdef CONFIG_DYNAMIC_TUNING_SWAPPINESS
 static int threshold1_vm_swappiness;
@@ -41,6 +39,10 @@ static struct proc_dir_entry *dynamic_swappiness_entry;
 
 #define check_swappiness(val) (((val) > 200) || ((val) < 0))
 #define check_vm_threshold(val) ((val) < 0)
+#endif
+
+#ifdef CONFIG_OPLUS_EXTRA_FREE_KBYTES
+static int oplus_extra_free_kbytes = 0;
 #endif
 
 #define PARA_BUF_LEN 128
@@ -82,16 +84,10 @@ int tune_dynamic_swappines(void)
 
 static void zo_set_swappiness(void *data, int *swappiness)
 {
-	unsigned long nr_inactive_file_pages = 0;
-	unsigned long nr_inactive_anon_pages = 0;
-
 	if (!free_zram_is_ok()) {
 		*swappiness = 0;
 		return;
 	}
-
-	nr_inactive_file_pages = global_node_page_state(NR_INACTIVE_FILE);
-	nr_inactive_anon_pages = global_node_page_state(NR_INACTIVE_ANON);
 
 	if (current_is_kswapd()) {
 #ifdef CONFIG_DYNAMIC_TUNING_SWAPPINESS
@@ -99,27 +95,18 @@ static void zo_set_swappiness(void *data, int *swappiness)
 #else
 		*swappiness = g_swappiness;
 #endif
-		/*
-		  Higher swappiness adjustment, When there are fewer inactive file pages
-		  but a larger number of inactive anonymous pages.
-		*/
-		if((*swappiness < INACTIVE_FILE_PAGES_LOW_SWAPPINESS) &&
-		    (nr_inactive_file_pages < INACTIVE_FILE_PAGES_LOW_THRESHOLD) &&
-		    (2 * nr_inactive_file_pages < nr_inactive_anon_pages))
-			*swappiness = INACTIVE_FILE_PAGES_LOW_SWAPPINESS;
-
 #ifdef CONFIG_HYBRIDSWAP_SWAPD
 	} else if (strncmp(current->comm, "hybridswapd:", sizeof("hybridswapd:") - 1) == 0) {
 		*swappiness = g_hybridswapd_swappiness;
 		if (free_swap_is_low_fp && free_swap_is_low_fp())
 			*swappiness = 0;
 #endif
-	} else {
+	} else
 		*swappiness = g_direct_swappiness;
-	}
 
 	return;
 }
+
 /* FIXME: We do not get the vendor_hook back for now, so we skip tune_inactive_ratio temporally */
 /*
 static void zo_set_inactive_ratio(void *data, unsigned long *inactive_ratio, int file)
@@ -159,7 +146,6 @@ static void balance_reclaim(void *unused, bool *balance_anon_file_reclaim)
 	unsigned long free_pages_threshold = 0;
 	unsigned long normal_zone_free_pages = 0;
 
-
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
 	if (config && config->balance_anon_file_reclaim_always_true) {
 		*balance_anon_file_reclaim = true;
@@ -180,6 +166,62 @@ static void balance_reclaim(void *unused, bool *balance_anon_file_reclaim)
 }
 #endif /* CONFIG_OPLUS_BALANCE_ANON_FILE_RECLAIM */
 
+#ifdef CONFIG_OPLUS_EXTRA_FREE_KBYTES
+struct pglist_data *first_online_pgdat(void)
+{
+	return NODE_DATA(first_online_node);
+}
+
+struct pglist_data *next_online_pgdat(struct pglist_data *pgdat)
+{
+	int nid = next_online_node(pgdat->node_id);
+
+	if (nid == MAX_NUMNODES)
+		return NULL;
+	return NODE_DATA(nid);
+}
+
+struct zone *next_zone(struct zone *zone)
+{
+	pg_data_t *pgdat = zone->zone_pgdat;
+
+	if (zone < pgdat->node_zones + MAX_NR_ZONES - 1)
+		zone++;
+	else {
+		pgdat = next_online_pgdat(pgdat);
+		if (pgdat)
+			zone = pgdat->node_zones;
+		else
+			zone = NULL;
+	}
+	return zone;
+}
+
+static void adjust_zone_wmark(void *unused, struct zone *zone, u64 interval)
+{
+	unsigned long delta;
+	unsigned long lowmem_pages = 0;
+	struct zone *z;
+
+	if (!oplus_extra_free_kbytes)
+		return;
+
+	for_each_zone(z) {
+		if (!is_highmem(z))
+			lowmem_pages += zone_managed_pages(z);
+	}
+
+	if (is_highmem(zone))
+		return;
+
+	delta = oplus_extra_free_kbytes >> (PAGE_SHIFT - 10);
+	delta *= zone_managed_pages(zone);
+	do_div(delta, lowmem_pages);
+	zone->_watermark[WMARK_LOW] += delta;
+	zone->_watermark[WMARK_HIGH] += delta;
+}
+#endif
+
 static void vh_android_vh_throttle_direct_reclaim_bypass(void *data, bool *bypass)
 {
 	if (test_task_is_rt(current) || current->prio == MAX_RT_PRIO || test_task_ux(current))
@@ -197,6 +239,10 @@ static void vh_android_vh_page_cache_ra_order_bypass(void *data,
 static int register_zram_opt_vendor_hooks(void)
 {
 	int ret = 0;
+
+	/* if ezr is enabled, we skip swappiness hook */
+	if (ezr_enabled)
+		goto bypass_swappiness_hook;
 
 	ret = register_trace_android_vh_tune_swappiness(zo_set_swappiness, NULL);
 	if (ret != 0) {
@@ -224,6 +270,7 @@ static int register_zram_opt_vendor_hooks(void)
 			pr_err("register_trace_android_rvh_perform_reclaim failed! ret=%d\n", ret);
 	}
 
+bypass_swappiness_hook:
 #if IS_ENABLED(CONFIG_OPLUS_BALANCE_ANON_FILE_RECLAIM)
 	ret = register_trace_android_rvh_set_balance_anon_file_reclaim(balance_reclaim,
 								       NULL);
@@ -232,6 +279,14 @@ static int register_zram_opt_vendor_hooks(void)
 		return ret;
 	}
 #endif /* CONFIG_OPLUS_BALANCE_ANON_FILE_RECLAIM */
+
+#ifdef CONFIG_OPLUS_EXTRA_FREE_KBYTES
+	ret = register_trace_android_vh_init_adjust_zone_wmark(adjust_zone_wmark, NULL);
+	if (ret) {
+		pr_err("Failed to register adjust_zone_wmark hooks\n");
+		return ret;
+	}
+#endif
 
 	ret = register_trace_android_vh_throttle_direct_reclaim_bypass(vh_android_vh_throttle_direct_reclaim_bypass, NULL);
 	if (ret) {
@@ -253,6 +308,9 @@ out:
 static void unregister_zram_opt_vendor_hooks(void)
 {
 	unregister_trace_android_vh_tune_swappiness(zo_set_swappiness, NULL);
+#ifdef CONFIG_OPLUS_EXTRA_FREE_KBYTES
+	unregister_trace_android_vh_init_adjust_zone_wmark(adjust_zone_wmark, NULL);
+#endif
 	unregister_trace_android_vh_throttle_direct_reclaim_bypass(vh_android_vh_throttle_direct_reclaim_bypass, NULL);
 	unregister_trace_android_vh_page_cache_ra_order_bypass(vh_android_vh_page_cache_ra_order_bypass, NULL);
 
@@ -509,12 +567,18 @@ static int __init zram_opt_init(void)
 	int ret = 0;
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+	struct config_ezreclaimd *erm_config;
+
 	config = oplus_read_mm_config(module_name_zram_opt);
 	if (config) {
 		pr_info("%s balance_anon_file_reclaim_always_true:%d\n",
 			module_name_zram_opt,
 			config->balance_anon_file_reclaim_always_true);
 	}
+
+	erm_config = oplus_read_mm_config(module_name_ezreclaimd);
+	if (erm_config)
+		ezr_enabled = erm_config->enable;
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 	ret = create_swappiness_para_proc();
 	if (ret)
@@ -566,5 +630,8 @@ module_param_named(vm_swappiness_threshold1, threshold1_vm_swappiness, int, S_IR
 module_param_named(vm_swappiness_threshold2, threshold2_vm_swappiness, int, S_IRUGO | S_IWUSR);
 module_param_named(swappiness_threshold1_size, threshold1_swappiness_size, int, S_IRUGO | S_IWUSR);
 module_param_named(swappiness_threshold2_size, threshold2_swappiness_size, int, S_IRUGO | S_IWUSR);
+#endif
+#ifdef CONFIG_OPLUS_EXTRA_FREE_KBYTES
+module_param_named(oplus_extra_free_kbytes, oplus_extra_free_kbytes, int, S_IRUGO | S_IWUSR);
 #endif
 MODULE_LICENSE("GPL v2");

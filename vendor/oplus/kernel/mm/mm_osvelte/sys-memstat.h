@@ -19,6 +19,8 @@ enum mtrack_type {
 	MTRACK_ASHMEM,
 	MTRACK_DMABUF,
 	MTRACK_GPU,
+	MTRACK_ERM,
+	MTRACK_UXMEM_POOL,
 	MTRACK_MAX
 };
 
@@ -26,8 +28,14 @@ enum mtrack_subtype {
 	MTRACK_DMABUF_SYSTEM_HEAP,
 	MTRACK_DMABUF_POOL,
 	MTRACK_DMABUF_BOOST_POOL,
+
 	MTRACK_GPU_TOTAL,
 	MTRACK_GPU_PROC_KERNEL,
+
+	MTRACK_ERM_LRU,
+	MTRACK_ERM_FREE,
+
+	MTRACK_UXMEM_POOL_TOTAL,
 	MTRACK_SUBTYPE_MAX
 };
 
@@ -35,12 +43,21 @@ static const char * const mtrack_text[MTRACK_MAX] = {
 	"ashmem",
 	"dma_buf",
 	"gpu",
+	"erm",
+	"uxpool",
 };
 
 struct mtrack_debugger {
 	long (*mem_usage)(enum mtrack_subtype type);
 	long (*pid_mem_usage)(enum mtrack_subtype type, pid_t pid);
 	void (*dump_usage_stat)(bool verbose);
+};
+
+struct osvelte_reclaim_stat {
+	/* 0: anon, 1: file */
+	unsigned long pgscan[2];
+	unsigned long pgsteal[2];
+	unsigned long dump_jiffies;
 };
 
 static inline unsigned long sys_totalram(void)

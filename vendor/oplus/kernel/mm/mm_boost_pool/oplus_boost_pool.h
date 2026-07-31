@@ -22,7 +22,7 @@
 struct dynamic_boost_pool {
 	char *name;
 	struct list_head list;
-	int sf_pages, camera_pages;
+	int sf_pages, camera_pages, camera_origin_pages;
 	int low, high, origin;
 	pid_t camera_pid;
 	struct task_struct *tsk, *prefill_tsk;

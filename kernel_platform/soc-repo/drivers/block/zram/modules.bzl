@@ -14,10 +14,10 @@ def register_modules(registry):
             "drivers/block/zram/hybridswap/hybridmain.c",
             "drivers/block/zram/hybridswap/hybridswapd.c",
             "drivers/block/zram/hybridswap/hybridswap.c",
+            "drivers/block/zram/hybridswap/display.c",
             "drivers/block/zram/hybridswap/hybridswap.h",
             "drivers/block/zram/hybridswap/internal.h",
             "drivers/block/zram/hybridswap/header_dup.h",
-            "drivers/block/zram/hybridswap/display.c",
         ],
         deps = [
             # do not sort
@@ -25,12 +25,15 @@ def register_modules(registry):
             "mm/zsmalloc",
             "drivers/soc/qcom/panel_event_notifier",
             "//vendor/oplus/kernel/mm:oplus_bsp_mm_osvelte",
+            "drivers/dma-buf/heaps/qcom_dma_heaps",
+            "//vendor/oplus/kernel/cpu:oplus_bsp_sched_assist",
         ],
         local_defines = [
             "CONFIG_HYBRIDSWAP",
             "CONFIG_HYBRIDSWAP_SWAPD",
             "CONFIG_HYBRIDSWAP_CORE",
-            "CONFIG_QCOM_PANEL_EVENT_NOTIFIER",
             "CONFIG_OPLUS_QPACE_RUS",
+            "CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD",
+            "CONFIG_QCOM_PANEL_EVENT_NOTIFIER",
         ],
     )

@@ -3343,7 +3343,7 @@ static void handle_pd_info_buffer(struct battery_chg_dev *bcdev,
 		return;
 	}
 	chg_info("got the pd partner info msg_id=%d, len=%zu\n", resp_msg->msg_id, len);
-	
+
 	buf_len = resp_msg->data_size;
 	if (buf_len == 0 || buf_len > sizeof(resp_msg->data_buffer)) {
 		chg_err("Incorrect buffer length: %zu\n", buf_len);
@@ -10732,6 +10732,11 @@ static int oplus_chg_get_vdm_info(struct oplus_chg_ic_dev *ic_dev, u32 *data, in
 	}
 
 	bcdev = oplus_chg_ic_get_drvdata(ic_dev);
+	if (!bcdev) {
+		chg_err("bcdev is NULL");
+		return -ENODEV;
+	}
+
 	if (data == NULL || cnt == NULL) {
 		chg_err("data or cnt is NULL");
 		return -EINVAL;

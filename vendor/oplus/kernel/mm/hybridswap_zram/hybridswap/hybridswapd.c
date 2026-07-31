@@ -18,18 +18,12 @@
 #include <linux/file.h>
 #include <linux/memcontrol.h>
 
-#if IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
-#include <linux/soc/qcom/panel_event_notifier.h>
-#include <linux/of.h>
-#include <drm/drm_panel.h>
-#elif IS_ENABLED(CONFIG_DRM_MSM) || IS_ENABLED(CONFIG_DRM_OPLUS_NOTIFY)
-#include <linux/msm_drm_notify.h>
-#elif IS_ENABLED(CONFIG_OPLUS_MTK_DRM_GKI_NOTIFY)
-#include <linux/mtk_panel_ext.h>
-#include <linux/mtk_disp_notify.h>
-#endif
-
+#ifdef CONFIG_HYBRIDSWAP_OPLUS_ZRAM
+#include "../zram_drv.h"
+#include "../zram_drv_internal.h"
+#else
 #include "hybridswap_zram_drv.h"
+#endif
 #include "internal.h"
 #include "hybridswap.h"
 

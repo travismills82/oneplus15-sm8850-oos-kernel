@@ -13393,6 +13393,7 @@ static int oplus_chg_track_gauge_status_check_platform_zero(
 	}
 	oplus_chg_track_get_gauge_low_soc_monitor_status(
 		track_chip, &track_chip->gauge_info, &track_chip->gauge_info.params);
+	track_chip->gauge_info.params.pre_ui_soc = track_chip->gauge_info.params.ui_soc;
 
 	return 0;
 }

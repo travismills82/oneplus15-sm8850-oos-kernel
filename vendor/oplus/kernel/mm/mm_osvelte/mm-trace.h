@@ -16,10 +16,12 @@
 /* reserve 32 for format_begin & format_end */
 #define MM_TRACE_FMT_MESSAGE_LENGTH (512 - 32)
 
+#ifndef SA_TRACING_MARK_WRITE
 static noinline void tracing_mark_write(const char *buf)
 {
 	trace_puts(buf);
 }
+#endif /* SA_TRACING_MARK_WRITE */
 
 #define WRITE_MSG(format_begin, format_end, track_name, name, value) { \
 	char buf[MM_TRACE_MESSAGE_LENGTH] __attribute__((uninitialized));     \
@@ -180,5 +182,22 @@ static inline void mm_trace_fmt_int64(int64_t value,
 	va_end(ap);
 
 	mm_trace_int64(buf, value);
+}
+
+static inline void mm_trace_instant_body(const char* name)
+{
+	WRITE_MSG("I|%d|", "%s", "", name, "");
+}
+
+static inline void mm_trace_fmt_instant_body(const char *fmt, ...)
+{
+	char buf[MM_TRACE_FMT_MESSAGE_LENGTH];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(buf, MM_TRACE_FMT_MESSAGE_LENGTH, fmt, ap);
+	va_end(ap);
+
+	mm_trace_instant_body(buf);
 }
 #endif /* _OSVELTE_MM_TRACE_H */

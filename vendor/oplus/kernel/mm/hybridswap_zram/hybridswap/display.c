@@ -14,15 +14,37 @@
 #include <linux/mtk_disp_notify.h>
 #endif
 
+#include <linux/sched.h>
+#include "mm_osvelte/common.h"
+
+#define PRIMARY_PANEL_ID 0
+#define SECONDARY_PANEL_ID 1
+#define MAX_PANEL_ID 2
+
 #if IS_ENABLED(CONFIG_DRM_MSM) || IS_ENABLED(CONFIG_DRM_OPLUS_NOTIFY) || IS_ENABLED(CONFIG_OPLUS_MTK_DRM_GKI_NOTIFY)
 static struct notifier_block fb_notif;
 #elif IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
-static void *g_panel_cookie;
+static void *g_panel_cookie[MAX_PANEL_ID];
+static bool g_display_off[MAX_PANEL_ID];
 #endif
-
 atomic_t display_off = ATOMIC_LONG_INIT(0);
+
+static void set_display_off(bool set, int panel_id)
+{
+	bool b;
+
 #if IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
-static struct drm_panel *get_active_panel(void)
+	g_display_off[panel_id] = set;
+	b = g_display_off[PRIMARY_PANEL_ID] && g_display_off[SECONDARY_PANEL_ID];
+#else /* IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER) */
+	b = set;
+#endif /* IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER) */
+	atomic_set(&display_off, b);
+	osvelte_set_scene(MM_SCENE_DISPLAY_OFF, b);
+}
+
+#if IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
+static struct drm_panel *get_active_panel(const char *panel_name)
 {
 	int i;
 	int count;
@@ -37,18 +59,18 @@ static struct drm_panel *get_active_panel(void)
 	}
 
 	log_warn("oplus,dsi-display-dev node found\n");
-	count = of_count_phandle_with_args(np, "oplus,dsi-panel-primary", NULL);
+	count = of_count_phandle_with_args(np, panel_name, NULL);
 	if (count <= 0) {
-		log_err("oplus,dsi-panel-primary missing\n");
+		log_err("%s missing\n", panel_name);
 		goto not_found;
 	}
 
 	for (i = 0; i < count; i++) {
-		panel_node = of_parse_phandle(np, "oplus,dsi-panel-primary", i);
+		panel_node = of_parse_phandle(np, panel_name, i);
 		panel = of_drm_find_panel(panel_node);
 		of_node_put(panel_node);
 		if (!IS_ERR(panel)) {
-			log_warn("active panel found\n");
+			log_warn("%s: active panel found\n", panel_name);
 			goto found;
 		}
 	}
@@ -69,15 +91,35 @@ static void bright_fb_notifier_callback(enum panel_event_notifier_tag tag,
 
 	switch (notification->notif_type) {
 	case DRM_PANEL_EVENT_BLANK:
-		atomic_set(&display_off, 1);
+		set_display_off(true, PRIMARY_PANEL_ID);
 		break;
 	case DRM_PANEL_EVENT_UNBLANK:
-		atomic_set(&display_off, 0);
+		set_display_off(false, PRIMARY_PANEL_ID);
 		break;
 	default:
 		break;
 	}
 }
+
+static void secondary_bright_fb_notifier_callback(enum panel_event_notifier_tag tag,
+	struct panel_event_notification *notification, void *client_data)
+{
+	if (!notification) {
+		log_info("%s, invalid notify\n", __func__);
+		return;
+	}
+	switch (notification->notif_type) {
+	case DRM_PANEL_EVENT_BLANK:
+		set_display_off(true, SECONDARY_PANEL_ID);
+		break;
+	case DRM_PANEL_EVENT_UNBLANK:
+		set_display_off(false, SECONDARY_PANEL_ID);
+		break;
+	default:
+		break;
+	}
+}
+
 #elif IS_ENABLED(CONFIG_DRM_MSM) || IS_ENABLED(CONFIG_DRM_OPLUS_NOTIFY)
 static int bright_fb_notifier_callback(struct notifier_block *self,
 		unsigned long event, void *data)
@@ -89,9 +131,9 @@ static int bright_fb_notifier_callback(struct notifier_block *self,
 		blank = evdata->data;
 
 		if (*blank ==  MSM_DRM_BLANK_POWERDOWN)
-			atomic_set(&display_off, 1);
+			set_display_off(true, PRIMARY_PANEL_ID);
 		else if (*blank == MSM_DRM_BLANK_UNBLANK)
-			atomic_set(&display_off, 0);
+			set_display_off(false, PRIMARY_PANEL_ID);
 	}
 
 	return NOTIFY_OK;
@@ -108,9 +150,9 @@ static int mtk_bright_fb_notifier_callback(struct notifier_block *self,
 	}
 
 	if (*blank == MTK_DISP_BLANK_POWERDOWN)
-		atomic_set(&display_off, 1);
+		set_display_off(true, PRIMARY_PANEL_ID);
 	else if (*blank == MTK_DISP_BLANK_UNBLANK)
-		atomic_set(&display_off, 0);
+		set_display_off(false, PRIMARY_PANEL_ID);
 	return NOTIFY_OK;
 }
 #endif
@@ -118,20 +160,37 @@ static int mtk_bright_fb_notifier_callback(struct notifier_block *self,
 void register_panel_event_notifier(void)
 {
 #if IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
-	struct drm_panel *active_panel;
+	struct drm_panel *primary_panel, *secondary_panel;
 	void *cookie = NULL;
 
-	active_panel = get_active_panel();
-	if (active_panel)
+	primary_panel = get_active_panel("oplus,dsi-panel-primary");
+	if (primary_panel)
 		cookie = panel_event_notifier_register(PANEL_EVENT_NOTIFICATION_PRIMARY,
-			PANEL_EVENT_NOTIFIER_CLIENT_MM, active_panel, bright_fb_notifier_callback, NULL);
+			PANEL_EVENT_NOTIFIER_CLIENT_MM, primary_panel, bright_fb_notifier_callback, NULL);
 
-	if (active_panel && !IS_ERR(cookie)) {
+	if (primary_panel && !IS_ERR(cookie)) {
 		log_warn("%s success\n", __func__);
-		g_panel_cookie = cookie;
+		g_panel_cookie[PRIMARY_PANEL_ID] = cookie;
 	} else {
 		log_err("%s failed. need fix\n", __func__);
 	}
+
+	g_display_off[SECONDARY_PANEL_ID] = true;
+	secondary_panel = get_active_panel("oplus,dsi-panel-secondary");
+	if (secondary_panel)
+		cookie = panel_event_notifier_register(PANEL_EVENT_NOTIFICATION_SECONDARY,
+			PANEL_EVENT_NOTIFIER_CLIENT_MM_SECONDARY, secondary_panel, secondary_bright_fb_notifier_callback, NULL);
+
+	if (secondary_panel && !IS_ERR(cookie)) {
+		log_warn("%s secondary panel success\n", __func__);
+		g_panel_cookie[SECONDARY_PANEL_ID] = cookie;
+		/* if secondary panel is active, set primary panel display off by default */
+		g_display_off[PRIMARY_PANEL_ID] = true;
+	} else {
+		/* set secondary panel display off by default */
+		log_err("%s failed. need fix\n", __func__);
+	}
+
 #elif IS_ENABLED(CONFIG_DRM_MSM) || IS_ENABLED(CONFIG_DRM_OPLUS_NOTIFY)
 	fb_notif.notifier_call = bright_fb_notifier_callback;
 	if (msm_drm_register_client(&fb_notif))
@@ -146,9 +205,14 @@ void register_panel_event_notifier(void)
 void unregister_panel_event_notifier(void)
 {
 #if IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
-	if (g_panel_cookie) {
-		panel_event_notifier_unregister(g_panel_cookie);
-		g_panel_cookie = NULL;
+
+	if (g_panel_cookie[PRIMARY_PANEL_ID]) {
+		panel_event_notifier_unregister(g_panel_cookie[PRIMARY_PANEL_ID]);
+		g_panel_cookie[PRIMARY_PANEL_ID] = NULL;
+	}
+	if (g_panel_cookie[SECONDARY_PANEL_ID]) {
+		panel_event_notifier_unregister(g_panel_cookie[SECONDARY_PANEL_ID]);
+		g_panel_cookie[SECONDARY_PANEL_ID] = NULL;
 	}
 #elif IS_ENABLED(CONFIG_DRM_MSM) || IS_ENABLED(CONFIG_DRM_OPLUS_NOTIFY)
 	msm_drm_unregister_client(&fb_notif);

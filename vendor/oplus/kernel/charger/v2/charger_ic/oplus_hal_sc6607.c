@@ -229,6 +229,196 @@ struct sc6607 {
 	struct delayed_work flash_mode_checkout_work;
 };
 
+
+struct soft_bc12 {
+	u8 bc12_state;
+	enum DPDM_STATE dp_state;
+	enum DPDM_STATE dm_state;
+	enum BC12_RESULT result;
+
+	u8 flag;
+	bool detect_done;
+	bool first_noti_sdp;
+	bool detect_ing;
+
+	struct mutex running_lock;
+	struct delayed_work detect_work;
+	int next_run_time;
+};
+
+struct sc6607_platform_data {
+	u32 vsyslim;
+	u32 batsns_en;
+	u32 vbat;
+	u32 ichg;
+	u32 vindpm;
+	u32 iindpm_dis;
+	u32 iindpm;
+	u32 ico_enable;
+	u32 iindpm_ico;
+	u32 vprechg;
+	u32 iprechg;
+	u32 iterm_en;
+	u32 iterm;
+	u32 rechg_dis;
+	u32 rechg_dg;
+	u32 rechg_volt;
+	u32 vboost;
+	u32 conv_ocp_dis;
+	u32 tsbat_jeita_dis;
+	u32 ibat_ocp_dis;
+	u32 vpmid_ovp_otg_dis;
+	u32 vbat_ovp_buck_dis;
+	u32 ibat_ocp;
+	u32 ntc_suport_1000k;
+/********* workaround: Octavian needs to enable adc start *********/
+	bool enable_adc;
+/********* workaround: Octavian needs to enable adc end *********/
+	u32 cc_pull_up_idrive;
+	u32 cc_pull_down_idrive;
+	u32 continuous_time;
+	u32 bmc_width[4];
+	u32 batfet_rst_en;
+};
+
+struct sc6607 {
+	struct device *dev;
+	struct i2c_client *client;
+
+	struct regmap *regmap;
+	struct regmap_field *regmap_fields[F_MAX_FIELDS];
+
+	const char *chg_dev_name;
+	const char *eint_name;
+
+	struct wakeup_source *suspend_ws;
+	struct wakeup_source *keep_resume_ws;
+	wait_queue_head_t wait;
+
+	atomic_t driver_suspended;
+	atomic_t charger_suspended;
+	atomic_t otg_enable_cnt;
+	unsigned long request_otg;
+
+	int irq;
+	int irq_gpio;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *charging_inter_active;
+	struct pinctrl_state *charging_inter_sleep;
+
+	bool power_good;
+	bool wd_rerun_detect;
+	struct sc6607_platform_data *platform_data;
+
+	struct power_supply *psy;
+	struct power_supply *chg_psy;
+	struct power_supply_desc psy_desc;
+
+	int vbus_type;
+	int hw_aicl_point;
+	bool open_adc_by_vac;
+	bool camera_on;
+	int disable_wdt;
+
+	bool is_force_dpdm;
+	bool usb_connect_start;
+
+	struct thermal_zone_device *tz_dev;
+
+	struct mutex dpdm_lock;
+	struct mutex adc_read_lock;
+	struct mutex i2c_rw_lock;
+	struct regulator *dpdm_reg;
+	bool dpdm_enabled;
+	struct soft_bc12 bc12;
+	int soft_bc12_type;
+	int bc12_try_count;
+	bool soft_bc12;
+	bool bc12_done;
+	atomic_t hvdcp_start;
+	int  bc12_timeouts;
+	struct timer_list bc12_timeout;
+	unsigned int oplus_chg_type;
+
+	struct mutex track_upload_lock;
+	struct mutex track_hk_err_lock;
+	u32 debug_force_hk_err;
+	bool hk_err_uploading;
+	int hk_debug_reg[SC6607_TRACK_REG_NUM];
+	int hk_err_reason_seq[SC6607_HK_IRQ_EVNET_NUM];
+	u8 hk_reg_track[SC6607_TRACK_REG_NUM];
+	u8 hk_reg_track_pre[SC6607_TRACK_REG_NUM];
+	struct work_struct track_match_hk_err_work;
+	struct delayed_work hk_err_load_trigger_work;
+	struct delayed_work hw_bc12_detect_work;
+	struct delayed_work init_status_work;
+	struct delayed_work init_status_check_work;
+	struct delayed_work tcpc_complete_work;
+	struct delayed_work get_voocphy_info_work;
+	bool track_init_done;
+
+	u8 chip_id;
+	bool pr_swap;
+	bool disable_tcpc_irq;
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+	struct adapter_device *pd_adapter;
+	struct mutex charger_pd_lock;
+	struct charger_device *chg_dev;
+#endif
+	bool disable_qc;
+	bool pdqc_setup_5v;
+	int  qc_to_9v_count;
+	bool hvdcp_cfg_9v_done;
+	int hvdcp_exit_stat;
+	bool hvdcp_can_enabled;
+	unsigned long long hvdcp_detect_time;
+	unsigned long long hvdcp_detach_time;
+	struct delayed_work qc_vol_convert_work;
+
+	bool not_support_usb_btb;
+	bool sc6607_switch_ntc;
+	bool usb_aicl_enhance;
+	struct iio_channel *batt_btb_temp_chan;
+	struct iio_channel *usb_btb_temp_chan;
+	bool error_reported;
+	bool use_ufcs_phy;
+	bool use_vooc_phy;
+	bool is_sc6607a;
+	struct votable *chg_disable_votable;
+	struct oplus_chg_ic_dev *ic_dev;
+	struct oplus_mms *err_topic;
+	struct mms_subscribe *err_subs;
+	struct oplus_mms *comm_topic;
+	struct mms_subscribe *comm_subs;
+
+	int found_cp_client_count;
+	struct oplus_voocphy_manager *voocphy;
+
+	struct tcpc_device *tcpc;
+	struct notifier_block pd_nb;
+
+	int cap_nr;
+	int pd_type;
+	int pd_chg_volt;
+	pd_msg_data pdo[PPS_PDO_MAX];
+	struct delayed_work sourcecap_done_work;
+	struct delayed_work charger_suspend_recovery_work;
+
+	struct delayed_work flash_mode_checkout_work;
+
+	struct votable *wired_icl_votable;
+	struct votable *wired_fcc_votable;
+	struct work_struct rerun_votable_work;
+};
+
+
+enum {
+	REG_HK_FLT_FLG,
+	REG_CHG_INT_FLG,
+	REG_CHG_FLT_FLG,
+	REG_CHG_FLT_FLG2,
+};
+
 struct sc6607_alert_handler {
 	u32 bit_mask;
 	int (*handler)(struct sc6607 *);
@@ -249,8 +439,10 @@ struct sc6607_track_check_reg {
 	u8 data;
 };
 
-struct tsbus_charger_temp {
-	struct thermal_zone_device *tzd;
+struct hk_irq_info {
+	int reg_list_order;
+	u8 mask;
+	int err_type;
 };
 
 static const u32 sy6607_adc_step[] = {
@@ -318,7 +510,7 @@ static void sc6607_check_ic_suspend(struct sc6607 *chip);
 static int oplus_sc6607_charger_suspend(struct sc6607 *chip);
 static int sc6607_dpdm_irq_handle(struct sc6607 *chip);
 static int bc12_detect_run(struct sc6607 *chip);
-static int sc6607_track_match_hk_err(struct sc6607 *chip, u8 data);
+static u8 sc6607_track_read_hk_reg(struct sc6607 *chip, u8 irq_val);
 static int sc6607_init_device(struct sc6607 *chip);
 static int sc6607_force_dpdm(struct sc6607 *chip, bool enable);
 static void oplus_notify_hvdcp_detach_stat(struct sc6607 *chip);
@@ -1424,6 +1616,16 @@ static int sc6607_hk_get_adc(struct sc6607 *chip, enum SC6607_ADC_MODULE id)
 	return (int)ret;
 }
 
+static bool sc6607_is_fastchg_commu_ing(struct sc6607 *chip)
+{
+	if (chip->voocphy &&
+		(oplus_chg_get_fastchg_commu_ing() ||
+		chip->voocphy->ufcs_enable))
+		return true;
+	else
+		return false;
+}
+
 static int sc6607_adc_read_ibus(struct sc6607 *chip)
 {
 	int ibus = 0;
@@ -1431,8 +1633,8 @@ static int sc6607_adc_read_ibus(struct sc6607 *chip)
 	if (!chip)
 		return -EINVAL;
 
-	if (chip->voocphy && oplus_chg_get_fastchg_commu_ing()) {
-		chg_info("svooc in communication\n");
+	if (sc6607_is_fastchg_commu_ing(chip)) {
+		chg_info("svooc or ufcs in communication ichg = %d\n", chip->voocphy->cp_ichg);
 		return chip->voocphy->cp_ichg;
 	} else {
 		ibus = sc6607_hk_get_adc(chip, SC6607_ADC_IBUS);
@@ -1448,8 +1650,8 @@ static int sc6607_adc_read_vbus_volt(struct sc6607 *chip)
 	if (!chip)
 		return -EINVAL;
 
-	if (chip->voocphy && oplus_chg_get_fastchg_commu_ing()) {
-		chg_info("svooc in communication\n");
+	if (sc6607_is_fastchg_commu_ing(chip)) {
+		chg_info("svooc or ufcs in communication ichg = %d\n", chip->voocphy->cp_ichg);
 		return chip->voocphy->cp_vbus;
 	}
 	vbus_vol = sc6607_hk_get_adc(chip, SC6607_ADC_VBUS);
@@ -2302,6 +2504,18 @@ static void oplus_chg_awake_init(struct sc6607 *chip)
 	chip->suspend_ws = wakeup_source_register(NULL, "split chg wakelock");
 }
 
+static void oplus_chg_awake_deinit(struct sc6607 *chip)
+{
+	if (!chip || !chip->suspend_ws) {
+		chg_err("chip is null\n");
+		return;
+	}
+
+	wakeup_source_unregister(chip->suspend_ws);
+	chip->suspend_ws = NULL;
+}
+
+
 static void oplus_chg_wakelock(struct sc6607 *chip, bool awake)
 {
 	static bool pm_flag = false;
@@ -2328,6 +2542,17 @@ static void oplus_keep_resume_awake_init(struct sc6607 *chip)
 	}
 
 	chip->keep_resume_ws = wakeup_source_register(NULL, "split_chg_keep_resume");
+}
+
+static void oplus_keep_resume_awake_deinit(struct sc6607 *chip)
+{
+	if (!chip || !chip->keep_resume_ws) {
+		chg_err("chip is null\n");
+		return;
+	}
+
+	wakeup_source_unregister(chip->keep_resume_ws);
+	chip->keep_resume_ws = NULL;
 }
 
 static void oplus_keep_resume_wakelock(struct sc6607 *chip, bool awake)
@@ -2368,6 +2593,35 @@ static void oplus_sc6607_set_mivr_by_battery_vol(struct sc6607 *chip)
 	chg_info("mV = %d\n", mV);
 }
 
+#define SC6607_DPDM_CTRL_REG_NUM	3
+static int sc6607a_set_dpdm_ctrl(struct sc6607 *chip, bool enable)
+{
+	int ret = 0;
+	int i;
+	u8 addr_buf[SC6607_DPDM_CTRL_REG_NUM] = {
+				SC6607_REG_DPDM_CTRL,
+				SC6607_REG_DPDM_CTRL_2,
+				SC6607_REG_DPDM_NONSTD_STAT };
+	u8 cmd_buf[SC6607_DPDM_CTRL_REG_NUM] = {
+				enable ? 0xB4 : 0x00,
+				enable ? 0x39 : 0x00,
+				enable ? 0x08 : 0x00 };
+
+	if (!chip)
+		return -EINVAL;
+
+	for (i = 0; i < SC6607_DPDM_CTRL_REG_NUM; i++) {
+		ret = sc6607_write_byte(chip, addr_buf[i], cmd_buf[i]);
+		if (ret < 0) {
+			chg_err("write dpdm ctrl reg 0x%02x failed, ret=%d\n",
+				addr_buf[i], ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int sc6607_hk_irq_handle(struct sc6607 *chip)
 {
 	int ret;
@@ -2383,7 +2637,7 @@ static int sc6607_hk_irq_handle(struct sc6607 *chip)
 	if (atomic_read(&chip->driver_suspended))
 		chg_info("suspended and wait %d ms\n", SC6607_WAIT_RESUME_TIME);
 
-	if (chip->voocphy && oplus_chg_get_fastchg_commu_ing()) {
+	if (sc6607_is_fastchg_commu_ing(chip)) {
 		ret = sc6607_voocphy_read_byte(chip->client, SC6607_REG_HK_INT_STAT, &val[0]);
 		if (ret) {
 			chg_err("read hk int stat reg failed\n");
@@ -2531,6 +2785,7 @@ static int sc6607_hk_irq_handle(struct sc6607 *chip)
 		sc6607_enable_enlim(chip);
 		sc6607_field_write(chip, F_ACDRV_MANUAL_PRE, 3);
 		sc6607_disable_hvdcp(chip);
+		atomic_set(&chip->hvdcp_start, false);
 		if (!chip->disable_qc)
 			oplus_notify_hvdcp_detach_stat(chip);
 		sc6607_detect_release(chip);
@@ -2557,6 +2812,10 @@ static int sc6607_dpdm_irq_handle(struct sc6607 *chip)
 	if (!chip)
 		return -EINVAL;
 
+	if (atomic_read(&chip->hvdcp_start)) {
+		oplus_sc6607_set_ichg(chip, SC6607_BUCK_ICHG_500MA);
+		sc6607_set_input_current_limit(chip, SC6607_DEFAULT_IBUS_MA);
+	}
 	sc6607_field_read(chip, F_HVDCP_EN, &hvdcp_en);
 	if (!hvdcp_en)
 		sc6607_set_input_current_limit(chip, SC6607_DEFAULT_IBUS_MA);
@@ -2685,6 +2944,7 @@ static int sc6607_ufcs_irq_handle(struct sc6607 *chip)
 		if (ufcs && ufcs->ops && ufcs->ops->irq_event_handler)
 			ufcs->ops->irq_event_handler(ufcs);
 	}
+
 	return IRQ_HANDLED;
 }
 
@@ -2693,19 +2953,14 @@ static int sc6607_buck_irq_handle(struct sc6607 *chip)
 	return 0;
 }
 
-static int sc6607_check_wd_timeout_fault(struct sc6607 *chip)
+static int sc6607_check_wd_timeout_fault(struct sc6607 *chip, u8 irq_val)
 {
-	int ret;
 	u8 val;
 
 	if (!chip)
 		return -EINVAL;
 
-	ret = sc6607_voocphy_read_byte(chip->client, SC6607_REG_HK_FLT_FLG, &val);
-	if (ret < 0) {
-		chg_err("read reg 0x%x failed\n", SC6607_REG_HK_FLT_FLG);
-		return ret;
-	}
+	val = sc6607_track_read_hk_reg(chip, irq_val);
 
 	if (val & SC6607_HK_WD_TIMEOUT_MASK) {
 		chg_err("wd timeout happened\n");
@@ -2713,30 +2968,13 @@ static int sc6607_check_wd_timeout_fault(struct sc6607 *chip)
 		sc6607_init_device(chip);
 		sc6607_hk_irq_handle(chip);
 	}
-	sc6607_track_match_hk_err(chip, val);
 
 	return 0;
 }
 
 static int sc6607_cp_irq_handle(struct sc6607 *chip)
 {
-	u8 val;
-	irqreturn_t ret = IRQ_HANDLED;
-
-	ret = sc6607_read_byte(chip, SC6607_REG_CP_FLT_FLG, &val); /*ibus ucp register*/
-	chg_info("SC6607_REG_CP_FLT_FLG(0x6B) data:0x%x", val);
-	if (ret < 0) {
-		chg_err("SC6607_REG_CP_FLT_FLG failed ret=%d\n", ret);
-		return IRQ_HANDLED;
-	}
-
-	ret = sc6607_read_byte(chip, SC6607_REG_CP_PMID2OUT_FLG, &val);
-	chg_info("SC6607_REG_CP_PMID2OUT_FLG(0x6C) data:0x%x", val);
-	if (ret < 0) {
-		chg_err("SC6607_REG_CP_PMID2OUT_FLG failed ret=%d\n", ret);
-		return IRQ_HANDLED;
-	}
-	return ret;
+	return 0;
 }
 
 static int sc6607_led_irq_handle(struct sc6607 *chip)
@@ -2781,7 +3019,7 @@ static irqreturn_t sc6607_irq_handler(int irq, void *data)
 		}
 	}
 
-	sc6607_check_wd_timeout_fault(chip);
+	sc6607_check_wd_timeout_fault(chip, val);
 
 irq_out:
 	oplus_keep_resume_wakelock(chip, false);
@@ -3088,6 +3326,7 @@ static int sc6607_init_device(struct sc6607 *chip)
 	chip->bc12_done = false;
 	chip->bc12_timeouts = 0;
 	chip->bc12_try_count = 0;
+	atomic_set(&chip->hvdcp_start, false);
 
 	sc6607_disable_watchdog_timer(chip);
 	ret = sc6607_read_byte(chip, SC6607_REG_HK_FLT_FLG, &val);
@@ -3865,8 +4104,8 @@ static int sc6607_get_tsbus(struct sc6607 *chip)
 	if (!chip)
 		return -EINVAL;
 
-	if (chip->voocphy && oplus_chg_get_fastchg_commu_ing()) {
-		chg_info("svooc in communication\n");
+	if (sc6607_is_fastchg_commu_ing(chip)) {
+		chg_info("svooc or ufcs in communication\n");
 		return sc6607_tsbus_tsbat_to_convert(chip, chip->voocphy->cp_tsbus, SC6607_ADC_TSBUS);
 	}
 	ret = sc6607_adc_read_tsbus(chip);
@@ -3919,8 +4158,8 @@ static int sc6607_get_tsbat(struct sc6607 *chip)
 	if (!chip)
 		return -EINVAL;
 
-	if (chip->voocphy && oplus_chg_get_fastchg_commu_ing()) {
-		chg_info("svooc in communication\n");
+	if (sc6607_is_fastchg_commu_ing(chip)) {
+		chg_info("svooc or ufcs in communication\n");
 		return sc6607_tsbus_tsbat_to_convert(chip, chip->voocphy->cp_tsbat, SC6607_ADC_TSBAT);
 	}
 
@@ -3944,9 +4183,282 @@ static int sc6607_track_check_buck_err(struct sc6607 *chip)
 	return 0;
 }
 
-static int sc6607_track_match_hk_err(struct sc6607 *chip, u8 data)
+#define REASON_LENGTH_MAX			1024
+#define ERR_LENGTH_MAX				64
+#define CHIP_INFO_LENGTH_MAX			128
+#define DUMP_LENGTH_MAX				256
+static int sc6607_track_get_local_time_s(void)
 {
+	int local_time_s;
+
+	local_time_s = local_clock() / TRACK_LOCAL_T_NS_TO_S_THD;
+	return local_time_s;
+}
+
+static int sc6607_get_chip_info(struct sc6607 *chip, char *chip_info, int len)
+{
+	int index = 0;
+
+	if (!chip || !chip_info || len <= 0)
+		return 0;
+
+	index += scnprintf(&(chip_info[index]), len - index,
+		"$$device_id@@%s$$err_scene@@%s", chip->is_sc6607a ? "sc6607a" : "sc6607",
+		chip->is_sc6607a ? "sc6607a_hk_work_err" : "sc6607_hk_work_err");
+
+	return index;
+}
+
+static int sc6607_get_charge_reg_info(struct sc6607 *chip, char *dump_info, int len)
+{
+	int index = 0;
+
+	if (!chip || !dump_info)
+		return 0;
+
+	index += scnprintf(&(dump_info[index]), len - index,
+	    "00: 0x%02x, 0D/44/52/53 pre[0x%02x, 0x%02x, 0x%02x, 0x%02x] 0D/44/52/53 [0x%02x, 0x%02x, 0x%02x, 0x%02x]",
+	    chip->chip_id, chip->hk_reg_track_pre[REG_HK_FLT_FLG], chip->hk_reg_track_pre[REG_CHG_INT_FLG],
+	    chip->hk_reg_track_pre[REG_CHG_FLT_FLG], chip->hk_reg_track_pre[REG_CHG_FLT_FLG2],
+	    chip->hk_reg_track[REG_HK_FLT_FLG], chip->hk_reg_track[REG_CHG_INT_FLG],
+	    chip->hk_reg_track[REG_CHG_FLT_FLG], chip->hk_reg_track[REG_CHG_FLT_FLG2]);
+	return index;
+}
+
+static int sc6607_format_hk_err_reason(struct sc6607 *chip, char *reason_info, int len)
+{
+	int i;
+	int reason_index = 0;
+
+	if (!chip || !reason_info || len <= 0)
+		return 0;
+
+	for (i = 0; i < SC6607_HK_IRQ_EVNET_NUM; i++) {
+		if (chip->hk_err_reason_seq[i] <= TRACK_BUCK_ERR_DEFAULT)
+			break;
+		reason_index += scnprintf(&(reason_info[reason_index]), len - reason_index,
+			"%s%s", reason_index == 0 ? "" : ",",
+			track_buck_device_error_str(chip->hk_err_reason_seq[i]));
+	}
+	if (reason_index == 0) {
+		reason_index += scnprintf(&(reason_info[reason_index]), len - reason_index,
+			"%s", track_buck_device_error_str(TRACK_BUCK_ERR_DEFAULT));
+	}
+	for (i = 0; i < SC6607_HK_IRQ_EVNET_NUM; i++)
+		chip->hk_err_reason_seq[i] = TRACK_BUCK_ERR_DEFAULT;
+
+	return reason_index;
+}
+
+static int sc6607_track_upload_hk_err_info(struct sc6607 *chip)
+{
+	int rc = 0;
+	int index = 0;
+	int curr_time;
+	static int upload_count = 0, pre_upload_time = 0;
+	char temp_str[REASON_LENGTH_MAX] = {0}, dump_info[DUMP_LENGTH_MAX] = {0};
+	char reason_info[DUMP_LENGTH_MAX] = {0}, chip_info[CHIP_INFO_LENGTH_MAX] = {0};
+	struct oplus_mms *err_topic;
+	struct mms_msg *msg = NULL;
+
+	if (chip == NULL) {
+		chg_err("chip is NULL");
+		return -EINVAL;
+	}
+
+	err_topic = oplus_mms_get_by_name("error");
+	if (!err_topic) {
+		chg_err("error topic not found\n");
+		return -EINVAL;
+	}
+
+	curr_time = sc6607_track_get_local_time_s();
+	if (curr_time - pre_upload_time > TRACK_DEVICE_ABNORMAL_UPLOAD_PERIOD)
+		upload_count = 0;
+
+	if (upload_count > TRACK_UPLOAD_COUNT_MAX) {
+		chg_info("charge_ic_err_uploading upload_count = %d > max %d, should return\n",
+			 upload_count, TRACK_UPLOAD_COUNT_MAX);
+		return 0;
+	}
+
+	upload_count++;
+	pre_upload_time = sc6607_track_get_local_time_s();
+
+	sc6607_get_chip_info(chip, chip_info, sizeof(chip_info));
+	index += scnprintf(&(temp_str[index]), REASON_LENGTH_MAX - index, "%s", chip_info);
+	sc6607_format_hk_err_reason(chip, reason_info, sizeof(reason_info));
+	index += scnprintf(&(temp_str[index]),
+		REASON_LENGTH_MAX - index, "$$err_reason@@%s", reason_info);
+
+	sc6607_get_charge_reg_info(chip, dump_info, sizeof(dump_info));
+	index += scnprintf(&(temp_str[index]),
+		REASON_LENGTH_MAX - index, "$$reg_info@@%s", dump_info);
+
+	msg = oplus_mms_alloc_str_msg(MSG_TYPE_ITEM, MSG_PRIO_MEDIUM,
+		ERR_ITEM_ERR_PHY_CP_INFO, temp_str);
+	if (msg == NULL) {
+		chg_err("alloc msg error\n");
+		return -EINVAL;
+	}
+	rc = oplus_mms_publish_msg_sync(err_topic, msg);
+	if (rc < 0) {
+		chg_err("publish msg error, rc=%d\n", rc);
+		kfree(msg);
+	}
+
 	return 0;
+}
+
+static void sc6607_track_match_hk_err_work(struct work_struct *work)
+{
+	int i;
+	int reason_seq_idx = 0;
+	bool err_happened = false;
+	struct sc6607 *chip = container_of(work, struct sc6607, track_match_hk_err_work);
+	struct hk_irq_info sc6607_flag_info[SC6607_HK_IRQ_EVNET_NUM] = {
+		{REG_HK_FLT_FLG, SC6607_HK_TSHUT_MASK, TRACK_BUCK_ERR_TSD},
+		{REG_CHG_INT_FLG, SC6607_BUCK_VSYS_SHORT_MASK, TRACK_BUCK_ERR_VSYS_SHORT},
+		{REG_CHG_FLT_FLG, SC6607_BUCK_VBAT_OVP_BUCK_FLG_MASK, TRACK_BUCK_ERR_VBAT_OVP},
+		{REG_HK_FLT_FLG, SC6607_HK_VBUS_OVP_MASK, TRACK_BUCK_ERR_VBUS_OVP},
+		{REG_HK_FLT_FLG, SC6607_HK_VAC_OVP_MASK, TRACK_BUCK_ERR_VAC_OVP},
+		{REG_CHG_FLT_FLG2, SC6607_BUCK_VPMID_SHORT_FLG_MASK, TRACK_BUCK_ERR_VPMID_SHORT},
+		{REG_CHG_FLT_FLG, SC6607_BUCK_IBAT_OCP_FLG_MASK, TRACK_BUCK_ERR_IBAT_OCP},
+		{REG_CHG_FLT_FLG, SC6607_BUCK_IBUS_RCP_FLG_MASK, TRACK_BUCK_ERR_IBUS_RCP},
+		{REG_CHG_FLT_FLG, SC6607_BUCK_CONV_OCP_FLG_MASK, TRACK_BUCK_ERR_CONV_OCP},
+		{REG_CHG_FLT_FLG, SC6607_BUCK_VSYS_OVP_FLG_MASK, TRACK_BUCK_ERR_VSYS_OVP},
+		{REG_CHG_FLT_FLG2, SC6607_BUCK_VPMID_OVP_OTG_FLG_MASK, TRACK_BUCK_ERR_VPMID_OVP_OTG},
+		{REG_HK_FLT_FLG, SC6607_HK_WD_TIMEOUT_MASK, TRACK_BUCK_ERR_WD_TIMEOUT},
+	};
+
+	if (!chip)
+		return;
+	for (i = 0; i < SC6607_HK_IRQ_EVNET_NUM; i++)
+		chip->hk_err_reason_seq[i] = TRACK_BUCK_ERR_DEFAULT;
+
+	for (i = 0; i < SC6607_HK_IRQ_EVNET_NUM; i++) {
+		if ((chip->hk_debug_reg[sc6607_flag_info[i].reg_list_order] & sc6607_flag_info[i].mask) ||
+		   (sc6607_flag_info[i].mask & chip->hk_reg_track[sc6607_flag_info[i].reg_list_order])) {
+			err_happened = true;
+			chip->hk_err_reason_seq[reason_seq_idx] = sc6607_flag_info[i].err_type;
+			reason_seq_idx++;
+			chip->hk_debug_reg[sc6607_flag_info[i].reg_list_order] &= ~sc6607_flag_info[i].mask;
+			if (reason_seq_idx >= SC6607_HK_IRQ_EVNET_NUM)
+				break;
+		}
+	}
+
+	if (err_happened)
+		sc6607_track_upload_hk_err_info(chip);
+}
+
+#define SC6607_TRACK_REG_BLOCK_SIZE		16
+static u8 sc6607_track_read_hk_reg(struct sc6607 *chip, u8 irq_val)
+{
+	int ret = 0;
+	u8 val = 0;
+	u8 data_block[SC6607_TRACK_REG_BLOCK_SIZE] = { 0 };
+
+	if (!chip)
+		return 0;
+
+	memmove(chip->hk_reg_track_pre, chip->hk_reg_track, sizeof(chip->hk_reg_track));
+
+	ret = sc6607_read_byte(chip, SC6607_REG_HK_FLT_FLG, &val);
+	if (ret < 0) {
+		chg_err("read reg 0x%02x failed\n", SC6607_REG_HK_FLT_FLG);
+		return 0;
+	}
+	chip->hk_reg_track[REG_HK_FLT_FLG] = val;
+
+	if (!(irq_val & (BIT(UFCS_FLAG) | BIT(VOOC_FLAG)))) {
+		/* read 0x44 ~ 0x53 regs */
+		ret = sc6607_read_data(chip, SC6607_REG_CHG_INT_FLG, data_block, SC6607_TRACK_REG_BLOCK_SIZE);
+		if (ret < 0) {
+			chg_err("read reg 0x%02x failed\n", SC6607_REG_CHG_INT_FLG);
+			return 0;
+		}
+
+		chip->hk_reg_track[REG_CHG_INT_FLG] = data_block[0]; /* read 0x44 reg */
+		chip->hk_reg_track[REG_CHG_FLT_FLG] = data_block[14]; /* read 0x52 reg */
+		chip->hk_reg_track[REG_CHG_FLT_FLG2] = data_block[15]; /* read 0x53 reg */
+		if (!chip->is_sc6607a)
+			chip->hk_reg_track[REG_CHG_INT_FLG] &= ~SC6607_BUCK_VSYS_SHORT_MASK;
+	}
+
+	schedule_work(&chip->track_match_hk_err_work);
+
+	return chip->hk_reg_track[REG_HK_FLT_FLG];
+}
+
+static ssize_t sc6607_track_reg_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct sc6607 *chip = dev_get_drvdata(dev);
+
+	if (!buf) {
+		chg_err("buf is NULL\n");
+		return -EINVAL;
+	}
+
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return -EINVAL;
+	}
+
+	return snprintf(buf, ERR_MSG_BUF, "0x0D/0x44/0x52/0x53[0x%02x, 0x%02x, 0x%02x, 0x%02x]\n",
+	    chip->hk_debug_reg[REG_HK_FLT_FLG], chip->hk_debug_reg[REG_CHG_INT_FLG],
+	    chip->hk_debug_reg[REG_CHG_FLT_FLG], chip->hk_debug_reg[REG_CHG_FLT_FLG2]);
+}
+
+
+static ssize_t sc6607_track_reg_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct sc6607 *chip = dev_get_drvdata(dev);
+	int track_buf[SC6607_TRACK_REG_NUM] = { 0 };
+
+	if (!buf) {
+		chg_err("buf is NULL\n");
+		return -EINVAL;
+	}
+
+	if (!chip) {
+		chg_err("sc6607 is NULL\n");
+		return -EINVAL;
+	}
+
+	if (sscanf(buf, "%x,%x,%x,%x", &track_buf[REG_HK_FLT_FLG], &track_buf[REG_CHG_INT_FLG],
+	    &track_buf[REG_CHG_FLT_FLG], &track_buf[REG_CHG_FLT_FLG2]) != SC6607_TRACK_REG_NUM) {
+		chg_err("invalid buff %s\n", buf);
+		return -EINVAL;
+	}
+
+	if (track_buf[REG_HK_FLT_FLG] > 0xff || track_buf[REG_CHG_INT_FLG] > 0xff ||
+	    track_buf[REG_CHG_FLT_FLG] > 0xff || track_buf[REG_CHG_FLT_FLG2] > 0xff) {
+		chg_err("0x0D/0x44/0x52/0x53 en[0x%02x, 0x%02x, 0x%02x, 0x%02x] invalid\n", track_buf[REG_HK_FLT_FLG],
+		    track_buf[REG_CHG_INT_FLG], track_buf[REG_CHG_FLT_FLG], track_buf[REG_CHG_FLT_FLG2]);
+		return -EINVAL;
+	}
+
+	memmove(chip->hk_debug_reg, track_buf, sizeof(track_buf));
+
+	chg_info("0x0D/0x44/0x52/0x53[0x%02x, 0x%02x, 0x%02x, 0x%02x]\n",
+	    chip->hk_debug_reg[REG_HK_FLT_FLG], chip->hk_debug_reg[REG_CHG_INT_FLG],
+	    chip->hk_debug_reg[REG_CHG_FLT_FLG], chip->hk_debug_reg[REG_CHG_FLT_FLG2]);
+
+	return count;
+}
+static DEVICE_ATTR(track_reg, 0660, sc6607_track_reg_show, sc6607_track_reg_store);
+
+static void sc6607_create_device_node(struct device *dev)
+{
+	device_create_file(dev, &dev_attr_track_reg);
+}
+
+static void sc6607_remove_device_node(struct device *dev)
+{
+	device_remove_file(dev, &dev_attr_track_reg);
 }
 
 struct oplus_chg_ic_virq sc6607_virq_table[] = {
@@ -4277,7 +4789,6 @@ static int sc6607_qc_detect_enable(struct oplus_chg_ic_dev *ic_dev, bool en)
 	int retry = QC_DETECT_RETRY;
 	u8 vbus_stat;
 	struct sc6607 *chip;
-	struct votable *icl_votable;
 
 	if (ic_dev == NULL) {
 		chg_err("ic_dev is NULL");
@@ -4302,6 +4813,7 @@ static int sc6607_qc_detect_enable(struct oplus_chg_ic_dev *ic_dev, bool en)
 	sc6607_detect_init(chip);
 	sc6607_enable_hvdcp(chip);
 	sc6607_force_dpdm(chip, true);
+	atomic_set(&chip->hvdcp_start, true);
 
 	while (retry--) {
 		chg_info("hvdcp detect retry:%d", retry);
@@ -4316,12 +4828,12 @@ static int sc6607_qc_detect_enable(struct oplus_chg_ic_dev *ic_dev, bool en)
 			break;
 		}
 	}
+	atomic_set(&chip->hvdcp_start, false);
 	if (chip->oplus_chg_type != POWER_SUPPLY_TYPE_USB_HVDCP) {
-		icl_votable = find_votable("WIRED_ICL");
-		if (!icl_votable)
-			chg_err("WIRED_ICL votable not found\n");
-		else
-			rerun_election(icl_votable, true);
+		if (is_wired_fcc_votable_available(chip))
+			rerun_election(chip->wired_fcc_votable, false);
+		if (is_wired_icl_votable_available(chip))
+			rerun_election(chip->wired_icl_votable, true);
 	}
 	sc6607_detect_release(chip);
 	return 0;
@@ -4865,6 +5377,43 @@ static void *sc6607_get_func(struct oplus_chg_ic_dev *ic_dev, enum oplus_chg_ic_
 	return func;
 }
 
+static int sc6607_ic_cfg_registers(struct sc6607 *chip, struct device_node *node)
+{
+	int ret = 0;
+	struct oplus_chg_ic_cfg ic_cfg = { 0 };
+	enum oplus_chg_ic_type ic_type;
+	int ic_index;
+
+	ret = of_property_read_u32(node, "oplus,ic_type", &ic_type);
+	if (ret < 0) {
+		chg_err("can't get ic type, ret=%d\n", ret);
+		return ret;
+	}
+	ret = of_property_read_u32(node, "oplus,ic_index", &ic_index);
+	if (ret < 0) {
+		chg_err("can't get ic index, ret=%d\n", ret);
+		return ret;
+	}
+
+	ic_cfg.name = node->name;
+	ic_cfg.index = ic_index;
+	snprintf(ic_cfg.manu_name, OPLUS_CHG_IC_MANU_NAME_MAX - 1, "buck-SC6607");
+	snprintf(ic_cfg.fw_id, OPLUS_CHG_IC_FW_ID_MAX - 1, "0x00");
+	ic_cfg.type = ic_type;
+	ic_cfg.get_func = sc6607_get_func;
+	ic_cfg.virq_data = sc6607_virq_table;
+	ic_cfg.virq_num = ARRAY_SIZE(sc6607_virq_table);
+	ic_cfg.of_node = node;
+	chip->ic_dev = devm_oplus_chg_ic_register(chip->dev, &ic_cfg);
+	if (!chip->ic_dev) {
+		ret = -ENODEV;
+		chg_err("register %s error\n", node->name);
+		return ret;
+	}
+	chg_info("register %s\n", node->name);
+	return ret;
+}
+
 static int sc6607_irq_gpio_init(struct sc6607 *chip)
 {
 	int rc;
@@ -5213,14 +5762,26 @@ static int pd_tcp_notifier_call(struct notifier_block *nb, unsigned long event, 
 	return NOTIFY_OK;
 }
 
+static void sc6607_init_work_queues(struct sc6607 *chip)
+{
+	INIT_DELAYED_WORK(&(chip->bc12.detect_work), sc6607_soft_bc12_work_func);
+	INIT_DELAYED_WORK(&chip->hw_bc12_detect_work, sc6607_hw_bc12_work_func);
+	INIT_DELAYED_WORK(&chip->init_status_work, sc6607_init_status_work);
+	INIT_DELAYED_WORK(&chip->init_status_check_work, sc6607_init_status_check_work);
+	INIT_DELAYED_WORK(&chip->qc_vol_convert_work, sc6607_qc_vol_convert);
+	INIT_DELAYED_WORK(&chip->get_voocphy_info_work, sc6607_get_voocphy_info_work);
+	INIT_DELAYED_WORK(&chip->flash_mode_checkout_work, sc6607_flash_mode_checkout_work);
+	INIT_WORK(&chip->rerun_votable_work, sc6607_rerun_votable_work);
+	INIT_WORK(&chip->track_match_hk_err_work, sc6607_track_match_hk_err_work);
+}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+static int sc6607_buck_probe(struct i2c_client *client)
+#else
 static int sc6607_buck_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct sc6607 *chip;
 	struct device_node *node = client->dev.of_node;
-	struct oplus_chg_ic_cfg ic_cfg = { 0 };
-	enum oplus_chg_ic_type ic_type;
-	int ic_index;
 	int ret = 0;
 	int i = 0;
 
@@ -5300,13 +5861,7 @@ static int sc6607_buck_probe(struct i2c_client *client, const struct i2c_device_
 	chip->hvdcp_exit_stat = HVDCP_EXIT_NORMAL;
 	timer_setup(&chip->bc12_timeout, sc6607_bc12_timeout_func, 0);
 	sc6607_disable_hvdcp(chip);
-	INIT_DELAYED_WORK(&(chip->bc12.detect_work), sc6607_soft_bc12_work_func);
-	INIT_DELAYED_WORK(&chip->hw_bc12_detect_work, sc6607_hw_bc12_work_func);
-	INIT_DELAYED_WORK(&chip->init_status_work, sc6607_init_status_work);
-	INIT_DELAYED_WORK(&chip->init_status_check_work, sc6607_init_status_check_work);
-	INIT_DELAYED_WORK(&chip->qc_vol_convert_work, sc6607_qc_vol_convert);
-	INIT_DELAYED_WORK(&chip->get_voocphy_info_work, sc6607_get_voocphy_info_work);
-	INIT_DELAYED_WORK(&chip->flash_mode_checkout_work, sc6607_flash_mode_checkout_work);
+	sc6607_init_work_queues(chip);
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 	ret = sc6607_chg_init_psy(chip);
@@ -5319,11 +5874,12 @@ static int sc6607_buck_probe(struct i2c_client *client, const struct i2c_device_
 						&sc6607_chg_props);
 	if (IS_ERR_OR_NULL(chip->chg_dev)) {
 		ret = PTR_ERR(chip->chg_dev);
-		goto err_device_register;
+		goto err_init;
 	}
 #endif
 
 	sc6607_charger_create_device_node(chip->dev);
+	sc6607_create_device_node(&(client->dev));
 	if (oplus_is_rf_ftm_mode()) {
 		chg_info("disable_charger for ftm mode.\n");
 		sc6607_enter_hiz_mode(chip);
@@ -5337,32 +5893,11 @@ static int sc6607_buck_probe(struct i2c_client *client, const struct i2c_device_
 	atomic_set(&chip->otg_enable_cnt, 0);
 	chip->request_otg = 0;
 
-	ret = of_property_read_u32(node, "oplus,ic_type", &ic_type);
+	ret = sc6607_ic_cfg_registers(chip, node);
 	if (ret < 0) {
-		chg_err("can't get ic type, ret=%d\n", ret);
+		chg_err("ic cfg register fail\n");
 		goto err_init;
 	}
-	ret = of_property_read_u32(node, "oplus,ic_index", &ic_index);
-	if (ret < 0) {
-		chg_err("can't get ic index, ret=%d\n", ret);
-		goto err_init;
-	}
-	ic_cfg.name = node->name;
-	ic_cfg.index = ic_index;
-	snprintf(ic_cfg.manu_name, OPLUS_CHG_IC_MANU_NAME_MAX - 1, "buck-SC6607");
-	snprintf(ic_cfg.fw_id, OPLUS_CHG_IC_FW_ID_MAX - 1, "0x00");
-	ic_cfg.type = ic_type;
-	ic_cfg.get_func = sc6607_get_func;
-	ic_cfg.virq_data = sc6607_virq_table;
-	ic_cfg.virq_num = ARRAY_SIZE(sc6607_virq_table);
-	ic_cfg.of_node = node;
-	chip->ic_dev = devm_oplus_chg_ic_register(chip->dev, &ic_cfg);
-	if (!chip->ic_dev) {
-		ret = -ENODEV;
-		chg_err("register %s error\n", node->name);
-		goto err_init;
-	}
-	chg_info("register %s\n", node->name);
 
 	ret = sc6607_irq_register(chip);
 	if (ret < 0)
@@ -5385,11 +5920,16 @@ static int sc6607_buck_probe(struct i2c_client *client, const struct i2c_device_
 	chg_info("end!\n");
 	return 0;
 
-#ifdef CONFIG_OPLUS_CHARGER_MTK
-err_device_register:
-	charger_device_unregister(chip->chg_dev);
-#endif
 err_init:
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+	if (chip->chg_dev)
+		charger_device_unregister(chip->chg_dev);
+#endif
+	sc6607_remove_device_node(chip->dev);
+	oplus_keep_resume_awake_deinit(chip);
+	oplus_chg_awake_deinit(chip);
+	cancel_work_sync(&chip->rerun_votable_work);
+	cancel_work_sync(&chip->track_match_hk_err_work);
 	if (!gpio_is_valid(chip->irq_gpio))
 		gpio_free(chip->irq_gpio);
 err_parse_dt:
@@ -5470,6 +6010,9 @@ static int sc6607_buck_remove(struct i2c_client *client)
 	struct sc6607 *chip = i2c_get_clientdata(client);
 
 	if (chip) {
+		cancel_work_sync(&chip->rerun_votable_work);
+		cancel_work_sync(&chip->track_match_hk_err_work);
+		sc6607_remove_device_node(chip->dev);
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 		if (chip->chg_dev)
 			charger_device_unregister(chip->chg_dev);

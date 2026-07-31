@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "internal.h"
+#include "mm-hooks.h"
 
 typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
 
@@ -28,7 +29,8 @@ struct common_data {
 
 static const char * const scene_to_txt[NR_MM_SCENE_BIT] = {
 	"camera",
-	"launcher_animation",
+	"camera_preopen",
+	"display_off",
 };
 
 /* replace this with pointer */
@@ -59,9 +61,26 @@ static int set_or_clear_scene(unsigned int cmd, unsigned long arg)
 		return -EINVAL;
 
 	osvelte_logi("cmd: %d nr: %lu", cmd, nr);
+	trace_oplus_mm_vh_set_or_clear_scene(set, nr);
+	/* preopen for camera app. but it means camera would open soon */
+	if (nr == MM_SCENE_CAMERA_PREOPEN)
+		return 0;
+
 	__set_or_clear_scene(nr, set);
 	return 0;
 }
+
+int osvelte_set_scene(enum oplus_mm_scene_bit nr, bool set)
+{
+	trace_oplus_mm_vh_set_or_clear_scene(set, nr);
+
+	if (unlikely(nr >= NR_MM_SCENE_BIT))
+		return -EINVAL;
+
+	__set_or_clear_scene(nr, set);
+	return 0;
+}
+EXPORT_SYMBOL_GPL(osvelte_set_scene);
 
 bool osvelte_test_scene(unsigned long nr)
 {
@@ -147,8 +166,11 @@ static ssize_t stats_show(struct kobject *kobj, struct kobj_attribute *attr, cha
 	size += sysfs_emit_at(buf, size, "%-20s %p\n", "oplus_mm",
 			      data->symbols[OPLUS_MM_KOBJ]);
 
-	task = (struct task_struct *)data->symbols[OPLUS_TASK_EZRECLAIMD];
-	size += sysfs_emit_at(buf, size, "%-20s %d\n", "ezreclaimd",
+	task = (struct task_struct *)data->symbols[OPLUS_MM_TASK_ERM_RECLAIMD];
+	size += sysfs_emit_at(buf, size, "%-20s %d\n", "erm_reclaimd",
+			      task == NULL ? -1 : task->tgid);
+	task = (struct task_struct *)data->symbols[OPLUS_MM_TASK_CACHED_BOOSTPOOL_PREFILL];
+	size += sysfs_emit_at(buf, size, "%-20s %d\n", "bp_refill",
 			      task == NULL ? -1 : task->tgid);
 	up_read(&data->init_lock);
 	return size;

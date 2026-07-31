@@ -14,17 +14,56 @@
 #define OSVELTE_LOG_TAG DEV_NAME
 
 /* declare page-flags here */
-#define PG_ezreclaimable (PG_oem_reserved_1)
+#define PG_erm (PG_oem_reserved_1)
+
+/* enable using erm freelist to boost allocation*/
+#define PF_MEMALLOC_BOOST	PF__HOLE__00800000
+/* put reclaimed folio into ezr freelist */
+#define PF_ERM_HOOK_RECLAIMED	PF__HOLE__01000000
+#define PF_SHRINK_ANON		PF__HOLE__02000000
+
+static inline void memalloc_hook_reclaimed_save(void)
+{
+	current->flags |= PF_ERM_HOOK_RECLAIMED;
+}
+
+static inline void memalloc_hook_reclaimed_restore(void)
+{
+	current->flags = (current->flags & ~PF_ERM_HOOK_RECLAIMED);
+}
+
+static inline bool memalloc_hook_reclaimed_test(void)
+{
+	return current->flags & PF_ERM_HOOK_RECLAIMED;
+}
+
+static inline void memalloc_boost_save(void)
+{
+	current->flags |= PF_MEMALLOC_BOOST;
+}
+
+static inline void memalloc_boost_restore(void)
+{
+	current->flags = (current->flags & ~PF_MEMALLOC_BOOST);
+}
+
+static inline bool memalloc_boost_test(void)
+{
+	return current->flags & PF_MEMALLOC_BOOST;
+}
 
 enum oplus_mm_scene_bit {
 	MM_SCENE_CAMERA = 0,
-	MM_SCENE_ANIMATION,
+	/* touchdown on camera app icon. */
+	MM_SCENE_CAMERA_PREOPEN,
+	MM_SCENE_DISPLAY_OFF,
 	NR_MM_SCENE_BIT,
 };
 
 enum oplus_mm_symbol {
 	OPLUS_MM_KOBJ,
-	OPLUS_TASK_EZRECLAIMD,
+	OPLUS_MM_TASK_ERM_RECLAIMD,
+	OPLUS_MM_TASK_CACHED_BOOSTPOOL_PREFILL,
 	OMS_END,
 };
 
@@ -32,9 +71,12 @@ enum oplus_mm_symbol {
 enum oplus_mm_trace_event {
 	OMTE_COMMON = 8940000,
 	OMTE_KWAPD_WAKEUP_HIGH_ORDER,
-	OMTE_KWAPD_RUNNING,
+	OMTE_KWAPD_RECLAIM,
 	OMTE_DMA_BUF_ALLOCATION,
 	OMTE_DMA_BUF_ALLOCATION_ORDERS,
+	OMTE_ERM_RECLAIM,
+	OMTE_ERM_RELEASE,
+	OMTE_ERM_RELEASE_DONE,
 };
 
 /* common ioctl for userspace */
@@ -65,6 +107,7 @@ int osvelte_common_exit(void);
 extern struct kobject *oplus_mm_kobj;
 extern void osvelte_register_symbol(enum oplus_mm_symbol sym, void *data);
 extern void *osvelte_read_symbol(enum oplus_mm_symbol sym, bool atomic);
+extern int osvelte_set_scene(enum oplus_mm_scene_bit nr, bool set);
 extern bool osvelte_test_scene(unsigned long nr);
 extern void *osvelte_kallsyms_lookup_name(const char *name);
 #endif /* _OSVELTE_COMMON_H */

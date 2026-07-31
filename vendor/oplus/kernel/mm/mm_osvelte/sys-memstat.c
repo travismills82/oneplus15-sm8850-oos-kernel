@@ -8,15 +8,21 @@
 #include <trace/hooks/mm.h>
 #include <trace/hooks/vmscan.h>
 
+#include "common.h"
 #include "internal.h"
 #include "memstat.h"
 #include "sys-memstat.h"
+#include "mm-config.h"
 #include "mm-trace.h"
 
 static struct proc_dir_entry *mtrack_procs[MTRACK_MAX];
 static struct mtrack_debugger *mtrack_debugger[MTRACK_MAX];
 static atomic64_t mtrack_vh_pages[MTRACK_VH_MAX];
 static unsigned long kswapd_dump_meminfo_jiffies;
+static struct osvelte_reclaim_stat kwapd_reclaim_stat;
+static struct tracepoint *tracepoint_mm_vmscan_lru_shrink_inactive_dup;
+static struct tracepoint *tracepoint_mm_vmscan_wakeup_kswap_dup;
+static bool ezr_enabled;
 
 static void show_val_kb(struct seq_file *m, const char *s, unsigned long num)
 {
@@ -125,47 +131,69 @@ static void extra_meminfo_proc_show(void *data, struct seq_file *m)
 			read_mtrack_mem_usage(MTRACK_GPU, MTRACK_GPU_TOTAL));
 	show_val_kb(m, "ShmemSwapped:   ",
 		    read_mtrack_vh_mem_usage(MTRACK_VH_SHMEM_SWAPED));
-}
-
-static void osvelte_vh_mm_customize_reclaim_idx(void *data, int order, gfp_t gfp, s8 *reclaim_idx, enum zone_type *highest_zoneidx)
-{
-	if (order < 2 || highest_zoneidx == NULL)
+	show_val_kb(m, "UxPool:         ",
+		    read_mtrack_mem_usage(MTRACK_UXMEM_POOL, MTRACK_UXMEM_POOL_TOTAL));
+	if (!ezr_enabled)
 		return;
-	mm_trace_fmt_begin("%d:%d", OMTE_KWAPD_WAKEUP_HIGH_ORDER, order);
-	mm_trace_fmt_end();
+	show_val_kb(m, "Ezr:            ",
+			read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU));
+	show_val_kb(m, "EzrFree:        ",
+			read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE));
 }
 
-static void osvelte_rvh_vmscan_kswapd_wake(void *data, int node_id, unsigned int highest_zoneidx, unsigned int alloc_order)
+static void osvelte_vh_vmscan_wakeup_kswapd(void *data, int nid, int zid, int order, gfp_t gfp_flags)
 {
-	mm_trace_fmt_begin("%d:%d@%d", OMTE_KWAPD_RUNNING, highest_zoneidx, alloc_order);
+	if (order < 2)
+		return;
+	mm_trace_fmt_instant_body("%d:%d@%d", OMTE_KWAPD_WAKEUP_HIGH_ORDER, nid, zid, order);
+}
+
+static void osvelte_vh_vmscan_lru_shrink_inactive(void *data, int nid,
+						  unsigned long nr_scanned,
+						  unsigned long nr_reclaimed,
+						  struct reclaim_stat *stat,
+						  int priority, int file)
+{
+	struct osvelte_reclaim_stat *rc;
+	int index;
+
+	if (!current_is_kswapd() || current->comm[2] != 'w')
+		return;
+
+	rc = &kwapd_reclaim_stat;
+	index = file ? 1 : 0;
+	rc->pgscan[index] += nr_scanned;
+	rc->pgsteal[index] += nr_reclaimed;
+}
+
+static void dump_kwapd_reclaim_stat(void)
+{
+	struct osvelte_reclaim_stat *rc = &kwapd_reclaim_stat;
+
+	mm_trace_fmt_int64(rc->pgscan[0], "%d:A1_pgscan_anon", OMTE_KWAPD_RECLAIM);
+	mm_trace_fmt_int64(rc->pgsteal[0], "%d:A2_pgsteal_anon", OMTE_KWAPD_RECLAIM);
+	mm_trace_fmt_int64(rc->pgscan[1], "%d:B1_pgscan_file", OMTE_KWAPD_RECLAIM);
+	mm_trace_fmt_int64(rc->pgsteal[1], "%d:B2_pgsteal_file", OMTE_KWAPD_RECLAIM);
 }
 
 static void osvelte_vh_vmscan_kswapd_done(void *data, int node_id, unsigned int highest_zoneidx, unsigned int alloc_order, unsigned int reclaim_order)
 {
-	mm_trace_fmt_end();
-}
-
-static void osvelte_rvh_kswapd_shrink_node(void *data, unsigned long *nr_to_reclaim)
-{
-	mm_trace_int64(OMTE_COMMON_STRING"ZZ_nr_to_reclaim", *nr_to_reclaim);
+	mm_trace_fmt_instant_body("%d:%d@%d", OMTE_KWAPD_RECLAIM, highest_zoneidx, alloc_order);
+	dump_kwapd_reclaim_stat();
 }
 
 static void osvelte_vh_tune_swappiness(void *data, int *swappiness)
 {
 	struct sysinfo si;
 
-	if (!current_is_kswapd())
-		return;
-
 	/* kshrink_slabd also set this PF_KSWAPD. */
-	if (current->comm[2] != 'w')
+	if (!current_is_kswapd() || current->comm[2] != 'w')
 		return;
 
-	si_swapinfo(&si);
 	if (time_before(jiffies, kswapd_dump_meminfo_jiffies + msecs_to_jiffies(100)))
 		return;
 
-	kswapd_dump_meminfo_jiffies = jiffies;
+	si_swapinfo(&si);
 	mm_trace_int64(OMTE_COMMON_STRING"AA_available", K(si_mem_available()));
 	mm_trace_int64(OMTE_COMMON_STRING"AB_free", K(sys_freeram()));
 	mm_trace_int64(OMTE_COMMON_STRING"AC_active_file", K(sys_active_file()));
@@ -176,7 +204,13 @@ static void osvelte_vh_tune_swappiness(void *data, int *swappiness)
 	mm_trace_int64(OMTE_COMMON_STRING"AE1_dmabuf_pool", K(read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_POOL)));
 	mm_trace_int64(OMTE_COMMON_STRING"AE2_dmabuf_boost_pool", K(read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_BOOST_POOL)));
 	mm_trace_int64(OMTE_COMMON_STRING"AE3_dmabuf", K(read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_SYSTEM_HEAP)));
+	mm_trace_int64(OMTE_COMMON_STRING"AF1_ezr_free", K(read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE)));
+	mm_trace_int64(OMTE_COMMON_STRING"AF2_ezr", K(read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU)));
 	mm_trace_int64(OMTE_COMMON_STRING"AG_gpu_total", K(read_mtrack_mem_usage(MTRACK_GPU, MTRACK_GPU_TOTAL)));
+	mm_trace_int64(OMTE_COMMON_STRING"AH_uxpool", K(read_mtrack_mem_usage(MTRACK_UXMEM_POOL, MTRACK_UXMEM_POOL_TOTAL)));
+	dump_kwapd_reclaim_stat();
+
+	kswapd_dump_meminfo_jiffies = jiffies;
 }
 
 static void osvelte_vh_shmem_mod_swapped(void *data, struct address_space *mapping,
@@ -188,16 +222,23 @@ static void osvelte_vh_shmem_mod_swapped(void *data, struct address_space *mappi
 int sys_memstat_init(struct proc_dir_entry *root)
 {
 	struct proc_dir_entry *dir_entry;
+	struct config_ezreclaimd *config;
 	int i;
 
 	if (register_trace_android_vh_meminfo_proc_show(extra_meminfo_proc_show, NULL)) {
 		pr_err("register extra meminfo proc failed.\n");
 		return -EINVAL;
 	}
-	register_trace_android_vh_mm_customize_reclaim_idx(osvelte_vh_mm_customize_reclaim_idx, NULL);
-	register_trace_android_rvh_vmscan_kswapd_wake(osvelte_rvh_vmscan_kswapd_wake, NULL);
+
+	/* if failed, not fatal error */
+	tracepoint_mm_vmscan_lru_shrink_inactive_dup = osvelte_kallsyms_lookup_name("__tracepoint_mm_vmscan_lru_shrink_inactive");
+	if (tracepoint_mm_vmscan_lru_shrink_inactive_dup)
+		tracepoint_probe_register(tracepoint_mm_vmscan_lru_shrink_inactive_dup, osvelte_vh_vmscan_lru_shrink_inactive, NULL);
+	tracepoint_mm_vmscan_wakeup_kswap_dup = osvelte_kallsyms_lookup_name("__tracepoint_mm_vmscan_wakeup_kswap");
+	if (tracepoint_mm_vmscan_wakeup_kswap_dup)
+		tracepoint_probe_register(tracepoint_mm_vmscan_wakeup_kswap_dup, osvelte_vh_vmscan_wakeup_kswapd, NULL);
+
 	register_trace_android_vh_vmscan_kswapd_done(osvelte_vh_vmscan_kswapd_done, NULL);
-	register_trace_android_rvh_kswapd_shrink_node(osvelte_rvh_kswapd_shrink_node, NULL);
 	register_trace_android_vh_tune_swappiness(osvelte_vh_tune_swappiness, NULL);
 	register_trace_android_vh_shmem_mod_swapped(osvelte_vh_shmem_mod_swapped, NULL);
 
@@ -217,6 +258,10 @@ int sys_memstat_init(struct proc_dir_entry *root)
 	dir_entry = mtrack_procs[MTRACK_ASHMEM];
 	if (dir_entry)
 		create_ashmem_procfs(dir_entry);
+
+	config = oplus_read_mm_config(module_name_ezreclaimd);
+	if (config)
+		ezr_enabled = config->enable;
 	return 0;
 }
 

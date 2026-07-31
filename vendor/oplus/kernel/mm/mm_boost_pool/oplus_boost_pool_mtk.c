@@ -24,10 +24,56 @@
 #include "oplus_boost_pool_mtk.h"
 #include "mm_osvelte/mm-config.h"
 
-#define CREATE_TRACE_POINTS
-#include "trace_dma_buf.h"
-EXPORT_TRACEPOINT_SYMBOL(dma_buf_alloc_start);
-EXPORT_TRACEPOINT_SYMBOL(dma_buf_alloc_end);
+#include <trace/hooks/vmscan.h>
+#include <trace/hooks/mm.h>
+
+#include "mm_osvelte/mm-hooks.h"
+#include "mm_osvelte/sys-memstat.h"
+#include "mm_osvelte/common.h"
+
+extern long read_mtrack_mem_usage(enum mtrack_type t, enum mtrack_subtype s);
+static bool ezr_enabled;
+static bool cam_scene;
+static unsigned long cam_scene_timeout;
+static struct task_struct *cached_prefill_task;
+static struct boost_pool *cached_boostpool;
+
+static bool ezr_enabled_and_cached(struct boost_pool *boost_pool)
+{
+	return ezr_enabled && boost_pool->mml;
+}
+
+static int calc_dyn_real_min(struct boost_pool *boost_pool)
+{
+	int dyn_real_min_wm;
+	int real_min;
+	int nr_erm_lru, nr_erm_free, nr_erm_pages;
+
+	if (!ezr_enabled || cam_scene)
+		return boost_pool->min;
+
+	nr_erm_lru = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU);
+	nr_erm_free = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE);
+
+	real_min = boost_pool->real_min;
+	nr_erm_pages = min(nr_erm_lru + nr_erm_free, real_min);
+	dyn_real_min_wm = real_min - nr_erm_pages;
+	return dyn_real_min_wm;
+}
+
+static int calc_dyn_boost_pool_wm(struct boost_pool *boost_pool)
+{
+	int dyn_real_low_pages;
+
+	if (boost_pool != cached_boostpool || !ezr_enabled || cam_scene)
+		return boost_pool->low;
+
+	if (time_before(jiffies, cam_scene_timeout))
+		dyn_real_low_pages = boost_pool->real_min;
+	else
+		dyn_real_low_pages = calc_dyn_real_min(boost_pool);
+	return dyn_real_low_pages;
+}
 
 /* this region must same as the system_heap */
 static LIST_HEAD(pool_list);
@@ -132,16 +178,13 @@ out:
 	return page;
 }
 
-static int mml_cnt;
-
 struct page *boost_pool_fetch(struct boost_pool *boost_pool, int order_index)
 {
 	struct page *page;
 	struct boost_page_pool *pool = boost_pool->pools[order_index];
 
 	if (boost_pool->mml &&
-	    boost_pool_nr_pages(boost_pool) > boost_pool->min - boost_pool->mml) {
-		++mml_cnt;
+	    boost_pool_nr_pages(boost_pool) > calc_dyn_boost_pool_wm(boost_pool) - boost_pool->mml) {
 		goto fetch_page;
 	}
 
@@ -284,6 +327,9 @@ EXPORT_SYMBOL_GPL(boost_pool_total_nr_pages);
 
 static inline void boost_pool_reset_wmark(struct boost_pool *boost_pool)
 {
+	if (ezr_enabled_and_cached(boost_pool))
+		boost_pool->min = 0;
+
 	boost_pool->alloc = boost_pool->low = boost_pool->min;
 }
 
@@ -296,13 +342,32 @@ int boost_pool_free(struct boost_pool *boost_pool, struct page *page,
 		return -1;
 	}
 
-	if (boost_pool_nr_pages(boost_pool) < boost_pool->low) {
+	if (boost_pool_nr_pages(boost_pool) < calc_dyn_boost_pool_wm(boost_pool)) {
 		boost_page_pool_free(boost_pool->pools[order_index], page);
 		return 0;
 	}
 	return -1;
 }
 EXPORT_SYMBOL_GPL(boost_pool_free);
+
+static int all_pool_nr_pages(struct boost_pool *pool, bool dump)
+{
+	int nr_dmabuf_pool, nr_erm_lru, nr_erm_free, nr_boost_pool;
+
+	if (!ezr_enabled_and_cached(pool))
+		return boost_pool_nr_pages(pool);
+
+	nr_dmabuf_pool = read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_POOL);
+	nr_erm_lru = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_LRU);
+	nr_erm_free = read_mtrack_mem_usage(MTRACK_ERM, MTRACK_ERM_FREE);
+	nr_boost_pool = boost_pool_nr_pages(pool);
+
+	if (dump) {
+		pr_info("dmabuf_pool: %dMib erm_lru: %dMib erm_free: %dMib boost_pool: %dMib\n",
+			P2M(nr_dmabuf_pool), P2M(nr_erm_lru), P2M(nr_erm_free), P2M(nr_boost_pool));
+	}
+	return nr_dmabuf_pool + nr_erm_lru + nr_erm_free + nr_boost_pool;
+}
 
 static int boost_pool_prefill_kthread(void *p)
 {
@@ -325,12 +390,13 @@ static int boost_pool_prefill_kthread(void *p)
 
 		pr_info("%s prefill start >>>>> nr_page: %dMib, alloc: %dMib\n",
 			current->comm,
-			P2M(boost_pool_nr_pages(boost_pool)),
+			P2M(all_pool_nr_pages(boost_pool, false)),
 			P2M(boost_pool->alloc));
+		all_pool_nr_pages(boost_pool, true);
 
 		for (i = 0; i < NUM_ORDERS; i++) {
 			while (!boost_pool->stop &&
-			       boost_pool_nr_pages(boost_pool) < boost_pool->alloc) {
+			       all_pool_nr_pages(boost_pool, false) < boost_pool->alloc) {
 				if (time_after64(get_jiffies_64(), timeout)) {
 					pr_warn("prefill timeout\n");
 					break;
@@ -343,8 +409,9 @@ static int boost_pool_prefill_kthread(void *p)
 
 		pr_info("%s prefill  end <<<<< nr_page: %dMib alloc: %dMib\n",
 			current->comm,
-			P2M(boost_pool_nr_pages(boost_pool)),
+			P2M(all_pool_nr_pages(boost_pool, false)),
 			P2M(boost_pool->alloc));
+		all_pool_nr_pages(boost_pool, true);
 
 		boost_pool->prefill = false;
 		boost_pool->stop = true;
@@ -430,6 +497,11 @@ static ssize_t min_write(struct file *file, const char __user *buf,
 		current->comm, current->tgid, boost_pool->prefill_task->comm,
 		P2M(nr_pages));
 
+	if (ezr_enabled_and_cached(boost_pool)) {
+		boost_pool->real_min = nr_pages;
+		nr_pages = 0;
+	}
+
 	boost_pool->min = boost_pool->low = boost_pool->alloc = nr_pages;
 
 	/* TODO fix concurrent change the watermark */
@@ -442,7 +514,10 @@ static int min_show(struct seq_file *s, void *unused)
 {
 	struct boost_pool *boost_pool = s->private;
 
-	seq_printf(s, "%d\n", P2M(boost_pool->min));
+	if (ezr_enabled)
+		seq_printf(s, "%d\n", P2M(boost_pool->real_min));
+	else
+		seq_printf(s, "%d\n", P2M(boost_pool->min));
 	return 0;
 }
 DEFINE_BOOST_POOL_PROC_RW_ATTRIBUTE(min);
@@ -648,8 +723,14 @@ static int boost_pool_shrink(struct boost_pool *boost_pool,
 	if (nr_to_scan == 0)
 		return boost_page_pool_do_shrink(pool, gfp_mask, 0);
 
-	nr_max_free = boost_pool_nr_pages(boost_pool) -
-		max(boost_pool->alloc, boost_pool->low);
+	if (boost_pool != cached_boostpool || !ezr_enabled || cam_scene) {
+		nr_max_free = boost_pool_nr_pages(boost_pool) -
+			max(boost_pool->alloc, boost_pool->low);
+	} else {
+		nr_max_free = boost_pool_nr_pages(boost_pool) -
+			calc_dyn_real_min(boost_pool);
+	}
+
 	nr_to_free = min(nr_max_free, nr_to_scan);
 	if (nr_to_free <= 0)
 		return 0;
@@ -713,6 +794,66 @@ static unsigned long boost_pool_mgr_shrink_scan(struct shrinker *shrinker,
 		return 0;
 	return boost_pool_mgr_shrink(sc->gfp_mask, sc->nr_to_scan);
 }
+
+static void update_cam_scene_timeout(void)
+{
+	cam_scene_timeout = jiffies + 5 * HZ;
+}
+
+static void boost_pool_vh_available_adjust(void *data, unsigned long *available)
+{
+	struct boost_pool *boost_pool = data;
+	int delta;
+	int wm_pages = calc_dyn_boost_pool_wm(boost_pool);
+
+	delta = boost_pool_nr_pages(boost_pool) - wm_pages;
+	if (delta < 0)
+		delta = 0;
+
+	*available += delta;
+}
+
+static void oplus_mm_vh_set_or_clear_scene(void *data, bool set, unsigned long nr_bit)
+{
+	struct boost_pool *boost_pool = data;
+
+	if (nr_bit == MM_SCENE_DISPLAY_OFF && set) {
+		pr_info("display off, reset wmark\n");
+		boost_pool_reset_wmark(boost_pool);
+		update_cam_scene_timeout();
+		return;
+	}
+
+	if (nr_bit != MM_SCENE_CAMERA || !boost_pool)
+		return;
+
+	if (set) {
+		boost_pool->min = boost_pool->low = boost_pool->real_min;
+	} else {
+		boost_pool_reset_wmark(boost_pool);
+		update_cam_scene_timeout();
+	}
+	boost_pool->alloc = max(boost_pool->low, boost_pool->alloc);
+}
+
+struct page *cached_boostpool_fetch_page(gfp_t gfp_mask_unused, int order_unsed)
+{
+	int i = 2;
+	struct page *page;
+	struct boost_pool *boost_pool = cached_boostpool;
+
+	BUG_ON(orders[i] != 0);
+	if (!boost_pool) {
+		pr_err("cached_boostpool is NULL\n");
+		return NULL;
+	}
+
+	page = boost_page_pool_remove(boost_pool->pools[i], POOL_HIGHPAGE);
+	if (!page)
+		page = boost_page_pool_remove(boost_pool->pools[i], POOL_LOWPAGE);
+	return page;
+}
+EXPORT_SYMBOL_GPL(cached_boostpool_fetch_page);
 
 struct boost_pool *boost_pool_create(const char *name, bool smmu_v3_enable)
 {
@@ -795,11 +936,14 @@ struct boost_pool *boost_pool_create(const char *name, bool smmu_v3_enable)
 	}
 
 	nr_pages = SZ_32M >> PAGE_SHIFT;
+	if (!uncached)
+		boost_pool->mml = SZ_64M >> PAGE_SHIFT;
+	if (ezr_enabled_and_cached(boost_pool))
+		nr_pages = 0;
+
 	boost_pool->min = nr_pages;
 	boost_pool->low = nr_pages;
 	boost_pool->alloc = nr_pages;
-	if (!uncached)
-		boost_pool->mml = SZ_64M >> PAGE_SHIFT;
 
 	mutex_init(&boost_pool->prefill_lock);
 	init_waitqueue_head(&boost_pool->waitq);
@@ -813,6 +957,14 @@ struct boost_pool *boost_pool_create(const char *name, bool smmu_v3_enable)
 	mutex_lock(&pool_list_lock);
 	list_add(&boost_pool->list, &pool_list);
 	mutex_unlock(&pool_list_lock);
+	if (ezr_enabled_and_cached(boost_pool)) {
+		cached_prefill_task = boost_pool->prefill_task;
+		cached_boostpool = boost_pool;
+		osvelte_register_symbol(OPLUS_MM_TASK_CACHED_BOOSTPOOL_PREFILL, cached_prefill_task);
+		register_trace_oplus_mm_vh_set_or_clear_scene(oplus_mm_vh_set_or_clear_scene, boost_pool);
+		register_trace_android_vh_si_mem_available_adjust(boost_pool_vh_available_adjust, boost_pool);
+		pr_info("init erm feature success\n");
+	}
 	boost_pool_wakeup_prefill(boost_pool);
 	return boost_pool;
 
@@ -833,7 +985,6 @@ free_pool:
 	return NULL;
 }
 EXPORT_SYMBOL_GPL(boost_pool_create);
-
 
 static int dump_show(struct seq_file *s, void *unused)
 {
@@ -857,8 +1008,10 @@ static int dump_show(struct seq_file *s, void *unused)
 			   P2M(boost_pool->min));
 		seq_printf(s, "    low          %dMib\n",
 			   P2M(boost_pool->low));
-		seq_printf(s, "    alloc         %dMib\n",
+		seq_printf(s, "    alloc        %dMib\n",
 			   P2M(boost_pool->alloc));
+		seq_printf(s, "    real_min     %dMib\n",
+			   P2M(boost_pool->real_min));
 		for (i = 0; i < NUM_ORDERS; i++) {
 			struct boost_page_pool *pool = boost_pool->pools[i];
 
@@ -873,7 +1026,12 @@ static int dump_show(struct seq_file *s, void *unused)
 			   boost_pool->custom_pid);
 		seq_printf(s, "    mml         %d\n",
 			   P2M(boost_pool->mml));
-		seq_printf(s, "    mml_cnt     %d\n", mml_cnt);
+		if (cached_boostpool == boost_pool) {
+			seq_printf(s, "    dyn_real_min     %d\n",
+				   P2M(calc_dyn_real_min(boost_pool)));
+			seq_printf(s, "    avalil_delta     %d\n",
+				   boost_pool_nr_pages(boost_pool) - calc_dyn_real_min(boost_pool));
+		}
 
 	}
 	mutex_unlock(&pool_list_lock);
@@ -916,6 +1074,7 @@ int boost_pool_mgr_init(void)
 	struct proc_dir_entry *dump, *enable;
 	static bool init;
 	struct shrinker *pool_shrinker;
+	struct config_ezreclaimd *config;
 
 	if (init)
 		return 0;
@@ -943,6 +1102,10 @@ int boost_pool_mgr_init(void)
 		pr_err("shrinker_alloc failed\n");
 		goto destroy_proc_enable;
 	}
+
+	config = oplus_read_mm_config(module_name_ezreclaimd);
+	if (config)
+		ezr_enabled = config->enable;
 
 	pool_shrinker->count_objects = boost_pool_mgr_shrink_count;
 	pool_shrinker->scan_objects = boost_pool_mgr_shrink_scan;

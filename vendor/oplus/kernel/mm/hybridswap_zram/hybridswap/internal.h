@@ -601,7 +601,6 @@ extern void hybridswapd_ops_init(struct hybridswapd_operations *ops);
 inline u64 get_zram_wm_ratio_value(void);
 void update_swapd_memcg_param(struct mem_cgroup *memcg);
 bool free_zram_is_ok(void);
-extern atomic_t ezreclaimable_nr;
 #else
 static inline bool hybridswap_swapd_enabled(void) { return false; }
 #endif
@@ -609,10 +608,10 @@ static inline bool hybridswap_swapd_enabled(void) { return false; }
 extern atomic_t display_off;
 extern struct zram *swapd_zram;
 
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD)
-extern void ezr_ops_init(struct hybridswapd_operations *ops);
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+extern void erm_ops_init(struct hybridswapd_operations *ops);
 extern bool ezreclaimd_enable;
-#endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE && CONFIG_OPLUS_FEATURE_MM_EZRECLAIMD */
+#endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 
 void register_panel_event_notifier(void);
 void unregister_panel_event_notifier(void);
