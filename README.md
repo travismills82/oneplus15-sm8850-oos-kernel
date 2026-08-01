@@ -102,6 +102,50 @@ physical super-partition space before resizing. Leave `system_dlkm_oki`,
 `vendor_boot`, `vendor_dlkm`, and `dtbo` untouched unless a separately
 validated procedure specifically requires them.
 
+### TWRP installer
+
+Release `oos16.0.9.400-r1` also provides
+`OnePlus15-OOS16.0.9.400-r1-TWRP.zip`. It contains the exact image pair above,
+not a separately rebuilt kernel. The installer is intentionally limited to
+Infiniti TWRP builds with the validated `twrp-flash-kernel` helper and
+`lpdump`; it checks the active slot, clean logical-partition metadata, image
+hashes, target size, writable backup storage, and post-write readback hashes.
+It writes matching `system_dlkm_<active-slot>` before `boot_<active-slot>` and
+does not touch `system_dlkm_oki`, `vendor_boot`, `vendor_dlkm`, `dtbo`, or
+VBMeta.
+
+The ZIP is 189,183,338 bytes with SHA-256
+`965f617b8238d7e6366229744ec5257ede390c824a252514d029372b822bca4a`.
+
+The installer never modifies live super metadata. If active `system_dlkm` is
+smaller than 88,514,560 bytes, it stops before any write and prints the exact
+fastbootd command required to resize that active logical partition. In TWRP,
+reboot to fastbootd, verify that `snapshot-update-status` is `none`, then run:
+
+```bash
+fastboot getvar current-slot
+fastboot getvar snapshot-update-status
+fastboot resize-logical-partition system_dlkm_b 88514560
+```
+
+Replace `b` with the `a` or `b` value reported by `current-slot` (not the
+Android slot-suffix form `_a` or `_b`).
+
+Return to TWRP and install the ZIP only after that operation succeeds. If
+fastbootd rejects the resize, stop and resolve the device's OTA/dynamic
+partition state; do not attempt `lpadd` against the live `super` device. The
+installer requires decrypted `/sdcard` or writable external storage so it can
+retain verified active-slot backups before flashing; a recovery-rootfs
+`/sdcard` placeholder is rejected. It does not alter AVB, so the same unlocked
+test-only VBMeta configuration used for the validated image pair remains a
+prerequisite.
+
+The installer itself was live-validated with TWRP `3.7.1_16-OnePlus_15` on the
+same CPH2747 slot `_b`: it first refused safely while only the non-persistent
+recovery-rootfs storage was available, then—after decrypted data storage was
+available—created durable backups, verified both post-flash hashes, and booted
+back to Android with the expected custom kernel and ext4 `system_dlkm`.
+
 The validated boot log had no panic, oops, MODVERSIONS mismatch, signature
 failure, or unknown-symbol failure. A clean boot of the matched custom pair
 was compared directly with a clean boot of the stock 16.0.9.400 `boot.img` and

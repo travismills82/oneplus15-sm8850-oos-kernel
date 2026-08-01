@@ -1,0 +1,2 @@
+ui_print("OnePlus 15 firmware-specific kernel installer");
+ui_print("All validation and writes are performed by update-binary.");
