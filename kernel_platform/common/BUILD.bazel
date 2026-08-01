@@ -271,6 +271,10 @@ common_kernel(
     makefile = ":Makefile",
     module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
     protected_module_names_list = ":gki_aarch64_protected_module_names",
+    # Trust the public module-signing certificate from stock CPH2747
+    # OxygenOS 16.0.9.400.  This keeps signature and protected-export
+    # enforcement intact when using that stock system_dlkm with this kernel.
+    system_trusted_key = "certs/oos16_0_9_400_stock_gki_module_signing.pem",
     system_dlkm_extra_archive_files = [":generate_gki_module_info_arm64"],
     trim_nonlisted_kmi = True,
     visibility = ["//visibility:public"],

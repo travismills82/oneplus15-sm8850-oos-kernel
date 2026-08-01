@@ -44,6 +44,9 @@ The migration preserves the repository's downstream work:
 - Kleaf/DDK dependency fixes and GKI ZRAM/ZSMALLOC ABI extraction handling;
 - the narrow Bluetooth protected-module compatibility chain needed for stock
   `system_dlkm`, without bypassing signatures, MODVERSIONS, ABI, or KMI;
+- an OxygenOS 16.0.9.400-specific trusted public module-signing certificate
+  for the stock GKI `system_dlkm` modules, so their existing signatures can
+  pass normal GKI protected-export enforcement;
 - ADIOS as an available, non-default I/O scheduler;
 - `CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y`;
 - current module-list, documentation, and release/installer support.
@@ -108,6 +111,53 @@ eight duplicate proc registrations, one duplicate sysfs group, one GIC warning,
 one unbalanced IRQ enable, and one touch HBP warning. The UFS query-attribute
 retry is also present once in both logs. These are therefore stock firmware
 baseline warnings rather than a regression introduced by this custom kernel.
+
+### Validated stock-`system_dlkm` mode
+
+The following **separate**, device-validated configuration eliminates the
+matching custom `system_dlkm` requirement on CPH2747
+`16.0.9.400(EX01)`:
+
+```text
+custom boot.img
++ stock OOS 16.0.9.400 system_dlkm.img (EROFS)
++ stock vendor_boot
++ stock vendor_dlkm
++ stock dtbo
+```
+
+It was built from commit `5834c2d99dc74bc50bc83ad2b1e7ba8085eafdc4` and
+reports kernel release `6.12.23-android16-5-o-g5834c2d99dc7-4k`. The
+validated boot artifact is 100,663,296 bytes with SHA-256
+`7fd8eaa32248a9dec04452b4c875f063117ae5d39779aadbe9b2d1df6802ff77`.
+The stock EROFS `system_dlkm.img` is 14,131,200 bytes with SHA-256
+`18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7`.
+
+This mode adds only the public certificate that signed those stock GKI
+modules to `CONFIG_SYSTEM_TRUSTED_KEYS`. The certificate serial is
+`6E2DD27B61C8671D2C2AFB38E907FE98DC8F0230` and its SHA-256 fingerprint is
+`F2:8D:BC:C6:00:85:B2:1A:3C:FF:13:42:48:28:97:FA:64:0B:46:88:47:47:31:47:83:4F:26:C4:FE:B2:DF:43`.
+It does **not** disable module signatures, MODVERSIONS, CRC validation,
+ABI/KMI checks, or protected-symbol enforcement. It allows legitimately
+signed stock modules such as `6lowpan.ko`, `tipc.ko`, and `wwan.ko` to load
+under that enforcement instead of rejecting their protected exports solely
+because the prior custom kernel did not trust their signer.
+
+Two Android boots were validated with the stock EROFS image mounted on the
+active slot. The embedded eSIM was loaded and active on `subId=1`; LTE
+registered HOME; `SETUP_DATA_CALL` returned `cause=NONE`; and `rmnet_data2`
+received IPv4, IPv6, DNS, and gateway configuration. With Wi-Fi disabled,
+bound direct-IP and DNS pings over `rmnet_data2` passed on both boots.
+Wi-Fi reconnected and passed a bound ping after re-enabling it. Bluetooth
+reached `OnState` with its Qualcomm `btpower`, `hci_uart`, `btqca`, and
+`bluetooth` driver chain loaded; the framework reported zero Bluetooth
+crashes. No protected-export, module-signature, unknown-symbol, or
+MODVERSIONS/CRC mismatch was observed.
+
+This compatibility path is deliberately scoped to the exact `.400` stock
+signer above. Do not assume that a different OxygenOS build uses the same
+module-signing certificate; extract and verify its stock signer before adding
+another firmware-specific trusted key.
 
 ## Build environment
 
