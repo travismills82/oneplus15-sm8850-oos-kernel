@@ -1,2 +1,2 @@
-ui_print("OnePlus 15 firmware-specific kernel installer");
-ui_print("All validation and writes are performed by update-binary.");
+ui_print("OnePlus 15 OOS 16.0.9.400 boot-only kernel installer");
+ui_print("update-binary validates stock EROFS system_dlkm and writes only boot.");

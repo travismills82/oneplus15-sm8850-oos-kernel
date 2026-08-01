@@ -9,209 +9,207 @@ tree with a new OnePlus snapshot.
 
 | Source | Previous 16.0.8.300 baseline | Current 16.0.9.400 baseline |
 | --- | --- | --- |
-| `android_kernel_oneplus_sm8850` | `c88c1b3f75f7e88cd651608362ac7b95f11eb400` | `fc30e54174d254ff7f33622a9278e4435f6718d2` |
-| `android_kernel_modules_and_devicetree_oneplus_sm8850` | `f45a4a587a0ba9107a5421a2dd978404f545164b` | `5ab2a689ff87d7d28c511f1762cf41c1b90d965a` |
+| android_kernel_oneplus_sm8850 | c88c1b3f75f7e88cd651608362ac7b95f11eb400 | fc30e54174d254ff7f33622a9278e4435f6718d2 |
+| android_kernel_modules_and_devicetree_oneplus_sm8850 | f45a4a587a0ba9107a5421a2dd978404f545164b | 5ab2a689ff87d7d28c511f1762cf41c1b90d965a |
 
 The current OnePlus source release covers CPH2745, CPH2747, and CPH2749
-`16.0.9.400(EX01)`, plus PLK110 `16.0.9.400(CN01)`. Both manifest projects
-are pinned to the exact source commits above; their upstream branch remains
-`oneplus/sm8850_b_16.0.0_oneplus_15` for provenance only.
+16.0.9.400(EX01), plus PLK110 16.0.9.400(CN01). Both manifest projects are
+pinned to the exact source commits above; their upstream branch remains
+oneplus/sm8850_b_16.0.0_oneplus_15 for provenance only.
 
 The Android Common Kernel is intentionally retained, not replaced with the
 OnePlus common tree:
 
-- ACK commit: `b2a876903b495c444a94b16f50d1463ffe953957`
-- ACK tag: `android16-6.12-2025-06_r53`
-- Build target: `//soc-repo:canoe_perf_dist`
-
-OnePlus still identifies both source releases with Qualcomm platform base
-`AU_LINUX_KERNEL.PLATFORM.5.0.R1.00.00.00.099.064`. The release metadata's
-recorded Qualcomm techpack revisions are unchanged; the source delta itself
-contains six kernel-platform changes and 126 module/device-tree changes,
-including charging, memory/ZRAM, display, graphics, camera, touch, and audio
-areas.
+- ACK commit: b2a876903b495c444a94b16f50d1463ffe953957
+- ACK tag: android16-6.12-2025-06_r53
+- Build target: //soc-repo:canoe_perf_dist
 
 ## Local customizations retained
 
-The migration preserves the repository's downstream work:
+- Stock-compatible kernel_aarch64 output handling without OnePlus-only
+  vmlinux_oki.
+- CONFIG_CIFS=y, CONFIG_NLS_UTF8=y, and built-in NetFS behavior, with netfs.ko
+  removed from the GKI module-output list.
+- Kleaf/DDK dependency fixes and GKI ZRAM/ZSMALLOC ABI extraction handling.
+- The narrow Bluetooth protected-module compatibility chain needed for stock
+  system_dlkm, without bypassing signatures, MODVERSIONS, ABI, or KMI.
+- An OxygenOS 16.0.9.400-specific trusted public module-signing certificate
+  for stock GKI modules.
+- ADIOS as an available, non-default I/O scheduler.
+- CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y.
 
-- stock-compatible `kernel_aarch64` output handling without OnePlus-only
-  `vmlinux_oki`;
-- `CONFIG_CIFS=y`, `CONFIG_NLS_UTF8=y`, and built-in NetFS behavior, with
-  `netfs.ko` removed from the GKI module-output list;
-- OxygenOS-compatible `system_dlkm` packaging and device-controlled empty
-  `modules.load` policy;
-- Kleaf/DDK dependency fixes and GKI ZRAM/ZSMALLOC ABI extraction handling;
-- the narrow Bluetooth protected-module compatibility chain needed for stock
-  `system_dlkm`, without bypassing signatures, MODVERSIONS, ABI, or KMI;
-- an OxygenOS 16.0.9.400-specific trusted public module-signing certificate
-  for the stock GKI `system_dlkm` modules, so their existing signatures can
-  pass normal GKI protected-export enforcement;
-- ADIOS as an available, non-default I/O scheduler;
-- `CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y`;
-- current module-list, documentation, and release/installer support.
+The Oplus display subtree omitted by the original upstream import is restored
+from the official 16.0.8.300 source before applying the corresponding
+16.0.9.400 display fixes.
 
-The official Oplus display subtree had been omitted by the upstream
-`display-drivers/.gitignore` during the original local import. It is restored
-from the official 16.0.8.300 source before applying the two corresponding
-16.0.9.400 display fixes, so this tree now carries the complete official
-target version instead of silently skipping those changes.
+## Default supported configuration
 
-## Firmware-specific artifact policy
-
-The historical, device-validated baseline is OxygenOS 16.0.8.300. Its boot
-and `system_dlkm` artifacts remain historical only and must not be flashed on
-16.0.9.400.
-
-### 16.0.9.400 validation status
-
-The current source baseline was built successfully with
-`//soc-repo:canoe_perf_dist`. The strict
-`//common:kernel_aarch64_abi`, `//common:kernel_aarch64_abi_kmi_symbol_checks`,
-and `//common:kernel_aarch64_abi_diff` checks also passed. The resulting
-kernel release is `6.12.23-android16-5-o-g7b1ff1b969ac-4k`.
-
-On a rooted CPH2747 running `16.0.9.400(EX01)`, the following matched pair was
-flashed and validated on slot `_b`:
-
-- `boot.img` — 100,663,296 bytes, SHA-256
-  `f78fd57d5041d0c8f875d7a182c759160f7d61b499e376210199bed2993fecc6`;
-- `system_dlkm.flatten.ext4.img` — 88,514,560 bytes, SHA-256
-  `6fa68a8fd4516438792fc571786b6aa9a8872235862cc0980092e6eb107d4002`.
-
-The test retained the stock `vendor_boot`, `vendor_dlkm`, and `dtbo` images.
-Android booted normally, retained Magisk root, and completed a controlled
-reboot in 23 seconds. Wi-Fi connected on 6 GHz and passed a direct ping;
-Bluetooth reached `OnState` with an active HCI controller and zero framework
-crashes; and cellular data acquired an IPv4/IPv6 address on `rmnet_data2`.
-With Wi-Fi disabled, direct-IP and DNS pings through `rmnet_data2` both passed
-three of three packets. CIFS is available, ZRAM/ZSMALLOC load successfully,
-and ADIOS is available without replacing the `mq-deadline` default scheduler.
-
-This is a firmware-specific test configuration, not a production AVB claim.
-The custom images were tested only after flashing the current slot's stock
-`vbmeta` with fastboot's `--disable-verity --disable-verification` flags. Do
-not reuse a 16.0.8.300 fingerprint, security-patch value, VBMeta image,
-partition size, or TWRP package on 16.0.9.400.
-
-Before flashing, back up the active slot and inspect its live dynamic-partition
-layout in fastbootd or TWRP. The stock `system_dlkm` layout is a smaller EROFS
-partition, while this matched image is ext4 and needs an 88,514,560-byte
-logical partition. Confirm there is no active snapshot/merge state and enough
-physical super-partition space before resizing. Leave `system_dlkm_oki`,
-`vendor_boot`, `vendor_dlkm`, and `dtbo` untouched unless a separately
-validated procedure specifically requires them.
-
-### TWRP installer
-
-Release `oos16.0.9.400-r1` also provides
-`OnePlus15-OOS16.0.9.400-r1-TWRP.zip`. It contains the exact image pair above,
-not a separately rebuilt kernel. The installer is intentionally limited to
-Infiniti TWRP builds with the validated `twrp-flash-kernel` helper and
-`lpdump`; it checks the active slot, clean logical-partition metadata, image
-hashes, target size, writable backup storage, and post-write readback hashes.
-It writes matching `system_dlkm_<active-slot>` before `boot_<active-slot>` and
-does not touch `system_dlkm_oki`, `vendor_boot`, `vendor_dlkm`, `dtbo`, or
-VBMeta.
-
-The ZIP is 189,183,338 bytes with SHA-256
-`965f617b8238d7e6366229744ec5257ede390c824a252514d029372b822bca4a`.
-
-The installer never modifies live super metadata. If active `system_dlkm` is
-smaller than 88,514,560 bytes, it stops before any write and prints the exact
-fastbootd command required to resize that active logical partition. In TWRP,
-reboot to fastbootd, verify that `snapshot-update-status` is `none`, then run:
-
-```bash
-fastboot getvar current-slot
-fastboot getvar snapshot-update-status
-fastboot resize-logical-partition system_dlkm_b 88514560
-```
-
-Replace `b` with the `a` or `b` value reported by `current-slot` (not the
-Android slot-suffix form `_a` or `_b`).
-
-Return to TWRP and install the ZIP only after that operation succeeds. If
-fastbootd rejects the resize, stop and resolve the device's OTA/dynamic
-partition state; do not attempt `lpadd` against the live `super` device. The
-installer requires decrypted `/sdcard` or writable external storage so it can
-retain verified active-slot backups before flashing; a recovery-rootfs
-`/sdcard` placeholder is rejected. It does not alter AVB, so the same unlocked
-test-only VBMeta configuration used for the validated image pair remains a
-prerequisite.
-
-The installer itself was live-validated with TWRP `3.7.1_16-OnePlus_15` on the
-same CPH2747 slot `_b`: it first refused safely while only the non-persistent
-recovery-rootfs storage was available, then—after decrypted data storage was
-available—created durable backups, verified both post-flash hashes, and booted
-back to Android with the expected custom kernel and ext4 `system_dlkm`.
-
-The validated boot log had no panic, oops, MODVERSIONS mismatch, signature
-failure, or unknown-symbol failure. A clean boot of the matched custom pair
-was compared directly with a clean boot of the stock 16.0.9.400 `boot.img` and
-`system_dlkm.img` pair on the same CPH2747 and slot. Both logs have the exact
-same 14 `WARNING: CPU` entries and 15 call traces: two PMIC-arbiter warnings,
-eight duplicate proc registrations, one duplicate sysfs group, one GIC warning,
-one unbalanced IRQ enable, and one touch HBP warning. The UFS query-attribute
-retry is also present once in both logs. These are therefore stock firmware
-baseline warnings rather than a regression introduced by this custom kernel.
-
-### Validated stock-`system_dlkm` mode
-
-The following **separate**, device-validated configuration eliminates the
-matching custom `system_dlkm` requirement on CPH2747
-`16.0.9.400(EX01)`:
-
-```text
+~~~text
 custom boot.img
-+ stock OOS 16.0.9.400 system_dlkm.img (EROFS)
++ stock OxygenOS 16.0.9.400 EROFS system_dlkm
 + stock vendor_boot
 + stock vendor_dlkm
 + stock dtbo
-```
+~~~
 
-It was built from commit `5834c2d99dc74bc50bc83ad2b1e7ba8085eafdc4` and
-reports kernel release `6.12.23-android16-5-o-g5834c2d99dc7-4k`. The
-validated boot artifact is 100,663,296 bytes with SHA-256
-`7fd8eaa32248a9dec04452b4c875f063117ae5d39779aadbe9b2d1df6802ff77`.
-The stock EROFS `system_dlkm.img` is 14,131,200 bytes with SHA-256
-`18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7`.
+The kernel is not dependent on the generated custom
+system_dlkm.flatten.ext4.img. It remains dependent on compatible GKI modules
+supplied by the stock OxygenOS 16.0.9.400 system_dlkm partition.
 
-This mode adds only the public certificate that signed those stock GKI
-modules to `CONFIG_SYSTEM_TRUSTED_KEYS`. The certificate serial is
-`6E2DD27B61C8671D2C2AFB38E907FE98DC8F0230` and its SHA-256 fingerprint is
-`F2:8D:BC:C6:00:85:B2:1A:3C:FF:13:42:48:28:97:FA:64:0B:46:88:47:47:31:47:83:4F:26:C4:FE:B2:DF:43`.
-It does **not** disable module signatures, MODVERSIONS, CRC validation,
-ABI/KMI checks, or protected-symbol enforcement. It allows legitimately
-signed stock modules such as `6lowpan.ko`, `tipc.ko`, and `wwan.ko` to load
-under that enforcement instead of rejecting their protected exports solely
-because the prior custom kernel did not trust their signer.
+Only the boot partition is replaced by the normal release. Do not flash,
+resize, remap, or overwrite system_dlkm, system_dlkm_oki, vendor_boot,
+vendor_dlkm, dtbo, or VBMeta for this configuration.
 
-Two Android boots were validated with the stock EROFS image mounted on the
-active slot. The embedded eSIM was loaded and active on `subId=1`; LTE
-registered HOME; `SETUP_DATA_CALL` returned `cause=NONE`; and `rmnet_data2`
-received IPv4, IPv6, DNS, and gateway configuration. With Wi-Fi disabled,
-bound direct-IP and DNS pings over `rmnet_data2` passed on both boots.
-Wi-Fi reconnected and passed a bound ping after re-enabling it. Bluetooth
-reached `OnState` with its Qualcomm `btpower`, `hci_uart`, `btqca`, and
-`bluetooth` driver chain loaded; the framework reported zero Bluetooth
-crashes. No protected-export, module-signature, unknown-symbol, or
-MODVERSIONS/CRC mismatch was observed.
+### Current boot-only validation
 
-This compatibility path is deliberately scoped to the exact `.400` stock
-signer above. Do not assume that a different OxygenOS build uses the same
-module-signing certificate; extract and verify its stock signer before adding
-another firmware-specific trusted key.
+The verified kernel image was built from source commit
+ee96bf9dec626eef39f2ba17f855339366e29f0f with:
+
+~~~bash
+cd kernel_platform
+tools/bazel build //soc-repo:canoe_perf_dist
+tools/bazel build \
+  //common:kernel_aarch64_abi \
+  //common:kernel_aarch64_abi_kmi_symbol_checks \
+  //common:kernel_aarch64_abi_diff
+~~~
+
+Both commands passed. Strict ABI/KMI validation remains enabled, as do
+CONFIG_MODULE_SIG, CONFIG_MODVERSIONS, CONFIG_GENDWARFKSYMS, symbol CRC
+validation, and protected-module enforcement.
+
+The fresh boot-only test artifact is:
+
+- Kernel release: 6.12.23-android16-5-o-gee96bf9dec62-4k.
+- boot.img: 100,663,296 bytes, SHA-256
+  45847acea8eec0d9e5d9272a7a147235e3aaea6421fb72e4b6bf61e10a38219e.
+
+The build still generates system_dlkm.flatten.ext4.img for ABI/KMI development
+and recovery work. The fresh artifact was 88,510,464 bytes with SHA-256
+e259b31d7d48dab1b1cf76dc1d5402c69c2a02cc45da85893519e1d86fefec87; it is
+not a normal release asset.
+
+The tested stock system_dlkm.img is the CPH2747 OxygenOS
+16.0.9.400(EX01) EROFS image:
+
+- Image bytes: 14,131,200.
+- SHA-256:
+  18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7.
+- Active runtime mount: /dev/block/dm-11 on /system_dlkm type erofs.
+- Active logical-partition capacity: 88,514,560 bytes, unchanged during this
+  test; the first 14,131,200 bytes matched the stock image hash exactly.
+
+The embedded trusted public certificate is the signer reported by stock GKI
+modules such as 6lowpan.ko:
+
+- Certificate serial:
+  6E2DD27B61C8671D2C2AFB38E907FE98DC8F0230.
+- SHA-256 fingerprint:
+  F2:8D:BC:C6:00:85:B2:1A:3C:FF:13:42:48:28:97:FA:64:0B:46:88:47:47:31:47:83:4F:26:C4:FE:B2:DF:43.
+
+It is set as system_trusted_key in kernel_platform/common/BUILD.bazel. This
+trusts the stock modules without weakening module signatures, MODVERSIONS, CRC
+checking, ABI/KMI checks, or protected exports.
+
+Two clean Android boots, followed by a recovery boot and successful return to
+Android, were completed on rooted CPH2747 16.0.9.400(EX01) using the fresh
+custom boot image and untouched stock EROFS system_dlkm. Each Android boot
+mounted the same stock EROFS payload and loaded 661 modules; 78 loaded module
+names were directly identified from stock /system_dlkm.
+
+No required module produced an unknown symbol, MODVERSIONS/CRC mismatch,
+vermagic error, invalid module format, signature/key failure, namespace
+failure, or protected-export failure. The stock wwan.ko module loaded under
+normal protected-module enforcement, so no broad WWAN exception is needed.
+
+Validated runtime results:
+
+- Wi-Fi connected to a WPA3 6 GHz network at 6135 MHz and passed direct-IP and
+  DNS traffic checks, including a settled five-packet test with no loss.
+- Bluetooth reached OnState after both boots with zero framework crashes. The
+  stock rfkill, bluetooth, btqca, btbcm, hci_uart, and pwrseq_core chain
+  loaded; two existing bonded devices remained present.
+- The eSIM subscription loaded as subId=1; LTE registered HOME;
+  SETUP_DATA_CALL reported cause=NONE; and rmnet_data2 received IPv4, IPv6,
+  DNS, and default routes. With Wi-Fi disabled, direct-IP and DNS traffic
+  through rmnet_data2 passed a settled five-packet test with no loss.
+- ZRAM/ZSMALLOC loaded and swap was active with LZ4 selected. CIFS appears in
+  /proc/filesystems. ADIOS is available but mq-deadline remains selected by
+  default on UFS block devices.
+- Encrypted userdata, charging/USB, display/touch, GPU, camera HAL, audio
+  paths, fingerprint HAL, NFC, and GNSS service state were present without a
+  kernel fault. Screen sleep/wake completed while wired ADB kept the device
+  awake; a fully unplugged deep-suspend test remains a separate physical test.
+
+The observed qti-testscripts SIGABRT and associated SELinux context warning
+are unchanged stock OxygenOS boot behavior, verified against the prior
+known-good stock-DLKM boot. There was no new kernel panic, oops, or pstore
+crash record.
+
+The r2 TWRP installer was also live-validated in
+TWRP 3.7.1_16-OnePlus_15. It verified the exact firmware manifest and stock
+EROFS system_dlkm before creating a durable boot_b backup, flashing only
+boot_b, and recording matching backup and readback hashes. Android then
+returned in 22 seconds with stock EROFS system_dlkm, Wi-Fi, Bluetooth, and
+Wi-Fi-disabled cellular traffic all working.
+
+**PASS:** system_dlkm.flatten.ext4.img is not required for normal OOS
+16.0.9.400 installation.
+
+## Installation
+
+Use only on an unlocked OnePlus 15 / CPH2747 running
+OxygenOS 16.0.9.400(EX01) with its stock EROFS system_dlkm still installed.
+The installer does not alter AVB; it is for the established unlocked test
+configuration only.
+
+### TWRP (recommended)
+
+Install OnePlus15-OOS16.0.9.400-r2-TWRP.zip in a compatible TWRP recovery.
+Before it writes anything, it verifies:
+
+- CPH2747 / Canoe identity and the active slot.
+- The exact active firmware manifest.
+- Stock EROFS magic and the known .400 system_dlkm SHA-256.
+- A durable backup location for boot_<active-slot>.
+
+It then flashes only boot_<active-slot>, reads back exactly the image length,
+and restores the backup automatically if writing or verification fails. The ZIP
+never touches dynamic-partition metadata or any non-boot image.
+
+### Fastboot
+
+Back up the active boot image first, determine the active slot, and replace b
+below with the slot reported by fastboot getvar current-slot:
+
+~~~bash
+fastboot getvar current-slot
+fastboot flash boot_b boot.img
+fastboot reboot
+~~~
+
+Do not flash the generated custom ext4 system_dlkm image for this normal
+release.
+
+## Legacy development/fallback mode
+
+Release oos16.0.9.400-r1 and the older matched custom boot.img plus
+system_dlkm.flatten.ext4.img procedure remain historical development/fallback
+material only. That path requires a custom ext4 logical system_dlkm image and
+can require dynamic-partition resizing. It is not included in, or required by,
+the normal r2 boot-only release.
+
+Keep the generated ext4 image available locally for ABI/KMI work, future ACK
+updates, and diagnostic recovery. Do not attach it to normal GitHub releases.
 
 ## Build environment
 
-This source repository intentionally excludes generated `out/` artifacts,
-nested Git metadata, and OnePlus-provided binary toolchains under
-`kernel_platform/prebuilts/`. To reproduce a full build environment, initialize
-a fresh checkout from [`oneplus_15.xml`](oneplus_15.xml), sync the pinned
-projects, and build:
+This source repository intentionally excludes generated out/ artifacts, nested
+Git metadata, and OnePlus-provided binary toolchains under
+kernel_platform/prebuilts/. To reproduce a full build environment, initialize
+a fresh checkout from oneplus_15.xml, sync the pinned projects, and build:
 
-```bash
+~~~bash
 cd kernel_platform
 tools/bazel build //soc-repo:canoe_perf_dist
-```
+~~~

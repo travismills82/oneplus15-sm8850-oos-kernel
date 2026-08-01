@@ -1,57 +1,69 @@
-OnePlus 15 OxygenOS 16.0.9.400-r1 TWRP installer
-===================================================
+OnePlus 15 OxygenOS 16.0.9.400-r2 boot-only TWRP installer
+============================================================
 
-This ZIP contains the exact matched kernel images validated on CPH2747 running
-@FIRMWARE@:
+This archive is the normal release installer for:
 
-  payload/boot.img
+  @DEVICE@
+  @FIRMWARE@
+  kernel release: @KERNEL_RELEASE@
+  source commit: @SOURCE_COMMIT@
+
+Archive contents
+----------------
+
+  boot.img
     bytes: @BOOT_BYTES@
     sha256: @BOOT_SHA256@
 
-  payload/system_dlkm.flatten.ext4.img
-    bytes: @SYSTEM_DLKM_BYTES@
-    sha256: @SYSTEM_DLKM_SHA256@
+  kernel-info.txt
+  checksums.sha256
+  META-INF/com/google/android/update-binary
+  META-INF/com/google/android/updater-script
 
-The installer is deliberately firmware-specific. Do not flash it on OOS
-16.0.8.300, a different OOS build, or an untested device variant.
+It intentionally does not contain a custom system_dlkm image.
 
-Requirements
-------------
+Required installed firmware contract
+------------------------------------
 
-* An unlocked OnePlus 15 already using a validated Infiniti TWRP build that
-  provides /system/bin/twrp-flash-kernel and lpdump.
-* A clean snapshot state. The installer refuses an active OTA merge/snapshot.
-* Writable decrypted /sdcard or mounted external storage. A recovery-rootfs
-  /sdcard placeholder is rejected because it cannot retain backups across a
-  reboot. The installer backs up active-slot boot and system_dlkm before any
-  write.
-* system_dlkm on the active slot must be at least @SYSTEM_DLKM_BYTES@ bytes.
-  The stock OOS layout is smaller. From TWRP, reboot to fastbootd and run:
+The active slot must already use the untouched stock CPH2747 OxygenOS
+16.0.9.400(EX01) system_dlkm EROFS image:
 
-    fastboot getvar current-slot
-    fastboot getvar snapshot-update-status
-    fastboot resize-logical-partition system_dlkm_b @SYSTEM_DLKM_BYTES@
+  bytes checked: @STOCK_SYSTEM_DLKM_BYTES@
+  EROFS magic at offset 1024: @STOCK_SYSTEM_DLKM_EROFS_MAGIC@
+  sha256: @STOCK_SYSTEM_DLKM_SHA256@
 
-  Replace `b` with the `a` or `b` value reported by `current-slot` (do not
-  include the underscore used by Android's slot-suffix property).
-
-  Only resize when snapshot-update-status is none and the super partition has
-  enough free space. If fastbootd rejects the resize, stop and resolve the
-  device's dynamic-partition/OTA state; do not use lpadd against live super.
+The installer verifies the active slot, CPH2747/Canoe identity, the exact
+firmware manifest, EROFS magic, and this stock system_dlkm hash before any
+write. It refuses an active OTA snapshot/merge, ext4 system_dlkm, a modified
+system_dlkm, an unknown firmware, or a device that cannot be verified.
 
 What it does
 ------------
 
-* Detects the recovery boot slot and writes only boot_<slot> and
-  system_dlkm_<slot>.
-* Verifies archive payload hashes, image headers, ext4 format, logical
-  metadata, input sizes, target backups, and post-write readback hashes.
-* Flashes matching system_dlkm first and boot second.
-* Leaves system_dlkm_oki, vendor_boot, vendor_dlkm, dtbo, and VBMeta untouched.
+* Extracts and SHA-256 verifies boot.img.
+* Creates a durable backup of boot_<active-slot>.
+* Flashes only boot_<active-slot>.
+* Reads back exactly @BOOT_BYTES@ bytes and verifies the boot SHA-256.
+* Restores the boot backup if writing or read-back verification fails.
 
-The installer does not disable AVB verification or flash VBMeta. It is for the
-same unlocked, test-only AVB configuration used to validate release
-@RELEASE_TAG@. It is not a production AVB-secure installation method.
+What it never does
+------------------
 
-After a successful install, reboot System without changing slots. The recovery
-helper reports the backup directory and verifies both writes before returning.
+* It never writes, mounts, maps, unmaps, resizes, erases, or otherwise changes
+  system_dlkm or system_dlkm_oki.
+* It never writes vendor_boot, vendor_dlkm, dtbo, vbmeta, vbmeta_system, or
+  vbmeta_vendor.
+* It does not modify dynamic-partition metadata or disable AVB verification.
+
+Requirements
+------------
+
+* An unlocked OnePlus 15 on the exact firmware above.
+* A TWRP build with lpdump and normal Android recovery tools.
+* Decrypted /data or durable mounted external storage for the boot backup.
+
+Install the ZIP from TWRP, then reboot System without switching slots. This is
+firmware-specific: do not install it on any other OxygenOS build.
+
+The generated system_dlkm.flatten.ext4.img remains a development and recovery
+fallback artifact. It is not part of this normal boot-only release.
