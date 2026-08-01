@@ -1,0 +1,57 @@
+OnePlus 15 OxygenOS 16.0.9.400-r1 TWRP installer
+===================================================
+
+This ZIP contains the exact matched kernel images validated on CPH2747 running
+@FIRMWARE@:
+
+  payload/boot.img
+    bytes: @BOOT_BYTES@
+    sha256: @BOOT_SHA256@
+
+  payload/system_dlkm.flatten.ext4.img
+    bytes: @SYSTEM_DLKM_BYTES@
+    sha256: @SYSTEM_DLKM_SHA256@
+
+The installer is deliberately firmware-specific. Do not flash it on OOS
+16.0.8.300, a different OOS build, or an untested device variant.
+
+Requirements
+------------
+
+* An unlocked OnePlus 15 already using a validated Infiniti TWRP build that
+  provides /system/bin/twrp-flash-kernel and lpdump.
+* A clean snapshot state. The installer refuses an active OTA merge/snapshot.
+* Writable decrypted /sdcard or mounted external storage. A recovery-rootfs
+  /sdcard placeholder is rejected because it cannot retain backups across a
+  reboot. The installer backs up active-slot boot and system_dlkm before any
+  write.
+* system_dlkm on the active slot must be at least @SYSTEM_DLKM_BYTES@ bytes.
+  The stock OOS layout is smaller. From TWRP, reboot to fastbootd and run:
+
+    fastboot getvar current-slot
+    fastboot getvar snapshot-update-status
+    fastboot resize-logical-partition system_dlkm_b @SYSTEM_DLKM_BYTES@
+
+  Replace `b` with the `a` or `b` value reported by `current-slot` (do not
+  include the underscore used by Android's slot-suffix property).
+
+  Only resize when snapshot-update-status is none and the super partition has
+  enough free space. If fastbootd rejects the resize, stop and resolve the
+  device's dynamic-partition/OTA state; do not use lpadd against live super.
+
+What it does
+------------
+
+* Detects the recovery boot slot and writes only boot_<slot> and
+  system_dlkm_<slot>.
+* Verifies archive payload hashes, image headers, ext4 format, logical
+  metadata, input sizes, target backups, and post-write readback hashes.
+* Flashes matching system_dlkm first and boot second.
+* Leaves system_dlkm_oki, vendor_boot, vendor_dlkm, dtbo, and VBMeta untouched.
+
+The installer does not disable AVB verification or flash VBMeta. It is for the
+same unlocked, test-only AVB configuration used to validate release
+@RELEASE_TAG@. It is not a production AVB-secure installation method.
+
+After a successful install, reboot System without changing slots. The recovery
+helper reports the backup directory and verifies both writes before returning.

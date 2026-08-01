@@ -1,0 +1,167 @@
+#!/sbin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# OOS 16.0.9.400-r1 installer. It deliberately delegates the only writes to
+# the validated TWRP helper, which validates the active slot, clean snapshot
+# metadata, backups, input image headers, and read-back hashes.
+
+set -u
+
+OUTFD="${2:-}"
+ZIPFILE="${3:-}"
+RELEASE_TAG='@RELEASE_TAG@'
+FIRMWARE='@FIRMWARE@'
+BOOT_BYTES='@BOOT_BYTES@'
+SYSTEM_DLKM_BYTES='@SYSTEM_DLKM_BYTES@'
+BOOT_SHA256='@BOOT_SHA256@'
+SYSTEM_DLKM_SHA256='@SYSTEM_DLKM_SHA256@'
+WORKDIR="/tmp/oneplus15-${RELEASE_TAG}-$$"
+PAYLOAD_DIR="${WORKDIR}/payload"
+HELPER='/system/bin/twrp-flash-kernel'
+
+ui_print() {
+    if [ -n "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
+        printf 'ui_print %s\nui_print\n' "$*" > "/proc/self/fd/$OUTFD"
+    else
+        printf '%s\n' "$*"
+    fi
+}
+
+abort_install() {
+    ui_print "ERROR: $*"
+    exit 1
+}
+
+is_decimal() {
+    case "$1" in
+        ''|*[!0-9]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+choose_backup_root() {
+    for candidate in /sdcard /external_sd /usb-otg; do
+        filesystem="$(df -kP "$candidate" 2>/dev/null | awk 'NR == 2 {print $1}')"
+        case "$filesystem" in
+            /dev/block/*|/dev/fuse)
+                if [ -d "$candidate" ] && [ -w "$candidate" ]; then
+                    printf '%s/TWRP/kernel-flash-backups\n' "$candidate"
+                    return 0
+                fi
+                ;;
+        esac
+    done
+
+    # /sdcard may be a rootfs placeholder before FBE user storage is unlocked.
+    # Direct data-media access is accepted only after TWRP confirms decryption.
+    if [ "$(getprop twrp.user.0.decrypt 2>/dev/null || true)" = 1 ]; then
+        candidate=/data/media/0
+        filesystem="$(df -kP "$candidate" 2>/dev/null | awk 'NR == 2 {print $1}')"
+        case "$filesystem" in
+            /dev/block/*|/dev/fuse)
+                if [ -d "$candidate" ] && [ -w "$candidate" ]; then
+                    printf '%s/TWRP/kernel-flash-backups\n' "$candidate"
+                    return 0
+                fi
+                ;;
+        esac
+    fi
+    return 1
+}
+
+forward_log() {
+    log="$1"
+    [ -f "$log" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        ui_print "$line"
+    done < "$log"
+}
+
+[ "$#" -ge 3 ] || abort_install 'TWRP did not supply the installer arguments.'
+[ -r "$ZIPFILE" ] || abort_install "installer archive is not readable: $ZIPFILE"
+
+for tool in awk blockdev df getprop grep lpdump mkdir sha256sum tr unzip; do
+    command -v "$tool" >/dev/null 2>&1 ||
+        abort_install "required recovery tool is unavailable: $tool"
+done
+
+slot="$(getprop ro.boot.slot_suffix 2>/dev/null || true)"
+case "$slot" in
+    _a|_b) ;;
+    *) abort_install "invalid active slot: ${slot:-unset}" ;;
+esac
+
+[ -x "$HELPER" ] || abort_install \
+    'requires the validated Infiniti TWRP helper at /system/bin/twrp-flash-kernel.'
+for proof in \
+    'With --flash, boot and system_dlkm are backed up first' \
+    'system_dlkm_oki is intentionally not touched.' \
+    'read-back checksum mismatch'; do
+    grep -F "$proof" "$HELPER" >/dev/null 2>&1 ||
+        abort_install 'the installed TWRP kernel helper is not the required safe implementation.'
+done
+
+lpdump_output=''
+lpdump_output="$(lpdump --slot "$slot" 2>&1)" ||
+    abort_install "lpdump failed for ${slot}: ${lpdump_output}"
+case "$lpdump_output" in
+    *"Current slot: ${slot}"*) ;;
+    *) abort_install "lpdump did not confirm active slot ${slot}." ;;
+esac
+case "$lpdump_output" in
+    *"Name: system_dlkm${slot}"*) ;;
+    *) abort_install "lpdump did not find system_dlkm${slot}." ;;
+esac
+case "$lpdump_output" in
+    *'Update state: none'*) ;;
+    *) abort_install 'snapshot update/merge is active or super metadata is not clean.' ;;
+esac
+
+target="/dev/block/mapper/system_dlkm${slot}"
+[ -b "$target" ] || abort_install "active logical target is unavailable: $target"
+target_bytes="$(blockdev --getsize64 "$target" 2>/dev/null | tr -d '[:space:]')" ||
+    abort_install "could not read target size: $target"
+is_decimal "$target_bytes" || abort_install 'target size is invalid.'
+if [ "$target_bytes" -lt "$SYSTEM_DLKM_BYTES" ]; then
+    ui_print "system_dlkm${slot} is ${target_bytes} bytes; this image needs ${SYSTEM_DLKM_BYTES}."
+    ui_print 'No partition was changed. This installer never rewrites live super metadata.'
+    ui_print 'Reboot this TWRP to fastbootd, then run on the host:'
+    ui_print "fastboot resize-logical-partition system_dlkm${slot} ${SYSTEM_DLKM_BYTES}"
+    ui_print 'Return to recovery and install this same ZIP again. Do not touch system_dlkm_oki.'
+    exit 1
+fi
+
+backup_root="$(choose_backup_root)" ||
+    abort_install 'decrypt /data or mount durable writable external storage for verified target backups.'
+
+mkdir -p "$PAYLOAD_DIR" || abort_install "could not create staging directory: $PAYLOAD_DIR"
+unzip -p "$ZIPFILE" payload/boot.img > "$PAYLOAD_DIR/boot.img" ||
+    abort_install 'could not extract boot.img from the installer archive.'
+unzip -p "$ZIPFILE" payload/system_dlkm.flatten.ext4.img \
+    > "$PAYLOAD_DIR/system_dlkm.flatten.ext4.img" ||
+    abort_install 'could not extract system_dlkm image from the installer archive.'
+
+actual_boot_sha256="$(sha256sum "$PAYLOAD_DIR/boot.img" | awk '{print $1}')"
+actual_system_dlkm_sha256="$(sha256sum "$PAYLOAD_DIR/system_dlkm.flatten.ext4.img" | awk '{print $1}')"
+[ "$actual_boot_sha256" = "$BOOT_SHA256" ] ||
+    abort_install 'boot image checksum does not match the signed release manifest.'
+[ "$actual_system_dlkm_sha256" = "$SYSTEM_DLKM_SHA256" ] ||
+    abort_install 'system_dlkm image checksum does not match the signed release manifest.'
+
+ui_print "OnePlus 15 ${FIRMWARE}: ${RELEASE_TAG}"
+ui_print "Target slot: ${slot}; system_dlkm target: ${target_bytes} bytes"
+ui_print "Verified payload hashes; backups will be stored under ${backup_root}."
+ui_print 'system_dlkm is flashed and read-back verified before boot; system_dlkm_oki is untouched.'
+
+helper_log="$WORKDIR/twrp-flash-kernel.log"
+"$HELPER" --flash --backup-dir "$backup_root" \
+    "$PAYLOAD_DIR/boot.img" "$PAYLOAD_DIR/system_dlkm.flatten.ext4.img" \
+    > "$helper_log" 2>&1
+helper_status=$?
+forward_log "$helper_log"
+[ "$helper_status" -eq 0 ] ||
+    abort_install 'TWRP rejected the image pair before completing a verified flash.'
+
+ui_print "${RELEASE_TAG} installed and read-back verified on ${slot}."
+ui_print 'Reboot System without switching slots. This installer does not alter VBMeta.'
+exit 0
