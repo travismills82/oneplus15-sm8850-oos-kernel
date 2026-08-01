@@ -1,23 +1,29 @@
 #!/sbin/sh
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# OOS 16.0.9.400-r1 installer. It deliberately delegates the only writes to
-# the validated TWRP helper, which validates the active slot, clean snapshot
-# metadata, backups, input image headers, and read-back hashes.
+# Boot-only installer for the verified OnePlus 15 OOS 16.0.9.400 release.
+# It reads the active stock system_dlkm only to prove its exact EROFS content;
+# it never mounts, maps, resizes, erases, or writes system_dlkm.
 
 set -u
+set -o pipefail
 
-OUTFD="${2:-}"
-ZIPFILE="${3:-}"
+[ "$#" -ge 3 ] || exit 1
+
+OUTFD="$2"
+ZIPFILE="$3"
 RELEASE_TAG='@RELEASE_TAG@'
 FIRMWARE='@FIRMWARE@'
+DEVICE='@DEVICE@'
 BOOT_BYTES='@BOOT_BYTES@'
-SYSTEM_DLKM_BYTES='@SYSTEM_DLKM_BYTES@'
+BOOT_PARTITION_BYTES='@BOOT_PARTITION_BYTES@'
 BOOT_SHA256='@BOOT_SHA256@'
-SYSTEM_DLKM_SHA256='@SYSTEM_DLKM_SHA256@'
-WORKDIR="/tmp/oneplus15-${RELEASE_TAG}-$$"
-PAYLOAD_DIR="${WORKDIR}/payload"
-HELPER='/system/bin/twrp-flash-kernel'
+STOCK_SYSTEM_DLKM_BYTES='@STOCK_SYSTEM_DLKM_BYTES@'
+STOCK_SYSTEM_DLKM_BLOCKS='@STOCK_SYSTEM_DLKM_BLOCKS@'
+STOCK_SYSTEM_DLKM_SHA256='@STOCK_SYSTEM_DLKM_SHA256@'
+STOCK_SYSTEM_DLKM_EROFS_MAGIC='@STOCK_SYSTEM_DLKM_EROFS_MAGIC@'
+WORKDIR="/tmp/oneplus15-$RELEASE_TAG-$$"
+MANIFEST_MOUNT=''
 
 ui_print() {
     if [ -n "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
@@ -39,6 +45,27 @@ is_decimal() {
     esac
 }
 
+hash_file() {
+    sha256sum "$1" | awk '{print $1}'
+}
+
+hash_block_prefix() {
+    hash_block="$1"
+    hash_bytes="$2"
+    is_decimal "$hash_bytes" || return 1
+    [ "$hash_bytes" -gt 0 ] || return 1
+    [ $((hash_bytes % 4096)) -eq 0 ] || return 1
+    hash_blocks=$((hash_bytes / 4096))
+    dd if="$hash_block" bs=4096 count="$hash_blocks" 2>/dev/null |
+        sha256sum | awk '{print $1}'
+}
+
+cleanup() {
+    if [ -n "$MANIFEST_MOUNT" ]; then
+        umount "$MANIFEST_MOUNT" 2>/dev/null || true
+    fi
+}
+
 choose_backup_root() {
     for candidate in /sdcard /external_sd /usb-otg; do
         filesystem="$(df -kP "$candidate" 2>/dev/null | awk 'NR == 2 {print $1}')"
@@ -52,8 +79,7 @@ choose_backup_root() {
         esac
     done
 
-    # /sdcard may be a rootfs placeholder before FBE user storage is unlocked.
-    # Direct data-media access is accepted only after TWRP confirms decryption.
+    # /sdcard may be a recovery-rootfs placeholder before FBE is unlocked.
     if [ "$(getprop twrp.user.0.decrypt 2>/dev/null || true)" = 1 ]; then
         candidate=/data/media/0
         filesystem="$(df -kP "$candidate" 2>/dev/null | awk 'NR == 2 {print $1}')"
@@ -69,99 +95,177 @@ choose_backup_root() {
     return 1
 }
 
-forward_log() {
-    log="$1"
-    [ -f "$log" ] || return 0
-    while IFS= read -r line || [ -n "$line" ]; do
-        ui_print "$line"
-    done < "$log"
+restore_boot() {
+    ui_print "Restoring boot$slot from durable backup."
+    dd if="$BACKUP_IMAGE" of="$BOOT_BLOCK" bs=4M conv=fsync ||
+        return 1
+    sync || return 1
+    restored_hash="$(hash_block_prefix "$BOOT_BLOCK" "$BOOT_TARGET_BYTES")" ||
+        return 1
+    [ "$restored_hash" = "$BACKUP_SHA256" ] || return 1
+    ui_print 'Boot backup restored and verified.'
 }
 
-[ "$#" -ge 3 ] || abort_install 'TWRP did not supply the installer arguments.'
+trap cleanup 0 1 2 15
+
 [ -r "$ZIPFILE" ] || abort_install "installer archive is not readable: $ZIPFILE"
 
-for tool in awk blockdev df getprop grep lpdump mkdir sha256sum tr unzip; do
+for tool in awk blockdev date dd df getprop grep lpdump mkdir mount od sha256sum sync tr umount unzip wc; do
     command -v "$tool" >/dev/null 2>&1 ||
         abort_install "required recovery tool is unavailable: $tool"
 done
 
+model="$(getprop ro.product.model 2>/dev/null || true)"
+board="$(getprop ro.product.board 2>/dev/null || true)"
+prjname="$(getprop ro.boot.prjname 2>/dev/null || true)"
+[ "$model" = CPH2747 ] ||
+    abort_install "unsupported model '$model'; expected CPH2747."
+[ "$board" = canoe ] ||
+    abort_install "unsupported board '$board'; expected canoe."
+[ "$prjname" = 24863 ] ||
+    abort_install "unsupported project '$prjname'; expected 24863."
+
 slot="$(getprop ro.boot.slot_suffix 2>/dev/null || true)"
 case "$slot" in
     _a|_b) ;;
-    *) abort_install "invalid active slot: ${slot:-unset}" ;;
+    *) abort_install "invalid active slot '$slot'." ;;
 esac
 
-[ -x "$HELPER" ] || abort_install \
-    'requires the validated Infiniti TWRP helper at /system/bin/twrp-flash-kernel.'
-for proof in \
-    'With --flash, boot and system_dlkm are backed up first' \
-    'system_dlkm_oki is intentionally not touched.' \
-    'read-back checksum mismatch'; do
-    grep -F "$proof" "$HELPER" >/dev/null 2>&1 ||
-        abort_install 'the installed TWRP kernel helper is not the required safe implementation.'
-done
-
-lpdump_output=''
 lpdump_output="$(lpdump --slot "$slot" 2>&1)" ||
-    abort_install "lpdump failed for ${slot}: ${lpdump_output}"
+    abort_install "lpdump failed for $slot: $lpdump_output"
 case "$lpdump_output" in
-    *"Current slot: ${slot}"*) ;;
-    *) abort_install "lpdump did not confirm active slot ${slot}." ;;
+    *"Current slot: $slot"*) ;;
+    *) abort_install "lpdump did not confirm active slot $slot." ;;
 esac
 case "$lpdump_output" in
-    *"Name: system_dlkm${slot}"*) ;;
-    *) abort_install "lpdump did not find system_dlkm${slot}." ;;
+    *"Name: system_dlkm$slot"*) ;;
+    *) abort_install "lpdump did not find system_dlkm$slot." ;;
 esac
 case "$lpdump_output" in
     *'Update state: none'*) ;;
     *) abort_install 'snapshot update/merge is active or super metadata is not clean.' ;;
 esac
 
-target="/dev/block/mapper/system_dlkm${slot}"
-[ -b "$target" ] || abort_install "active logical target is unavailable: $target"
-target_bytes="$(blockdev --getsize64 "$target" 2>/dev/null | tr -d '[:space:]')" ||
-    abort_install "could not read target size: $target"
-is_decimal "$target_bytes" || abort_install 'target size is invalid.'
-if [ "$target_bytes" -lt "$SYSTEM_DLKM_BYTES" ]; then
-    ui_print "system_dlkm${slot} is ${target_bytes} bytes; this image needs ${SYSTEM_DLKM_BYTES}."
-    ui_print 'No partition was changed. This installer never rewrites live super metadata.'
-    ui_print 'Reboot this TWRP to fastbootd, then run on the host:'
-    ui_print "fastboot resize-logical-partition system_dlkm${slot} ${SYSTEM_DLKM_BYTES}"
-    ui_print 'Return to recovery and install this same ZIP again. Do not touch system_dlkm_oki.'
-    exit 1
-fi
+BOOT_BLOCK="/dev/block/bootdevice/by-name/boot$slot"
+SYSTEM_DLKM_BLOCK="/dev/block/mapper/system_dlkm$slot"
+MANIFEST_BLOCK="/dev/block/mapper/my_manifest$slot"
+[ -b "$BOOT_BLOCK" ] || abort_install "active boot target is unavailable: $BOOT_BLOCK"
+[ -b "$SYSTEM_DLKM_BLOCK" ] ||
+    abort_install "active system_dlkm mapper is unavailable: $SYSTEM_DLKM_BLOCK"
+[ -b "$MANIFEST_BLOCK" ] ||
+    abort_install "active firmware manifest mapper is unavailable: $MANIFEST_BLOCK"
+
+BOOT_TARGET_BYTES="$(blockdev --getsize64 "$BOOT_BLOCK" 2>/dev/null | tr -d '[:space:]')" ||
+    abort_install "could not read boot target size: $BOOT_BLOCK"
+SYSTEM_DLKM_TARGET_BYTES="$(blockdev --getsize64 "$SYSTEM_DLKM_BLOCK" 2>/dev/null | tr -d '[:space:]')" ||
+    abort_install "could not read system_dlkm target size: $SYSTEM_DLKM_BLOCK"
+is_decimal "$BOOT_TARGET_BYTES" || abort_install 'boot target size is invalid.'
+is_decimal "$SYSTEM_DLKM_TARGET_BYTES" || abort_install 'system_dlkm target size is invalid.'
+[ "$BOOT_TARGET_BYTES" = "$BOOT_PARTITION_BYTES" ] ||
+    abort_install "boot target size $BOOT_TARGET_BYTES does not match this release."
+[ "$SYSTEM_DLKM_TARGET_BYTES" -ge "$STOCK_SYSTEM_DLKM_BYTES" ] ||
+    abort_install 'system_dlkm is too small to contain the required stock EROFS image.'
+
+system_dlkm_magic="$(dd if="$SYSTEM_DLKM_BLOCK" bs=1 skip=1024 count=4 2>/dev/null |
+    od -An -tx1 | tr -d '[:space:]')" ||
+    abort_install 'could not read the system_dlkm EROFS superblock.'
+[ "$system_dlkm_magic" = "$STOCK_SYSTEM_DLKM_EROFS_MAGIC" ] ||
+    abort_install 'system_dlkm is not the required stock EROFS filesystem.'
+stock_system_dlkm_hash="$(hash_block_prefix "$SYSTEM_DLKM_BLOCK" "$STOCK_SYSTEM_DLKM_BYTES")" ||
+    abort_install 'could not hash the stock system_dlkm payload.'
+[ "$stock_system_dlkm_hash" = "$STOCK_SYSTEM_DLKM_SHA256" ] ||
+    abort_install 'active system_dlkm is not the exact stock OOS 16.0.9.400 image.'
+
+mkdir -p "$WORKDIR" ||
+    abort_install "could not create installer staging directory: $WORKDIR"
+MANIFEST_DIR="$WORKDIR/firmware-manifest"
+mkdir -p "$MANIFEST_DIR" ||
+    abort_install 'could not create firmware verification mount point.'
+mount -o ro "$MANIFEST_BLOCK" "$MANIFEST_DIR" ||
+    abort_install 'could not mount the active firmware manifest read-only.'
+MANIFEST_MOUNT="$MANIFEST_DIR"
+[ -r "$MANIFEST_DIR/build.prop" ] ||
+    abort_install 'active firmware manifest is missing build.prop.'
+grep -Fx 'ro.build.display.id=CPH2747_16.0.9.400(EX01)' \
+    "$MANIFEST_DIR/build.prop" >/dev/null 2>&1 ||
+    abort_install 'active firmware is not CPH2747 OxygenOS 16.0.9.400(EX01).'
+grep -Fx 'ro.product.model=CPH2747' "$MANIFEST_DIR/build.prop" >/dev/null 2>&1 ||
+    abort_install 'active firmware manifest does not identify CPH2747.'
+umount "$MANIFEST_DIR" ||
+    abort_install 'could not unmount the read-only firmware manifest.'
+MANIFEST_MOUNT=''
+
+BOOT_IMAGE="$WORKDIR/boot.img"
+unzip -p "$ZIPFILE" boot.img > "$BOOT_IMAGE" ||
+    abort_install 'could not extract boot.img from the installer archive.'
+IMAGE_BYTES="$(wc -c < "$BOOT_IMAGE" | tr -d '[:space:]')"
+is_decimal "$IMAGE_BYTES" || abort_install 'extracted boot image size is invalid.'
+[ "$IMAGE_BYTES" = "$BOOT_BYTES" ] ||
+    abort_install "boot image length $IMAGE_BYTES does not match the release manifest."
+[ "$IMAGE_BYTES" -le "$BOOT_TARGET_BYTES" ] ||
+    abort_install 'boot image exceeds the active boot partition.'
+[ $((IMAGE_BYTES % 4096)) -eq 0 ] ||
+    abort_install 'boot image is not 4096-byte aligned.'
+boot_magic="$(dd if="$BOOT_IMAGE" bs=8 count=1 2>/dev/null)" ||
+    abort_install 'could not read the boot image header.'
+[ "$boot_magic" = 'ANDROID!' ] ||
+    abort_install 'boot image does not have an Android boot header.'
+actual_boot_sha256="$(hash_file "$BOOT_IMAGE")" ||
+    abort_install 'could not hash extracted boot image.'
+[ "$actual_boot_sha256" = "$BOOT_SHA256" ] ||
+    abort_install 'boot image checksum does not match the release manifest.'
 
 backup_root="$(choose_backup_root)" ||
-    abort_install 'decrypt /data or mount durable writable external storage for verified target backups.'
+    abort_install 'decrypt /data or mount durable writable external storage for a boot backup.'
+mkdir -p "$backup_root" ||
+    abort_install "could not create backup root: $backup_root"
+slot_letter="$(printf '%s' "$slot" | tr -d '_')"
+timestamp="$(date +%Y%m%d-%H%M%S)" ||
+    abort_install 'could not create backup timestamp.'
+BACKUP_DIR="$backup_root/$RELEASE_TAG-boot-$slot_letter-$timestamp-$$"
+mkdir "$BACKUP_DIR" ||
+    abort_install "could not create durable backup directory: $BACKUP_DIR"
+BACKUP_IMAGE="$BACKUP_DIR/boot$slot.img"
+BOOT_TARGET_BLOCKS=$((BOOT_TARGET_BYTES / 4096))
+[ $((BOOT_TARGET_BYTES % 4096)) -eq 0 ] ||
+    abort_install 'boot target is not 4096-byte aligned.'
+dd if="$BOOT_BLOCK" of="$BACKUP_IMAGE" bs=4096 count="$BOOT_TARGET_BLOCKS" conv=fsync ||
+    abort_install "could not back up boot$slot."
+BACKUP_SHA256="$(hash_file "$BACKUP_IMAGE")" ||
+    abort_install 'could not hash durable boot backup.'
+{
+    printf 'release_tag=%s\n' "$RELEASE_TAG"
+    printf 'firmware=%s\n' "$FIRMWARE"
+    printf 'slot=%s\n' "$slot"
+    printf 'boot_target=%s\nboot_target_bytes=%s\n' "$BOOT_BLOCK" "$BOOT_TARGET_BYTES"
+    printf 'backup_sha256=%s\nrelease_boot_sha256=%s\n' "$BACKUP_SHA256" "$BOOT_SHA256"
+    printf 'stock_system_dlkm_sha256=%s\n' "$STOCK_SYSTEM_DLKM_SHA256"
+} > "$BACKUP_DIR/manifest.txt" ||
+    abort_install 'could not write backup manifest.'
 
-mkdir -p "$PAYLOAD_DIR" || abort_install "could not create staging directory: $PAYLOAD_DIR"
-unzip -p "$ZIPFILE" payload/boot.img > "$PAYLOAD_DIR/boot.img" ||
-    abort_install 'could not extract boot.img from the installer archive.'
-unzip -p "$ZIPFILE" payload/system_dlkm.flatten.ext4.img \
-    > "$PAYLOAD_DIR/system_dlkm.flatten.ext4.img" ||
-    abort_install 'could not extract system_dlkm image from the installer archive.'
+ui_print "$DEVICE — $FIRMWARE — $RELEASE_TAG"
+ui_print "Verified stock EROFS system_dlkm$slot and firmware manifest."
+ui_print "Backing up then flashing only boot$slot; no dynamic partitions will be modified."
 
-actual_boot_sha256="$(sha256sum "$PAYLOAD_DIR/boot.img" | awk '{print $1}')"
-actual_system_dlkm_sha256="$(sha256sum "$PAYLOAD_DIR/system_dlkm.flatten.ext4.img" | awk '{print $1}')"
-[ "$actual_boot_sha256" = "$BOOT_SHA256" ] ||
-    abort_install 'boot image checksum does not match the signed release manifest.'
-[ "$actual_system_dlkm_sha256" = "$SYSTEM_DLKM_SHA256" ] ||
-    abort_install 'system_dlkm image checksum does not match the signed release manifest.'
+flash_ok=1
+dd if="$BOOT_IMAGE" of="$BOOT_BLOCK" bs=4M conv=fsync || flash_ok=0
+sync || flash_ok=0
+if [ "$flash_ok" -eq 1 ]; then
+    readback_sha256="$(hash_block_prefix "$BOOT_BLOCK" "$BOOT_BYTES")" || flash_ok=0
+    [ "$readback_sha256" = "$BOOT_SHA256" ] || flash_ok=0
+fi
 
-ui_print "OnePlus 15 ${FIRMWARE}: ${RELEASE_TAG}"
-ui_print "Target slot: ${slot}; system_dlkm target: ${target_bytes} bytes"
-ui_print "Verified payload hashes; backups will be stored under ${backup_root}."
-ui_print 'system_dlkm is flashed and read-back verified before boot; system_dlkm_oki is untouched.'
+if [ "$flash_ok" -ne 1 ]; then
+    ui_print 'Boot write/read-back verification failed; attempting rollback.'
+    restore_boot ||
+        abort_install "boot rollback failed; manual recovery is required from $BACKUP_IMAGE."
+    abort_install 'boot write verification failed; the original boot image was restored.'
+fi
 
-helper_log="$WORKDIR/twrp-flash-kernel.log"
-"$HELPER" --flash --backup-dir "$backup_root" \
-    "$PAYLOAD_DIR/boot.img" "$PAYLOAD_DIR/system_dlkm.flatten.ext4.img" \
-    > "$helper_log" 2>&1
-helper_status=$?
-forward_log "$helper_log"
-[ "$helper_status" -eq 0 ] ||
-    abort_install 'TWRP rejected the image pair before completing a verified flash.'
+printf 'result=verified\nreadback_sha256=%s\n' "$readback_sha256" >> "$BACKUP_DIR/manifest.txt" ||
+    abort_install 'boot was verified, but recording the backup result failed.'
 
-ui_print "${RELEASE_TAG} installed and read-back verified on ${slot}."
-ui_print 'Reboot System without switching slots. This installer does not alter VBMeta.'
+ui_print "boot$slot installed and verified."
+ui_print "Backup: $BACKUP_IMAGE"
+ui_print 'Reboot System without switching slots. This installer never writes system_dlkm, system_dlkm_oki, vendor_boot, vendor_dlkm, dtbo, or VBMeta.'
 exit 0

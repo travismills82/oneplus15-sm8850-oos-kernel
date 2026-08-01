@@ -1,0 +1,14 @@
+release_tag=@RELEASE_TAG@
+firmware=@FIRMWARE@
+device=@DEVICE@
+kernel_release=@KERNEL_RELEASE@
+source_commit=@SOURCE_COMMIT@
+boot_bytes=@BOOT_BYTES@
+boot_partition_bytes=@BOOT_PARTITION_BYTES@
+boot_sha256=@BOOT_SHA256@
+system_dlkm_contract=stock_oxygenos_erofs
+stock_system_dlkm_bytes=@STOCK_SYSTEM_DLKM_BYTES@
+stock_system_dlkm_blocks=@STOCK_SYSTEM_DLKM_BLOCKS@
+stock_system_dlkm_erofs_magic=@STOCK_SYSTEM_DLKM_EROFS_MAGIC@
+stock_system_dlkm_sha256=@STOCK_SYSTEM_DLKM_SHA256@
+installer_writes=boot_active_slot_only
