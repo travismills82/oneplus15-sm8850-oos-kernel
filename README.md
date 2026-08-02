@@ -37,6 +37,9 @@ OnePlus common tree:
   for stock GKI modules.
 - ADIOS as an available, non-default I/O scheduler.
 - CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y.
+- Built-in NTFS3 (LZX and POSIX ACL), CAKE, and BBR as the default TCP
+  congestion control. Btrfs and NFS remain disabled after their experimental
+  configuration changed the GKI ABI and did not boot reliably.
 
 The Oplus display subtree omitted by the original upstream import is restored
 from the official 16.0.8.300 source before applying the corresponding
@@ -62,8 +65,8 @@ vendor_dlkm, dtbo, or VBMeta for this configuration.
 
 ### Current boot-only validation
 
-The verified kernel image was built from source commit
-ee96bf9dec626eef39f2ba17f855339366e29f0f with:
+The verified r3 kernel image was built from source commit
+c5f5df7c3b5a66b690cdfc737197b045f911ba7a with:
 
 ~~~bash
 cd kernel_platform
@@ -80,14 +83,12 @@ validation, and protected-module enforcement.
 
 The fresh boot-only test artifact is:
 
-- Kernel release: 6.12.23-android16-5-o-gee96bf9dec62-4k.
+- Kernel release: 6.12.23-android16-5-o-gc5f5df7c3b5a-4k.
 - boot.img: 100,663,296 bytes, SHA-256
-  45847acea8eec0d9e5d9272a7a147235e3aaea6421fb72e4b6bf61e10a38219e.
+  17d34b6b881b6b9244d678c52d35b993bb303d8c90b231de7ea792f2476dcc40.
 
 The build still generates system_dlkm.flatten.ext4.img for ABI/KMI development
-and recovery work. The fresh artifact was 88,510,464 bytes with SHA-256
-e259b31d7d48dab1b1cf76dc1d5402c69c2a02cc45da85893519e1d86fefec87; it is
-not a normal release asset.
+and recovery work, but it is not a normal release asset.
 
 The tested stock system_dlkm.img is the CPH2747 OxygenOS
 16.0.9.400(EX01) EROFS image:
@@ -146,12 +147,16 @@ are unchanged stock OxygenOS boot behavior, verified against the prior
 known-good stock-DLKM boot. There was no new kernel panic, oops, or pstore
 crash record.
 
-The r2 TWRP installer was also live-validated in
+The r2 TWRP installer was live-validated in
 TWRP 3.7.1_16-OnePlus_15. It verified the exact firmware manifest and stock
 EROFS system_dlkm before creating a durable boot_b backup, flashing only
 boot_b, and recording matching backup and readback hashes. Android then
 returned in 22 seconds with stock EROFS system_dlkm, Wi-Fi, Bluetooth, and
 Wi-Fi-disabled cellular traffic all working.
+
+The r3 TWRP archive packages the current r3 boot image and retains the same
+boot-only device checks, backup, flash, and readback-verification flow. Its
+metadata identifies the r3 release and the exact r3 kernel source commit.
 
 **PASS:** system_dlkm.flatten.ext4.img is not required for normal OOS
 16.0.9.400 installation.
@@ -165,7 +170,7 @@ configuration only.
 
 ### TWRP (recommended)
 
-Install OnePlus15-OOS16.0.9.400-r2-TWRP.zip in a compatible TWRP recovery.
+Install OnePlus15-OOS16.0.9.400-r3-TWRP.zip in a compatible TWRP recovery.
 Before it writes anything, it verifies:
 
 - CPH2747 / Canoe identity and the active slot.
@@ -197,7 +202,7 @@ Release oos16.0.9.400-r1 and the older matched custom boot.img plus
 system_dlkm.flatten.ext4.img procedure remain historical development/fallback
 material only. That path requires a custom ext4 logical system_dlkm image and
 can require dynamic-partition resizing. It is not included in, or required by,
-the normal r2 boot-only release.
+the normal r3 boot-only release.
 
 Keep the generated ext4 image available locally for ABI/KMI work, future ACK
 updates, and diagnostic recovery. Do not attach it to normal GitHub releases.

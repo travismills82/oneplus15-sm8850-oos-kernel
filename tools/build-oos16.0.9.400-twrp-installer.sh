@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly RELEASE_TAG='oos16.0.9.400-r2'
+readonly RELEASE_TAG='oos16.0.9.400-r3'
 readonly FIRMWARE='OxygenOS 16.0.9.400(EX01)'
 readonly DEVICE='OnePlus 15 / CPH2747 / Canoe'
 readonly BOOT_PARTITION_BYTES='100663296'
@@ -24,7 +24,7 @@ Usage:
   KERNEL_RELEASE=<uname -r> tools/build-oos16.0.9.400-twrp-installer.sh \
       BOOT_IMAGE OUTPUT_ZIP
 
-The input must be the validated OOS 16.0.9.400-r2 boot image. The output path
+The input must be the validated OOS 16.0.9.400 boot image. The output path
 must not already exist. The resulting ZIP contains only boot.img and verifies
 the active stock EROFS system_dlkm partition before it writes boot.
 EOF
@@ -64,8 +64,9 @@ done
 [ -f "$BOOT_IMAGE" ] && [ -r "$BOOT_IMAGE" ] ||
     die "boot image is not a readable regular file: $BOOT_IMAGE"
 [ -d "$TEMPLATE_DIR" ] || die "installer template is missing: $TEMPLATE_DIR"
-SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null)" ||
-    die "could not determine source commit from $REPO_ROOT"
+SOURCE_COMMIT_REF="${KERNEL_SOURCE_COMMIT:-HEAD}"
+SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse --verify "${SOURCE_COMMIT_REF}^{commit}" 2>/dev/null)" ||
+    die "could not resolve KERNEL_SOURCE_COMMIT '$SOURCE_COMMIT_REF' from $REPO_ROOT"
 
 OUTPUT_DIR="$(dirname -- "$OUTPUT_ZIP")"
 mkdir -p "$OUTPUT_DIR"
