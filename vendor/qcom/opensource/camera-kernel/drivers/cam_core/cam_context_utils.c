@@ -44,6 +44,7 @@ static void cam_context_free_mem_hw_entries(struct cam_context *ctx)
 		for (i = 0; i < ctx->req_size; i++) {
 			CAM_MEM_FREE(ctx->out_map_entries[i]);
 			ctx->out_map_entries[i] = NULL;
+			ctx->req_list[i].out_map_entries = NULL;
 		}
 
 		CAM_MEM_FREE(ctx->out_map_entries);
@@ -54,6 +55,7 @@ static void cam_context_free_mem_hw_entries(struct cam_context *ctx)
 		for (i = 0; i < ctx->req_size; i++) {
 			CAM_MEM_FREE(ctx->in_map_entries[i]);
 			ctx->in_map_entries[i] = NULL;
+			ctx->req_list[i].in_map_entries = NULL;
 		}
 
 		CAM_MEM_FREE(ctx->in_map_entries);
@@ -64,6 +66,7 @@ static void cam_context_free_mem_hw_entries(struct cam_context *ctx)
 		for (i = 0; i < ctx->req_size; i++) {
 			CAM_MEM_FREE(ctx->hw_update_entry[i]);
 			ctx->hw_update_entry[i] = NULL;
+			ctx->req_list[i].hw_update_entries = NULL;
 		}
 
 		CAM_MEM_FREE(ctx->hw_update_entry);
@@ -572,6 +575,13 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	req->num_out_acked          = 0;
 	req->flushed                = 0;
 	atomic_set(&req->num_in_acked, 0);
+
+	if (!req->hw_update_entries || !req->in_map_entries || !req->out_map_entries) {
+		CAM_ERR(CAM_CTXT,"[%s][%d] Request entries freed, ctx may have been released",
+			ctx->dev_name, ctx->ctx_id);
+		rc = -EINVAL;
+		goto free_req;
+	}
 
 	remain_len = cam_context_parse_config_cmd(ctx, cmd, &packet);
 	if (IS_ERR_OR_NULL(packet)) {
