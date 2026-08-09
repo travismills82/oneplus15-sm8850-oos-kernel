@@ -40,6 +40,10 @@ OnePlus common tree:
 - Built-in NTFS3 (LZX and POSIX ACL), CAKE, and BBR as the default TCP
   congestion control. Btrfs and NFS remain disabled after their experimental
   configuration changed the GKI ABI and did not boot reliably.
+- The r4 payload adds built-in SquashFS; common USB serial and USB Ethernet
+  drivers; VLAN, RNDIS host, MACsec, and SocketCAN (including CAN327 and
+  J1939); ISO9660 and UDF; and IKHEADERS. nftables remains disabled because
+  its experiment changed the GKI ABI.
 
 The Oplus display subtree omitted by the original upstream import is restored
 from the official 16.0.8.300 source before applying the corresponding
@@ -65,8 +69,8 @@ vendor_dlkm, dtbo, or VBMeta for this configuration.
 
 ### Current boot-only validation
 
-The verified r3 kernel image was built from source commit
-c5f5df7c3b5a66b690cdfc737197b045f911ba7a with:
+The verified r4 kernel image was built from source commit
+b4f82466b51e23a6f50c28de3bbb89a5ec8be3e4 with:
 
 ~~~bash
 cd kernel_platform
@@ -83,9 +87,9 @@ validation, and protected-module enforcement.
 
 The fresh boot-only test artifact is:
 
-- Kernel release: 6.12.23-android16-5-o-gc5f5df7c3b5a-4k.
+- Kernel release: 6.12.23-android16-5-o-gb4f82466b51e-4k.
 - boot.img: 100,663,296 bytes, SHA-256
-  17d34b6b881b6b9244d678c52d35b993bb303d8c90b231de7ea792f2476dcc40.
+  ea8a188d94fb599e6533c97b2799b8570a37ab1fc32e048908974c16d07c5f79.
 
 The build still generates system_dlkm.flatten.ext4.img for ABI/KMI development
 and recovery work, but it is not a normal release asset.
@@ -112,51 +116,26 @@ It is set as system_trusted_key in kernel_platform/common/BUILD.bazel. This
 trusts the stock modules without weakening module signatures, MODVERSIONS, CRC
 checking, ABI/KMI checks, or protected exports.
 
-Two clean Android boots, followed by a recovery boot and successful return to
-Android, were completed on rooted CPH2747 16.0.9.400(EX01) using the fresh
-custom boot image and untouched stock EROFS system_dlkm. Each Android boot
-mounted the same stock EROFS payload and loaded 661 modules; 78 loaded module
-names were directly identified from stock /system_dlkm.
+The r4 payload was flashed through TWRP recovery on rooted CPH2747
+16.0.9.400(EX01). Recovery verified the exact stock EROFS system_dlkm hash,
+the active slot, and clean logical-partition metadata before a full boot_b
+backup was copied to the host. The boot_b readback SHA-256 matched the r4
+image exactly.
 
-No required module produced an unknown symbol, MODVERSIONS/CRC mismatch,
-vermagic error, invalid module format, signature/key failure, namespace
-failure, or protected-export failure. The stock wwan.ko module loaded under
-normal protected-module enforcement, so no broad WWAN exception is needed.
+Android then returned on slot _b with verified boot still green and the r4
+kernel release above. Wi-Fi reconnected at 6 GHz, Bluetooth reached OnState,
+LTE interfaces were present, /system_dlkm remained stock EROFS, and pstore was
+empty. No unknown-symbol, MODVERSIONS/CRC, vermagic, signature/key, namespace,
+or protected-export failure was observed.
 
-Validated runtime results:
+Early boot still logs several Oplus/Qualcomm WARN traces in PMIC, duplicate
+proc/sysfs registration, regulator, and HBP paths. They are not module ABI or
+signature failures, but a full phone regression and disconnected deep-suspend
+test remain outstanding for r4.
 
-- Wi-Fi connected to a WPA3 6 GHz network at 6135 MHz and passed direct-IP and
-  DNS traffic checks, including a settled five-packet test with no loss.
-- Bluetooth reached OnState after both boots with zero framework crashes. The
-  stock rfkill, bluetooth, btqca, btbcm, hci_uart, and pwrseq_core chain
-  loaded; two existing bonded devices remained present.
-- The eSIM subscription loaded as subId=1; LTE registered HOME;
-  SETUP_DATA_CALL reported cause=NONE; and rmnet_data2 received IPv4, IPv6,
-  DNS, and default routes. With Wi-Fi disabled, direct-IP and DNS traffic
-  through rmnet_data2 passed a settled five-packet test with no loss.
-- ZRAM/ZSMALLOC loaded and swap was active with LZ4 selected. CIFS appears in
-  /proc/filesystems. ADIOS is available but mq-deadline remains selected by
-  default on UFS block devices.
-- Encrypted userdata, charging/USB, display/touch, GPU, camera HAL, audio
-  paths, fingerprint HAL, NFC, and GNSS service state were present without a
-  kernel fault. Screen sleep/wake completed while wired ADB kept the device
-  awake; a fully unplugged deep-suspend test remains a separate physical test.
-
-The observed qti-testscripts SIGABRT and associated SELinux context warning
-are unchanged stock OxygenOS boot behavior, verified against the prior
-known-good stock-DLKM boot. There was no new kernel panic, oops, or pstore
-crash record.
-
-The r2 TWRP installer was live-validated in
-TWRP 3.7.1_16-OnePlus_15. It verified the exact firmware manifest and stock
-EROFS system_dlkm before creating a durable boot_b backup, flashing only
-boot_b, and recording matching backup and readback hashes. Android then
-returned in 22 seconds with stock EROFS system_dlkm, Wi-Fi, Bluetooth, and
-Wi-Fi-disabled cellular traffic all working.
-
-The r3 TWRP archive packages the current r3 boot image and retains the same
+The r4 TWRP archive packages the r4 boot image and retains the existing
 boot-only device checks, backup, flash, and readback-verification flow. Its
-metadata identifies the r3 release and the exact r3 kernel source commit.
+metadata identifies the r4 release and the exact r4 kernel payload commit.
 
 **PASS:** system_dlkm.flatten.ext4.img is not required for normal OOS
 16.0.9.400 installation.
@@ -170,7 +149,7 @@ configuration only.
 
 ### TWRP (recommended)
 
-Install OnePlus15-OOS16.0.9.400-r3-TWRP.zip in a compatible TWRP recovery.
+Install OnePlus15-OOS16.0.9.400-r4-TWRP.zip in a compatible TWRP recovery.
 Before it writes anything, it verifies:
 
 - CPH2747 / Canoe identity and the active slot.
@@ -202,7 +181,7 @@ Release oos16.0.9.400-r1 and the older matched custom boot.img plus
 system_dlkm.flatten.ext4.img procedure remain historical development/fallback
 material only. That path requires a custom ext4 logical system_dlkm image and
 can require dynamic-partition resizing. It is not included in, or required by,
-the normal r3 boot-only release.
+the normal r4 boot-only release.
 
 Keep the generated ext4 image available locally for ABI/KMI work, future ACK
 updates, and diagnostic recovery. Do not attach it to normal GitHub releases.

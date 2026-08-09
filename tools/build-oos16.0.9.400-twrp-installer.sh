@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly RELEASE_TAG='oos16.0.9.400-r3'
+readonly RELEASE_TAG='oos16.0.9.400-r4'
 readonly FIRMWARE='OxygenOS 16.0.9.400(EX01)'
 readonly DEVICE='OnePlus 15 / CPH2747 / Canoe'
 readonly BOOT_PARTITION_BYTES='100663296'
