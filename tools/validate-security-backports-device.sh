@@ -32,7 +32,7 @@ run_shell() {
     local output
 
     printf '\n$ adb shell %s\n' "$command"
-    if output="$("$ADB" shell sh -c "$command" 2>&1)"; then
+    if output="$("$ADB" shell "$command" 2>&1)"; then
         printf '%s\n' "$output"
     else
         warn "$label could not be collected"
@@ -43,6 +43,8 @@ run_shell() {
 run_root() {
     local label="$1"
     local command="$2"
+    local encoded_command
+    local remote_command
     local output
 
     if [ "$ROOT_AVAILABLE" -ne 1 ]; then
@@ -51,7 +53,9 @@ run_root() {
     fi
 
     printf '\n$ adb shell su -c %s\n' "$command"
-    if output="$("$ADB" shell su -c "$command" 2>&1)"; then
+    encoded_command="$(printf '%s' "$command" | base64 | tr -d '\n')"
+    remote_command="su -c \"\$(echo $encoded_command | base64 -d)\""
+    if output="$("$ADB" shell "$remote_command" 2>&1)"; then
         printf '%s\n' "$output"
     else
         warn "$label could not be collected"
@@ -71,7 +75,7 @@ if [ "$device_state" != "device" ]; then
 fi
 pass "authorized Android device detected"
 
-if "$ADB" shell su -c id >/dev/null 2>&1; then
+if "$ADB" shell "su -c id" >/dev/null 2>&1; then
     ROOT_AVAILABLE=1
     pass "root shell is available for diagnostic reads"
 else
@@ -88,7 +92,7 @@ config_command='if [ -r /proc/config.gz ]; then (zcat /proc/config.gz 2>/dev/nul
 run_root "kernel config" "$config_command"
 
 section "Stock system_dlkm contract"
-system_dlkm_mount="$("$ADB" shell sh -c 'awk "\$2 == \"/system_dlkm\" { print }" /proc/mounts' 2>&1 || true)"
+system_dlkm_mount="$("$ADB" shell 'grep " /system_dlkm " /proc/mounts || true' 2>&1 || true)"
 printf '%s\n' "$system_dlkm_mount"
 if printf '%s\n' "$system_dlkm_mount" | grep -q ' erofs '; then
     pass "/system_dlkm is mounted as EROFS"
