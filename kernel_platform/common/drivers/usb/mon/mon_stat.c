@@ -26,7 +26,7 @@ struct snap {
 
 static int mon_stat_open(struct inode *inode, struct file *file)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 	struct snap *sp;
 
 	sp = kmalloc(sizeof(struct snap), GFP_KERNEL);

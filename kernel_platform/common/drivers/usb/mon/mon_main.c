@@ -17,23 +17,22 @@
 
 #include "usb_mon.h"
 
-
-static void mon_stop(struct mon_bus *mbus);
-static void mon_dissolve(struct mon_bus *mbus, struct usb_bus *ubus);
+static void mon_stop(struct mon_bus_priv *mbus);
+static void mon_dissolve(struct mon_bus_priv *mbus, struct usb_bus *ubus);
 static void mon_bus_drop(struct kref *r);
 static void mon_bus_init(struct usb_bus *ubus);
 
 DEFINE_MUTEX(mon_lock);
 
-struct mon_bus mon_bus0;		/* Pseudo bus meaning "all buses" */
-static LIST_HEAD(mon_buses);		/* All buses we know: struct mon_bus */
+struct mon_bus_priv mon_bus0;	/* Pseudo bus meaning "all buses" */
+static LIST_HEAD(mon_buses);		/* All buses we know: struct mon_bus_priv */
 
 /*
  * Link a reader into the bus.
  *
  * This must be called with mon_lock taken because of mbus->ref.
  */
-void mon_reader_add(struct mon_bus *mbus, struct mon_reader *r)
+void mon_reader_add(struct mon_bus_priv *mbus, struct mon_reader *r)
 {
 	unsigned long flags;
 	struct list_head *p;
@@ -42,8 +41,8 @@ void mon_reader_add(struct mon_bus *mbus, struct mon_reader *r)
 	if (mbus->nreaders == 0) {
 		if (mbus == &mon_bus0) {
 			list_for_each (p, &mon_buses) {
-				struct mon_bus *m1;
-				m1 = list_entry(p, struct mon_bus, bus_link);
+				struct mon_bus_priv *m1;
+				m1 = list_entry(p, struct mon_bus_priv, bus_link);
 				m1->u_bus->monitored = 1;
 			}
 		} else {
@@ -62,7 +61,7 @@ void mon_reader_add(struct mon_bus *mbus, struct mon_reader *r)
  *
  * This is called with mon_lock taken, so we can decrement mbus->ref.
  */
-void mon_reader_del(struct mon_bus *mbus, struct mon_reader *r)
+void mon_reader_del(struct mon_bus_priv *mbus, struct mon_reader *r)
 {
 	unsigned long flags;
 
@@ -78,7 +77,7 @@ void mon_reader_del(struct mon_bus *mbus, struct mon_reader *r)
 
 /*
  */
-static void mon_bus_submit(struct mon_bus *mbus, struct urb *urb)
+static void mon_bus_submit(struct mon_bus_priv *mbus, struct urb *urb)
 {
 	unsigned long flags;
 	struct mon_reader *r;
@@ -92,9 +91,9 @@ static void mon_bus_submit(struct mon_bus *mbus, struct urb *urb)
 
 static void mon_submit(struct usb_bus *ubus, struct urb *urb)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 
-	mbus = ubus->mon_bus;
+	mbus = mon_bus_to_priv(ubus->mon_bus);
 	if (mbus != NULL)
 		mon_bus_submit(mbus, urb);
 	mon_bus_submit(&mon_bus0, urb);
@@ -102,7 +101,8 @@ static void mon_submit(struct usb_bus *ubus, struct urb *urb)
 
 /*
  */
-static void mon_bus_submit_error(struct mon_bus *mbus, struct urb *urb, int error)
+static void mon_bus_submit_error(struct mon_bus_priv *mbus, struct urb *urb,
+				 int error)
 {
 	unsigned long flags;
 	struct mon_reader *r;
@@ -116,9 +116,9 @@ static void mon_bus_submit_error(struct mon_bus *mbus, struct urb *urb, int erro
 
 static void mon_submit_error(struct usb_bus *ubus, struct urb *urb, int error)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 
-	mbus = ubus->mon_bus;
+	mbus = mon_bus_to_priv(ubus->mon_bus);
 	if (mbus != NULL)
 		mon_bus_submit_error(mbus, urb, error);
 	mon_bus_submit_error(&mon_bus0, urb, error);
@@ -126,7 +126,8 @@ static void mon_submit_error(struct usb_bus *ubus, struct urb *urb, int error)
 
 /*
  */
-static void mon_bus_complete(struct mon_bus *mbus, struct urb *urb, int status)
+static void mon_bus_complete(struct mon_bus_priv *mbus, struct urb *urb,
+			     int status)
 {
 	unsigned long flags;
 	struct mon_reader *r;
@@ -140,9 +141,9 @@ static void mon_bus_complete(struct mon_bus *mbus, struct urb *urb, int status)
 
 static void mon_complete(struct usb_bus *ubus, struct urb *urb, int status)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 
-	mbus = ubus->mon_bus;
+	mbus = mon_bus_to_priv(ubus->mon_bus);
 	if (mbus != NULL)
 		mon_bus_complete(mbus, urb, status);
 	mon_bus_complete(&mon_bus0, urb, status);
@@ -153,7 +154,7 @@ static void mon_complete(struct usb_bus *ubus, struct urb *urb, int status)
 /*
  * Stop monitoring.
  */
-static void mon_stop(struct mon_bus *mbus)
+static void mon_stop(struct mon_bus_priv *mbus)
 {
 	struct usb_bus *ubus;
 
@@ -197,7 +198,7 @@ static void mon_bus_add(struct usb_bus *ubus)
  */
 static void mon_bus_remove(struct usb_bus *ubus)
 {
-	struct mon_bus *mbus = ubus->mon_bus;
+	struct mon_bus_priv *mbus = mon_bus_to_priv(ubus->mon_bus);
 
 	mutex_lock(&mon_lock);
 	list_del(&mbus->bus_link);
@@ -240,7 +241,7 @@ static const struct usb_mon_operations mon_ops_0 = {
 /*
  * Tear usb_bus and mon_bus apart.
  */
-static void mon_dissolve(struct mon_bus *mbus, struct usb_bus *ubus)
+static void mon_dissolve(struct mon_bus_priv *mbus, struct usb_bus *ubus)
 {
 
 	if (ubus->monitored) {
@@ -259,7 +260,7 @@ static void mon_dissolve(struct mon_bus *mbus, struct usb_bus *ubus)
  */
 static void mon_bus_drop(struct kref *r)
 {
-	struct mon_bus *mbus = container_of(r, struct mon_bus, ref);
+	struct mon_bus_priv *mbus = container_of(r, struct mon_bus_priv, ref);
 	kfree(mbus);
 }
 
@@ -271,9 +272,9 @@ static void mon_bus_drop(struct kref *r)
  */
 static void mon_bus_init(struct usb_bus *ubus)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 
-	mbus = kzalloc(sizeof(struct mon_bus), GFP_KERNEL);
+	mbus = kzalloc(sizeof(struct mon_bus_priv), GFP_KERNEL);
 	if (mbus == NULL)
 		goto err_alloc;
 	kref_init(&mbus->ref);
@@ -285,7 +286,7 @@ static void mon_bus_init(struct usb_bus *ubus)
 	 * a notification if the bus is about to be removed.
 	 */
 	mbus->u_bus = ubus;
-	ubus->mon_bus = mbus;
+	ubus->mon_bus = mon_bus_from_priv(mbus);
 
 	mbus->text_inited = mon_text_add(mbus, ubus);
 	mbus->bin_inited = mon_bin_add(mbus, ubus);
@@ -301,7 +302,7 @@ err_alloc:
 
 static void mon_bus0_init(void)
 {
-	struct mon_bus *mbus = &mon_bus0;
+	struct mon_bus_priv *mbus = &mon_bus0;
 
 	kref_init(&mbus->ref);
 	spin_lock_init(&mbus->lock);
@@ -319,9 +320,9 @@ static void mon_bus0_init(void)
  *
  * This is obviously inefficient and may be revised in the future.
  */
-struct mon_bus *mon_bus_lookup(unsigned int num)
+struct mon_bus_priv *mon_bus_lookup(unsigned int num)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 
 	if (num == 0) {
 		return &mon_bus0;
@@ -370,7 +371,7 @@ err_text:
 
 static void __exit mon_exit(void)
 {
-	struct mon_bus *mbus;
+	struct mon_bus_priv *mbus;
 	struct list_head *p;
 
 	usb_unregister_notify(&mon_nb);
@@ -380,7 +381,7 @@ static void __exit mon_exit(void)
 
 	while (!list_empty(&mon_buses)) {
 		p = mon_buses.next;
-		mbus = list_entry(p, struct mon_bus, bus_link);
+		mbus = list_entry(p, struct mon_bus_priv, bus_link);
 		list_del(p);
 
 		if (mbus->text_inited)

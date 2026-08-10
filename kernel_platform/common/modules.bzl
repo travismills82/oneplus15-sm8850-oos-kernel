@@ -29,7 +29,6 @@ _COMMON_GKI_MODULES_LIST = [
     "drivers/power/sequencing/pwrseq-core.ko",
     "drivers/pps/pps_core.ko",
     "drivers/ptp/ptp.ko",
-    "drivers/usb/mon/usbmon.ko",
     "drivers/virtio/virtio_balloon.ko",
     "drivers/virtio/virtio_pci.ko",
     "drivers/virtio/virtio_pci_legacy_dev.ko",
