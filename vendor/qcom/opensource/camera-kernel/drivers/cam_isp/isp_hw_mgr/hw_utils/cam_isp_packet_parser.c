@@ -223,6 +223,16 @@ static int cam_isp_update_dual_config(
 			if (dual_config->stripes_flex[ports_plane_idx].port_id == 0)
 				continue;
 			port_id = dual_config->stripes_flex[ports_plane_idx].port_id;
+
+			if (port_id < out_base || port_id >= out_max ||
+				out_map[port_id & 0xFF] == 0xFF) {
+				CAM_ERR(CAM_ISP,
+					"Invalid port_id %u for isp out resource i %d num_out_res %d",
+					port_id, i, dual_config->num_ports);
+				rc = -EINVAL;
+				goto end;
+			}
+
 			hw_mgr_res = &res_list_isp_out[out_map[port_id & 0xFF]];
 			if (!hw_mgr_res) {
 				CAM_ERR(CAM_ISP,
