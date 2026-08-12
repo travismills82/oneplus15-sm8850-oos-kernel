@@ -10,10 +10,7 @@ _COMMON_GKI_MODULES_LIST = [
     # keep sorted
     "drivers/block/virtio_blk.ko",
     "drivers/block/zram/zram.ko",
-    "drivers/bluetooth/btbcm.ko",
-    "drivers/bluetooth/btqca.ko",
     "drivers/bluetooth/btsdio.ko",
-    "drivers/bluetooth/hci_uart.ko",
     "drivers/char/virtio_console.ko",
     "drivers/gnss/gnss.ko",
     "drivers/misc/vcpu_stall_detector.ko",
@@ -26,7 +23,6 @@ _COMMON_GKI_MODULES_LIST = [
     "drivers/net/slip/slhc.ko",
     "drivers/net/usb/rtl8150.ko",
     "drivers/net/wwan/wwan.ko",
-    "drivers/power/sequencing/pwrseq-core.ko",
     "drivers/pps/pps_core.ko",
     "drivers/ptp/ptp.ko",
     "drivers/virtio/virtio_balloon.ko",
@@ -45,7 +41,6 @@ _COMMON_GKI_MODULES_LIST = [
     "net/6lowpan/nhc_udp.ko",
     "net/9p/9pnet.ko",
     "net/9p/9pnet_fd.ko",
-    "net/bluetooth/bluetooth.ko",
     "net/bluetooth/hidp/hidp.ko",
     "net/bluetooth/rfcomm/rfcomm.ko",
     "net/ieee802154/6lowpan/ieee802154_6lowpan.ko",
@@ -55,7 +50,6 @@ _COMMON_GKI_MODULES_LIST = [
     "net/l2tp/l2tp_ppp.ko",
     "net/mac802154/mac802154.ko",
     "net/nfc/nfc.ko",
-    "net/rfkill/rfkill.ko",
     "net/tipc/tipc.ko",
     "net/tipc/tipc_diag.ko",
     "net/tls/tls.ko",
@@ -180,13 +174,7 @@ def get_kunit_modules_list(arch = None):
 
 _COMMON_UNPROTECTED_MODULES_LIST = [
     "drivers/block/zram/zram.ko",
-    "drivers/bluetooth/btbcm.ko",
-    "drivers/bluetooth/btqca.ko",
-    "drivers/bluetooth/hci_uart.ko",
-    "drivers/power/sequencing/pwrseq-core.ko",
     "mm/zsmalloc.ko",
-    "net/bluetooth/bluetooth.ko",
-    "net/rfkill/rfkill.ko",
 ]
 
 # buildifier: disable=unnamed-macro
