@@ -3310,6 +3310,37 @@ static bool module_load_satisfied_by_builtin(const char *name)
 		return true;
 #endif
 
+	/*
+	 * OxygenOS 16.0.9.400 loads this exact Bluetooth dependency chain from
+	 * its stock system_dlkm.  Keep each entry behind the configuration that
+	 * places the corresponding implementation in vmlinux, so restoring a
+	 * component to a module also restores normal module loading for it.
+	 */
+#ifdef CONFIG_BT
+	if (!strcmp(name, "bluetooth"))
+		return true;
+#endif
+#ifdef CONFIG_RFKILL
+	if (!strcmp(name, "rfkill"))
+		return true;
+#endif
+#ifdef CONFIG_POWER_SEQUENCING
+	if (!strcmp(name, "pwrseq_core"))
+		return true;
+#endif
+#ifdef CONFIG_BT_HCIUART
+	if (!strcmp(name, "hci_uart"))
+		return true;
+#endif
+#ifdef CONFIG_BT_QCA
+	if (!strcmp(name, "btqca"))
+		return true;
+#endif
+#ifdef CONFIG_BT_BCM
+	if (!strcmp(name, "btbcm"))
+		return true;
+#endif
+
 	return false;
 }
 
