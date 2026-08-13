@@ -3309,6 +3309,10 @@ static bool module_load_satisfied_by_builtin(const char *name)
 	if (!strcmp(name, "usbmon"))
 		return true;
 #endif
+#ifdef CONFIG_USB_RTL8150
+	if (!strcmp(name, "rtl8150"))
+		return true;
+#endif
 
 	/*
 	 * OxygenOS 16.0.9.400 loads this exact Bluetooth dependency chain from
