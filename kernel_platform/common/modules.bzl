@@ -21,7 +21,6 @@ _COMMON_GKI_MODULES_LIST = [
     "drivers/net/ppp/pppox.ko",
     "drivers/net/ppp/pptp.ko",
     "drivers/net/slip/slhc.ko",
-    "drivers/net/usb/rtl8150.ko",
     "drivers/net/wwan/wwan.ko",
     "drivers/pps/pps_core.ko",
     "drivers/ptp/ptp.ko",
