@@ -40,7 +40,6 @@ _COMMON_GKI_MODULES_LIST = [
     "net/6lowpan/nhc_udp.ko",
     "net/9p/9pnet.ko",
     "net/9p/9pnet_fd.ko",
-    "net/bluetooth/hidp/hidp.ko",
     "net/ieee802154/6lowpan/ieee802154_6lowpan.ko",
     "net/ieee802154/ieee802154.ko",
     "net/ieee802154/ieee802154_socket.ko",
