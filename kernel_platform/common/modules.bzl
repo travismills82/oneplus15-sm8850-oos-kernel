@@ -46,7 +46,6 @@ _COMMON_GKI_MODULES_LIST = [
     "net/l2tp/l2tp_core.ko",
     "net/l2tp/l2tp_ppp.ko",
     "net/mac802154/mac802154.ko",
-    "net/nfc/nfc.ko",
     "net/tipc/tipc.ko",
     "net/tipc/tipc_diag.ko",
     "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
