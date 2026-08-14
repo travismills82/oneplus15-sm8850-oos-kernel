@@ -2690,6 +2690,8 @@ void hci_unregister_dev(struct hci_dev *hdev)
 	disable_work_sync(&hdev->tx_work);
 	disable_work_sync(&hdev->power_on);
 	disable_work_sync(&hdev->error_reset);
+	disable_delayed_work_sync(&hdev->cmd_timer);
+	disable_delayed_work_sync(&hdev->ncmd_timer);
 
 	hci_cmd_sync_clear(hdev);
 
@@ -4123,3 +4125,4 @@ static void hci_cmd_work(struct work_struct *work)
 		rcu_read_unlock();
 	}
 }
+++ b/net/bluetooth/hci_core.c
