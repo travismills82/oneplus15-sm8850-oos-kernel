@@ -42,10 +42,11 @@ OnePlus common tree:
   configuration changed the GKI ABI and did not boot reliably.
 - The r4 payload adds built-in SquashFS; common USB serial and USB Ethernet
   drivers; VLAN, RNDIS host, MACsec, and SocketCAN (including CAN327 and
-  J1939); ISO9660 and UDF; and IKHEADERS. The r6 security refresh retains all
-  of those features and adds 20 source-verified ACK/upstream security patches
-  in 13 logical commits. nftables remains disabled because its experiment
-  changed the GKI ABI.
+  J1939); ISO9660 and UDF; and IKHEADERS. The r7 release retains all of those
+  features, moves the Bluetooth/QCA path, RFCOMM, HIDP, NFC core, TLS, and
+  RTL8150 into Image where ABI-safe, and adds a further source-verified
+  ACK/upstream security refresh. nftables remains disabled because its
+  experiment changed the GKI ABI.
 
 The Oplus display subtree omitted by the original upstream import is restored
 from the official 16.0.8.300 source before applying the corresponding
@@ -69,10 +70,10 @@ Only the boot partition is replaced by the normal release. Do not flash,
 resize, remap, or overwrite system_dlkm, system_dlkm_oki, vendor_boot,
 vendor_dlkm, dtbo, or VBMeta for this configuration.
 
-### Current boot-only validation (r6 security refresh)
+### Current boot-only validation (r7 security refresh)
 
-The verified r6 boot payload was built from source commit
-2857429f04fcab698ea4f8cd15fb656dd6fa3901 with:
+The verified r7 boot payload was built from source commit
+bd70777d3d2cbb44e758d8ad36c264b18b7b69ab with:
 
 ~~~bash
 cd kernel_platform
@@ -87,19 +88,24 @@ Both commands passed. Strict ABI/KMI validation remains enabled, as do
 CONFIG_MODULE_SIG, CONFIG_MODVERSIONS, CONFIG_GENDWARFKSYMS, symbol CRC
 validation, and protected-module enforcement.
 
-The live-tested r6 boot payload is:
+The live-tested r7 boot payload is:
 
-- Kernel release: 6.12.23-android16-5-o-g2857429f04fc-4k.
+- Kernel release: 6.12.23-android16-5-o-gbd70777d3d2c-4k.
 - boot.img: 100,663,296 bytes, SHA-256
-  67229d9327b7bae375def12b7db87ec447e1cb9c2d64f4500167ffaf4adb90f6.
+  86eba62f4f93f02aaacda89ef903c91a3e531575aba1cf253ce70e0887b38d1f.
 
-The r6 payload retains 20 source-verified Android Common Kernel/upstream
-security patches represented in 13 logical local commits. Coverage includes
-Binder and eventpoll lifetime handling, USB gadget/Type-C validation, AF_UNIX,
-HID, xt_quota2, dm-bow, F2FS, BPF, Wacom, and pKVM. The complete applicability
-and provenance audit is in [`security/cve-audit-2026.md`](security/cve-audit-2026.md).
-No new kernel configuration feature was enabled for r6; all r4 power-user
-functionality is preserved.
+The r7 payload retains r6 coverage and adds 52 source-verified Linux
+6.12.91--6.12.98/Android Common security patch units. The refresh covers SKB
+shared-frag handling, IPv6 MLD packet lifetime, 16 NTFS3 bounds/lifetime
+fixes, three EROFS decompression/unmount lifetime fixes, 27 Bluetooth fixes,
+and three NFC LLCP UAF fixes. The complete applicability and provenance audit
+is in [`security/cve-audit-2026.md`](security/cve-audit-2026.md).
+
+The ABI-safe system-DLKM reduction work also builds Bluetooth core/QCA HCI,
+RFKILL, power sequencing, RFCOMM, HIDP, NFC core, TLS, and RTL8150 into Image.
+Stock module load requests are satisfied only by the narrow exact-name
+compatibility path after normal signature and module-format checks; no module
+security, ABI, or KMI enforcement is relaxed.
 
 The build still generates system_dlkm.flatten.ext4.img for ABI/KMI development
 and recovery work, but it is not a normal release asset.
@@ -126,28 +132,26 @@ It is set as system_trusted_key in kernel_platform/common/BUILD.bazel. This
 trusts the stock modules without weakening module signatures, MODVERSIONS, CRC
 checking, ABI/KMI checks, or protected exports.
 
-The r6 payload was direct-flashed only to active boot_b on rooted CPH2747
+The r7 payload was direct-flashed only to active boot_b on rooted CPH2747
 16.0.9.400(EX01), after a full boot_b backup was created. The boot_b readback
-SHA-256 matched the r6 image exactly. The active `/system_dlkm` mount remained
-the stock EROFS image throughout testing.
+SHA-256 matched the r7 image exactly. Android completed a normal boot on slot
+_b; Bluetooth reached ON with zero framework crashes, and NFC reached ON with
+its controller and HAL initialized. The generated configuration confirms the
+built-in Bluetooth, RFCOMM, HIDP, NFC, NTFS3, and EROFS paths.
 
-Android then completed two clean boots on slot _b with the r6 kernel release
-above. Wi-Fi reconnected at 6 GHz, Bluetooth modules and service loaded,
-LTE/RMNET interfaces were present, USB `mtp,adb`, Type-C/UCSI, F2FS, ZRAM,
-Binder, camera, and audio services were available, and `/system_dlkm` remained
-stock EROFS. No unknown-symbol, MODVERSIONS/CRC, vermagic, signature/key,
-namespace, or protected-export failure was observed.
+The r7 smoke test found no new Oops, BUG, KASAN, UBSAN, panic, module-signature,
+or CRC failure. The boot log still contains the known pre-r7 stale stock USB
+Ethernet module failures (`usbnet`, ASIX, AQC111, CDC, and `r8153_ecm` unknown
+symbols) caused by untouched stock modules attempting to use implementations
+already moved into Image. They are not introduced or fixed by this security
+refresh; broader phone regression and disconnected deep-suspend testing remain
+recommended.
 
-The captured r6 kernel log contained no Oops, BUG, KASAN, UBSAN, panic,
-call-trace, unknown-symbol, module-verification, protected-symbol, or CRC
-mismatch pattern. Broader phone regression and disconnected deep-suspend
-testing remain recommended.
-
-The r6 TWRP archive packages the r6 boot image and retains the existing
+The r7 TWRP archive packages the r7 boot image and retains the existing
 boot-only device checks, backup, flash, and readback-verification flow. Its
-metadata identifies the r6 release and the exact r6 kernel payload commit. The
-r6 archive is statically validated; the already live-tested r6 payload was
-flashed directly, not through this archive.
+metadata identifies the r7 release and exact r7 kernel payload commit. The
+archive is statically validated; the payload was live smoke-tested through the
+direct active-slot boot path, not installed through TWRP.
 
 **PASS:** system_dlkm.flatten.ext4.img is not required for normal OOS
 16.0.9.400 installation.
@@ -161,7 +165,7 @@ configuration only.
 
 ### TWRP (recommended)
 
-Install OnePlus15-OOS16.0.9.400-r6-TWRP.zip in a compatible TWRP recovery.
+Install OnePlus15-OOS16.0.9.400-r7-TWRP.zip in a compatible TWRP recovery.
 Before it writes anything, it verifies:
 
 - CPH2747 / Canoe identity and the active slot.
@@ -193,7 +197,7 @@ Release oos16.0.9.400-r1 and the older matched custom boot.img plus
 system_dlkm.flatten.ext4.img procedure remain historical development/fallback
 material only. That path requires a custom ext4 logical system_dlkm image and
 can require dynamic-partition resizing. It is not included in, or required by,
-the normal r6 boot-only release.
+the normal r7 boot-only release.
 
 Keep the generated ext4 image available locally for ABI/KMI work, future ACK
 updates, and diagnostic recovery. Do not attach it to normal GitHub releases.
