@@ -3328,6 +3328,10 @@ static bool module_load_satisfied_by_builtin(const char *name)
 	if (!strcmp(name, "rfcomm"))
 		return true;
 #endif
+#ifdef CONFIG_BT_HIDP
+	if (!strcmp(name, "hidp"))
+		return true;
+#endif
 #ifdef CONFIG_RFKILL
 	if (!strcmp(name, "rfkill"))
 		return true;
