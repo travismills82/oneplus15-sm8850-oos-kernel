@@ -3317,6 +3317,10 @@ static bool module_load_satisfied_by_builtin(const char *name)
 	if (!strcmp(name, "tls"))
 		return true;
 #endif
+#ifdef CONFIG_NFC
+	if (!strcmp(name, "nfc"))
+		return true;
+#endif
 
 	/*
 	 * OxygenOS 16.0.9.400 loads this exact Bluetooth dependency chain from
