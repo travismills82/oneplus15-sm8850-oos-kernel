@@ -100,7 +100,7 @@ static void hci_read_codec_capabilities(struct hci_dev *hdev, __u8 transport,
 				caps = (void *)skb->data;
 				if (skb->len < sizeof(*caps))
 					goto error;
-				if (skb->len < caps->len)
+				if (skb->len < sizeof(caps->len) + caps->len)
 					goto error;
 				len += sizeof(caps->len) + caps->len;
 				skb_pull(skb,  sizeof(caps->len) + caps->len);
@@ -251,3 +251,4 @@ void hci_read_supported_codecs_v2(struct hci_dev *hdev)
 error:
 	kfree_skb(skb);
 }
+++ b/net/bluetooth/hci_codec.c
