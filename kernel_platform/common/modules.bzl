@@ -49,7 +49,6 @@ _COMMON_GKI_MODULES_LIST = [
     "net/nfc/nfc.ko",
     "net/tipc/tipc.ko",
     "net/tipc/tipc_diag.ko",
-    "net/tls/tls.ko",
     "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
 ]
 
