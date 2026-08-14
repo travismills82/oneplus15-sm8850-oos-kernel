@@ -3313,6 +3313,10 @@ static bool module_load_satisfied_by_builtin(const char *name)
 	if (!strcmp(name, "rtl8150"))
 		return true;
 #endif
+#ifdef CONFIG_TLS
+	if (!strcmp(name, "tls"))
+		return true;
+#endif
 
 	/*
 	 * OxygenOS 16.0.9.400 loads this exact Bluetooth dependency chain from
