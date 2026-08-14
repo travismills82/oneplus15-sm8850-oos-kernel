@@ -1437,6 +1437,7 @@ static void iso_conn_big_sync(struct sock *sk)
 
 	release_sock(sk);
 	hci_dev_unlock(hdev);
+	hci_dev_put(hdev);
 }
 
 static int iso_sock_recvmsg(struct socket *sock, struct msghdr *msg,
@@ -2449,3 +2450,4 @@ int iso_exit(void)
 
 	return 0;
 }
+++ b/net/bluetooth/iso.c
