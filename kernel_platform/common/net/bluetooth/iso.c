@@ -2450,4 +2450,3 @@ int iso_exit(void)
 
 	return 0;
 }
-++ b/net/bluetooth/iso.c

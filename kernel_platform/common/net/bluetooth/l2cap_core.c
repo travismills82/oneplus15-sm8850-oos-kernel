@@ -7722,6 +7722,3 @@ MODULE_PARM_DESC(disable_ertm, "Disable enhanced retransmission mode");
 
 module_param(enable_ecred, bool, 0644);
 MODULE_PARM_DESC(enable_ecred, "Enable enhanced credit flow control mode");
-++ b/net/bluetooth/l2cap_core.c
-++ b/net/bluetooth/l2cap_core.c
-++ b/net/bluetooth/l2cap_core.c

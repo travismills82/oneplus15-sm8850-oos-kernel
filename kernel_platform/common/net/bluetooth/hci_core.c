@@ -4125,4 +4125,3 @@ static void hci_cmd_work(struct work_struct *work)
 		rcu_read_unlock();
 	}
 }
-++ b/net/bluetooth/hci_core.c

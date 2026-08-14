@@ -10584,4 +10584,3 @@ void mgmt_cleanup(struct sock *sk)
 
 	read_unlock(&hci_dev_list_lock);
 }
-++ b/net/bluetooth/mgmt.c

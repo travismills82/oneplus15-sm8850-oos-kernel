@@ -989,5 +989,3 @@ int l2cap_register_user(struct l2cap_conn *conn, struct l2cap_user *user);
 void l2cap_unregister_user(struct l2cap_conn *conn, struct l2cap_user *user);
 
 #endif /* __L2CAP_H */
-++ b/include/net/bluetooth/l2cap.h
-++ b/include/net/bluetooth/l2cap.h

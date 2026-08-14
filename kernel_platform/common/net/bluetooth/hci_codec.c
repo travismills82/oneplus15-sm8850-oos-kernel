@@ -251,4 +251,3 @@ void hci_read_supported_codecs_v2(struct hci_dev *hdev)
 error:
 	kfree_skb(skb);
 }
-++ b/net/bluetooth/hci_codec.c

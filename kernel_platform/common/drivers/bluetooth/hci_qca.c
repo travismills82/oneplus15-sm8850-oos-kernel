@@ -2755,4 +2755,3 @@ int __exit qca_deinit(void)
 
 	return hci_uart_unregister_proto(&qca_proto);
 }
-++ b/drivers/bluetooth/hci_qca.c
