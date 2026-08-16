@@ -26,9 +26,13 @@ tested with persistent host-side failure logging.
 ## Source-built provider set
 
 The following targets must be built directly from the exact payload source tree.
-The
-Peach-v2 target is the Canoe-specific DDK target and retains its existing Oplus
-feature defines and generated configuration.
+The Peach-v2 target is the Canoe-specific DDK target and retains its existing
+Oplus feature defines and generated configuration.
+
+Before staging, the packager reads the matching build's generated
+`include/config/kernel.release` and rejects every source replacement whose
+`vermagic` does not begin with that exact release. This blocks stale DDK output
+from entering the candidate even when its exported CRCs happen to match.
 
 | Module | Source target |
 | --- | --- |

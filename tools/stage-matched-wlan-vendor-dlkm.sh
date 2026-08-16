@@ -81,6 +81,7 @@ require_file "$kernel_build_dir/scripts/sign-file"
 require_file "$kernel_build_dir/certs/signing_key.pem"
 require_file "$kernel_build_dir/certs/signing_key.x509"
 require_file "$kernel_build_dir/vmlinux"
+require_file "$kernel_build_dir/include/config/kernel.release"
 command -v debugfs >/dev/null || die "debugfs is required"
 command -v e2fsck >/dev/null || die "e2fsck is required"
 command -v modinfo >/dev/null || die "modinfo is required"
@@ -113,12 +114,19 @@ if certificate not in vmlinux:
     raise SystemExit("the module-signing certificate is absent from the matching vmlinux")
 PY
 
+kernel_release=$(<"$kernel_build_dir/include/config/kernel.release")
+[[ -n "$kernel_release" ]] || die "matching kernel release is empty"
+
 declare -A source_by_name=()
 for replacement in "${replacements[@]}"; do
     require_file "$replacement"
     name=$(module_name "$replacement")
     [[ -z ${source_by_name[$name]+x} ]] || die "duplicate source replacement for $name"
     has_signature "$replacement" && die "replacement is already signed: $replacement"
+    vermagic=$(modinfo -F vermagic "$replacement")
+    [[ "$vermagic" == "$kernel_release "* ]] || {
+        die "replacement $name does not match kernel release $kernel_release: ${vermagic:-<none>}"
+    }
     source_by_name[$name]=$replacement
 done
 
@@ -233,6 +241,7 @@ done
     printf 'candidate_vendor_image_sha256=%s\n' "$(sha256sum "$out_dir/vendor_dlkm.img" | awk '{print $1}')"
     printf 'candidate_vendor_image_bytes=%s\n' "$(stat -c '%s' "$out_dir/vendor_dlkm.img")"
     printf 'kernel_build_dir=%s\n' "$kernel_build_dir"
+    printf 'kernel_release=%s\n' "$kernel_release"
     printf 'kernel_signing_certificate_sha256=%s\n' \
         "$(openssl x509 -inform DER -in "$kernel_build_dir/certs/signing_key.x509" -noout -fingerprint -sha256 | cut -d= -f2)"
     printf 'kernel_signing_certificate_present_in_vmlinux=yes\n'
