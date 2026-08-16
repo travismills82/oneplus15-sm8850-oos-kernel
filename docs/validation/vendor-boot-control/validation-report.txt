@@ -1,0 +1,24 @@
+CONTROLLED VENDOR_BOOT STATIC CLOSURE
+modules=479
+normal_modules_load_entries=138
+normal_modules_distinct=137
+recovery_modules_load_entries=465
+recovery_modules_distinct=464
+exact_source_outputs_available=308
+source_not_proven=171
+normal_imports=6351
+normal_unresolved_imports=0
+normal_crc_mismatches=0
+normal_closure_result=PASS
+note=charger mode has no distinct modules.load file in the stock vendor ramdisk; its module policy is not inferred.
+note=source availability means an exact gbd70777 source-build output is present; absence means not proven, not necessarily source absent.
+physical_validation_utc=2026-08-16
+physical_slot=_b
+physical_vendor_boot_input_sha256=5fe60f58ebe3f935acb3ec41585fa16977804cc0c2efd4e84c44a645a1eb7162
+physical_vendor_boot_readback_sha256=5fe60f58ebe3f935acb3ec41585fa16977804cc0c2efd4e84c44a645a1eb7162
+physical_boots_completed=2
+physical_wifi_reload=PASS
+physical_wifi_6ghz_wpa3=PASS
+physical_ping_loss=0_percent
+physical_module_contract_failures=0
+physical_result=PASS_LOSSLESS_VENDOR_BOOT_BASELINE
