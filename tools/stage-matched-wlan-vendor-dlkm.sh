@@ -51,6 +51,73 @@ module_name() {
 
 has_signature() { [[ -n "$(modinfo -F signer "$1")" ]]; }
 
+# debugfs write creates a fresh inode.  That is not equivalent to replacing a
+# file through the mounted Android filesystem: it loses the original mode and
+# security.selinux xattr.  vendor_modprobe is confined to vendor_file, so an
+# unlabeled replacement can be present and signed yet remain unloadable.
+image_inode_metadata() {
+    local image=$1 path=$2 stat mode uid gid
+
+    stat=$(debugfs -R "stat $path" "$image" 2>/dev/null) || {
+        die "could not inspect inode metadata for $path"
+    }
+    mode=$(sed -n 's/^.*Mode:  *\([0-7][0-7][0-7][0-7]\).*$/\1/p' <<<"$stat")
+    read -r uid gid < <(sed -n 's/^User: *\([0-9][0-9]*\).*Group: *\([0-9][0-9]*\).*$/\1 \2/p' <<<"$stat")
+    [[ "$mode" =~ ^[0-7]{4}$ && "$uid" =~ ^[0-9]+$ && "$gid" =~ ^[0-9]+$ ]] || {
+        die "could not parse inode metadata for $path"
+    }
+    printf '%s\t%s\t%s\n' "$mode" "$uid" "$gid"
+}
+
+image_selinux_xattr_hex() {
+    local image=$1 path=$2 attrs value
+
+    attrs=$(debugfs -R "ea_list $path" "$image" 2>/dev/null) || {
+        die "could not inspect extended attributes for $path"
+    }
+    # Refuse to silently drop an attribute the stager does not know how to
+    # reproduce.  Current stock vendor modules have exactly this xattr.
+    [[ $(sed -n 's/^  \([^ ]*\) (.*/\1/p' <<<"$attrs" | wc -l) -eq 1 ]] || {
+        die "unexpected extended-attribute set for $path"
+    }
+    [[ $(sed -n 's/^  \([^ ]*\) (.*/\1/p' <<<"$attrs") == security.selinux ]] || {
+        die "security.selinux is missing for $path"
+    }
+    value=$(debugfs -R "ea_get -x $path security.selinux" "$image" 2>/dev/null) || {
+        die "could not read security.selinux for $path"
+    }
+    value=$(sed -n 's/^security\.selinux ([0-9][0-9]*) = //p' <<<"$value" | tr -d ' ')
+    [[ "$value" =~ ^([0-9A-Fa-f]{2})+$ ]] || die "invalid security.selinux value for $path"
+    printf '%s\n' "$value"
+}
+
+debugfs_octal_literal() {
+    python3 - "$1" <<'PY'
+import sys
+
+raw = bytes.fromhex(sys.argv[1])
+print(''.join(f'\\{byte:03o}' for byte in raw))
+PY
+}
+
+restore_image_metadata() {
+    local image=$1 path=$2 mode=$3 uid=$4 gid=$5 selinux_hex=$6 selinux_literal
+
+    debugfs -w -R "set_inode_field $path mode 0100${mode#0}" "$image" >/dev/null 2>&1 || {
+        die "could not restore mode for $path"
+    }
+    debugfs -w -R "set_inode_field $path uid $uid" "$image" >/dev/null 2>&1 || {
+        die "could not restore uid for $path"
+    }
+    debugfs -w -R "set_inode_field $path gid $gid" "$image" >/dev/null 2>&1 || {
+        die "could not restore gid for $path"
+    }
+    selinux_literal=$(debugfs_octal_literal "$selinux_hex")
+    debugfs -w -R "ea_set $path security.selinux \"$selinux_literal\"" "$image" >/dev/null 2>&1 || {
+        die "could not restore security.selinux for $path"
+    }
+}
+
 stock_root=
 stock_image=
 kernel_build_dir=
@@ -274,11 +341,28 @@ cp --reflink=auto "$stock_image" "$out_dir/vendor_dlkm.img"
     die "candidate image size differs from the stock partition image"
 }
 
+declare -A image_mode_by_module=()
+declare -A image_uid_by_module=()
+declare -A image_gid_by_module=()
+declare -A image_selinux_by_module=()
+for module in "${closure_modules[@]}"; do
+    staged=${stage_path_by_name[$module]}
+    relative=${staged#"$out_dir/staging"}
+    metadata=$(image_inode_metadata "$out_dir/vendor_dlkm.img" "$relative")
+    IFS=$'\t' read -r image_mode_by_module[$module] image_uid_by_module[$module] image_gid_by_module[$module] <<< "$metadata"
+    image_selinux_by_module[$module]=$(image_selinux_xattr_hex "$out_dir/vendor_dlkm.img" "$relative")
+done
+
 for module in "${closure_modules[@]}"; do
     staged=${stage_path_by_name[$module]}
     relative=${staged#"$out_dir/staging"}
     debugfs -w -R "rm $relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
     debugfs -w -R "write $staged $relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
+    restore_image_metadata "$out_dir/vendor_dlkm.img" "$relative" \
+        "${image_mode_by_module[$module]}" \
+        "${image_uid_by_module[$module]}" \
+        "${image_gid_by_module[$module]}" \
+        "${image_selinux_by_module[$module]}"
 done
 
 # The copied image still contains the stock hashtree/FEC/footer.  Discard that
@@ -346,6 +430,16 @@ for module in "${closure_modules[@]}"; do
     [[ "$(sha256sum "$staged" | awk '{print $1}')" == "$(sha256sum "$readback" | awk '{print $1}')" ]] || {
         die "read-back hash mismatch for $module"
     }
+    metadata=$(image_inode_metadata "$out_dir/vendor_dlkm.img" "$relative")
+    IFS=$'\t' read -r mode uid gid <<< "$metadata"
+    [[ "$mode" == "${image_mode_by_module[$module]}" &&
+       "$uid" == "${image_uid_by_module[$module]}" &&
+       "$gid" == "${image_gid_by_module[$module]}" ]] || {
+        die "read-back inode metadata mismatch for $module"
+    }
+    [[ "$(image_selinux_xattr_hex "$out_dir/vendor_dlkm.img" "$relative")" == "${image_selinux_by_module[$module]}" ]] || {
+        die "read-back security.selinux mismatch for $module"
+    }
 done
 
 {
@@ -365,7 +459,7 @@ done
     printf 'kernel_signing_certificate_present_in_vmlinux=yes\n'
     printf 'source_replacements=%s\n' "${#source_by_name[@]}"
     printf 'signed_closure_modules=%s\n' "${#closure_action[@]}"
-    printf 'metadata_policy=retained_stock_metadata; module_names_and_dependencies_are_contract-matched\n'
+    printf 'metadata_policy=stock_module_mode_uid_gid_and_security.selinux_preserved; module_names_and_dependencies_are_contract-matched\n'
     printf 'avb=partition-local_footer_regenerated; parent_top_level_vbmeta_not_updated\n'
 } > "$out_dir/manifest.txt"
 

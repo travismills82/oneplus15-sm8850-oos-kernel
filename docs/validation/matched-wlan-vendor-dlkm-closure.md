@@ -16,12 +16,27 @@ does not change CFG80211, MAC80211, the Peach-v2 source revision, or any
 Oplus/Qualcomm WLAN feature selection. The Canoe DDK configuration keeps
 `CONFIG_CFG80211=m` and `CONFIG_MAC80211=m`; `CONFIG_RFKILL=y` remains enabled.
 
-Status: **REBUILD REQUIRED**. The earlier candidate was built from the r7
-release commit while the phone was running the later `gbd70777d3d2c` payload.
-It booted Android and then shut down, so it was restored from verified backups
-and is rejected. This document deliberately records no validation result until
-the complete closure has been rebuilt from the exact payload/config lineage and
-tested with persistent host-side failure logging.
+Status: **METADATA-FIXED ARTIFACT READY FOR RETEST**. The earlier candidate
+was built from the r7 release commit while the phone was running the later
+`gbd70777d3d2c` payload. It booted Android and then shut down, so it was
+restored from verified backups and is rejected.
+
+The first exact-lineage staged test booted Android, mounted the custom EROFS
+`system_dlkm`, and mounted the custom `vendor_dlkm`, but Wi-Fi could not load.
+The retained stock image was restored byte-for-byte afterwards. Static
+inspection found that the stager's `debugfs write` operation had replaced each
+module inode with mode `0664` and no `security.selinux` attribute instead of
+the stock mode `0644` and
+`u:object_r:vendor_file:s0\000`. That makes the replacements unavailable to
+the confined `vendor_modprobe` service before any module CRC or Peach-v2
+compatibility result can be inferred. The candidate is therefore rejected as a
+packaging failure, not as an ABI failure.
+
+The stager now preserves and verifies the original mode, uid, gid, and exact
+SELinux xattr for every replaced module. The rebuilt artifact passes the full
+post-sign closure audit (zero unresolved imports, zero CRC mismatches, and zero
+replacement-contract failures), `e2fsck`, and local AVB hashtree verification.
+It still requires a new physical test.
 
 ## Source-built provider set
 
@@ -105,7 +120,8 @@ resolution, signing closure, and external-boundary edges.
 
 1. copies the raw, verified stock `vendor_dlkm` image;
 2. replaces exactly the 29 closure modules with stripped and signed staged
-   copies;
+   copies while preserving and read-back-verifying the stock module mode, uid,
+   gid, and `security.selinux` xattr;
 3. regenerates the partition-local unsigned AVB hashtree, FEC, and footer
    from the modified ext4 payload while preserving stock geometry, salt,
    properties, rollback fields, and partition size;
@@ -149,4 +165,6 @@ and record the post-failure recovery evidence before another candidate is tried.
 
 Run `tools/capture-matched-wlan-boot.sh` before any device staging. It writes
 only host-side evidence and deliberately performs no ADB write, property change,
-reboot, flash, or recovery action.
+reboot, flash, or recovery action. Its parent supervisor deliberately survives
+ADB stream disconnects and flushes each completed snapshot; run it from a
+persistent host shell (for example `setsid`) through the recovery/boot cycle.

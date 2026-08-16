@@ -122,6 +122,11 @@ snapshot() {
 	record_command "$snapshot_file" adb_device shell su -c 'find /sys/fs/pstore -maxdepth 1 -type f -printf "%f %s bytes\n" 2>/dev/null; for f in /sys/fs/pstore/*; do [ -f "$f" ] || continue; echo "===== $f ====="; cat "$f"; done'
 	record_command "$snapshot_file" adb_device shell su -c 'find /sys/kernel/debug -maxdepth 2 -type f -iname "*last*kmsg*" -o -iname "*ramoops*" 2>/dev/null'
 	record_command "$snapshot_file" adb_device shell su -c 'dmesg'
+
+	# Snapshots are the durable failure evidence.  Flush the completed file so a
+	# later ADB loss, watchdog reset, or host-side stream failure cannot discard
+	# the last useful state transition.
+	sync -f "$snapshot_file" 2>/dev/null || true
 	event "snapshot-finish label=$label"
 }
 
@@ -129,7 +134,7 @@ stream_logcat() {
 	while (( ! stopping )); do
 		event "logcat-connect"
 		local rc
-		if "$adb_bin" -s "$serial" logcat -b all -v threadtime >> "$logcat_log" 2>> "$stream_errors"; then
+		if stdbuf -oL -eL "$adb_bin" -s "$serial" logcat -b all -v threadtime >> "$logcat_log" 2>> "$stream_errors"; then
 			rc=0
 		else
 			rc=$?
@@ -143,7 +148,7 @@ stream_dmesg() {
 	while (( ! stopping )); do
 		event "dmesg-follow-connect"
 		local rc
-		if "$adb_bin" -s "$serial" exec-out su -c 'exec dmesg -w' >> "$dmesg_log" 2>> "$stream_errors"; then
+		if stdbuf -oL -eL "$adb_bin" -s "$serial" exec-out su -c 'exec dmesg -w' >> "$dmesg_log" 2>> "$stream_errors"; then
 			rc=0
 		else
 			rc=$?
@@ -191,4 +196,11 @@ periodic_snapshots & child_pids+=("$!")
 printf 'Persistent matched-WLAN boot capture is running.\n'
 printf 'output=%s\n' "$out_dir"
 printf 'Leave this process running through staging and recovery; Ctrl-C stops it.\n'
-wait "${child_pids[@]}"
+
+# Do not wait on a list of children under `set -e`: an expected ADB disconnect
+# can otherwise make wait() terminate the capture supervisor after only its
+# first snapshot.  The worker loops independently reconnect, while this parent
+# remains alive until it receives an explicit signal.
+while (( ! stopping )); do
+	sleep 1 || true
+done
