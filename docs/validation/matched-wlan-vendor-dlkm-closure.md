@@ -16,7 +16,7 @@ does not change CFG80211, MAC80211, the Peach-v2 source revision, or any
 Oplus/Qualcomm WLAN feature selection. The Canoe DDK configuration keeps
 `CONFIG_CFG80211=m` and `CONFIG_MAC80211=m`; `CONFIG_RFKILL=y` remains enabled.
 
-Status: **DEPENDENCY-RECONCILIATION ARTIFACT READY FOR RETEST**. The earlier candidate
+Status: **STAGED WLAN BOOT PASS — EXTENDED DEVICE VALIDATION REQUIRED**. The earlier candidate
 was built from the r7 release commit while the phone was running the later
 `gbd70777d3d2c` payload. It booted Android and then shut down, so it was
 restored from verified backups and is rejected.
@@ -99,6 +99,48 @@ zero CRC mismatches, and zero replacement-contract failures. The exact
 `gbd70777d3d2c` build was then rerun through `canoe_perf_dist`,
 `kernel_aarch64_abi`, `kernel_aarch64_abi_kmi_symbol_checks`, and
 `kernel_aarch64_abi_diff`; all passed with the existing empty ABI report.
+
+### Dependency-reconciled staged test result
+
+The dependency-reconciled candidate was then written only to the already
+tested slot `_b` in this order: `vendor_dlkm`, `system_dlkm`, then `boot`.
+Each target was read back and matched its input SHA-256 before reboot. Neither
+`vendor_boot` nor VBMeta was changed, and the complete original `_b` backup
+set remains available.
+
+The candidate completed two Android boots. On both, Android loaded the
+source-built/re-signed WLAN closure and automatically rejoined the saved
+6 GHz WPA3 network. The active on-device files match the final staged image:
+
+| Module | Staged and device SHA-256 |
+| --- | --- |
+| `cfg80211.ko` | `de3b40d090c3c3417f488154219bdb4c85a90682bc2ccbdb4a08396ee055e022` |
+| `qca_cld3_peach_v2.ko` | `0dab2ebfb005fc17152114f58fdebaee1c500d0235b690cd677bcbcc0f471216` |
+| `cnss2.ko` | `30b0c83107c1ab5fc8bbb228da224a9c9486e60ca7fcf120b1f1c90ef16268ec` |
+| `wlan_firmware_service.ko` | `f8d6d09c946996d0fca128708ebbda2bea25b088bb84d4f52760b8a76d61a775` |
+
+`/proc/modules` showed `cfg80211`, `qca_cld3_peach_v2`, `cnss2`,
+`cnss_utils`, `cnss_plat_ipc_qmi_svc`, `cnss_prealloc`,
+`wlan_firmware_service`, `cnss_nl`, `ipam`, `gsim`, `rmnet_mem`, and
+`smem_mailbox` loaded. Wi-Fi was disabled and enabled again successfully; it
+reconnected in the next poll. ICMP checks before and after that cycle, and
+after the second boot, had zero packet loss. The targeted error scan found no
+unknown symbol, CRC, vermagic, module-verification, protected-export, panic,
+KASAN, or UBSAN signature.
+
+The successful full-boot persistent capture is:
+
+```text
+/home/travis/Android/oneplus15-matched-wlan-gbd70777-live-captures/
+20260816T181540Z-deps-reconciled-reboot/
+```
+
+The candidate remains installed only on `_b`; the original `_b` images are
+retained as verified recovery rollback inputs. This proves the WLAN delivery
+closure and dependency metadata path, not every hardware subsystem in the
+hybrid vendor-DLKM image. Bluetooth profiles, cellular data/calls, camera,
+audio, NFC, GNSS, suspend/resume, and longer Wi-Fi throughput/roaming testing
+remain required before any production or release decision.
 
 ## Source-built provider set
 
