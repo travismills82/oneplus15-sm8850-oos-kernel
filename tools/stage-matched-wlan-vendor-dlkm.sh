@@ -22,12 +22,18 @@ Usage:
       --stock-vendor-root <extracted-stock-vendor-dlkm> \
       --stock-vendor-image <raw-stock-vendor_dlkm.img> \
       --kernel-build-dir <matching-kernel_aarch64-output> \
+      --system-dlkm-staging-archive <matching-system_dlkm_staging_archive.tar.gz> \
       --avbtool <path-to-avbtool> \
       --validation-dir <validator-output> \
       --out-dir <new-empty-output-directory> \
       --replacement <source-module.ko> [--replacement <source-module.ko> ...]
 
 The validator output must PASS with the exact source modules supplied here.
+The system-DLKM staging archive must come from the same build.  Its flat
+module set and modules.builtin file are used to reconcile vendor modules.dep:
+dependencies on a provider compiled into vmlinux are removed, while every
+other /system/lib/modules dependency must still exist in the supplied system
+image.
 The script regenerates the partition-local unsigned AVB hashtree/FEC/footer
 using the stock footer's geometry. It does not update parent/top-level vbmeta
 metadata and is intentionally not a flasher.
@@ -121,6 +127,7 @@ restore_image_metadata() {
 stock_root=
 stock_image=
 kernel_build_dir=
+system_dlkm_staging_archive=
 avbtool=
 validation_dir=
 out_dir=
@@ -131,6 +138,7 @@ while [[ $# -gt 0 ]]; do
         --stock-vendor-root) stock_root=${2:-}; shift 2 ;;
         --stock-vendor-image) stock_image=${2:-}; shift 2 ;;
         --kernel-build-dir) kernel_build_dir=${2:-}; shift 2 ;;
+        --system-dlkm-staging-archive) system_dlkm_staging_archive=${2:-}; shift 2 ;;
         --avbtool) avbtool=${2:-}; shift 2 ;;
         --validation-dir) validation_dir=${2:-}; shift 2 ;;
         --out-dir) out_dir=${2:-}; shift 2 ;;
@@ -140,7 +148,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ -n "$stock_root" && -n "$stock_image" && -n "$kernel_build_dir" && -n "$avbtool" ]] || {
+[[ -n "$stock_root" && -n "$stock_image" && -n "$kernel_build_dir" &&
+   -n "$system_dlkm_staging_archive" && -n "$avbtool" ]] || {
     usage >&2
     die "stock root, stock image, and kernel build directory are required"
 }
@@ -153,6 +162,7 @@ done
 require_dir "$stock_root"
 require_file "$stock_image"
 require_dir "$kernel_build_dir"
+require_file "$system_dlkm_staging_archive"
 require_dir "$validation_dir"
 require_file "$validation_dir/summary.json"
 require_file "$validation_dir/protected-export-signing-closure.tsv"
@@ -161,6 +171,7 @@ require_file "$kernel_build_dir/certs/signing_key.pem"
 require_file "$kernel_build_dir/certs/signing_key.x509"
 require_file "$kernel_build_dir/vmlinux"
 require_file "$kernel_build_dir/include/config/kernel.release"
+require_file "$kernel_build_dir/modules.builtin"
 require_file "$avbtool"
 avbtool_dir=$(dirname "$avbtool")
 [[ -x "$avbtool_dir/fec" ]] || die "the avbtool companion fec binary is required"
@@ -248,6 +259,22 @@ PY
 kernel_release=$(<"$kernel_build_dir/include/config/kernel.release")
 [[ -n "$kernel_release" ]] || die "matching kernel release is empty"
 
+# Do not use the stock system-DLKM inventory to interpret cross-partition
+# dependencies.  The candidate Image has deliberately moved some providers
+# (for example rfkill) into vmlinux, so a stock modules.dep path can name a
+# file that no longer exists in the matching system_dlkm image.  The archive
+# is a build output, not an input image to mutate.
+system_dlkm_reference="$out_dir/system-dlkm-reference"
+mkdir -p "$system_dlkm_reference"
+tar -xzf "$system_dlkm_staging_archive" -C "$system_dlkm_reference"
+system_modules_root="$system_dlkm_reference/flatten/lib/modules"
+system_modules_builtin="$system_dlkm_reference/lib/modules/$kernel_release/modules.builtin"
+require_dir "$system_modules_root"
+require_file "$system_modules_builtin"
+cmp -s "$system_modules_builtin" "$kernel_build_dir/modules.builtin" || {
+    die "system-DLKM archive modules.builtin does not match the kernel build"
+}
+
 declare -A source_by_name=()
 for replacement in "${replacements[@]}"; do
     require_file "$replacement"
@@ -302,6 +329,93 @@ while IFS= read -r -d '' module_path; do
     stage_path_by_name[$name]=$module_path
 done < <(find "$stage_modules" -type f -name '*.ko' -print0 | sort -z)
 
+# Android's flattened vendor module loader consumes this text file directly.
+# Keep all stock ordering and vendor dependencies, but make it describe the
+# candidate system-DLKM/Image boundary exactly.  A missing non-built-in system
+# provider is a hard error: silently retaining it would create a boot-time
+# modprobe failure, and silently dropping it would hide a real dependency.
+modules_dep_reconciliation="$out_dir/vendor-system-dependency-reconciliation.tsv"
+python3 - "$stage_modules/modules.dep" "$system_modules_root" \
+    "$system_modules_builtin" "$modules_dep_reconciliation" <<'PY'
+from pathlib import Path, PurePosixPath
+import os
+import sys
+
+dep_path = Path(sys.argv[1])
+system_modules_root = Path(sys.argv[2])
+builtin_path = Path(sys.argv[3])
+report_path = Path(sys.argv[4])
+
+if not dep_path.is_file():
+    raise SystemExit(f"missing staged modules.dep: {dep_path}")
+
+builtin_names = {
+    PurePosixPath(line.strip()).name
+    for line in builtin_path.read_text(encoding="utf-8").splitlines()
+    if line.strip().endswith(".ko")
+}
+if not builtin_names:
+    raise SystemExit(f"no built-in modules found in {builtin_path}")
+
+system_module_names = {
+    path.name
+    for path in system_modules_root.rglob("*.ko")
+    if path.is_file()
+}
+if not system_module_names:
+    raise SystemExit(f"no flattened system modules found in {system_modules_root}")
+
+lines = dep_path.read_text(encoding="utf-8").splitlines(keepends=True)
+reconciled = []
+rows = [("module", "system_dependency", "provider_state", "action")]
+pruned = 0
+retained = 0
+
+for line in lines:
+    if not line.strip() or line.lstrip().startswith("#"):
+        reconciled.append(line)
+        continue
+    try:
+        target, raw_dependencies = line.rstrip("\n").split(":", 1)
+    except ValueError as exc:
+        raise SystemExit(f"malformed modules.dep row: {line!r}") from exc
+
+    dependencies = raw_dependencies.split()
+    kept = []
+    for dependency in dependencies:
+        path = PurePosixPath(dependency)
+        if str(path.parent) != "/system/lib/modules":
+            kept.append(dependency)
+            continue
+
+        name = path.name
+        if name in builtin_names:
+            rows.append((target, dependency, "BUILTIN", "PRUNED_BUILTIN"))
+            pruned += 1
+        elif name in system_module_names:
+            rows.append((target, dependency, "SYSTEM_DLKM", "RETAINED"))
+            retained += 1
+            kept.append(dependency)
+        else:
+            raise SystemExit(
+                f"{target} requires absent system provider {dependency}; "
+                "it is neither in the matching flattened system_dlkm nor built into vmlinux"
+            )
+
+    reconciled.append(f"{target}:" + (f" {' '.join(kept)}" if kept else "") + "\n")
+
+temporary = dep_path.with_name(dep_path.name + ".reconciled")
+temporary.write_text("".join(reconciled), encoding="utf-8")
+os.chmod(temporary, dep_path.stat().st_mode)
+temporary.replace(dep_path)
+
+report_path.write_text(
+    "\n".join("\t".join(row) for row in rows) + "\n",
+    encoding="utf-8",
+)
+print(f"modules.dep reconciliation: pruned_builtin_edges={pruned} retained_system_edges={retained}")
+PY
+
 for module in "${closure_modules[@]}"; do
     [[ -n ${stage_path_by_name[$module]+x} ]] || {
         die "closure module is absent from stock tree: $module"
@@ -353,6 +467,12 @@ for module in "${closure_modules[@]}"; do
     image_selinux_by_module[$module]=$(image_selinux_xattr_hex "$out_dir/vendor_dlkm.img" "$relative")
 done
 
+modules_dep_relative=/lib/modules/modules.dep
+modules_dep_stage="$stage_modules/modules.dep"
+metadata=$(image_inode_metadata "$out_dir/vendor_dlkm.img" "$modules_dep_relative")
+IFS=$'\t' read -r image_modules_dep_mode image_modules_dep_uid image_modules_dep_gid <<< "$metadata"
+image_modules_dep_selinux=$(image_selinux_xattr_hex "$out_dir/vendor_dlkm.img" "$modules_dep_relative")
+
 for module in "${closure_modules[@]}"; do
     staged=${stage_path_by_name[$module]}
     relative=${staged#"$out_dir/staging"}
@@ -364,6 +484,14 @@ for module in "${closure_modules[@]}"; do
         "${image_gid_by_module[$module]}" \
         "${image_selinux_by_module[$module]}"
 done
+
+# modules.dep is executable policy input for vendor_modprobe, so replace it in
+# the image with the same inode metadata safeguards as signed modules.
+debugfs -w -R "rm $modules_dep_relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
+debugfs -w -R "write $modules_dep_stage $modules_dep_relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
+restore_image_metadata "$out_dir/vendor_dlkm.img" "$modules_dep_relative" \
+    "$image_modules_dep_mode" "$image_modules_dep_uid" "$image_modules_dep_gid" \
+    "$image_modules_dep_selinux"
 
 # The copied image still contains the stock hashtree/FEC/footer.  Discard that
 # trailing integrity data before computing a new footer from the modified ext4
@@ -442,6 +570,25 @@ for module in "${closure_modules[@]}"; do
     }
 done
 
+modules_dep_readback="$out_dir/readback/modules.dep"
+debugfs -R "dump $modules_dep_relative $modules_dep_readback" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
+cmp -s "$modules_dep_stage" "$modules_dep_readback" || {
+    die "read-back modules.dep does not match the reconciled staged metadata"
+}
+metadata=$(image_inode_metadata "$out_dir/vendor_dlkm.img" "$modules_dep_relative")
+IFS=$'\t' read -r mode uid gid <<< "$metadata"
+[[ "$mode" == "$image_modules_dep_mode" &&
+   "$uid" == "$image_modules_dep_uid" &&
+   "$gid" == "$image_modules_dep_gid" ]] || {
+    die "read-back inode metadata mismatch for modules.dep"
+}
+[[ "$(image_selinux_xattr_hex "$out_dir/vendor_dlkm.img" "$modules_dep_relative")" == "$image_modules_dep_selinux" ]] || {
+    die "read-back security.selinux mismatch for modules.dep"
+}
+
+modules_dep_pruned_builtin_edges=$(awk -F '\t' 'NR > 1 && $4 == "PRUNED_BUILTIN" { count++ } END { print count + 0 }' "$modules_dep_reconciliation")
+modules_dep_retained_system_edges=$(awk -F '\t' 'NR > 1 && $4 == "RETAINED" { count++ } END { print count + 0 }' "$modules_dep_reconciliation")
+
 {
     printf 'stock_vendor_root=%s\n' "$stock_root"
     printf 'stock_vendor_image=%s\n' "$stock_image"
@@ -454,18 +601,24 @@ done
     printf 'vendor_avb_footer=regenerated_hashtree_fec_from_modified_ext4_payload\n'
     printf 'kernel_build_dir=%s\n' "$kernel_build_dir"
     printf 'kernel_release=%s\n' "$kernel_release"
+    printf 'system_dlkm_staging_archive=%s\n' "$system_dlkm_staging_archive"
+    printf 'system_dlkm_staging_archive_sha256=%s\n' "$(sha256sum "$system_dlkm_staging_archive" | awk '{print $1}')"
+    printf 'modules_dep_reconciliation=matching_system_dlkm_and_vmlinux_builtin_boundary\n'
+    printf 'modules_dep_pruned_builtin_edges=%s\n' "$modules_dep_pruned_builtin_edges"
+    printf 'modules_dep_retained_system_edges=%s\n' "$modules_dep_retained_system_edges"
     printf 'kernel_signing_certificate_sha256=%s\n' \
         "$(openssl x509 -inform DER -in "$kernel_build_dir/certs/signing_key.x509" -noout -fingerprint -sha256 | cut -d= -f2)"
     printf 'kernel_signing_certificate_present_in_vmlinux=yes\n'
     printf 'source_replacements=%s\n' "${#source_by_name[@]}"
     printf 'signed_closure_modules=%s\n' "${#closure_action[@]}"
-    printf 'metadata_policy=stock_module_mode_uid_gid_and_security.selinux_preserved; module_names_and_dependencies_are_contract-matched\n'
+    printf 'metadata_policy=stock_module_and_modules.dep_mode_uid_gid_and_security.selinux_preserved; module_names_and_dependencies_are_contract-matched\n'
     printf 'avb=partition-local_footer_regenerated; parent_top_level_vbmeta_not_updated\n'
 } > "$out_dir/manifest.txt"
 
 (
     cd "$out_dir"
-    sha256sum vendor_dlkm.img manifest.txt staging-files.txt staging-SHA256SUMS e2fsck.txt
+    sha256sum vendor_dlkm.img manifest.txt staging-files.txt staging-SHA256SUMS \
+        vendor-system-dependency-reconciliation.tsv e2fsck.txt
 ) > "$out_dir/SHA256SUMS"
 
 printf 'STAGED MATCHED WLAN VENDOR-DLKM CANDIDATE\n'

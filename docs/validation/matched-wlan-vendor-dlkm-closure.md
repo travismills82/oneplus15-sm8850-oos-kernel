@@ -16,7 +16,7 @@ does not change CFG80211, MAC80211, the Peach-v2 source revision, or any
 Oplus/Qualcomm WLAN feature selection. The Canoe DDK configuration keeps
 `CONFIG_CFG80211=m` and `CONFIG_MAC80211=m`; `CONFIG_RFKILL=y` remains enabled.
 
-Status: **METADATA-FIXED ARTIFACT READY FOR RETEST**. The earlier candidate
+Status: **DEPENDENCY-RECONCILIATION ARTIFACT READY FOR RETEST**. The earlier candidate
 was built from the r7 release commit while the phone was running the later
 `gbd70777d3d2c` payload. It booted Android and then shut down, so it was
 restored from verified backups and is rejected.
@@ -37,6 +37,68 @@ SELinux xattr for every replaced module. The rebuilt artifact passes the full
 post-sign closure audit (zero unresolved imports, zero CRC mismatches, and zero
 replacement-contract failures), `e2fsck`, and local AVB hashtree verification.
 It still requires a new physical test.
+
+### Metadata-preserving retest result
+
+The metadata-preserving candidate was physically staged to slot `_b` on
+2026-08-16 with a persistent host-side dmesg/logcat/snapshot capture. It
+booted Android and the project-signed CNSS/IPA prerequisites loaded, proving
+that the restored `vendor_file` label and module signatures were accepted.
+However, `cfg80211`, `mac80211`, and `qca_cld3_peach_v2` were absent from
+`/proc/modules` when Wi-Fi was enabled. The stock Peach retry then reported
+the expected missing cfg80211 exports, including `cfg80211_scan_done`,
+`cfg80211_connect_done`, and `wiphy_register`.
+
+This was a second packaging failure, not a CRC or protected-export failure.
+The candidate retained the stock flattened `modules.dep` row:
+
+```text
+/vendor/lib/modules/cfg80211.ko: /system/lib/modules/rfkill.ko
+```
+
+but the exact matching Image has `CONFIG_RFKILL=y`, and the matching custom
+system-DLKM does not contain `rfkill.ko`. Android's vendor modprobe therefore
+could not satisfy cfg80211's stale file dependency before Peach was inserted.
+The test slot was restored in recovery in dependency-first order, with the
+following full-partition SHA-256 read-back proofs before boot was restored:
+
+```text
+vendor_dlkm_b  40d4bd03e9d315aac562234019f6db192617bb1ab65532157b81022ebc7330e6
+system_dlkm_b  bcd4b14f940574bd2f55c967dfb4cec1e17a008197bb769dc05fd5e13c8670ce
+boot_b         86eba62f4f93f02aaacda89ef903c91a3e531575aba1cf253ce70e0887b38d1f
+```
+
+The restored kernel immediately loaded the stock modular WLAN chain and
+reconnected to the saved 6 GHz WPA3 network. Persistent evidence, including
+the failed candidate's targeted metadata/dmesg capture and the final restored
+snapshot, is stored under:
+
+```text
+/home/travis/Android/oneplus15-matched-wlan-gbd70777-live-captures/
+20260816T174537Z-metadata-fixed/
+```
+
+The next artifact reconciles vendor `modules.dep` against the exact
+`system_dlkm_staging_archive.tar.gz` and the matching `modules.builtin` file.
+It prunes only providers compiled into vmlinux (53 edges, including the
+critical cfg80211-to-rfkill edge), retains 37 real system-DLKM dependencies,
+and rejects any missing provider. The generated `modules.dep` is itself
+replaced with its original mode, uid, gid, and `security.selinux` label and is
+read back from the final image for hash and metadata verification.
+
+The resulting dependency-reconciled artifact is:
+
+```text
+vendor_dlkm.img
+SHA-256: bdfe5ace6796cc2341720d58bdbfde0fb7099201aa469cc6fe016c4519cf04ea
+size:    143,986,688 bytes
+```
+
+Its complete post-sign validator result is PASS with zero unresolved imports,
+zero CRC mismatches, and zero replacement-contract failures. The exact
+`gbd70777d3d2c` build was then rerun through `canoe_perf_dist`,
+`kernel_aarch64_abi`, `kernel_aarch64_abi_kmi_symbol_checks`, and
+`kernel_aarch64_abi_diff`; all passed with the existing empty ABI report.
 
 ## Source-built provider set
 
@@ -79,9 +141,11 @@ contract failures, import CRC mismatches, and unresolved imports.
 
 When that gate passes, the source providers preserve the ABI expected by the
 retained stock modules. Their module names and dependency interfaces remain
-unchanged, so the stock Android flat-layout `modules.load`, `modules.dep`,
-`modules.alias`, and `modules.softdep` metadata are retained rather than
-regenerated from an incompatible `/lib/modules/<release>` layout.
+unchanged, so the stock Android flat-layout `modules.load`, `modules.alias`,
+and `modules.softdep` metadata remain intact. `modules.dep` is not blindly
+copied: it is reconciled against the exact matching system-DLKM module archive
+and vmlinux built-in list. This is a narrow path correction, not a conversion
+to an incompatible `/lib/modules/<release>` layout.
 
 ## Protected-export signing closure
 
@@ -122,12 +186,19 @@ resolution, signing closure, and external-boundary edges.
 2. replaces exactly the 29 closure modules with stripped and signed staged
    copies while preserving and read-back-verifying the stock module mode, uid,
    gid, and `security.selinux` xattr;
-3. regenerates the partition-local unsigned AVB hashtree, FEC, and footer
+3. compares every `/system/lib/modules/*.ko` dependency in the stock flat
+   `modules.dep` against the exact matching system-DLKM staging archive and
+   `modules.builtin`, removing only dependencies supplied by vmlinux,
+   retaining real system-DLKM module paths, and rejecting all unknown paths;
+4. replaces the reconciled `modules.dep` while preserving and read-back-
+   verifying its stock mode, uid, gid, and `security.selinux` xattr;
+5. regenerates the partition-local unsigned AVB hashtree, FEC, and footer
    from the modified ext4 payload while preserving stock geometry, salt,
    properties, rollback fields, and partition size;
-4. verifies the regenerated footer and hashtree with `avbtool`;
-5. runs `e2fsck -fn`; and
-6. reads every replacement back through `debugfs` and compares SHA-256 hashes.
+6. verifies the regenerated footer and hashtree with `avbtool`;
+7. runs `e2fsck -fn`; and
+8. reads every replacement and the reconciled metadata back through `debugfs`
+   for SHA-256 and inode/xattr comparison.
 
 The candidate must retain the stock 143,986,688-byte partition size. Filesystem
 validation must complete cleanly and every changed module must have a matching
