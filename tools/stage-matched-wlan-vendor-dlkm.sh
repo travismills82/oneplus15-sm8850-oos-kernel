@@ -5,6 +5,13 @@
 # replaces only validator-selected modules, strips debug information, then signs
 # the complete protected-export closure with the key embedded in the matching
 # Image. It intentionally retains all other stock modules byte-for-byte.
+#
+# The modified ext4 payload cannot retain the stock AVB hashtree/FEC/footer:
+# doing so leaves an internally inconsistent image that can fail dm-verity at
+# mount time.  This script therefore regenerates the *partition-local*,
+# unsigned vendor_dlkm AVB footer from the stock footer's geometry and metadata.
+# It deliberately does not update any parent/top-level vbmeta descriptor; that
+# remains a separate bootloader/AVB decision for a development device.
 
 set -euo pipefail
 
@@ -15,12 +22,15 @@ Usage:
       --stock-vendor-root <extracted-stock-vendor-dlkm> \
       --stock-vendor-image <raw-stock-vendor_dlkm.img> \
       --kernel-build-dir <matching-kernel_aarch64-output> \
+      --avbtool <path-to-avbtool> \
       --validation-dir <validator-output> \
       --out-dir <new-empty-output-directory> \
       --replacement <source-module.ko> [--replacement <source-module.ko> ...]
 
 The validator output must PASS with the exact source modules supplied here.
-This script does not update AVB metadata and is intentionally not a flasher.
+The script regenerates the partition-local unsigned AVB hashtree/FEC/footer
+using the stock footer's geometry. It does not update parent/top-level vbmeta
+metadata and is intentionally not a flasher.
 USAGE
 }
 
@@ -44,6 +54,7 @@ has_signature() { [[ -n "$(modinfo -F signer "$1")" ]]; }
 stock_root=
 stock_image=
 kernel_build_dir=
+avbtool=
 validation_dir=
 out_dir=
 declare -a replacements=()
@@ -53,6 +64,7 @@ while [[ $# -gt 0 ]]; do
         --stock-vendor-root) stock_root=${2:-}; shift 2 ;;
         --stock-vendor-image) stock_image=${2:-}; shift 2 ;;
         --kernel-build-dir) kernel_build_dir=${2:-}; shift 2 ;;
+        --avbtool) avbtool=${2:-}; shift 2 ;;
         --validation-dir) validation_dir=${2:-}; shift 2 ;;
         --out-dir) out_dir=${2:-}; shift 2 ;;
         --replacement) replacements+=("${2:-}"); shift 2 ;;
@@ -61,7 +73,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ -n "$stock_root" && -n "$stock_image" && -n "$kernel_build_dir" ]] || {
+[[ -n "$stock_root" && -n "$stock_image" && -n "$kernel_build_dir" && -n "$avbtool" ]] || {
     usage >&2
     die "stock root, stock image, and kernel build directory are required"
 }
@@ -82,10 +94,62 @@ require_file "$kernel_build_dir/certs/signing_key.pem"
 require_file "$kernel_build_dir/certs/signing_key.x509"
 require_file "$kernel_build_dir/vmlinux"
 require_file "$kernel_build_dir/include/config/kernel.release"
+require_file "$avbtool"
+avbtool_dir=$(dirname "$avbtool")
+[[ -x "$avbtool_dir/fec" ]] || die "the avbtool companion fec binary is required"
+PATH="$avbtool_dir:$PATH"
+export PATH
 command -v debugfs >/dev/null || die "debugfs is required"
 command -v e2fsck >/dev/null || die "e2fsck is required"
 command -v modinfo >/dev/null || die "modinfo is required"
 [[ ! -e "$out_dir" ]] || die "output path already exists: $out_dir"
+
+read_avb_footer() {
+    local image=$1
+    "$avbtool" info_image --image "$image"
+}
+
+avb_info=$(read_avb_footer "$stock_image")
+mapfile -t avb_fields < <(python3 - "$avb_info" <<'PY'
+import re
+import sys
+
+info = sys.argv[1]
+
+def one(pattern, label):
+    match = re.search(pattern, info, re.M)
+    if not match:
+        raise SystemExit(f"missing {label} in stock AVB footer")
+    return match.group(1)
+
+print(f"partition_size\t{one(r'^Image size:\s+(\d+) bytes$', 'image size')}")
+print(f"original_image_size\t{one(r'^Original image size:\s+(\d+) bytes$', 'original image size')}")
+print(f"partition_name\t{one(r'^      Partition Name:\s+(.+)$', 'partition name')}")
+print(f"hash_algorithm\t{one(r'^      Hash Algorithm:\s+(.+)$', 'hash algorithm')}")
+print(f"salt\t{one(r'^      Salt:\s+([0-9a-fA-F]+)$', 'salt')}")
+print(f"block_size\t{one(r'^      Data Block Size:\s+(\d+)(?: bytes)?$', 'data block size')}")
+print(f"fec_num_roots\t{one(r'^      FEC num roots:\s+(\d+)$', 'FEC roots')}")
+print(f"rollback_index\t{one(r'^Rollback Index:\s+(\d+)$', 'rollback index')}")
+print(f"flags\t{one(r'^Flags:\s+(\d+)$', 'flags')}")
+print(f"rollback_index_location\t{one(r'^Rollback Index Location:\s+(\d+)$', 'rollback index location')}")
+for key, value in re.findall(r"^    Prop: (.+?) -> '([^']*)'$", info, re.M):
+    print(f"prop\t{key}\t{value}")
+PY
+)
+
+declare -A avb_field=()
+declare -a avb_props=()
+for field in "${avb_fields[@]}"; do
+    IFS=$'\t' read -r key value extra <<< "$field"
+    if [[ "$key" == prop ]]; then
+        avb_props+=("$value:$extra")
+    else
+        avb_field[$key]=$value
+    fi
+done
+for key in partition_size original_image_size partition_name hash_algorithm salt block_size fec_num_roots rollback_index flags rollback_index_location; do
+    [[ -n ${avb_field[$key]:-} ]] || die "stock AVB footer did not provide $key"
+done
 
 python3 - "$validation_dir/summary.json" <<'PY'
 import json
@@ -217,6 +281,57 @@ for module in "${closure_modules[@]}"; do
     debugfs -w -R "write $staged $relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
 done
 
+# The copied image still contains the stock hashtree/FEC/footer.  Discard that
+# trailing integrity data before computing a new footer from the modified ext4
+# payload.  The candidate is private output, never the verified stock image.
+truncate -s "${avb_field[original_image_size]}" "$out_dir/vendor_dlkm.img"
+avb_args=(
+    add_hashtree_footer
+    --image "$out_dir/vendor_dlkm.img"
+    --partition_size "${avb_field[partition_size]}"
+    --partition_name "${avb_field[partition_name]}"
+    --hash_algorithm "${avb_field[hash_algorithm]}"
+    --salt "${avb_field[salt]}"
+    --block_size "${avb_field[block_size]}"
+    --fec_num_roots "${avb_field[fec_num_roots]}"
+    --algorithm NONE
+    --rollback_index "${avb_field[rollback_index]}"
+    --rollback_index_location "${avb_field[rollback_index_location]}"
+    --flags "${avb_field[flags]}"
+)
+for prop in "${avb_props[@]}"; do
+    avb_args+=(--prop "$prop")
+done
+"$avbtool" "${avb_args[@]}"
+[[ $(stat -c '%s' "$out_dir/vendor_dlkm.img") == "${avb_field[partition_size]}" ]] || {
+    die "regenerated vendor_dlkm size does not match the stock partition size"
+}
+candidate_avb_info=$(read_avb_footer "$out_dir/vendor_dlkm.img")
+candidate_root_digest=$(python3 - "$candidate_avb_info" <<'PY'
+import re
+import sys
+match = re.search(r'^      Root Digest:\s+([0-9a-fA-F]+)$', sys.argv[1], re.M)
+if not match:
+    raise SystemExit('missing candidate AVB root digest')
+print(match.group(1))
+PY
+)
+stock_root_digest=$(python3 - "$avb_info" <<'PY'
+import re
+import sys
+match = re.search(r'^      Root Digest:\s+([0-9a-fA-F]+)$', sys.argv[1], re.M)
+if not match:
+    raise SystemExit('missing stock AVB root digest')
+print(match.group(1))
+PY
+)
+[[ "$candidate_root_digest" != "$stock_root_digest" ]] || {
+    die "regenerated AVB root digest unexpectedly equals the stock digest"
+}
+"$avbtool" verify_image --image "$out_dir/vendor_dlkm.img" >/dev/null || {
+    die "regenerated AVB footer failed avbtool verification"
+}
+
 e2fsck -fn "$out_dir/vendor_dlkm.img" > "$out_dir/e2fsck.txt" 2>&1 || {
     sed -n '1,240p' "$out_dir/e2fsck.txt" >&2
     die "candidate vendor_dlkm filesystem validation failed"
@@ -240,6 +355,9 @@ done
     printf 'candidate_vendor_image=%s\n' "$out_dir/vendor_dlkm.img"
     printf 'candidate_vendor_image_sha256=%s\n' "$(sha256sum "$out_dir/vendor_dlkm.img" | awk '{print $1}')"
     printf 'candidate_vendor_image_bytes=%s\n' "$(stat -c '%s' "$out_dir/vendor_dlkm.img")"
+    printf 'stock_vendor_avb_root_digest=%s\n' "$stock_root_digest"
+    printf 'candidate_vendor_avb_root_digest=%s\n' "$candidate_root_digest"
+    printf 'vendor_avb_footer=regenerated_hashtree_fec_from_modified_ext4_payload\n'
     printf 'kernel_build_dir=%s\n' "$kernel_build_dir"
     printf 'kernel_release=%s\n' "$kernel_release"
     printf 'kernel_signing_certificate_sha256=%s\n' \
@@ -248,7 +366,7 @@ done
     printf 'source_replacements=%s\n' "${#source_by_name[@]}"
     printf 'signed_closure_modules=%s\n' "${#closure_action[@]}"
     printf 'metadata_policy=retained_stock_metadata; module_names_and_dependencies_are_contract-matched\n'
-    printf 'avb=not_updated; static_candidate_only\n'
+    printf 'avb=partition-local_footer_regenerated; parent_top_level_vbmeta_not_updated\n'
 } > "$out_dir/manifest.txt"
 
 (
@@ -260,4 +378,4 @@ printf 'STAGED MATCHED WLAN VENDOR-DLKM CANDIDATE\n'
 printf 'image=%s\n' "$out_dir/vendor_dlkm.img"
 printf 'manifest=%s\n' "$out_dir/manifest.txt"
 printf 'signed_closure_modules=%s\n' "${#closure_action[@]}"
-printf 'AVB metadata was not changed; this output is not flashable without a separately validated AVB plan.\n'
+printf 'The vendor_dlkm partition-local AVB footer was regenerated; parent/top-level vbmeta was not updated.\n'

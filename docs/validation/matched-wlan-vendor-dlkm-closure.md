@@ -106,13 +106,17 @@ resolution, signing closure, and external-boundary edges.
 1. copies the raw, verified stock `vendor_dlkm` image;
 2. replaces exactly the 29 closure modules with stripped and signed staged
    copies;
-3. preserves the image format, filesystem layout, and partition size;
-4. runs `e2fsck -fn`; and
-5. reads every replacement back through `debugfs` and compares SHA-256 hashes.
+3. regenerates the partition-local unsigned AVB hashtree, FEC, and footer
+   from the modified ext4 payload while preserving stock geometry, salt,
+   properties, rollback fields, and partition size;
+4. verifies the regenerated footer and hashtree with `avbtool`;
+5. runs `e2fsck -fn`; and
+6. reads every replacement back through `debugfs` and compares SHA-256 hashes.
 
 The candidate must retain the stock 143,986,688-byte partition size. Filesystem
 validation must complete cleanly and every changed module must have a matching
-read-back hash before device staging is considered.
+read-back hash before device staging is considered. Retaining the stock AVB
+hashtree after changing modules is invalid and is a hard staging failure.
 
 ## Retained vendor-boot boundary
 
@@ -136,10 +140,12 @@ those exact vendor-boot consumers before any path that loads them is supported.
 ## Acceptance boundary
 
 This closure is suitable only as the next static artifact for a controlled
-vendor-DLKM experiment. AVB metadata and vendor boot remain unchanged. Any
-repeat device staging must start a host-side persistent dmesg/logcat/periodic
-state capture before the reboot, preserve verified known-good backups, and
-record the post-failure recovery evidence before another candidate is tried.
+vendor-DLKM experiment. Its partition-local footer is internally valid, but
+parent/top-level AVB metadata and vendor boot remain unchanged; that is valid
+only under the separately verified unlocked-device development AVB policy.
+Any repeat device staging must start a host-side persistent dmesg/logcat/
+periodic state capture before the reboot, preserve verified known-good backups,
+and record the post-failure recovery evidence before another candidate is tried.
 
 Run `tools/capture-matched-wlan-boot.sh` before any device staging. It writes
 only host-side evidence and deliberately performs no ADB write, property change,
