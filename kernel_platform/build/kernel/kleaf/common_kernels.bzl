@@ -242,13 +242,19 @@ def common_kernel(
         outs = outs,
         arch = arch,
         implicit_outs = [
-            # Kernel build time module signing utility and keys
-            # Only available during GKI builds
+            # Kernel build time module signing utility and public certificate.
+            # Only available during GKI builds.
             # Device fragments need to add: '# CONFIG_MODULE_SIG_ALL is not set'
             "scripts/sign-file",
-            "certs/signing_key.pem",
             "certs/signing_key.x509",
-        ],
+        ] + (
+            # The default Kbuild path generates this private key below certs/.
+            # A declared module_signing_key is instead restored at the output
+            # root under its own basename. Do not declare a nonexistent
+            # certs/signing_key.pem output in that case, and do not export the
+            # externally supplied private key as a Bazel build artifact.
+            ["certs/signing_key.pem"] if module_signing_key == None else []
+        ),
         build_config = Label("//build/kernel/kleaf:gki_build_config_fragment"),
         makefile = makefile,
         check_defconfig = check_defconfig,
