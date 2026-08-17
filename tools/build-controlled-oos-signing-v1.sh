@@ -119,7 +119,11 @@ if ((do_all)); then
 fi
 
 kernel_build_dir="$repo_root/kernel_platform/bazel-bin/common/kernel_aarch64"
-config="$kernel_build_dir/.config"
+# Kleaf keeps the configured Kbuild output directory under the sibling
+# ``kernel_aarch64_config`` target.  ``kernel_aarch64`` exposes the image,
+# vmlinux, Module.symvers, and modules, but deliberately does not expose a
+# duplicate .config file.
+config="${kernel_build_dir}_config/out_dir/.config"
 release_file="$kernel_build_dir/include/config/kernel.release"
 signing_x509="$kernel_build_dir/certs/signing_key.x509"
 vmlinux="$kernel_build_dir/vmlinux"
