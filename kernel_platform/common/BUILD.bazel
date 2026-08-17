@@ -271,10 +271,14 @@ common_kernel(
     makefile = ":Makefile",
     module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
     protected_module_names_list = ":gki_aarch64_protected_module_names",
-    # Trust the public module-signing certificate from stock CPH2747
-    # OxygenOS 16.0.9.400.  This keeps signature and protected-export
-    # enforcement intact when using that stock system_dlkm with this kernel.
-    system_trusted_key = "certs/oos16_0_9_400_stock_gki_module_signing.pem",
+    # The signing key is intentionally supplied only through the declared
+    # local @oneplus15_signing repository. The checked-in placeholder fails
+    # closed, so a developer cannot silently fall back to Kbuild's generated
+    # signing key.
+    module_signing_key = "@oneplus15_signing//:module_key",
+    # Keep the stock OOS module certificate trusted while also trusting the
+    # controlled-v1 certificate used for all rebuilt/re-signed modules.
+    system_trusted_key = "certs/controlled_oos_signing_v1_trusted.pem",
     system_dlkm_extra_archive_files = [":generate_gki_module_info_arm64"],
     trim_nonlisted_kmi = True,
     visibility = ["//visibility:public"],

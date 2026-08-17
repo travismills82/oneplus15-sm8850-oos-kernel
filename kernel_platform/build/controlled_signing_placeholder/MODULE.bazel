@@ -1,0 +1,4 @@
+module(
+    name = "oneplus15_signing",
+    version = "0.0.0-placeholder",
+)

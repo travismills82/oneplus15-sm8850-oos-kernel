@@ -17,6 +17,11 @@
 ### build/kernel/kleaf/bazel.WORKSPACE contents ###
 
 ### Qualcomm customizations ###
+local_repository(
+    name = "oneplus15_signing",
+    path = "build/controlled_signing_placeholder",
+)
+
 new_local_repository(
     name = "dtc",
     path = "external/qcom-dtc",
