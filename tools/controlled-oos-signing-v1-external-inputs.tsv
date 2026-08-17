@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Non-git build inputs for the controlled-v1 Canoe generation. The source-ID
+# guard hashes these exact paths before it writes Kleaf's workspace status.
+#
+# kind	path	sha256
+file	kernel_platform/prebuilts/kernel-build-tools/bazel/linux-x86_64/bazel	18417fdee645a8dc08bc3f27e33f71a5681f9f14661b33ac48536a31dc8d00f1
+file	kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin/clang.real	69e6d00e8596eba85cbcf2cd87639fe3f8dbed397cba6d98a8c2def68a7a4044
+file	kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin/ld.lld	1f31f62de62191dc5d01e7af4cef82a101f8210b7a8a80aa75ec78f92d4edcb2
+file	kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin/llvm-ar	4217d998e5dc2cfaf04c802955cdf3af1aee9b3699a36b9fd9dd18d273b8099f
+file	kernel_platform/oplus/bazel/oplus_modules_variant.bzl	da4f8a89486028731a97fc551bf1d6889f19d2163818f3be35d94ad7c6b82219
+tree	kernel_platform/qcom/opensource/devicetree/oplus	4428c96c4bae504a967e59088e49a9bb2f0e9609038aa31a178d21241b34af92
