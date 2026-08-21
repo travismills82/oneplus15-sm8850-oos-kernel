@@ -6,11 +6,13 @@ This experiment keeps the controlled-v1 Image fixed and restores the complete
 OxygenOS 16.0.9.400(EX01) vendor-side cellular packet-data closure to exact
 stock binaries. It does not change WLAN source versions, `CONFIG_CFG80211`,
 module-signature enforcement, MODVERSIONS, protected exports, `vendor_boot`,
-or VBMeta. No image documented here has been flashed.
+or VBMeta. The ordered physical bisection below changed only the named slot
+`_b` payload at each stage and verified every write by full read-back SHA-256.
 
-Slot `_b` currently runs the restored r7 stock-DLKM baseline. Slot `_a` is
-marked unbootable and is not a fallback. A later physical test requires a
-fresh, readable, SHA-256-verified TWRP backup before any write.
+Slot `_b` now runs the physically validated TEST 3 stack. Slot `_a` remains
+marked unbootable and is not a fallback. Every physical write below was gated
+by a fresh, readable, SHA-256-verified host backup and a second persistent TWRP
+backup of the target partition.
 
 ## Pass/fail evidence
 
@@ -193,31 +195,83 @@ Candidate validation additionally proves:
 The vendor-boot copies of `mac80211` and `wonder` remain dormant and forbidden
 from supported load lists. They are not treated as active providers.
 
-## Required physical bisection
-
-No staged test below has been flashed by this work.
+## Physical bisection
 
 | Test | Image | system_dlkm | vendor_dlkm | Purpose | Current result |
 | --- | --- | --- | --- | --- | --- |
 | TEST 0 | r7 `86eba62f…7b38d1f` | stock `18f530dc…fd6dd7` | stock `40d4bd03…330e6` | Known pass | PASS: LTE home, RMNET IPv4/IPv6/default route, IP and DNS 5/5; Wi-Fi pass. |
-| TEST 1 | controlled-v1 `25efe546…fc313` | exact stock | exact stock | Isolate Image/signing/release identity | STATIC PASS (781 compatible, 237 dormant, 0 blockers); PHYSICAL NOT RUN. |
-| TEST 2 | controlled-v1 | corrected controlled-v1 `edebc948…70f05` | exact stock | Isolate controlled system providers and the restored `wwan` load policy | STATIC PASS (706 compatible, 209 dormant, 0 blockers); PHYSICAL NOT RUN; requires TEST 1 cellular PASS. |
-| TEST 3 | controlled-v1 | corrected controlled-v1 | Candidate A `24e66015…27b80` | Minimum source WLAN plus exact stock cellular vendor closure | STATIC PASS (700 compatible, 209 dormant, 0 blockers); PHYSICAL NOT RUN; requires TEST 2 cellular PASS. |
+| TEST 1 | controlled-v1 `25efe546…fc313` | exact stock | exact stock | Isolate Image/signing/release identity | **PHYSICAL PASS**: controlled release booted; Visible LTE HOME; `rmnet_data2` IPv4+IPv6; cellular default routes; `NONE(0x0)`; IP and DNS 5/5. |
+| TEST 2 | controlled-v1 | corrected controlled-v1 `edebc948…70f05` | exact stock | Isolate controlled system providers and the restored `wwan` load policy | **CELLULAR PHYSICAL PASS**: `wwan` loaded; Visible LTE HOME; `rmnet_data2` IPv4+IPv6; default route; `NONE(0x0)`; IP and DNS 5/5. Stock WLAN did not complete the controlled provider handoff, as expected before Candidate A. |
+| TEST 3 | controlled-v1 | corrected controlled-v1 | Candidate A `24e66015…27b80` | Minimum source WLAN plus exact stock cellular vendor closure | **PHYSICAL PASS**: source Peach/cfg80211/mac80211 loaded; Wi-Fi 5/6 GHz WPA3 and reload passed; Visible LTE HOME and cellular IP/DNS passed; simultaneous Wi-Fi/RMNET state verified. |
 
-The tests must run in this order. If TEST 1 fails, no custom vendor closure is
-implicated. If TEST 1 passes and corrected TEST 2 fails, the controlled
-system-DLKM/WWAN boundary is the first failing layer. Only a passing TEST 2
-permits Candidate A to test whether controlled WLAN and stock cellular work
-simultaneously.
+The tests ran in this order and isolated the original failure. TEST 1 proves
+the controlled-v1 Image/signing/release identity does not break cellular.
+TEST 2 proves the corrected controlled system-DLKM and restored `wwan` load
+policy do not break cellular. TEST 3 proves the minimum controlled WLAN set can
+run against the exact stock IPA/GSI/RMNET/CNSS/QMI provider set while cellular
+packet data remains functional.
+
+### Backup and write verification
+
+- Before TEST 1, `boot_b` was backed up with SHA-256
+  `86eba62f4f93f02aaacda89ef903c91a3e531575aba1cf253ce70e0887b38d1f`.
+  Controlled `boot_b` read back as
+  `25efe5463938757339dcfada56ee47d77d3c0cc42b6707dda7dd1613c20fc313`.
+- Before TEST 2, the full 88,514,560-byte stock `system_dlkm_b` logical
+  partition was backed up as
+  `8d7b2766102fe1f96991f5d00bcf1a9eb47c0c7fc118a25137cf05761f31cbf3`.
+  The candidate image prefix read back as
+  `edebc94818e6fa4e214d58fd82fe46f6c513fc9850b3e7b77caf076a12270f05`.
+- Before TEST 3, the full 143,986,688-byte stock `vendor_dlkm_b` was backed
+  up byte-for-byte as
+  `40d4bd03e9d315aac562234019f6db192617bb1ab65532157b81022ebc7330e6`.
+  The persistent TWRP backup is
+  `/sdcard/TWRP/kernel-flash-backups/controlled-stack-b-20260821-171402/`.
+  Candidate A read back as
+  `24e66015a3e4ea3583f895d529008d8c7c3706d7bc506ef550df936935127b80`.
+- `vendor_boot`, VBMeta, and active-slot metadata were not changed.
+
+The hardened TWRP helper accepted decrypted persistent storage, rejected no
+safety gate, reported no active snapshot state, and verified every backup and
+post-write hash. Slot `_a` was never used or modified and remains unbootable.
+
+### TEST 3 runtime proof
+
+The running release is
+`6.12.23-android16-5-o-g090459863b8c-4k`. Runtime module state contains the
+controlled `qca_cld3_peach_v2`, `cfg80211`, and `mac80211` modules plus the
+re-signed exact-stock `wonder`; the active IPA/GSI/RMNET/CNSS/QMI providers are
+the exact stock binaries retained by Candidate A.
+
+Wi-Fi first associated at 5220 MHz and passed IP and DNS 5/5. An OFF/ON reload
+then associated at 6135 MHz with WPA3-SAE and again passed IP and DNS 5/5.
+With Wi-Fi disabled, Visible registered LTE HOME and `rmnet_data2` received
+IPv4 `100.73.131.228/29` plus a global IPv6 address. Android installed IPv4 and
+IPv6 default routes, the RIL data call returned `NONE(0x0)`, and both
+`1.1.1.1` and `google.com` passed 5/5. After Wi-Fi was re-enabled, the 6135 MHz
+WPA3 connection and the live RMNET addresses/routes coexisted.
+
+The final targeted scan found zero unknown-symbol, MODVERSION/vermagic,
+module-signature, protected-export, or cellular setup-data-call failures. The
+boot log retains pre-existing Oplus driver warnings/call traces also present
+on the stock/TEST 1 path; none identifies the controlled WLAN or stock cellular
+closure as its origin.
 
 ## Current conclusion
 
-The failed full controlled-v1 stack cannot yet be assigned to one IPA or RMNET
-module. It proves a functional difference somewhere in the replaced module
-delivery stack despite clean ABI/CRC/protected-export checks. Candidate A
-removes every vendor-side cellular replacement and is statically ready for the
-ordered, backup-gated physical bisection.
+The original controlled-v1 cellular failure is outside the Image/signing
+boundary. Its first proven delivery defect was the empty system-DLKM
+`modules.load`, which omitted `wwan` at runtime; corrected TEST 2 passed. The
+broader source-built/re-signed vendor cellular replacement set used by the
+failed full image remains unvalidated and suspect, but this bisection does not
+claim one IPA or RMNET module as the root cause because those modules were
+replaced as a group and were not retested independently after the `wwan` fix.
+
+Candidate A is the new controlled-v1 baseline: controlled WLAN, exact stock
+cellular data plane, controlled system-DLKM, stock vendor-boot, and stock
+VBMeta. Per the bisection plan, cellular migration stops here and must resume
+only as a separate provider-batch experiment.
 
 ```text
-STATICALLY READY — PHYSICAL TEST 1 REQUIRED; NO IMAGE FLASHED
+PASS — CONTROLLED WLAN + STOCK CELLULAR BASELINE ESTABLISHED
 ```
