@@ -93,6 +93,17 @@ load_count=$(wc -l < "$out_dir/modules.load")
     die "stock policy covers $load_count of $module_count controlled modules"
 cp -- "$out_dir/modules.load" "$modules_root/modules.load"
 
+release_modules_dir=$(find "$out_dir/staging/lib/modules" -mindepth 1 -maxdepth 1 \
+    -type d -print -quit)
+[[ -n "$release_modules_dir" ]] || die "staging archive has no release module directory"
+validator="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-system-dlkm-load-contract.py"
+[[ -x "$validator" ]] || die "load-contract validator is unavailable: $validator"
+python3 "$validator" \
+    --system-root "$modules_root" \
+    --modules-builtin "$release_modules_dir/modules.builtin" \
+    --required wwan.ko \
+    --out "$out_dir/system-dlkm-load-contract.tsv"
+
 avb_info=$($avbtool info_image --image "$base_image") ||
     die "unable to read base system_dlkm AVB footer"
 field() {
@@ -178,9 +189,16 @@ done < <(find "$modules_root" -maxdepth 1 -type f -name '*.ko' | sort)
     printf 'avb=partition_local_hashtree_fec_regenerated_parent_vbmeta_unchanged\n'
 } > "$out_dir/manifest.txt"
 
+python3 "$validator" \
+    --system-root "$out_dir/readback/lib/modules" \
+    --modules-builtin "$release_modules_dir/modules.builtin" \
+    --required wwan.ko \
+    --out "$out_dir/system-dlkm-load-contract.tsv"
+
 (
     cd "$out_dir"
-    sha256sum system_dlkm.img modules.load manifest.txt fsck.erofs.txt > SHA256SUMS
+    sha256sum system_dlkm.img modules.load system-dlkm-load-contract.tsv \
+        manifest.txt fsck.erofs.txt > SHA256SUMS
 )
 
 printf 'CONTROLLED SYSTEM_DLKM LOAD POLICY STAGED\n'

@@ -8,9 +8,30 @@
 
 set -euo pipefail
 
+# The frozen TEST3 release has a stricter profile than the earlier generic
+# controlled-v1 packager: its three payload hashes and 27-module stock
+# cellular boundary are immutable.  Keep the historical interface below for
+# auditability, while routing this explicit profile through its fail-closed
+# packager.
+if [[ ${1:-} == --profile && ${2:-} == controlled-v1-test3 ]]; then
+    shift 2
+    exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-controlled-v1-test3.py" "$@"
+fi
+
 usage() {
     cat <<'EOF'
 Usage:
+  tools/package-controlled-oos-stack.sh --profile controlled-v1-test3 \
+      --boot <physically-validated-boot.img> \
+      --system-dlkm <corrected-system_dlkm.img> \
+      --vendor-dlkm <candidate-a-vendor_dlkm.img> \
+      --kernel-build-dir <kernel_aarch64-output> \
+      --system-stage-dir <corrected-system-stage-dir> \
+      --vendor-stage-dir <candidate-a-vendor-stage-dir> \
+      --out-dir out/controlled-v1-test3
+
+or the historical generic controlled-v1 interface:
+
   tools/package-controlled-oos-stack.sh \
       --boot <boot.img> \
       --vendor-boot <lossless-vendor_boot.img> \
