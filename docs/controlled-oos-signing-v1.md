@@ -64,3 +64,70 @@ does.
 The resulting machine-readable release contract records the full source ID,
 certificate hash, trusted-bundle hash, configuration, Module.symvers, and
 artifact hashes. It is the compatibility identity for controlled-v1.
+
+## First controlled-v1 static release contract
+
+The first clean controlled-v1 generation uses:
+
+```text
+kernel_source_id=090459863b8ccf45599c6506461d144ab736d9a5
+kernel_release=6.12.23-android16-5-o-g090459863b8c-4k
+config_sha256=b53d48b303059adb49a8dbe457145a4b7523a77fae621ea8d9e7b0b727e1615b
+module_symvers_sha256=de57709f3de38afb3e266481da09433687979ffb88ee607bda93ac4732dd7e0b
+system_map_sha256=e2dfd062ea06fbbde98cc863e1fce7451df65315a0f56a9b913c3e7c9f281ed5
+vmlinux_sha256=6524d28cd3016de2a99ecfe74feaf613ebe9211f61aa01489c4729cdcb5e5a2e
+Image_sha256=632f24d2f8834beb6071b3541fb85f32f03f5faabffeb633dfae892c66b662b1
+```
+
+The clean Canoe distribution, ABI, KMI symbol check, and ABI diff targets all
+pass. Both the stock OxygenOS certificate and controlled-v1 certificate are
+present in `vmlinux`; the strict ABI report is empty.
+
+The exact OxygenOS 16.0.9.400(EX01) full OTA used to recover the stock
+partition boundary has MD5 `ff32749b3f7c7ce37e277ea881d6ba2e`. Its extracted
+stock images reproduce the previously recorded physical hashes:
+
+```text
+system_dlkm_sha256=18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7
+vendor_boot_sha256=5fe60f58ebe3f935acb3ec41585fa16977804cc0c2efd4e84c44a645a1eb7162
+vendor_dlkm_sha256=40d4bd03e9d315aac562234019f6db192617bb1ab65532157b81022ebc7330e6
+```
+
+The controlled hybrid validation found 14 source replacements and 15 exact
+stock consumers requiring re-signing, for a 29-module protected-export
+closure. The candidate retains all 436 vendor-DLKM modules. Replacement
+contract failures, unresolved imports, CRC mismatches, and active
+protected-export failures are all zero. The retained-stock boundary contains
+678 compatible modules and 208 dormant modules with zero blockers.
+
+The lossless stock vendor-boot contains 479 modules. Its normal boot list has
+138 entries (137 distinct modules) and 6,351 imports; all resolve with matching
+CRCs against controlled-v1. The vendor-boot copies of `mac80211` and `wonder`
+remain absent from both normal and recovery load lists and must remain dormant.
+
+The non-flashing package is generated under:
+
+```text
+out/controlled-oos-signing-v1/
+```
+
+Its current payload hashes are:
+
+```text
+boot_sha256=25efe5463938757339dcfada56ee47d77d3c0cc42b6707dda7dd1613c20fc313
+vendor_boot_sha256=5fe60f58ebe3f935acb3ec41585fa16977804cc0c2efd4e84c44a645a1eb7162
+system_dlkm_sha256=56bc9699222b3708c2e08a7d246f105fba300d548a2729bb19aafad61b5fcb4b
+vendor_dlkm_sha256=f90d73b8e13629ba101826cdd3406573f07edb63f35c217b0f56357453ab6dd1
+```
+
+`SHA256SUMS`, local AVB verification, EROFS verification, ext4 `e2fsck`, module
+signer checks, and the retained-stock contract pass. The package contains no
+private signing material and no VBMeta payload.
+
+TWRP `feature/controlled-kernel-installer` commit
+`571e322c7494d68f7b9fe959659a676d155cd3ad` accepts all four payloads and
+enforces dependency-first ordering: vendor-DLKM, system-DLKM, vendor-boot, and
+boot last. Its helper validation passes. A recovery/device dry run, verified
+partition backups, read-back verification, two Android boots, and the complete
+functional regression matrix are still required before this generation is
+physically accepted.
