@@ -183,6 +183,13 @@ def parse_args() -> argparse.Namespace:
         help="signed source/re-sign closure; these modules are not retained stock",
     )
     parser.add_argument(
+        "--fully-controlled-partition",
+        action="append",
+        default=[],
+        metavar="PARTITION",
+        help="partition whose candidate contains no retained stock binaries; may be repeated",
+    )
+    parser.add_argument(
         "--forbidden-load",
         action="append",
         default=[],
@@ -218,6 +225,11 @@ def main() -> int:
     for value in args.controlled_module_list:
         for partition, names in read_controlled_modules(value).items():
             controlled[partition].update(names)
+    for partition in args.fully_controlled_partition:
+        if partition not in stock_roots:
+            die(f"fully controlled partition has no stock root: {partition}")
+        records = ELF.scan_root(stock_roots[partition], partition, "STOCK_INVENTORY")
+        controlled[partition].update(records)
 
     load_modes: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
     for value in args.load_list:
@@ -290,7 +302,16 @@ def main() -> int:
                 else:
                     result = "UNRESOLVED"
                     unresolved += 1
-                controlled_provider = any(entry[3] for entry in matching)
+                # A symbol is a protected-provider edge only when every
+                # matching runtime provider is in the controlled signing
+                # closure.  Hybrid vendor_dlkm deliberately retains exact
+                # stock providers for some duplicate GKI module names (for
+                # example zsmalloc); a parallel controlled system_dlkm copy
+                # must not turn that valid stock-to-stock dependency into a
+                # false protected-export failure.
+                controlled_provider = bool(matching) and all(
+                    entry[3] for entry in matching
+                )
                 if controlled_provider:
                     protected_failures += 1
                 dependency_rows.append(

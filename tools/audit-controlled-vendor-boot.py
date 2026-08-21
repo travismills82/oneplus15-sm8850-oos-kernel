@@ -387,7 +387,7 @@ def main() -> int:
         "normal_closure_result="
         + ("PASS" if not normal_unresolved and not normal_crc_mismatches else "FAIL"),
         "note=charger mode has no distinct modules.load file in the stock vendor ramdisk; its module policy is not inferred.",
-        "note=source availability means an exact gbd70777 source-build output is present; absence means not proven, not necessarily source absent.",
+        f"note=source availability means an exact {ARGS.source_lineage} source-build output is present; absence means not proven, not necessarily source absent.",
     ]
     (ARGS.out_dir / "validation-report.txt").write_text("\n".join(report) + "\n", encoding="utf-8")
     print("\n".join(report))
