@@ -321,6 +321,13 @@ retained_stock_module_count=$(awk -F '\t' 'NR > 1 { count++ } END { print count 
 
 custom_module_contract="$out_dir/custom-module-contract.tsv"
 printf 'module\taction\tsha256\tvermagic\tsigner\tsignature_id\n' > "$custom_module_contract"
+source_example=$(awk -F '\t' 'NR > 1 && $2 == "SOURCE_REPLACEMENT" { print $1; exit }' \
+    "$vendor_validation_dir/protected-export-signing-closure.tsv")
+[[ -n "$source_example" ]] || die "controlled closure has no source replacement"
+source_example_vermagic=$(modinfo -F vermagic "$vendor_stage_dir/readback/$source_example.ko")
+[[ "$source_example_vermagic" == "$kernel_release "* ]] ||
+    die "source replacement example does not match $kernel_release"
+expected_vermagic_tail=${source_example_vermagic#* }
 while IFS=$'\t' read -r module action _first_import _signed_provider; do
     [[ "$module" == module ]] && continue
     [[ -n "$module" && -n "$action" ]] || die "malformed controlled module closure row"
@@ -329,8 +336,17 @@ while IFS=$'\t' read -r module action _first_import _signed_provider; do
     staged_vermagic=$(modinfo -F vermagic "$staged_module")
     staged_signer=$(modinfo -F signer "$staged_module")
     staged_sig_id=$(modinfo -F sig_id "$staged_module")
-    [[ "$staged_vermagic" == "$kernel_release "* ]] ||
-        die "controlled module $module does not match $kernel_release"
+    case "$action" in
+        SOURCE_REPLACEMENT)
+            [[ "$staged_vermagic" == "$kernel_release $expected_vermagic_tail" ]] ||
+                die "source replacement $module does not match $kernel_release"
+            ;;
+        RE_SIGN_STOCK)
+            [[ "$staged_vermagic" == *" $expected_vermagic_tail" ]] ||
+                die "re-signed stock module $module has an incompatible vermagic contract"
+            ;;
+        *) die "unknown controlled module action for $module: $action" ;;
+    esac
     [[ "$staged_signer" == "$project_signer" ]] ||
         die "controlled module $module has unexpected signer: ${staged_signer:-<none>}"
     [[ "$staged_sig_id" == PKCS#7 ]] ||
