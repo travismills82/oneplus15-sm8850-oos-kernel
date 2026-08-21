@@ -1,0 +1,11 @@
+module	parameter	description
+cfg80211	cfg80211_disable_40mhz_24ghz	Disable 40MHz support in the 2.4GHz band
+cfg80211	ieee80211_regdom	IEEE 802.11 regulatory domain code
+cfg80211	bss_entries_limit	limit to number of scan BSS entries (per wiphy, default 1000)
+mac80211	max_nullfunc_tries	Maximum nullfunc tx tries before disconnecting (reason 4).
+mac80211	max_probe_tries	Maximum probe tries before disconnecting (reason 4).
+mac80211	beacon_loss_count	Number of beacon intervals before we decide beacon was lost.
+mac80211	probe_wait_ms	Maximum time(ms) to wait for probe response before disconnecting (reason 4).
+mac80211	ieee80211_default_rc_algo	Default rate control algorithm for mac80211 to use
+mac80211	minstrel_vht_only	Use only VHT rates when VHT is supported by sta.
+wonder	physical_name	Interface name to use (e.g., wlan0, radiotap0, ...)
