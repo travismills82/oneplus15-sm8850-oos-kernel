@@ -131,3 +131,14 @@ boot last. Its helper validation passes. A recovery/device dry run, verified
 partition backups, read-back verification, two Android boots, and the complete
 functional regression matrix are still required before this generation is
 physically accepted.
+
+## Physical result
+
+The 2026-08-21 slot `_b` test booted controlled-v1 and validated its module
+contract and 6 GHz WPA3 Wi-Fi path, but cellular data failed. A controlled A/B
+rollback to r7 with the exact stock DLKM images restored LTE data immediately:
+`rmnet_data3` acquired IPv4/IPv6 plus a default route, and both IP and DNS
+reachability passed with zero packet loss. Controlled-v1 is therefore rejected
+pending correction of its IPA/RMNET closure and must not be released or
+reflashed unchanged. See
+`docs/validation/controlled-oos-signing-v1-physical-2026-08-21.md`.
