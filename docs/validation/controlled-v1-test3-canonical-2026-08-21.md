@@ -112,12 +112,18 @@ separate device-side gate and performs no writes.
 
 ## A/B safety status
 
-At TEST3 validation time slot `_b` was the controlled baseline and slot `_a`
-was marked unbootable. Slot A must not be described as a fallback until its
-contents have been inventoried, restored from verified production payloads if
-needed, and physically boot-tested. TWRP and verified backups remain the
-recovery path until that audit is complete.
+Slot `_b` remains the controlled baseline. The completed read-only slot-A
+audit found older boot-chain payloads and no `_a` system/vendor-DLKM logical
+partitions in either readable super metadata copy. Repair would therefore
+require a separately reviewed dynamic-partition metadata change. No repair
+write or slot activation was attempted, and slot A remains unbootable.
+
+The hardened TWRP helper passed a live dry run against the exact TEST3
+package, with `vendor_boot` omitted and no partitions modified. Full evidence
+and the repair stop condition are documented in
+`docs/validation/controlled-v1-slot-a-safety-2026-08-21.md`. TWRP and the
+verified backups remain the recovery path.
 
 ```text
-PASS — CONTROLLED WLAN + STOCK CELLULAR BASELINE ESTABLISHED
+PASS — BASELINE FROZEN, SLOT A REPAIR DEFERRED
 ```
