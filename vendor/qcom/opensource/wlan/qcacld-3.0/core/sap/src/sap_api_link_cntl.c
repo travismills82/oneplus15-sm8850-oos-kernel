@@ -314,9 +314,8 @@ wlansap_filter_unsafe_ch(struct wlan_objmgr_psoc *psoc,
 	 */
 	for (i = 0; i < sap_ctx->acs_cfg->ch_list_count; i++) {
 		freq = sap_ctx->acs_cfg->freq_list[i];
-		if (!policy_mgr_is_sap_freq_allowed(psoc,
-				wlan_vdev_mlme_get_opmode(sap_ctx->vdev),
-				freq)) {
+		if (!policy_mgr_is_unsafe_freq_allowed(psoc, sap_ctx->vdev_id,
+						       freq)) {
 			if (info) {
 				len += qdf_scnprintf(info + len,
 						SAP_MAX_CHANNEL_INFO_LOG - len,
@@ -1145,6 +1144,7 @@ QDF_STATUS wlansap_roam_callback(void *ctx,
 	bool is_csa_needed;
 	qdf_freq_t chan_freq = 0;
 	struct sap_ch_switch_info *ch_switch_info;
+	struct if_mgr_event_data csa_complete_ev_data;
 
 	if (QDF_IS_STATUS_ERROR(wlansap_context_get(sap_ctx)))
 		return QDF_STATUS_E_FAILURE;
@@ -1239,10 +1239,6 @@ QDF_STATUS wlansap_roam_callback(void *ctx,
 			break;
 		}
 
-		sap_debug("sapdfs: Indicate eSAP_DFS_RADAR_DETECT to HDD");
-		sap_signal_hdd_event(sap_ctx, NULL, eSAP_DFS_RADAR_DETECT,
-				     (void *) eSAP_STATUS_SUCCESS);
-
 		is_csa_needed =
 			sap_is_chan_change_needed_for_radar(sap_ctx,
 							    &chan_freq);
@@ -1264,6 +1260,10 @@ QDF_STATUS wlansap_roam_callback(void *ctx,
 			ch_switch_info->target_chan_freq =
 				sap_indicate_radar(sap_ctx);
 		}
+
+		sap_debug("sapdfs: Indicate eSAP_DFS_RADAR_DETECT to HDD");
+		sap_signal_hdd_event(sap_ctx, NULL, eSAP_DFS_RADAR_DETECT,
+				     (void *) eSAP_STATUS_SUCCESS);
 
 		/* if there is an assigned next channel hopping */
 		if (0 < ch_switch_info->user_provided_target_chan_freq) {
@@ -1311,9 +1311,10 @@ QDF_STATUS wlansap_roam_callback(void *ctx,
 	case eCSR_ROAM_DFS_CHAN_SW_NOTIFY:
 		break;
 	case eCSR_ROAM_SET_CHANNEL_RSP:
+		csa_complete_ev_data.data = &sap_ctx->csa_reason;
 		ucfg_if_mgr_deliver_event(sap_ctx->vdev,
 					  WLAN_IF_MGR_EV_AP_CSA_COMPLETE,
-					  NULL);
+					  &csa_complete_ev_data);
 		break;
 	case eCSR_ROAM_CAC_COMPLETE_IND:
 		break;
@@ -1827,9 +1828,8 @@ void wlansap_process_chan_info_event(struct sap_context *sap_ctx,
 	if (qdf_list_size(list))
 		goto exit;
 
-	if (!policy_mgr_is_sap_freq_allowed(mac->psoc,
-				wlan_vdev_mlme_get_opmode(sap_ctx->vdev),
-				roam_info->chan_info_freq) ||
+	if (!policy_mgr_is_unsafe_freq_allowed(mac->psoc, sap_ctx->vdev_id,
+					       roam_info->chan_info_freq) ||
 	    wlan_reg_is_vlp_depriority_freq(mac->pdev,
 					    roam_info->chan_info_freq))
 		goto exit;

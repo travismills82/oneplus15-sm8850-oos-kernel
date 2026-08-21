@@ -671,11 +671,12 @@ QDF_STATUS lim_send_mlm_assoc_ind(struct mac_context *mac,
  * pe_roam_synch_callback() upon Re/Association Response frame reception or
  * roam synch indication with reassociation response frame is received.
  *
- * Return: None
+ * Return: QDF_STATUS
  */
-void lim_process_assoc_rsp_frame(struct mac_context *mac, uint8_t *rx_pkt_info,
-				 uint32_t reassoc_frame_len, uint8_t subtype,
-				 struct pe_session *pe_session);
+QDF_STATUS
+lim_process_assoc_rsp_frame(struct mac_context *mac, uint8_t *rx_pkt_info,
+			    uint32_t reassoc_frame_len, uint8_t subtype,
+			    struct pe_session *pe_session);
 
 void lim_process_disassoc_frame(struct mac_context *, uint8_t *, struct pe_session *);
 
@@ -1154,6 +1155,23 @@ static inline void lim_update_tdls_set_state_for_fw(struct pe_session
 
 static inline void lim_update_tdls_2g_bw(struct pe_session *session)
 {
+}
+
+static inline QDF_STATUS lim_process_tdls_add_sta_rsp(struct mac_context *mac,
+						      void *msg,
+						      struct pe_session *pe_session)
+{
+	return QDF_STATUS_SUCCESS;
+}
+
+static inline QDF_STATUS lim_send_sme_tdls_add_sta_rsp(struct mac_context *mac,
+						       uint8_t vdev_id,
+						       tSirMacAddr peer_mac,
+						       uint8_t update,
+						       tDphHashNode *sta,
+						       uint8_t status)
+{
+	return QDF_STATUS_SUCCESS;
 }
 #endif
 

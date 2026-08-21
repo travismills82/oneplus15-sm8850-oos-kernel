@@ -63,6 +63,19 @@
 #define ACTION_OUI_MAX_OUI_LENGTH 5
 #define ACTION_OUI_MAX_DATA_LENGTH 20
 #define ACTION_OUI_MAX_DATA_MASK_LENGTH 3
+
+/*
+ * Maximum data length for host-only OUI extensions.
+ * This is larger than ACTION_OUI_MAX_DATA_LENGTH which is limited by firmware.
+ */
+#define ACTION_OUI_MAX_DATA_LENGTH_HOST_ONLY 64
+
+/*
+ * Maximum data mask length for host-only OUI extensions.
+ * This is larger than ACTION_OUI_MAX_DATA_MASK_LENGTH which is limited by
+ * firmware.
+ */
+#define ACTION_OUI_MAX_DATA_MASK_LENGTH_HOST_ONLY 8
 #define ACTION_OUI_MAC_MASK_LENGTH 1
 #define ACTION_OUI_MAX_CAPABILITY_LENGTH 1
 
@@ -124,10 +137,12 @@
  * frame for specified IoT APs.
  * @ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN: Send SMPS frame along with OMN
  * frame for specified IoT APs.
+ * @ACTION_OUI_RESTRICT_SLO: Downgrade to SLO if particular AP build present.
  * @ACTION_OUI_DISABLE_AUX_LISTEN: disable Aux Listen for specified IoT APs
  * @ACTION_OUI_RESTRICT_MAX_MLO_LINKS: Downgrade MLO if particular AP
  *                                     build present.
  * @ACTION_OUI_DISABLE_DYNAMIC_SMPS: Disable Dynamic SMPS for specified AP
+ * @ACTION_OUI_FORCE_TX_NULL_FRAME_ON_P2P: Force tx null frame on p2p Go
  * @ACTION_OUI_HOST_ONLY: host only action id start - placeholder.
  * New Firmware related "ACTION" needs to be added before this placeholder.
  * @ACTION_OUI_HOST_RECONN: reconnect to the same BSSID when wait for
@@ -144,6 +159,7 @@
  * check for specified AP.
  * @ACTION_OUI_ENABLE_DYNAMIC_SMPS: Enable Dynamic SMPS for specified AP,
  * priority higher than ACTION_OUI_DISABLE_DYNAMIC_SMPS
+ * @ACTION_OUI_ENABLE_DSMPS_BY_RSSI: Enable DSMPS based on AP RSSI
  * @ACTION_OUI_ENABLE_AMSDU_2G: Enable AMSDU for 2.4 GHz STA connections with specified APs
  * @ACTION_OUI_MAXIMUM_ID: maximum number of action oui types
  */
@@ -161,10 +177,12 @@ enum action_oui_id {
 	ACTION_OUI_DISABLE_DYNAMIC_QOS_NULL_TX_RATE = 10,
 	ACTION_OUI_ENABLE_CTS2SELF_WITH_QOS_NULL = 11,
 	ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN = 12,
-	ACTION_OUI_DISABLE_AUX_LISTEN = 13,
+	ACTION_OUI_RESTRICT_SLO = 13,
+	ACTION_OUI_DISABLE_AUX_LISTEN = 15,
 	ACTION_OUI_RESTRICT_MAX_MLO_LINKS = 16,
 	ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ = 17,
 	ACTION_OUI_DISABLE_DYNAMIC_SMPS = 18,
+	ACTION_OUI_FORCE_TX_NULL_FRAME_ON_P2P = 19,
 
 	/* host&fw interface add above here */
 	ACTION_OUI_HOST_ONLY,
@@ -177,6 +195,7 @@ enum action_oui_id {
 	ACTION_OUI_EXT_MLD_CAP_OP,
 	ACTION_OUI_SKIP_BCN_CH_MISMATCH_CHK,
 	ACTION_OUI_ENABLE_DYNAMIC_SMPS,
+	ACTION_OUI_ENABLE_DSMPS_BY_RSSI,
 	ACTION_OUI_ENABLE_AMSDU_2G,
 	ACTION_OUI_MAXIMUM_ID
 };
@@ -235,8 +254,8 @@ struct action_oui_extension {
 	uint32_t mac_mask_length;
 	uint32_t capability_length;
 	uint8_t oui[ACTION_OUI_MAX_OUI_LENGTH];
-	uint8_t data[ACTION_OUI_MAX_DATA_LENGTH];
-	uint8_t data_mask[ACTION_OUI_MAX_DATA_MASK_LENGTH];
+	uint8_t data[ACTION_OUI_MAX_DATA_LENGTH_HOST_ONLY];
+	uint8_t data_mask[ACTION_OUI_MAX_DATA_MASK_LENGTH_HOST_ONLY];
 	uint8_t mac_addr[QDF_MAC_ADDR_SIZE];
 	uint8_t mac_mask[ACTION_OUI_MAC_MASK_LENGTH];
 	uint8_t capability[ACTION_OUI_MAX_CAPABILITY_LENGTH];

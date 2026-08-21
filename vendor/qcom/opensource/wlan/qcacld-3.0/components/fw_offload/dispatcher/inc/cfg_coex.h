@@ -73,7 +73,7 @@
  * byte1 - BT Max Tx power.
  * It is 0.5dbm every unit. E.g. 0x64, it means 50dbm.
  * @Min: 0
- * @Max: 0xffffffff
+ * @Max: 0xffff
  * @Default: 0x0a0a
  *
  * Usage: External
@@ -83,7 +83,7 @@
 #define CFG_MAX_TX_POWER_FOR_BTC CFG_INI_UINT( \
 			"gSetMaxTxPowerForBTC", \
 			0, \
-			0xffffffff, \
+			0xffff, \
 			0x0a0a, \
 			CFG_VALUE_OR_DEFAULT, \
 			"Max Tx Power for BTC")

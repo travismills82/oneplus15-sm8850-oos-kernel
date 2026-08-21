@@ -8545,6 +8545,21 @@ void dp_update_pdev_ingress_stats_ext_drop(struct dp_pdev *tgtobj,
 }
 #endif
 
+#ifdef IPA_OPT_WIFI_DP
+static inline void dp_print_opt_dp_stats(struct dp_soc *soc)
+{
+	int i;
+
+	for (i = 0; i < DP_RX_PATH_MAX; i++)
+		DP_PRINT_STATS("opt_dp_pkts[%d]: %llu", i,
+			       soc->stats.rx.opt_dp_pkts[i]);
+}
+#else
+static inline void dp_print_opt_dp_stats(struct dp_soc *soc)
+{
+}
+#endif
+
 void dp_txrx_path_stats(struct dp_soc *soc)
 {
 	uint8_t error_code;
@@ -8622,6 +8637,12 @@ void dp_txrx_path_stats(struct dp_soc *soc)
 			       pdev->soc->stats.tx.tx_invalid_peer.num);
 		DP_PRINT_STATS("Tx desc freed in non-completion path: %u",
 			       pdev->soc->stats.tx.tx_comp_exception);
+		DP_PRINT_STATS("Tx desc duplicate: %u",
+			       pdev->soc->stats.tx.tx_desc_duplicate);
+		DP_PRINT_STATS("Tx desc unused: %u",
+			       pdev->soc->stats.tx.tx_desc_unused);
+		DP_PRINT_STATS("Tx desc when pdev is down: %u",
+			       pdev->soc->stats.tx.tx_desc_pdev_down);
 		DP_PRINT_STATS("Tx desc force freed: %u",
 			       pdev->soc->stats.tx.tx_comp_force_freed);
 		DP_PRINT_STATS("SW tso pkt cnt: %u",
@@ -8692,6 +8713,8 @@ void dp_txrx_path_stats(struct dp_soc *soc)
 				       pdev->soc->stats.rx.err
 				       .rxdma_error[error_code]);
 		}
+
+		dp_print_opt_dp_stats(soc);
 
 		pos = 0;
 		pos += qdf_scnprintf(buf + pos, buf_len - pos, "%s", "Rx/IRQ [Range:Pkts] [");
@@ -8767,6 +8790,12 @@ void dp_print_txrx_soc_stats(struct dp_soc *soc)
 			       pdev->soc->stats.tx.tx_invalid_peer.num);
 		DP_PRINT_STATS("Tx desc freed in non-completion path: %u",
 			       pdev->soc->stats.tx.tx_comp_exception);
+		DP_PRINT_STATS("Tx desc duplicate: %u",
+			       pdev->soc->stats.tx.tx_desc_duplicate);
+		DP_PRINT_STATS("Tx desc unused: %u",
+			       pdev->soc->stats.tx.tx_desc_unused);
+		DP_PRINT_STATS("Tx desc when pdev is down: %u",
+			       pdev->soc->stats.tx.tx_desc_pdev_down);
 		DP_PRINT_STATS("Tx desc force freed: %u",
 			       pdev->soc->stats.tx.tx_comp_force_freed);
 		DP_PRINT_STATS("Rx path statistics:");

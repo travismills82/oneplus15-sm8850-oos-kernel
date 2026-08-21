@@ -56,6 +56,19 @@
 #define BAND_MASK_FIRST_FREQ  0x3000000
 #define BAND_MASK_SECOND_FREQ 0xC000000
 
+#define NUM_CCK_BITS 2
+#define CCK_RX_BIT 0
+#define CCK_TX_BIT 1
+
+enum cck_mode_index {
+	STA_CCK_IDX = 0,
+	SAP_CCK_IDX = 1,
+	XPAN_CCK_IDX = 2,
+	P2P_GO_CCK_IDX = 3,
+	P2P_CLI_CCK_IDX = 4,
+	MAX_CCK_IDX,
+};
+
 #ifdef FEATURE_SET
 /**
  * wlan_mlme_get_feature_info() - Get mlme features
@@ -844,6 +857,28 @@ QDF_STATUS wlan_mlme_configure_chain_mask(struct wlan_objmgr_psoc *psoc,
  * Return: true if supported else false
  */
 bool wlan_mlme_is_chain_mask_supported(struct wlan_objmgr_psoc *psoc);
+
+/**
+ * wlan_mlme_set_chain_mask() - configure chainmask
+ * @psoc: pointer to psoc object
+ * @tx_mask: tx chain mask
+ * @rx_mask: tx chain mask
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS wlan_mlme_set_chain_mask(struct wlan_objmgr_psoc *psoc,
+				    uint8_t tx_mask, uint8_t rx_mask);
+
+/**
+ * wlan_mlme_get_chain_mask() - get configured chainmask
+ * @psoc: pointer to psoc object
+ * @tx_mask: tx chain mask
+ * @rx_mask: tx chain mask
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS wlan_mlme_get_chain_mask(struct wlan_objmgr_psoc *psoc,
+				    uint8_t *tx_mask, uint8_t *rx_mask);
 
 /**
  * wlan_mlme_get_listen_interval() - Get listen interval
@@ -2122,6 +2157,14 @@ wlan_mlme_get_wmm_sba_ac_vo(struct wlan_objmgr_psoc *psoc, uint16_t *value);
  */
 QDF_STATUS wlan_mlme_set_enable_bcast_probe_rsp(struct wlan_objmgr_psoc *psoc,
 						bool value);
+
+/*
+ * wlan_mlme_get_enable_bcast_probe_rsp() - Get enable bcast probe resp info
+ * @psoc: pointer to psoc object
+ *
+ * Return: Bcast probe response info
+ */
+bool wlan_mlme_get_enable_bcast_probe_rsp(struct wlan_objmgr_psoc *psoc);
 
 /**
  * wlan_mlme_get_wmm_uapsd_vo_srv_intv() - Get Uapsd service
@@ -4770,12 +4813,32 @@ QDF_STATUS wlan_mlme_set_ext_mld_cap_supp(struct wlan_objmgr_psoc *psoc,
 					  bool value);
 
 /**
+ * wlan_mlme_set_exclude_ext_mld_cap() - Exclude the Extended MLD capability in
+ * association request frame.
+ * @psoc: pointer to psoc object
+ * @value: value to exclude Extended MLD capability
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS wlan_mlme_set_exclude_ext_mld_cap(struct wlan_objmgr_psoc *psoc,
+					     bool value);
+
+/**
  * wlan_mlme_get_ext_mld_cap_supp() - Check if Extended MLD capability supported
  * @psoc: pointer to psoc object
  *
  * Return: bool to check if Extended MLD capability is supported
  */
 bool wlan_mlme_get_ext_mld_cap_supp(struct wlan_objmgr_psoc *psoc);
+
+/**
+ * wlan_mlme_get_exclude_ext_mld_cap() - Check if Extended MLD capability
+ * needs to be excluded in association request frame.
+ * @psoc: pointer to psoc object
+ *
+ * Return: bool to check if Extended MLD capability is excluded
+ */
+bool wlan_mlme_get_exclude_ext_mld_cap(struct wlan_objmgr_psoc *psoc);
 #else
 static inline
 void wlan_mlme_set_ml_link_control_mode(struct wlan_objmgr_psoc *psoc,
@@ -4853,8 +4916,21 @@ wlan_mlme_set_ext_mld_cap_supp(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_E_NOSUPPORT;
 }
 
+static inline QDF_STATUS
+wlan_mlme_set_exclude_ext_mld_cap(struct wlan_objmgr_psoc *psoc,
+				  bool value)
+{
+	return QDF_STATUS_E_NOSUPPORT;
+}
+
 static inline bool
 wlan_mlme_get_ext_mld_cap_supp(struct wlan_objmgr_psoc *psoc)
+{
+	return false;
+}
+
+static inline bool
+wlan_mlme_get_exclude_ext_mld_cap(struct wlan_objmgr_psoc *psoc)
 {
 	return false;
 }
@@ -5633,6 +5709,20 @@ void wlan_mlme_update_ch_width_from_ap(struct mlme_legacy_priv *mlme_priv,
 				       bool value);
 
 /**
+ * wlan_mlme_update_cur_ch_width() - Write the current operating channel
+ * width to vdev mlme legacy priv struct
+ *
+ * @vdev: vdev
+ * @ch_width: channel width from AP or user space config
+ * @value: set false for user space config and true for beacon update
+ * Return:QDF_STATUS
+ */
+QDF_STATUS
+wlan_mlme_update_cur_ch_width(struct wlan_objmgr_vdev *vdev,
+			      enum phy_ch_width ch_width,
+			      bool value);
+
+/**
  * wlan_mlme_init_miracast_opt() - Init timer and wakelock for miracast
  * optimization
  * @mlme_obj: MLME ext psoc priv object
@@ -5666,4 +5756,64 @@ QDF_STATUS wlan_mlme_start_miracast_opt(struct wlan_objmgr_psoc *psoc);
  */
 QDF_STATUS wlan_mlme_stop_miracast_opt(struct wlan_objmgr_psoc *psoc);
 
+#ifdef WLAN_FEATURE_MLO_SAP_LINK_REMOVAL
+/*
+ * wlan_mlme_send_mlo_sap_link_removal_cmd() - send mlo sap link removal request
+ * @vdev: pointer to vdev
+ * @ie: link reconfig ie
+ * @elem_len: link reconfig ie length
+ *
+ * Return: True if send wmi cmd to FW success, otherwise false
+ */
+QDF_STATUS wlan_mlme_send_mlo_sap_link_removal_cmd(struct wlan_objmgr_vdev *vdev,
+						   const uint8_t *ie,
+						   size_t elem_len);
+#endif
+
+/**
+ * wlan_mlme_get_edca_txop_duration_ms() - query TXOP duration in unit of ms.
+ * @psoc: pointer to psoc
+ *
+ * Return: TXOP duration in unit of ms.
+ */
+uint32_t
+wlan_mlme_get_edca_txop_duration_ms(struct wlan_objmgr_psoc *psoc);
+
+/**
+ * wlan_get_mode_index_from_mode() - get CCK opmode index
+ * @opmode: qdf opmode
+ *
+ * Return: cck_mode_index
+ */
+enum cck_mode_index wlan_get_mode_index_from_mode(enum QDF_OPMODE opmode);
+
+/**
+ * wlan_get_rx_tx_cck_5g_support_for_mode() - get CCK TX/RX support
+ * @psoc: psoc
+ * @opmode: qdf opmode
+ * @rx_support: to hold rx support
+ * @tx_support: told hold tx_suuport
+ *
+ * Return: true if rx or tx support enabled
+ */
+bool
+wlan_get_rx_tx_cck_5g_support_for_mode(struct wlan_objmgr_psoc *psoc,
+				       enum QDF_OPMODE opmode,
+				       bool *rx_support, bool *tx_support);
+
+/**
+ * wlan_get_fw_cck_cap() - get FW CCK RX/TX support
+ * @psoc: psoc
+ *
+ * Return: FW CCK support
+ */
+uint32_t wlan_get_fw_cck_cap(struct wlan_objmgr_psoc *psoc);
+
+/**
+ * wlan_mlme_update_mcc_cck_support() - update MCC CCK support
+ * @psoc: pointer to psoc object
+ *
+ * Return: QDF status
+ */
+QDF_STATUS wlan_mlme_update_mcc_cck_support(struct wlan_objmgr_psoc *psoc);
 #endif /* _WLAN_MLME_API_H_ */

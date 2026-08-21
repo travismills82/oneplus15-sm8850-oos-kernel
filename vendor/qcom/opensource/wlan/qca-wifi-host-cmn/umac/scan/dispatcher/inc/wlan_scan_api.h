@@ -71,6 +71,7 @@ wlan_scan_get_scan_entry_by_mac_freq(struct wlan_objmgr_pdev *pdev,
  * @pdev: pointer to pdev object
  * @bssid: pointer to mac addr
  * @vdev_id: vdev id
+ * @ch_freq: channel frequency
  *
  * Return: scan entry if found, else NULL
  *
@@ -79,7 +80,8 @@ wlan_scan_get_scan_entry_by_mac_freq(struct wlan_objmgr_pdev *pdev,
 struct scan_cache_entry *
 wlan_scan_entry_by_bssid_and_security(struct wlan_objmgr_pdev *pdev,
 				      struct qdf_mac_addr *bssid,
-				      uint8_t vdev_id);
+				      uint8_t vdev_id,
+				      qdf_freq_t ch_freq);
 
 /**
  * wlan_scan_cfg_set_active_2g_dwelltime() - API to set scan active 2g dwelltime
@@ -560,18 +562,6 @@ struct scan_cache_entry *
 wlan_scan_get_entry_by_bssid(struct wlan_objmgr_pdev *pdev,
 			     struct qdf_mac_addr *bssid);
 
-/*
- * wlan_scan_is_locally_generated_entry() - Function to check
- * if bss entry is a locally generated scan entry
- * @pdev: pdev object
- * @bssid: bssid/link mac of the interface
- *
- * Return : true if scan entry is locally generated; false otherwise
- */
-bool
-wlan_scan_is_locally_generated_entry(struct wlan_objmgr_pdev *pdev,
-				     struct qdf_mac_addr *bssid);
-
 /**
  * wlan_scan_get_mld_addr_by_link_addr() - Function to get MLD address
  * in the scan entry from the link BSSID.
@@ -701,4 +691,18 @@ wlan_scan_deregister_cached_scan_ev_handler(struct wlan_objmgr_pdev *pdev)
  * Returun: void
  */
 void wlan_scan_set_obss_scan_enable(struct wlan_objmgr_vdev *vdev);
+
+/**
+ * wlan_scan_flush_results() - Flush scan results from the scan cache
+ * @pdev: pointer to pdev object
+ * @filter: filter to apply for flushing results
+ *
+ * This function flushes scan results from the scan cache based on the
+ * provided filter. If filter is NULL, all scan results for the pdev
+ * will be flushed.
+ *
+ * Return: QDF_STATUS_SUCCESS on success, error code otherwise.
+ */
+QDF_STATUS wlan_scan_flush_results(struct wlan_objmgr_pdev *pdev,
+				   struct scan_filter *filter);
 #endif

@@ -815,7 +815,7 @@ int cnss_plat_ipc_register(enum cnss_plat_ipc_qmi_client_id_v01 client_id,
 	struct cnss_plat_ipc_qmi_client_ctx *qmi_client;
 	int num_user;
 
-	if (client_id > CNSS_PLAT_IPC_MAX_QMI_CLIENTS) {
+	if (client_id < 0 || client_id > CNSS_PLAT_IPC_MAX_QMI_CLIENTS) {
 		cnss_plat_ipc_err("Invalid Client ID: %d\n", client_id);
 		return -EINVAL;
 	}
@@ -851,7 +851,7 @@ void cnss_plat_ipc_unregister(enum cnss_plat_ipc_qmi_client_id_v01 client_id,
 	struct cnss_plat_ipc_qmi_client_ctx *qmi_client;
 	int i;
 
-	if (client_id > CNSS_PLAT_IPC_MAX_QMI_CLIENTS) {
+	if (client_id < 0 || client_id > CNSS_PLAT_IPC_MAX_QMI_CLIENTS) {
 		cnss_plat_ipc_err("Invalid Client ID: %d\n", client_id);
 		return;
 	}

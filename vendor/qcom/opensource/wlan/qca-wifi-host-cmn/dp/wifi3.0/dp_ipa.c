@@ -43,6 +43,10 @@
 #endif
 #include <pld_common.h>
 #include "wlan_dp_ucfg_api.h"
+#define IPV4 0x0008
+#define IPV6 0xdd86
+#define IPV4BYTES 4
+#define IPV6BYTES 16
 
 #define IPA_CLK_ENABLE_WAIT_TIME_MS 500
 
@@ -1675,9 +1679,9 @@ static void dp_ipa_set_tx_doorbell_paddr(struct dp_soc *soc,
 	hal_srng_dst_set_hp_paddr_confirm(wbm_srng,
 					  ipa_res->tx_comp_doorbell_paddr);
 
-	dp_info("paddr %pK vaddr %pK",
-		(void *)ipa_res->tx_comp_doorbell_paddr,
-		(void *)ipa_res->tx_comp_doorbell_vaddr);
+	dp_ipa_debug("paddr %pK vaddr %pK",
+		     (void *)ipa_res->tx_comp_doorbell_paddr,
+		     (void *)ipa_res->tx_comp_doorbell_vaddr);
 }
 
 #ifdef IPA_SET_RESET_TX_DB_PA
@@ -1695,7 +1699,7 @@ static QDF_STATUS dp_ipa_reset_tx_doorbell_pa(struct dp_soc *soc,
 
 	hal_srng_dst_set_hp_paddr_confirm((struct hal_srng *)wbm_srng, hp_addr);
 
-	dp_info("Reset WBM HP addr paddr: %pK", (void *)hp_addr);
+	dp_ipa_debug("Reset WBM HP addr paddr: %pK", (void *)hp_addr);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1807,10 +1811,26 @@ static void dp_ipa_opt_wifi_dp_cleanup(struct dp_soc *soc, struct dp_pdev *pdev)
 		dp_info("opt_dp: cleanup call pcie link down");
 		dp_ipa_pcie_link_down((struct cdp_soc_t *)soc);
 	}
+
+	qdf_rtpm_deregister(QDF_RTPM_ID_OPT_DP);
+}
+
+static void dp_ipa_opt_wifi_dp_setup(struct dp_soc *soc, struct dp_pdev *pdev)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)soc->hal_soc;
+	struct hif_softc *hif = (struct hif_softc *)(hal_soc->hif_handle);
+
+	qdf_atomic_init(&hif->opt_wifi_dp_rtpm_cnt);
+	qdf_rtpm_register(QDF_RTPM_ID_OPT_DP, NULL);
 }
 #else
 static inline
 void dp_ipa_opt_wifi_dp_cleanup(struct dp_soc *soc, struct dp_pdev *pdev)
+{
+}
+
+static inline
+void dp_ipa_opt_wifi_dp_setup(struct dp_soc *soc, struct dp_pdev *pdev)
 {
 }
 #endif
@@ -1986,6 +2006,8 @@ int dp_ipa_uc_attach(struct dp_soc *soc, struct dp_pdev *pdev)
 
 	if (!wlan_cfg_is_ipa_enabled(soc->wlan_cfg_ctx))
 		return QDF_STATUS_SUCCESS;
+
+	dp_ipa_opt_wifi_dp_setup(soc, pdev);
 
 	/* TX resource attach */
 	error = dp_tx_ipa_uc_attach(soc, pdev);
@@ -3992,6 +4014,45 @@ void dp_ipa_wdi_opt_dpath_notify_flt_add_rem_cb(int flt0_rslt, int flt1_rslt)
 	wlan_ipa_wdi_opt_dpath_notify_flt_add_rem_cb(flt0_rslt, flt1_rslt);
 }
 
+void dp_ipa_print_opt_dp_log(struct cdp_soc_t *soc_hdl,
+			     bool is_opt_dp_filter_active,
+			     void *flt_params)
+{
+	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
+	struct wifi_dp_flt_setup *dp_flt_param =
+					(struct wifi_dp_flt_setup *)flt_params;
+	struct addr_params *flt_addr_params = &dp_flt_param->flt_addr_params[0];
+	int i = 0, j;
+
+	soc->is_opt_dp_filter_active = is_opt_dp_filter_active;
+	if (!soc->is_opt_dp_filter_active)
+		return;
+
+	/* Clear the previous OPT_DP session stats */
+	qdf_mem_zero(&soc->stats.rx.opt_dp_pkts,
+		     DP_RX_PATH_MAX * sizeof(soc->stats.rx.opt_dp_pkts[0]));
+	for (i = 0; i < DP_OPT_DP_NUM_FILTER; i++) {
+		if (!flt_addr_params[i].valid)
+			continue;
+
+		soc->ipa_flt[i].l3_type = flt_addr_params[i].l3_type;
+		if (flt_addr_params[i].l3_type == IPV4) {
+			qdf_mem_copy(&soc->ipa_flt[i].opt_dp_src_ipv4,
+				     flt_addr_params[i].src_ipv4_addr,
+				     IPV4BYTES);
+			dp_info("opt_dp_pkt: src ipv4 - 0x%x",
+				soc->ipa_flt[i].opt_dp_src_ipv4);
+		} else if (flt_addr_params[i].l3_type == IPV6) {
+			qdf_mem_copy(soc->ipa_flt[i].opt_dp_src_ipv6,
+				     flt_addr_params[i].src_ipv6_addr,
+				     IPV6BYTES);
+			for (j = 0; j < 4; j++)
+				dp_info("opt_dp_pkt: src ipv6 - 0x%x",
+					*((uint32_t *)soc->ipa_flt[i].opt_dp_src_ipv6 + j));
+		}
+	}
+}
+
 int dp_ipa_pcie_link_up(struct cdp_soc_t *soc_hdl)
 {
 	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
@@ -4008,6 +4069,42 @@ int dp_ipa_pcie_link_up(struct cdp_soc_t *soc_hdl)
 
 	response = hif_prevent_l1((hal_soc->hif_handle));
 	return response;
+}
+
+void dp_ipa_dump_ring_hp_tp(struct cdp_soc_t *soc_hdl)
+{
+	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
+	int32_t hw_headp = -1, tailp = -1, headp = -1;
+	int32_t hw_tailp = -1;
+	struct dp_srng *srng;
+	uint64_t hp_addr;
+
+	srng = &soc->reo_dest_ring[IPA_REO_DEST_RING_IDX];
+	hal_get_hw_hptp(soc->hal_soc, srng->hal_srng, &hw_headp,
+			&hw_tailp, REO_DST);
+	hal_srng_dst_get_hp_paddr((struct hal_srng *)srng->hal_srng,
+				  &hp_addr);
+	dp_ipa_debug("opt_dp: REO2IPA hp addr - 0x%llx, hp - 0x%x, tp - 0x%x",
+		     hp_addr, hw_headp, hw_tailp);
+	srng = &soc->reo_exception_ring;
+	hal_get_sw_hptp(soc->hal_soc, srng->hal_srng, &tailp, &headp);
+	dp_ipa_debug("opt_dp: REO exception hp - 0x%x, tp - 0x%x", headp,
+		     tailp);
+	srng = &soc->rx_rel_ring;
+	hal_get_sw_hptp(soc->hal_soc, srng->hal_srng, &tailp, &headp);
+	dp_ipa_debug("opt_dp: WBM RX error hp - 0x%x, tp - 0x%x", headp,
+		     tailp);
+	srng = &soc->tx_comp_ring[IPA_TCL_DATA_RING_IDX];
+	hal_get_hw_hptp(soc->hal_soc, srng->hal_srng, &hw_headp,
+			&hw_tailp, WBM2SW_RELEASE);
+	hal_srng_dst_get_hp_paddr((struct hal_srng *)srng->hal_srng, &hp_addr);
+	dp_ipa_debug("opt_dp: WBM2IPA hp addr - 0x%llx, hp - 0x%x, tp - 0x%x",
+		     hp_addr, hw_headp, hw_tailp);
+	srng = &soc->tcl_data_ring[IPA_TCL_DATA_RING_IDX];
+	hal_get_hw_hptp(soc->hal_soc, srng->hal_srng, &hw_headp,
+			&hw_tailp, TCL_DATA);
+	dp_ipa_debug("opt_dp: IPA2TCL hp - 0x%x, tp - 0x%x", hw_headp,
+		     hw_tailp);
 }
 
 void dp_ipa_pcie_link_down(struct cdp_soc_t *soc_hdl)
@@ -4355,13 +4452,13 @@ bool dp_ipa_is_completion_pending(struct cdp_soc_t *soc_hdl)
 
 	num_tx_outstanding = QDF_IPA_WDI_TX_OUTSTANDING_BUFFS(&ipa_outstanding);
 
-	if (num_avail == ((DP_IPA_WAR_WBM2SW_REL_RING_NO_BUF_ENTRIES +
-			   num_tx_outstanding) * wbm_srng->entry_size))
-		return false;
-
 	dp_info("num_avail: %d num_tx_outstanding: %d No buf entries: %d",
 		num_avail / wbm_srng->entry_size, num_tx_outstanding,
 		DP_IPA_WAR_WBM2SW_REL_RING_NO_BUF_ENTRIES);
+
+	if (num_avail == ((DP_IPA_WAR_WBM2SW_REL_RING_NO_BUF_ENTRIES +
+			   num_tx_outstanding) * wbm_srng->entry_size))
+		return false;
 
 	return true;
 }

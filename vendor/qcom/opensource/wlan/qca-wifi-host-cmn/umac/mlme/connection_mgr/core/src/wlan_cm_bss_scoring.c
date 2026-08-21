@@ -122,7 +122,8 @@
 
 #define CM_BEST_CANDIDATE_MAX_BSS_SCORE (CM_BEST_CANDIDATE_MAX_WEIGHT * 100)
 #define CM_AVOID_CANDIDATE_NON_ML_MIN_SCORE 1
-#define CM_AVOID_CANDIDATE_ML_MIN_SCORE 2
+#define CM_AVOID_CANDIDATE_NON_ML_EHT_MIN_SCORE 2
+#define CM_AVOID_CANDIDATE_ML_MIN_SCORE 3
 
 #define CM_GET_SCORE_PERCENTAGE(value32, bw_index) \
 	QDF_GET_BITS(value32, (8 * (bw_index)), 8)
@@ -152,32 +153,49 @@ SNR_DB_TO_BIT_PER_TONE_LUT[DB_NUM] = {0, 171, 212, 262, 323, 396, 484,
 
 #ifdef WLAN_FEATURE_11BE_MLO
 static bool
-cm_is_mlo_entry(struct scan_cache_entry *bss1, struct scan_cache_entry *bss2)
+cm_phy_mode_better(struct scan_cache_entry *bss1, struct scan_cache_entry *bss2)
 {
-	if (bss1->ie_list.multi_link_bv &&
-	    !bss2->ie_list.multi_link_bv)
+	/* Check if bss1 has MLO IE and greater number of links */
+	if (bss1->ie_list.multi_link_bv && !bss2->ie_list.multi_link_bv) {
 		return true;
-	else
+	} else if (!bss1->ie_list.multi_link_bv &&
+		   bss2->ie_list.multi_link_bv) {
 		return false;
+	} else if (bss1->ie_list.multi_link_bv &&
+		   bss2->ie_list.multi_link_bv) {
+		if (bss1->ml_info.num_links > bss2->ml_info.num_links)
+			return true;
+		return false;
+	}
+
+	/* Check if bss1 has better phy mode */
+	if (bss1->phy_mode > bss2->phy_mode)
+		return true;
+
+	return false;
 }
 #else
 static inline bool
-cm_is_mlo_entry(struct scan_cache_entry *bss1, struct scan_cache_entry *bss2)
+cm_phy_mode_better(struct scan_cache_entry *bss1, struct scan_cache_entry *bss2)
 {
+	if (bss1->phy_mode > bss2->phy_mode)
+		return true;
+
 	return false;
 }
 #endif
 
-static bool cm_is_better_bss(struct scan_cache_entry *bss1,
-			     struct scan_cache_entry *bss2)
+bool cm_is_better_bss(struct scan_cache_entry *bss1,
+		      struct scan_cache_entry *bss2)
 {
 	if (bss1->bss_score > bss2->bss_score)
 		return true;
 	else if (bss1->bss_score == bss2->bss_score) {
 		if (bss1->rssi_raw > bss2->rssi_raw)
 			return true;
+		/* If same bssid check for MLO links and phymode */
 		if (qdf_is_macaddr_equal(&bss1->bssid, &bss2->bssid))
-			return cm_is_mlo_entry(bss1, bss2);
+			return cm_phy_mode_better(bss1, bss2);
 	}
 
 	return false;
@@ -616,7 +634,11 @@ static uint32_t cm_get_sta_nss(struct wlan_objmgr_psoc *psoc,
 #ifdef WLAN_FEATURE_11BE_MLO_ADV_FEATURE
 static uint32_t wlan_cm_get_min_score(struct scan_cache_entry *entry)
 {
-	if (!entry->ie_list.multi_link_bv)
+	/* Add more score for EHT without ml IE than HE or lower phy_mode */
+	if (IS_WLAN_PHYMODE_EHT(entry->phy_mode) &&
+	    !entry->ie_list.multi_link_bv)
+		return CM_AVOID_CANDIDATE_NON_ML_EHT_MIN_SCORE;
+	else if (!entry->ie_list.multi_link_bv)
 		return CM_AVOID_CANDIDATE_NON_ML_MIN_SCORE;
 	/* Add more weigh for candidate with partner link */
 	return CM_AVOID_CANDIDATE_ML_MIN_SCORE +
@@ -2894,8 +2916,8 @@ static int cm_calculate_bss_score(struct wlan_objmgr_psoc *psoc,
 	return score;
 }
 
-static void cm_list_insert_sorted(qdf_list_t *scan_list,
-				  struct scan_cache_node *scan_entry)
+void cm_list_insert_sorted(qdf_list_t *scan_list,
+			   struct scan_cache_node *scan_entry)
 {
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
 	struct scan_cache_node *curr_entry;
@@ -3024,11 +3046,13 @@ void cm_print_candidate_list(qdf_list_t *candidate_list)
 					     QDF_MAC_ADDR_REF(link[i].link_addr.bytes),
 					     link[i].freq, link[i].link_id,
 					     link[i].is_valid_link);
-		mlme_nofl_debug("Candidate(" QDF_MAC_ADDR_FMT " %s freq %d self_link_id %d): %s bss_score %d ",
+		mlme_nofl_debug("Candidate(" QDF_MAC_ADDR_FMT " %s freq %d phy %d rssi %d self_link_id %d): %s bss_score %d ",
 			       QDF_MAC_ADDR_REF(scan_entry->entry->bssid.bytes),
 			       scan_entry->entry->ie_list.multi_link_bv ? "MLO" :
 			       "NON MLO",
 			       scan_entry->entry->channel.chan_freq,
+			       scan_entry->entry->phy_mode,
+			       scan_entry->entry->rssi_raw,
 			       scan_entry->entry->ml_info.self_link_id,
 			       log_str,
 			       scan_entry->entry->bss_score);
@@ -3206,13 +3230,14 @@ cm_add_11_ax_candidate(struct wlan_objmgr_pdev *pdev,
 {};
 #endif
 
-static bool cm_is_slo_candidate_allowed(struct wlan_objmgr_psoc *psoc,
-					struct scan_cache_entry *scan_entry)
+bool cm_is_slo_candidate_allowed(struct wlan_objmgr_psoc *psoc,
+				 struct scan_cache_entry *scan_entry)
 {
 	struct action_oui_search_attr attr = {0};
 
 	attr.ie_data = util_scan_entry_ie_data(scan_entry);
 	attr.ie_length = util_scan_entry_ie_len(scan_entry);
+	attr.mac_addr = scan_entry->bssid.bytes;
 
 	if (wlan_action_oui_search(psoc, &attr,
 				   ACTION_OUI_RESTRICT_MAX_MLO_LINKS)) {
@@ -3225,15 +3250,93 @@ static bool cm_is_slo_candidate_allowed(struct wlan_objmgr_psoc *psoc,
 	return true;
 }
 
-static void cm_validate_partner_links(struct wlan_objmgr_psoc *psoc,
+/**
+ * cm_check_for_partner_link_in_scan_list() - Check if partner link exists in
+ * scan list
+ * @pdev: Pointer to pdev object
+ * @entry: Pointer to scan cache entry
+ * @link_info: Pointer to partner link information
+ *
+ * This function checks if a partner link exists in the scan cache by creating
+ * a filter with the link's MAC address and MLD address, then querying the scan
+ * cache. It also checks for common AKM with other links within same MLD.
+ *
+ * Return: true if partner link is found in scan cache, false otherwise
+ */
+static bool
+cm_check_for_partner_link_in_scan_list(struct wlan_objmgr_pdev *pdev,
+				       struct scan_cache_entry *entry,
+				       struct partner_link_info *link_info)
+{
+	struct scan_filter *scan_filter;
+	qdf_list_t *list = NULL;
+	struct scan_cache_node *first_node = NULL;
+	qdf_list_node_t *cur_node = NULL;
+	bool is_present = false;
+
+	scan_filter = qdf_mem_malloc(sizeof(*scan_filter));
+	if (!scan_filter) {
+		mlme_err("Failed to allocate memory for scan filter");
+		return is_present;
+	}
+
+	scan_filter->num_of_bssid = 1;
+	scan_filter->match_mld_addr = true;
+	qdf_copy_macaddr(&scan_filter->mld_addr,
+			 &entry->ml_info.mld_mac_addr);
+	scan_filter->match_link_id = true;
+	scan_filter->link_id = link_info->link_id;
+	qdf_mem_copy(scan_filter->bssid_list[0].bytes,
+		     link_info->link_addr.bytes,
+		     sizeof(struct qdf_mac_addr));
+
+	list = scm_get_scan_result(pdev, scan_filter);
+	qdf_mem_free(scan_filter);
+	if (!list || (list && !qdf_list_size(list))) {
+		mlme_err("Scan entry for bssid: "QDF_MAC_ADDR_FMT" not found",
+			 QDF_MAC_ADDR_REF(link_info->link_addr.bytes));
+		goto done;
+	}
+
+	if (qdf_list_peek_front(list, &cur_node) != QDF_STATUS_SUCCESS) {
+		mlme_err("Failed to peek front of the list");
+		goto done;
+	}
+
+	first_node = qdf_container_of(cur_node, struct scan_cache_node,
+				      node);
+
+	if (first_node && first_node->entry) {
+		if (wlan_scan_entries_contain_cmn_akm(entry,
+						      first_node->entry)) {
+			is_present = true;
+			mlme_debug("Partner link present in scan list");
+		}
+	}
+
+done:
+	if (list)
+		scm_purge_scan_results(list);
+
+	return is_present;
+}
+
+static void cm_validate_partner_links(struct wlan_objmgr_pdev *pdev,
 				      struct scoring_cfg *score_config,
 				      struct scan_cache_entry *entry,
 				      qdf_list_t *scan_list, bool allow_scan)
 {
+	struct wlan_objmgr_psoc *psoc;
 	uint8_t idx;
 	struct scan_cache_entry *partner_entry;
 	struct partner_link_info *link_info;
 	struct wlan_objmgr_peer *peer;
+
+	psoc = wlan_pdev_get_psoc(pdev);
+	if (!psoc) {
+		mlme_err("psoc NULL");
+		return;
+	}
 
 	for (idx = 0; idx < entry->ml_info.num_links; idx++) {
 		link_info = &entry->ml_info.link_info[idx];
@@ -3261,6 +3364,14 @@ static void cm_validate_partner_links(struct wlan_objmgr_psoc *psoc,
 		partner_entry = cm_get_entry(scan_list, &link_info->link_addr,
 					     &entry->ml_info.mld_mac_addr);
 		if (!partner_entry) {
+			/**
+			 * If the partner link is present in scan cache, keep
+			 * this link valid.
+			 */
+			if (cm_check_for_partner_link_in_scan_list(pdev, entry,
+								   link_info))
+				continue;
+
 			/**
 			 * If scan is already done and if the candidate is
 			 * part of MBSSID set's non-Tx BSSID, then clear the
@@ -3376,7 +3487,7 @@ static void cm_mlo_generate_candidate_list(struct wlan_objmgr_pdev *pdev,
 		}
 
 		/* Validate the partner links */
-		cm_validate_partner_links(psoc, score_config, scan_entry,
+		cm_validate_partner_links(pdev, score_config, scan_entry,
 					  candidate_list, allow_scan);
 
 		if (!allow_slo_candidate)
@@ -3522,7 +3633,7 @@ static void cm_eliminate_invalid_candidate(struct wlan_objmgr_psoc *psoc,
 {
 }
 
-static inline void cm_validate_partner_links(struct wlan_objmgr_psoc *psoc,
+static inline void cm_validate_partner_links(struct wlan_objmgr_pdev *pdev,
 					     struct scoring_cfg *score_config,
 					     struct scan_cache_entry *entry,
 					     qdf_list_t *scan_list,

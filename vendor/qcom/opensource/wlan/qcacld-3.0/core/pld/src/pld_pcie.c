@@ -303,7 +303,6 @@ static void pld_pcie_uevent(struct pci_dev *pdev,
 		data.uevent = PLD_FW_RECOVERY_START;
 		break;
 	case CNSS_FW_DOWN:
-	case CNSS_SYS_REBOOT:
 		data.uevent = PLD_FW_DOWN;
 		break;
 	default:
@@ -891,18 +890,6 @@ int pld_pcie_wlan_disable(struct device *dev, enum pld_driver_mode mode)
 {
 	return cnss_wlan_disable(dev, CNSS_OFF);
 }
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
-int pld_pcie_get_tsf_gpio(struct device *dev)
-{
-	return cnss_get_wlan_tsf_gpio(dev);
-}
-#else
-int pld_pcie_get_tsf_gpio(struct device *dev)
-{
-	return -EINVAL;
-}
-#endif
 
 int pld_pcie_get_fw_files_for_target(struct device *dev,
 				     struct pld_fw_files *pfw_files,

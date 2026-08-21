@@ -82,6 +82,8 @@ struct cnss_wlan_runtime_ops {
 	int (*runtime_resume)(struct pci_dev *pdev);
 };
 
+typedef void (*wlan_tsf_handler_t)(void *, uint64_t);
+
 enum cnss_driver_status {
 	CNSS_UNINITIALIZED,
 	CNSS_INITIALIZED,
@@ -272,6 +274,7 @@ extern int cnss_get_fw_files_for_target(struct device *dev,
 					u32 target_type, u32 target_version);
 extern int cnss_get_platform_cap(struct device *dev,
 				 struct cnss_platform_cap *cap);
+extern bool cnss_smmu_s1_enabled(struct device *dev);
 extern struct iommu_domain *cnss_smmu_get_domain(struct device *dev);
 extern int cnss_smmu_map(struct device *dev,
 			 phys_addr_t paddr, uint32_t *iova_addr, size_t size);
@@ -343,7 +346,11 @@ extern int cnss_send_buffer_to_afcmem(struct device *dev, const uint8_t *afcdb,
 extern int cnss_reset_afcmem(struct device *dev, uint8_t slotid);
 extern bool cnss_get_fw_cap(struct device *dev, enum cnss_fw_caps fw_cap);
 extern bool cnss_audio_is_direct_link_supported(struct device *dev);
-extern int cnss_get_wlan_tsf_gpio(struct device *dev);
+extern int cnss_register_tsf_captured_handler(struct device *dev,
+					      wlan_tsf_handler_t handler,
+					      void *ctx);
+extern int cnss_unregister_tsf_captured_handler(struct device *dev,
+						void *ctx);
 extern bool cnss_ipa_wlan_shared_smmu_supported(struct device *dev);
 extern int cnss_set_wfc_mode(struct device *dev, struct cnss_wfc_cfg cfg);
 extern int cnss_thermal_cdev_register(struct device *dev,

@@ -209,7 +209,6 @@ struct hdd_config {
 #ifdef FEATURE_RUNTIME_PM
 	unsigned long cpu_cxpc_threshold;
 #endif
-	bool exclude_selftx_from_cca_busy;
 #ifdef WLAN_FEATURE_11BE_MLO
 	/* ml link state cache expiry time*/
 	qdf_time_t link_state_cache_expiry_time;
@@ -530,4 +529,23 @@ int hdd_update_channel_width(struct wlan_hdd_link_info *link_info,
  */
 enum phy_ch_width
 hdd_convert_chwidth_to_phy_chwidth(enum eSirMacHTChannelWidth chwidth);
+
+#ifdef FORCE_WAKE
+/**
+ * hdd_set_hif_init_phase() - Enable/disable the
+ * init_phase flag
+ * @hif_ctx: hif opaque handle
+ * @init_phase: init phase flag
+ *
+ * Return: None
+ */
+void hdd_set_hif_init_phase(struct hif_opaque_softc *hif_ctx,
+			    bool init_phase);
+#else
+static inline
+void hdd_set_hif_init_phase(struct hif_opaque_softc *hif_ctx,
+			    bool init_phase)
+{
+}
+#endif /* FORCE_WAKE */
 #endif /* end #if !defined(HDD_CONFIG_H__) */

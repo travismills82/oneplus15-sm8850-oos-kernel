@@ -60,6 +60,7 @@
 #include "wlan_hdd_ioctl.h"
 #include "wlan_hdd_stats.h"
 #include "wlan_cp_stats_ucfg_api.h"
+#include "wma_api.h"
 
 #define MAX_ROAM_COUNT_VALUE (999)
 
@@ -424,6 +425,27 @@ void hdd_cm_clear_conn_info_mld_addr(struct hdd_station_ctx *sta_ctx)
 {
 	qdf_mem_zero(&sta_ctx->conn_info.mld_addr, QDF_MAC_ADDR_SIZE);
 }
+
+void hdd_cm_clear_link_info(uint8_t vdev_id)
+{
+	struct hdd_context *hdd_ctx;
+	struct wlan_hdd_link_info *link_info;
+
+	hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
+	if (!hdd_ctx) {
+		hdd_err("HDD context NULL");
+		return;
+	}
+
+	link_info = hdd_get_link_info_by_vdev(hdd_ctx, vdev_id);
+	if (!link_info) {
+		hdd_err("No link info for vdev_id: %d", vdev_id);
+		return;
+	}
+
+	hdd_debug("Clearing link info for vdev_id: %d", vdev_id);
+	hdd_adapter_reset_station_ctx(link_info->adapter);
+}
 #endif /* WLAN_FEATURE_11BE_MLO */
 
 #ifdef FEATURE_WLAN_WAPI
@@ -462,92 +484,54 @@ static void hdd_update_scan_ie_for_connect(struct hdd_adapter *adapter,
 	defined(CFG80211_11BE_BASIC)) && \
 	defined(WLAN_FEATURE_11BE)
 /**
- * hdd_update_action_oui_for_connect() - Update Action OUI for 802.11be AP
+ * hdd_update_standard_for_connect() - Update standard version for connect
  * @hdd_ctx: hdd context
  * @req: connect request parameter
+ * @vdev: vdev
  *
- * If user sets flag ASSOC_REQ_DISABLE_EHT in connect request, driver
- * will send action oui "ffffff 00 01" to host mlme and also firmware
- * for action id ACTION_OUI_11BE_OUI_ALLOW, so that all the AP will
- * be not matched with this OUI and 802.11be mode will not be allowed,
- * possibly downgrade to 11ax will happen.
- * If user doesn't set ASSOC_REQ_DISABLE_EHT, driver/firmware will
- * recover to default INI setting.
+ * If user sets flag ASSOC_REQ_DISABLE_EHT/ASSOC_REQ_DISABLE_HE in connect
+ * request, need limit connection/roaming Dot11 mode to wifi6/5.
  *
  * Returns: void
  */
 static void
-hdd_update_action_oui_for_connect(struct hdd_context *hdd_ctx,
-				  struct cfg80211_connect_params *req)
+hdd_update_standard_for_connect(struct hdd_context *hdd_ctx,
+				struct cfg80211_connect_params *req,
+				struct wlan_objmgr_vdev *vdev)
 {
-	QDF_STATUS status;
-	uint8_t *str;
-	bool usr_disable_eht;
+	WMI_HOST_WIFI_STANDARD std = WMI_HOST_WIFI_STANDARD_7;
+	uint8_t vdev_id;
+	int ret;
 
-	if (!ucfg_action_oui_enabled(hdd_ctx->psoc))
-		return;
-
-	usr_disable_eht = ucfg_mlme_get_usr_disable_sta_eht(hdd_ctx->psoc);
-	if (req->flags & ASSOC_REQ_DISABLE_EHT ||
-	    !(req->flags & CONNECT_REQ_MLO_SUPPORT)) {
-		if (usr_disable_eht) {
-			hdd_debug("user eht is disabled already");
-			return;
-		}
-		status = ucfg_action_oui_cleanup(
-				hdd_ctx->psoc, ACTION_OUI_11BE_OUI_ALLOW);
-		if (!QDF_IS_STATUS_SUCCESS(status)) {
-			hdd_err("Failed to cleanup oui id %d",
-				ACTION_OUI_11BE_OUI_ALLOW);
-			return;
-		}
-		status = ucfg_action_oui_parse(hdd_ctx->psoc,
-					       ACTION_OUI_INVALID,
-					       ACTION_OUI_11BE_OUI_ALLOW);
-		if (!QDF_IS_STATUS_SUCCESS(status)) {
-			hdd_err("Failed to parse action_oui str for id %d",
-				ACTION_OUI_11BE_OUI_ALLOW);
-			return;
-		}
-	} else {
-		if (!usr_disable_eht) {
-			hdd_debug("user eht is enabled already");
-			return;
-		}
-		status = ucfg_action_oui_cleanup(hdd_ctx->psoc,
-						 ACTION_OUI_11BE_OUI_ALLOW);
-		if (!QDF_IS_STATUS_SUCCESS(status)) {
-			hdd_err("Failed to cleanup oui id %d",
-				ACTION_OUI_11BE_OUI_ALLOW);
-			return;
-		}
-		str = ucfg_action_oui_get_config(hdd_ctx->psoc,
-						 ACTION_OUI_11BE_OUI_ALLOW);
-		if (!qdf_str_len(str))
-			goto send_oui;
-
-		status = ucfg_action_oui_parse(hdd_ctx->psoc,
-					       str, ACTION_OUI_11BE_OUI_ALLOW);
-		if (!QDF_IS_STATUS_SUCCESS(status)) {
-			hdd_err("Failed to parse action_oui str for id %d",
-				ACTION_OUI_11BE_OUI_ALLOW);
-			return;
-		}
+	if (req->flags & ASSOC_REQ_DISABLE_HE) {
+		hdd_debug("user he is disabled");
+		std = WMI_HOST_WIFI_STANDARD_5;
+	} else if (req->flags & ASSOC_REQ_DISABLE_EHT ||
+		!(req->flags & CONNECT_REQ_MLO_SUPPORT)) {
+		hdd_debug("user eht is disabled");
+		std = WMI_HOST_WIFI_STANDARD_6E;
 	}
 
-send_oui:
-	status = ucfg_action_oui_send_by_id(hdd_ctx->psoc,
-					    ACTION_OUI_11BE_OUI_ALLOW);
-	if (!QDF_IS_STATUS_SUCCESS(status)) {
-		hdd_err("Failed to send oui id %d", ACTION_OUI_11BE_OUI_ALLOW);
+	if (mlme_get_vdev_wifi_std(vdev) == std)
+		return;
+
+	vdev_id	= wlan_vdev_get_id(vdev);
+	ret = sme_cli_set_command(vdev_id,
+				  wmi_vdev_param_wifi_standard_version,
+				  std, VDEV_CMD);
+	if (ret) {
+		hdd_err("Failed to set vdev %d standard version %d to fw",
+			vdev_id, std);
 		return;
 	}
-	ucfg_mlme_set_usr_disable_sta_eht(hdd_ctx->psoc, !usr_disable_eht);
+
+	ucfg_mlme_set_vdev_wifi_std(hdd_ctx->psoc, vdev_id, std);
 }
 #else
 static void
-hdd_update_action_oui_for_connect(struct hdd_context *hdd_ctx,
-				  struct cfg80211_connect_params *req)
+hdd_update_standard_for_connect(struct hdd_context *hdd_ctx,
+				struct cfg80211_connect_params *req,
+				struct wlan_objmgr_vdev *vdev)
 {
 }
 #endif
@@ -614,7 +598,8 @@ hdd_get_sap_link_info_of_dfs(struct hdd_context *hdd_ctx)
 
 	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
 					   dbgid) {
-		if (adapter->device_mode != QDF_SAP_MODE)
+		if (adapter->device_mode != QDF_SAP_MODE &&
+		    adapter->device_mode != QDF_P2P_GO_MODE)
 			goto loop_next;
 
 		hdd_adapter_for_each_active_link_info(adapter, link_info) {
@@ -698,6 +683,7 @@ bool wlan_hdd_cm_handle_sap_sta_dfs_conc(struct hdd_context *hdd_ctx,
 	bool is_6ghz_cap = false;
 	int ret;
 	struct wlan_hdd_link_info *link_info;
+	enum policy_mgr_con_mode dfs_con_mode = PM_SAP_MODE;
 
 	link_info = hdd_get_sap_link_info_of_dfs(hdd_ctx);
 	/* probably no dfs sap running, no handling required */
@@ -807,13 +793,15 @@ def_chan:
 		is_6ghz_cap = policy_mgr_get_ap_6ghz_capable(hdd_ctx->psoc,
 						link_info->vdev_id,
 							     NULL);
+	if (link_info->adapter->device_mode == QDF_P2P_GO_MODE)
+		dfs_con_mode = PM_P2P_GO_MODE;
 
 	if (!ch_freq || wlan_reg_is_dfs_for_freq(hdd_ctx->pdev, ch_freq) ||
 	    !policy_mgr_is_safe_channel(hdd_ctx->psoc, ch_freq) ||
 	    wlan_reg_is_passive_for_freq(hdd_ctx->pdev, ch_freq) ||
 	    (WLAN_REG_IS_6GHZ_CHAN_FREQ(ch_freq) && !is_6ghz_cap))
 		ch_freq = policy_mgr_get_nondfs_preferred_channel(
-				hdd_ctx->psoc, PM_SAP_MODE,
+				hdd_ctx->psoc, dfs_con_mode,
 				true, link_info->vdev_id);
 
 	if (WLAN_REG_IS_5GHZ_CH_FREQ(ch_freq) &&
@@ -961,7 +949,7 @@ int wlan_hdd_cm_connect(struct wiphy *wiphy,
 	params.dot11mode_filter = hdd_get_dot11mode_filter(hdd_ctx);
 
 	hdd_update_scan_ie_for_connect(adapter, &params);
-	hdd_update_action_oui_for_connect(hdd_ctx, req);
+	hdd_update_standard_for_connect(hdd_ctx, req, vdev);
 
 	status = osif_cm_connect(ndev, vdev, req, &params);
 
@@ -1432,6 +1420,7 @@ static void hdd_cm_save_connect_info(struct wlan_hdd_link_info *link_info,
 	qdf_mem_copy(&sta_ctx->conn_info.last_ssid.SSID.ssId,
 		     &rsp->ssid.ssid,
 		     rsp->ssid.length);
+	sta_ctx->conn_info.last_ssid.SSID.ssId[rsp->ssid.length] = '\0';
 	sta_ctx->conn_info.ssid.SSID.length = rsp->ssid.length;
 	sta_ctx->conn_info.last_ssid.SSID.length = rsp->ssid.length;
 
@@ -1707,7 +1696,6 @@ hdd_cm_connect_success_pre_user_update(struct wlan_objmgr_vdev *vdev,
 	mac_handle = hdd_adapter_get_mac_handle(adapter);
 
 	wlan_hdd_ft_set_key_delay(vdev);
-	hdd_cm_update_rssi_snr_by_bssid(link_info);
 	hdd_cm_save_connect_status(link_info, rsp->status_code);
 
 	hdd_init_scan_reject_params(hdd_ctx);
@@ -1719,6 +1707,8 @@ hdd_cm_connect_success_pre_user_update(struct wlan_objmgr_vdev *vdev,
 	hdd_cm_rec_connect_info(rsp);
 
 	hdd_cm_save_connect_info(link_info, rsp);
+
+	hdd_cm_update_rssi_snr_by_bssid(link_info);
 
 	hdd_add_beacon_filter(hdd_ctx, link_info->vdev_id);
 
@@ -1966,7 +1956,8 @@ hdd_cm_connect_success_post_user_update(struct wlan_objmgr_vdev *vdev,
 	hdd_post_conn_clear_bcn_rssi_stats(hdd_ctx->psoc, link_info, rsp);
 	if (adapter->device_mode == QDF_STA_MODE ||
 	    (adapter->device_mode == QDF_P2P_CLIENT_MODE &&
-	     wlan_vdev_p2p_is_wfd_r2_mode(hdd_ctx->psoc, rsp->vdev_id))) {
+	     (wlan_vdev_p2p_is_wfd_r2_mode(hdd_ctx->psoc, rsp->vdev_id) ||
+	      wlan_vdev_p2p_is_pcc_mode(hdd_ctx->psoc, rsp->vdev_id)))) {
 		/* Inform FTM TIME SYNC about the connection with AP */
 		if (adapter->device_mode == QDF_STA_MODE)
 			hdd_ftm_time_sync_sta_state_notify(adapter,

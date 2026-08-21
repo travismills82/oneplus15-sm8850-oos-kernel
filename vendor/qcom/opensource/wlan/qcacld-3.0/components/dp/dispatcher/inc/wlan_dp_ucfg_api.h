@@ -804,6 +804,15 @@ uint8_t ucfg_dp_nud_tracking_enabled(struct wlan_objmgr_psoc *psoc);
 void ucfg_dp_nud_indicate_roam(struct wlan_objmgr_vdev *vdev);
 
 /**
+ * ucfg_dp_get_haps_config - get the haps config
+ *
+ * @psoc: PSOC Handle
+ *
+ * Return : HAPS config value.
+ */
+uint32_t ucfg_dp_get_haps_config(struct wlan_objmgr_psoc *psoc);
+
+/**
  * ucfg_dp_clear_arp_stats() - Clear ARP Stats
  * @vdev: vdev context
  *
@@ -1631,6 +1640,15 @@ ucfg_dp_direct_link_handle_lpass_ssr_notif(struct wlan_objmgr_psoc *psoc)
 QDF_STATUS ucfg_dp_bus_suspend(ol_txrx_soc_handle soc, uint8_t pdev_id);
 
 /**
+ * ucfg_dp_fisa_suspend() - FISA suspend DP handler
+ * @soc: CDP SoC handle
+ * @pdev_id: DP PDEV ID
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS ucfg_dp_fisa_suspend(ol_txrx_soc_handle soc, uint8_t pdev_id);
+
+/**
  * ucfg_dp_bus_resume() - BUS resume DP handler
  * @soc: CDP SoC handle
  * @pdev_id: DP PDEV ID
@@ -1722,6 +1740,23 @@ QDF_STATUS ucfg_dp_txrx_deinit(ol_txrx_soc_handle soc);
  */
 QDF_STATUS ucfg_dp_txrx_ext_dump_stats(ol_txrx_soc_handle soc,
 				       uint8_t stats_id);
+
+/**
+ * ucfg_dp_haps_dump_stats() - print haps stats
+ * @psoc: pointer to psoc object
+ *
+ * Return: QDF_STATUS_SUCCESS on success, error qdf status on failure
+ */
+QDF_STATUS ucfg_dp_haps_dump_stats(struct wlan_objmgr_psoc *psoc);
+
+/**
+ * ucfg_dp_haps_clear_stats() - clear haps stats
+ * @psoc: pointer to psoc object
+ *
+ * Return: none
+ */
+void ucfg_dp_haps_clear_stats(struct wlan_objmgr_psoc *psoc);
+
 /**
  * ucfg_dp_txrx_set_cpu_mask() - set CPU mask for RX threads
  * @soc: ol_txrx_soc_handle object
@@ -2068,6 +2103,30 @@ void ucfg_dp_recover_mon_conf_flags(struct wlan_objmgr_psoc *psoc);
 void
 ucfg_dp_rx_aggr_dis_req(struct wlan_objmgr_vdev *vdev,
 			enum ctrl_rx_aggr_client_id id, bool disable);
+
+#ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
+/**
+ * ucfg_dp_dump_periodic_custom_stats_enable_req() - Request dump periodic
+ *						     custom stats enable/disable
+ * @vdev: vdev mapped to DP interface
+ * @enable: Enable or disable dump periodic custom stats
+ *
+ * Return: None
+ */
+void
+ucfg_dp_dump_periodic_custom_stats_enable_req(struct wlan_objmgr_vdev *vdev,
+					      bool enable);
+
+/**
+ * ucfg_dp_get_dump_periodic_custom_stats_enable() - Get dump periodic custom
+ *						     stats enable status
+ * @vdev: vdev mapped to DP interface
+ *
+ * Return: true if dump periodic custom stats is enabled, false otherwise
+ */
+bool
+ucfg_dp_get_dump_periodic_custom_stats_enable(struct wlan_objmgr_vdev *vdev);
+#endif
 
 #ifdef WLAN_DP_FEATURE_STC
 /**

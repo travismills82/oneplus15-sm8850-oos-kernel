@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -199,6 +199,7 @@ struct tdls_callbacks {
  * @tdls_add_sta_req: store eWNI_SME_TDLS_ADD_STA_REQ value
  * @tdls_del_sta_req: store eWNI_SME_TDLS_DEL_STA_REQ value
  * @tdls_update_peer_state: store WMA_UPDATE_TDLS_PEER_STATE value
+ * @tdls_update_offchan_mode: store WMA_UPDATE_TDLS_OFF_CHAN value
  * @tdls_del_all_peers:store eWNI_SME_DEL_ALL_TDLS_PEERS
  * @tdls_update_dp_vdev_flags: store CDP_UPDATE_TDLS_FLAGS
  * @tdls_idle_peer_data: provide information about idle peer
@@ -256,6 +257,7 @@ struct tdls_soc_priv_obj {
 	uint16_t tdls_add_sta_req;
 	uint16_t tdls_del_sta_req;
 	uint16_t tdls_update_peer_state;
+	uint16_t tdls_update_offchan_mode;
 	uint16_t tdls_del_all_peers;
 	uint32_t tdls_update_dp_vdev_flags;
 	qdf_spinlock_t tdls_ct_spinlock;
@@ -941,6 +943,15 @@ QDF_STATUS tdls_handle_start_bss(struct wlan_objmgr_psoc *psoc);
  * Return: True or False
  */
 bool tdls_is_concurrency_allowed(struct wlan_objmgr_psoc *psoc);
+
+/**
+ * tdls_check_if_offchannel_allowed() - Check if tdls off-channel is allowed
+ * @vdev: vdev object
+ *
+ * Function determines the whether TDLS off-channel is allowed
+ * Return: true or false
+ */
+bool tdls_check_if_offchannel_allowed(struct wlan_objmgr_vdev *vdev);
 #else
 static inline
 QDF_STATUS tdls_handle_start_bss(struct wlan_objmgr_psoc *psoc)
@@ -954,5 +965,10 @@ tdls_is_concurrency_allowed(struct wlan_objmgr_psoc *psoc)
 	return false;
 }
 
+static inline bool
+tdls_check_if_offchannel_allowed(struct wlan_objmgr_vdev *vdev)
+{
+	return false;
+}
 #endif /* WLAN_FEATURE_TDLS_CONCURRENCIES */
 #endif

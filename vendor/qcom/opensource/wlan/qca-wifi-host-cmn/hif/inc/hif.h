@@ -50,7 +50,7 @@ typedef void __iomem *A_target_id_t;
 typedef void *hif_handle_t;
 
 #if defined(HIF_IPCI) && defined(FEATURE_HAL_DELAYED_REG_WRITE)
-#define HIF_WORK_DRAIN_WAIT_CNT 50
+#define HIF_WORK_DRAIN_WAIT_CNT 200
 
 #define HIF_EP_WAKE_RESET_WAIT_CNT 10
 #endif
@@ -554,6 +554,7 @@ struct hif_direct_link_ce_info {
  * @HIF_EVENT_BH_COMPLETE: NAPI POLL completion event
  * @HIF_EVENT_BH_FORCE_BREAK: NAPI POLL force break event
  * @HIF_EVENT_IRQ_DISABLE_EXPIRED: IRQ disable expired event
+ * @HIF_EVENT_IRQ_REENABLED: IRQ re-enabled event
  */
 enum hif_event_type {
 	HIF_EVENT_IRQ_TRIGGER,
@@ -565,6 +566,7 @@ enum hif_event_type {
 	HIF_EVENT_BH_COMPLETE,
 	HIF_EVENT_BH_FORCE_BREAK,
 	HIF_EVENT_IRQ_DISABLE_EXPIRED,
+	HIF_EVENT_IRQ_REENABLED,
 	/* Do check hif_hist_skip_event_record when adding new events */
 };
 
@@ -792,7 +794,8 @@ hif_display_ctrl_traffic_pipes_state(struct hif_opaque_softc *hif_ctx)
 }
 #endif
 
-#if defined(HIF_CONFIG_SLUB_DEBUG_ON) || defined(HIF_CE_DEBUG_DATA_BUF)
+#if defined(HIF_CONFIG_SLUB_DEBUG_ON) || defined(HIF_CE_DEBUG_DATA_BUF) ||\
+	defined(RECORD_DP_CE_EVTS)
 void hif_display_latest_desc_hist(struct hif_opaque_softc *hif_ctx);
 #else
 static
@@ -1038,7 +1041,8 @@ QDF_STATUS hif_diag_write_access(struct hif_opaque_softc *hif_ctx,
 QDF_STATUS hif_diag_write_mem(struct hif_opaque_softc *hif_ctx,
 			uint32_t address, uint8_t *data, int nbytes);
 
-typedef void (*fastpath_msg_handler)(void *, qdf_nbuf_t *, uint32_t);
+typedef void (*fastpath_msg_handler)(void *, qdf_nbuf_t *, uint32_t,
+				     unsigned int);
 
 void hif_enable_polled_mode(struct hif_opaque_softc *hif_ctx);
 bool hif_is_polled_mode_enabled(struct hif_opaque_softc *hif_ctx);

@@ -863,7 +863,40 @@
 
 /*
  * <ini>
+ * gActionOUIRestrictSLO - Used to downgrade to single link connection for
+ * specific AP build version.
+ *
+ * Sample OUIs: (All values in Hex)
+ *   OUI 3 : 000CE7
+ *   OUI data Len : 4
+ *   OUI Data : 01000000
+ *   OUI data Mask: F0
+ *   Info Mask : 01 - only OUI present in Info mask
+ *
+ * gActionOUIRestrictSLO=000CE7 04 01000000 F0 01 000CE7 04 09000000 F0 01
+ * Refer to gEnableActionOUI for more detail about the format.
+ *
+ * Related: gEnableActionOUI
+ *
+ * Supported Feature: Action OUIs
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
+#define CFG_ACTION_OUI_RESTRICT_SLO CFG_INI_STRING( \
+	"gActionOUIRestrictSLO", \
+	0, \
+	ACTION_OUI_MAX_STR_LEN, \
+	"", \
+	"To restrict matching OUI APs to single link connection at max")
+
+/*
+ * <ini>
  * CFG_ACTION_OUI_LIMIT_BW - Used to limit BW for specified AP
+ *
+ * To avoid IoT issue, limit 2.4 GHz STA connection BW to 20MHz,
+ * Limit 5/6 GHz STA connection TX BW to 40MHz
  *
  * Example OUIs: (All values in Hex)
  * OUI 1: 00904c
@@ -999,6 +1032,34 @@
 
 /*
  * <ini>
+ * g_force_tx_null_frame_on_p2p – Used to avoid disconnecting p2p Go of no
+ * beacon.
+ *
+ * Indicate sending qos null frames on p2p interface when final bmiss is
+ * detected if specific vendor OUI is in beacon.
+ * If an ACK is received, suppress reporting the final bmiss to the host for
+ * avoiding a disconnect.
+ *
+ * If the INI is set to "ffffff 00 01", always send qos null frames on p2p
+ * interface when final bmiss is detected.
+ *
+ * Related: None
+ *
+ * Supported Feature: Action OUIs
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
+#define CFG_ACTION_OUI_FORCE_TX_NULL_FRAME_ON_P2P CFG_INI_STRING( \
+	"g_force_tx_null_frame_on_p2p", \
+	0, \
+	ACTION_OUI_MAX_STR_LEN, \
+	"", \
+	"Allow connection to APs without beacon frames")
+
+/*
+ * <ini>
  * gActionOUIEnableAmsdu2G - Used to enable AMSDU for 2.4 GHz STA connections
  * with specified APs
  * @Default: ""
@@ -1076,6 +1137,7 @@
 	CFG(CFG_ACTION_OUI_ENABLE_CTS2SELF) \
 	CFG(CFG_ACTION_OUI_ENABLE_CTS2SELF_WITH_QOS_NULL) \
 	CFG(CFG_ACTION_OUI_RESTRICT_MAX_MLO_LINKS) \
+	CFG(CFG_ACTION_OUI_RESTRICT_SLO) \
 	CFG(CFG_ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN) \
 	CFG(CFG_ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ) \
 	CFG(CFG_ACTION_OUI_DISABLE_BFORMEE) \
@@ -1085,6 +1147,7 @@
 	CFG(CFG_ACTION_OUI_EXT_MLD_CAP_OP) \
 	CFG(CFG_ACTION_OUI_ENABLE_AMSDU_2G) \
 	CFG(CFG_ACTION_OUI_SKIP_BCN_CH_MISMATCH_CHK) \
+	CFG(CFG_ACTION_OUI_FORCE_TX_NULL_FRAME_ON_P2P) \
 	CFG(CFG_ENABLE_ACTION_OUI)
 
 /* Action OUI V2 ini use different name format XXX_V2, support operator

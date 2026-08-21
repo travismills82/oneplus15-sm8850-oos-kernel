@@ -1807,17 +1807,12 @@ cm_connect_complete_ind(struct wlan_objmgr_vdev *vdev,
 				psoc, vdev_id,
 				ml_nlink_link_switch_pre_completion_evt, NULL);
 
+		policy_mgr_update_flow_pool_map(psoc, vdev);
 		if (policy_mgr_ml_link_vdev_need_to_be_disabled(psoc, vdev,
 								false) ||
 		    (!policy_mgr_is_hw_dbs_capable(psoc) &&
 		     wlan_vdev_mlme_is_mlo_vdev(vdev) &&
 		     wlan_vdev_mlme_is_mlo_link_vdev(vdev))) {
-			/*
-			 * Update flow pool map for both the vdevs during
-			 * initial connection
-			 */
-			policy_mgr_update_flow_pool_map(psoc, vdev);
-
 			policy_mgr_move_vdev_from_connection_to_disabled_tbl(
 								psoc, vdev_id);
 
@@ -1998,7 +1993,7 @@ cm_send_force_bss_peer_delete_req(struct wlan_objmgr_vdev *vdev)
 
 	join_req = qdf_mem_malloc(sizeof(*join_req));
 	if (!join_req) {
-		cm_send_bss_peer_delete_req(vdev);
+		mlme_err("malloc fail");
 		return QDF_STATUS_E_NOMEM;
 	}
 
@@ -2006,8 +2001,6 @@ cm_send_force_bss_peer_delete_req(struct wlan_objmgr_vdev *vdev)
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err(CM_PREFIX_FMT "Failed to copy join req",
 			 CM_PREFIX_REF(req.vdev_id, req.cm_id));
-		cm_send_bss_peer_delete_req(vdev);
-
 		cm_free_join_req(join_req);
 		return QDF_STATUS_E_FAILURE;
 	}

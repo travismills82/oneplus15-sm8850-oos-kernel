@@ -296,12 +296,11 @@ qdf_freq_t wlan_get_ll_lt_sap_restart_freq(struct wlan_objmgr_pdev *pdev,
 	} else if (wlan_reg_is_passive_for_freq(pdev, chan_freq))  {
 		*csa_reason = CSA_REASON_CHAN_PASSIVE;
 		goto get_new_ll_lt_sap_freq;
-	} else if (!policy_mgr_is_sap_freq_allowed(psoc,
-				wlan_get_opmode_from_vdev_id(pdev, vdev_id),
-				chan_freq)) {
+	} else if (!policy_mgr_is_unsafe_freq_allowed(psoc, vdev_id,
+						      chan_freq)) {
 		*csa_reason = CSA_REASON_UNSAFE_CHANNEL;
 		goto get_new_ll_lt_sap_freq;
-	} else if (policy_mgr_is_ll_lt_sap_restart_required(psoc)) {
+	} else if (policy_mgr_is_ll_lt_sap_restart_required(psoc, chan_freq)) {
 		*csa_reason = CSA_REASON_CONCURRENT_STA_CHANGED_CHANNEL;
 		goto get_new_ll_lt_sap_freq;
 	}
@@ -514,6 +513,20 @@ wlan_ll_sap_set_cur_freq_unused_cu(struct wlan_objmgr_psoc *psoc,
 				   uint8_t vdev_id, uint32_t unused_cu)
 {
 	return ll_sap_set_cur_freq_unused_cu(psoc, vdev_id, unused_cu);
+}
+
+bool
+wlan_ll_sap_is_start_bss_in_progress(struct wlan_objmgr_psoc *psoc,
+				     uint8_t vdev_id)
+{
+	return ll_sap_is_start_bss_in_progress(psoc, vdev_id);
+}
+
+QDF_STATUS
+wlan_ll_sap_set_start_bss_in_progress(struct wlan_objmgr_psoc *psoc,
+				      uint8_t vdev_id, bool start_bss)
+{
+	return ll_sap_set_start_bss_in_progress(psoc, vdev_id, start_bss);
 }
 
 uint64_t

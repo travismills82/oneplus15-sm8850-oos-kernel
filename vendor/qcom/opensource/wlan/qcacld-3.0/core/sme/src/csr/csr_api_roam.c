@@ -1104,9 +1104,21 @@ QDF_STATUS csr_update_channel_list(struct mac_context *mac)
 				pChanList->chanParam[num_channel].nan_disabled =
 					true;
 
-			if (CHANNEL_STATE_DFS == channel_state)
-				pChanList->chanParam[num_channel].dfsSet =
-					true;
+			if (wlan_reg_is_6ghz_chan_freq(
+				pChanList->chanParam[num_channel].freq)) {
+				if (wlan_reg_is_6g_freq_indoor(mac->pdev,
+					pChanList->chanParam[num_channel].freq))
+					pChanList->chanParam[num_channel].is_passive = true;
+			} else {
+				if (wlan_reg_is_dfs_for_freq(mac->pdev,
+					pChanList->chanParam[num_channel].freq))
+					pChanList->chanParam[num_channel].dfsSet = true;
+
+				if (wlan_reg_is_freq_indoor(mac->pdev,
+					pChanList->chanParam[num_channel].freq))
+					pChanList->chanParam[num_channel].is_passive = true;
+			}
+
 
 			pChanList->chanParam[num_channel].quarter_rate =
 							is_5mhz_enabled;
@@ -5306,6 +5318,7 @@ QDF_STATUS csr_cm_update_fils_info(struct wlan_objmgr_vdev *vdev,
 				   struct bss_description *bss_desc,
 				   struct wlan_cm_vdev_connect_req *req)
 {
+	return QDF_STATUS_SUCCESS;
 }
 #endif
 
@@ -5383,8 +5396,10 @@ QDF_STATUS cm_csr_handle_join_req(struct wlan_objmgr_vdev *vdev,
 	status = wlan_fill_bss_desc_from_scan_entry(mac_ctx, bss_desc,
 						    join_req->entry);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		mgmt_txrx_frame_hex_dump(util_scan_entry_frame_ptr(join_req->entry),
-						    util_scan_entry_frame_len(join_req->entry), false);
+		mgmt_txrx_frame_hex_dump(
+			util_scan_entry_frame_ptr(join_req->entry),
+			util_scan_entry_frame_len(join_req->entry),
+			false);
 		qdf_mem_free(bss_desc);
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -5959,6 +5974,12 @@ QDF_STATUS cm_csr_handle_diconnect_req(struct wlan_objmgr_vdev *vdev,
 	if (!session || !CSR_IS_SESSION_VALID(mac_ctx, vdev_id)) {
 		sme_err("session not found for vdev_id %d", vdev_id);
 		return QDF_STATUS_E_INVAL;
+	}
+
+	if (cm_csr_is_ss_wait_for_key(vdev_id)) {
+		mlme_debug("Stop Wait for key timer");
+		cm_stop_wait_for_key_timer(mac_ctx->psoc, vdev_id);
+		cm_csr_set_ss_none(vdev_id);
 	}
 
 	cm_csr_set_joining(vdev_id);

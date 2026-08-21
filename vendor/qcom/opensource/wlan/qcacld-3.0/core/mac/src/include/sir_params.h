@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -313,6 +314,7 @@ enum halmsgtype {
 #ifdef FEATURE_WLAN_TDLS
 	/* (SIR_HAL_ITC_MSG_TYPES_BEGIN + 174) is not used */
 	SIR_HAL_UPDATE_TDLS_PEER_STATE    = (SIR_HAL_ITC_MSG_TYPES_BEGIN + 175),
+	SIR_HAL_UPDATE_TDLS_OFF_CHAN_MODE = (SIR_HAL_ITC_MSG_TYPES_BEGIN + 176),
 #endif
 	/* (SIR_HAL_ITC_MSG_TYPES_BEGIN + 176 -> 178) are not used */
 	SIR_HAL_BEACON_TX_SUCCESS_IND     = (SIR_HAL_ITC_MSG_TYPES_BEGIN + 179),
@@ -558,7 +560,7 @@ enum halmsgtype {
 /* currently unused                     (SIR_LIM_TIMEOUT_MSG_START + 0x25) */
 
 #define SIR_LIM_DISASSOC_ACK_TIMEOUT       (SIR_LIM_TIMEOUT_MSG_START + 0x26)
-/*#define SIR_LIM_DEAUTH_ACK_TIMEOUT       (SIR_LIM_TIMEOUT_MSG_START + 0x27) */
+#define SIR_LIM_DEAUTH_ACK_TIMEOUT       (SIR_LIM_TIMEOUT_MSG_START + 0x27)
 #define SIR_LIM_PERIODIC_JOIN_PROBE_REQ_TIMEOUT \
 					 (SIR_LIM_TIMEOUT_MSG_START + 0x28)
 

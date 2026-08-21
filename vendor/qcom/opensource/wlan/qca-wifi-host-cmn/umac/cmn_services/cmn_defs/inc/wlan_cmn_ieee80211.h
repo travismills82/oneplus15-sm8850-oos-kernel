@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -225,6 +225,7 @@
  * @QCN_ATTRIB_EDCA_PIFS_PARAM: EDCA PIFS param
  * @QCN_ATTRIB_ECSA_TARGET_TSF_INFO: ECSA Target TSF information
  * @QCN_ATTRIB_MAX: Maximum attribute
+ * @QCN_ATTRIB_5G_CCK_RX_TX_SUPP: 5 GHz CCK RX/TX support
  */
 enum qcn_attribute_id {
 	QCN_ATTRIB_VERSION                  = 0x01,
@@ -241,7 +242,8 @@ enum qcn_attribute_id {
 	QCN_ATTRIB_ECSA_SUPP                = 0X0C,
 	QCN_ATTRIB_EDCA_PIFS_PARAM          = 0X0D,
 	QCN_ATTRIB_ECSA_TARGET_TSF_INFO     = 0x0E,
-	QCN_ATTRIB_MAX                      = 0x0F
+	QCN_ATTRIB_5G_CCK_RX_TX_SUPP	    = 0x0F,
+	QCN_ATTRIB_MAX,
 };
 
 /* Extender vendor specific IE */
@@ -3033,6 +3035,19 @@ struct wlan_ml_rv_linfo_perstaprof_stainfo_opparams {
 /* End of definitions related to Reconfiguration variant Multi-Link element Link
  * Info field.
  */
+
+/* Max length of element info and common info in Reconfiguration variant
+ * Multi-Link IE
+ */
+#define WLAN_ML_RV_ELEM_COMMON_MAX_LEN \
+	(sizeof(struct wlan_ie_multilink) + \
+	 WLAN_ML_RV_CINFO_LENGTH_MAX)
+
+/* Max link info length of Reconfiguration variant Multi-Link IE */
+#define WLAN_ML_RV_LINK_INFO_MAX_LEN \
+	(sizeof(struct wlan_ml_rv_linfo_perstaprof) + \
+	  WLAN_ML_RV_LINFO_PERSTAPROF_STAINFO_LENGTH_MAX + \
+	  WLAN_STA_PROFILE_MAX_LEN)
 
 /* End of definitions related to Reconfiguration variant Multi-Link element. */
 

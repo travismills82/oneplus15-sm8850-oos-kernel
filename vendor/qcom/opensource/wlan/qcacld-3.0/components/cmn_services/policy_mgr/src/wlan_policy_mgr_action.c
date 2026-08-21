@@ -46,6 +46,7 @@
 #include "wlan_psoc_mlme_api.h"
 #include "wlan_policy_mgr_ll_sap.h"
 #include "wlan_cm_roam_api.h"
+#include "wlan_ll_sap_api.h"
 
 enum policy_mgr_conc_next_action (*policy_mgr_get_current_pref_hw_mode_ptr)
 	(struct wlan_objmgr_psoc *psoc);
@@ -463,6 +464,7 @@ policy_mgr_get_connection_table_entry_info(struct wlan_objmgr_pdev *pdev,
 	struct wlan_channel *chan;
 	QDF_STATUS status = QDF_STATUS_E_INVAL;
 	struct vdev_mlme_obj *vdev_mlme;
+	uint32_t mac_id;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id,
 			WLAN_POLICY_MGR_ID);
@@ -481,13 +483,19 @@ policy_mgr_get_connection_table_entry_info(struct wlan_objmgr_pdev *pdev,
 		goto rel_ref;
 	}
 
+	mac_id = wlan_mlme_get_vdev_mac_id(vdev);
+	if (mac_id > MAX_MAC) {
+		policy_mgr_err("Invalid mac for vdev %d", vdev_id);
+		goto rel_ref;
+	}
+
 	conn_table_entry->type = vdev_mlme->mgmt.generic.type;
 	conn_table_entry->sub_type = vdev_mlme->mgmt.generic.subtype;
 	conn_table_entry->vdev_id = vdev_id;
 	conn_table_entry->mhz = chan->ch_freq;
 	conn_table_entry->chan_width = chan->ch_width;
 	conn_table_entry->ch_flagext = chan->ch_flagext;
-	conn_table_entry->mac_id = wlan_mlme_get_vdev_mac_id(pdev, vdev_id);
+	conn_table_entry->mac_id = mac_id;
 
 	status = QDF_STATUS_SUCCESS;
 rel_ref:
@@ -1945,27 +1953,32 @@ bool policy_mgr_is_safe_channel(struct wlan_objmgr_psoc *psoc,
 }
 #endif
 
-bool policy_mgr_is_sap_freq_allowed(struct wlan_objmgr_psoc *psoc,
-				    enum QDF_OPMODE opmode,
-				    uint32_t sap_freq)
+bool policy_mgr_is_unsafe_freq_allowed(struct wlan_objmgr_psoc *psoc,
+				       uint8_t vdev_id, uint32_t sap_freq)
 {
 	uint32_t nan_2g_freq, nan_5g_freq;
-	struct policy_mgr_psoc_priv_obj *pm_ctx;
+	struct wlan_objmgr_vdev *vdev;
+	bool allowed = false;
 
-	pm_ctx = policy_mgr_get_context(psoc);
-	if (!pm_ctx) {
-		policy_mgr_err("context is NULL");
-		return QDF_STATUS_E_INVAL;
+	if (policy_mgr_is_safe_channel(psoc, sap_freq))
+		return true;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
+						    WLAN_LEGACY_MAC_ID);
+	if (!vdev) {
+		policy_mgr_err("Invalid vdev Context");
+		return false;
 	}
 
 	/*
 	 * Ignore safe channel validation when the mode is P2P_GO and user
 	 * configures the corresponding bit in ini coex_unsafe_chan_nb_user_prefer.
 	 */
-	if ((opmode == QDF_P2P_GO_MODE &&
-	     wlan_mlme_get_coex_unsafe_chan_nb_user_prefer_for_p2p_go(psoc)) ||
-	    policy_mgr_is_safe_channel(psoc, sap_freq))
-		return true;
+	if ((wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_GO_MODE &&
+	     wlan_mlme_get_coex_unsafe_chan_nb_user_prefer_for_p2p_go(psoc))) {
+		allowed = true;
+		goto done;
+	}
 
 	/*
 	 * Return true if it's STA+SAP SCC and
@@ -1974,7 +1987,18 @@ bool policy_mgr_is_sap_freq_allowed(struct wlan_objmgr_psoc *psoc,
 	if (policy_mgr_sta_sap_scc_on_lte_coex_chan(psoc) &&
 	    policy_mgr_is_sta_sap_scc(psoc, sap_freq, false)) {
 		policy_mgr_debug("unsafe freq %d for sap is allowed", sap_freq);
-		return true;
+		allowed = true;
+		goto done;
+	}
+
+	if (wlan_vdev_mlme_get_opmode(vdev) == QDF_SAP_MODE &&
+	    !(mlme_is_acs_sap(vdev) ||
+	      policy_mgr_restrict_sap_on_unsafe_chan(psoc) ||
+	      !sap_get_coex_fixed_chan_cap(psoc))) {
+		policy_mgr_debug("Fixed channel SAP freq %d is allowed",
+				 sap_freq);
+		allowed = true;
+		goto done;
 	}
 
 	/*
@@ -1982,11 +2006,12 @@ bool policy_mgr_is_sap_freq_allowed(struct wlan_objmgr_psoc *psoc,
 	 * concurrency when NAN is not presetn.
 	 */
 	if (!wlan_nan_is_disc_active(psoc))
-		return false;
+		goto done;
 
 	nan_2g_freq =
 		policy_mgr_mode_specific_get_channel(psoc, PM_NAN_DISC_MODE);
-	nan_5g_freq = wlan_nan_get_5ghz_social_ch_freq(pm_ctx->pdev);
+	nan_5g_freq =
+		wlan_nan_get_5ghz_social_ch_freq(wlan_vdev_get_pdev(vdev));
 
 	if ((WLAN_REG_IS_SAME_BAND_FREQS(nan_2g_freq, sap_freq) ||
 	     WLAN_REG_IS_SAME_BAND_FREQS(nan_5g_freq, sap_freq)) &&
@@ -1994,11 +2019,39 @@ bool policy_mgr_is_sap_freq_allowed(struct wlan_objmgr_psoc *psoc,
 	    policy_mgr_get_nan_sap_scc_on_lte_coex_chnl(psoc)) {
 		policy_mgr_debug("NAN+SAP SCC on unsafe freq %d is allowed",
 				  sap_freq);
+		allowed = true;
+		goto done;
+	}
+
+done:
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_MAC_ID);
+
+	return allowed;
+}
+
+#ifdef FEATURE_WLAN_SAP_COEX_CHECK_BW
+bool policy_mgr_is_sap_safe_with_bw(struct wlan_objmgr_psoc *psoc,
+				    enum QDF_OPMODE opmode,
+				    bool acs_enable,
+				    uint32_t sap_freq,
+				    uint32_t center_freq,
+				    enum phy_ch_width bw)
+{
+	if (opmode != QDF_SAP_MODE)
+		return true;
+
+	if (!acs_enable)
+		return true;
+
+	if (policy_mgr_sta_sap_scc_on_lte_coex_chan(psoc) &&
+	    policy_mgr_is_sta_sap_scc(psoc, sap_freq, false)) {
+		policy_mgr_debug("sap freq %d is SCC with STA", sap_freq);
 		return true;
 	}
 
-	return false;
+	return policy_mgr_check_bw_with_unsafe_chan_freq(psoc, center_freq, bw);
 }
+#endif
 
 bool policy_mgr_is_sap_restart_required_after_sta_disconnect(
 			struct wlan_objmgr_psoc *psoc,
@@ -2616,8 +2669,10 @@ void policy_mgr_nan_sap_post_disable_conc_check(struct wlan_objmgr_psoc *psoc)
 	/* if user configured frequency is not valid
 	 * frequency, remain on the same frequency and do not restart the SAP
 	 */
-	if (!policy_mgr_is_safe_channel(pm_ctx->psoc, user_config_freq))
+	if (!policy_mgr_is_unsafe_freq_allowed(psoc, sap_info->vdev_id,
+					       user_config_freq))
 		goto vdev_release;
+
 	sap_freq = user_config_freq;
 
 	if (pm_ctx->hdd_cbacks.hdd_is_chan_switch_in_progress &&
@@ -3958,17 +4013,6 @@ policy_mgr_valid_sap_conc_channel_check(struct wlan_objmgr_psoc *psoc,
 				     old_mhz_freq_seg1);
 	}
 
-	if (*con_ch_freq != 0 &&
-	    con_mode == PM_SAP_MODE &&
-	    !policy_mgr_is_multi_sap_allowed_on_same_band(
-					pm_ctx->pdev,
-					PM_SAP_MODE, *con_ch_freq,
-					sap_vdev_id)) {
-		policymgr_nofl_debug("Terminating multi sap on same band, con_ch_freq %d sap_ch_freq %d",
-				     ch_freq, sap_ch_freq);
-		return QDF_STATUS_E_FAILURE;
-	}
-
 	if (*con_ch_freq &&
 	    pm_ctx->hdd_cbacks.wlan_get_ap_prefer_conc_ch_params)
 		pm_ctx->hdd_cbacks.wlan_get_ap_prefer_conc_ch_params(
@@ -4010,7 +4054,7 @@ void policy_mgr_check_concurrent_intf_and_restart_sap(
 		return;
 	}
 
-	if (policy_mgr_is_ll_lt_sap_restart_required(psoc)) {
+	if (policy_mgr_is_ll_lt_sap_restart_required(psoc, 0)) {
 		restart_sap = true;
 		goto sap_restart;
 	}
@@ -4066,7 +4110,8 @@ void policy_mgr_check_concurrent_intf_and_restart_sap(
 	if (cc_count == 1 && !is_acs_mode &&
 	    target_psoc_get_sap_coex_fixed_chan_cap(
 			wlan_psoc_get_tgt_if_handle(psoc)) &&
-	    !policy_mgr_is_safe_channel(psoc, op_ch_freq_list[0])) {
+	    !policy_mgr_is_safe_channel(psoc, op_ch_freq_list[0]) &&
+	    !policy_mgr_is_conc_sap_ready_for_mcc_to_scc_trans(psoc)) {
 		policy_mgr_debug("Avoid channel switch as it's allowed to operate on unsafe channel: %d",
 				 op_ch_freq_list[0]);
 		return;
@@ -4485,21 +4530,37 @@ static void __policy_mgr_is_ap_start_in_progress(struct wlan_objmgr_pdev *pdev,
 	uint32_t *ap_starting_vdev_id = (uint32_t *)arg;
 	enum wlan_serialization_cmd_type cmd_type;
 	enum QDF_OPMODE op_mode;
+	struct wlan_objmgr_psoc *psoc;
+	uint8_t vdev_id;
 
 	if (!vdev || !ap_starting_vdev_id)
 		return;
 	if (*ap_starting_vdev_id != WLAN_INVALID_VDEV_ID)
 		return;
+	psoc = wlan_pdev_get_psoc(pdev);
+	if (!psoc)
+		return;
+
 	op_mode = wlan_vdev_mlme_get_opmode(vdev);
 	if (op_mode != QDF_SAP_MODE && op_mode != QDF_P2P_GO_MODE &&
 	    op_mode != QDF_NDI_MODE)
 		return;
+
+	vdev_id = wlan_vdev_get_id(vdev);
+	if (policy_mgr_is_vdev_ll_lt_sap(psoc, vdev_id) &&
+	    wlan_ll_sap_is_start_bss_in_progress(psoc, vdev_id)) {
+		*ap_starting_vdev_id = vdev_id;
+		policy_mgr_debug("LL SAP vdev %d op mode %d start bss in progress",
+				 *ap_starting_vdev_id, op_mode);
+		return;
+	}
+
 	/* Check AP start is present in active and pending queue or not */
 	cmd_type = wlan_serialization_get_vdev_active_cmd_type(vdev);
 	if (cmd_type == WLAN_SER_CMD_VDEV_START_BSS ||
 	    wlan_ser_is_non_scan_cmd_type_in_vdev_queue(
 			vdev, WLAN_SER_CMD_VDEV_START_BSS)) {
-		*ap_starting_vdev_id = wlan_vdev_get_id(vdev);
+		*ap_starting_vdev_id = vdev_id;
 		policy_mgr_debug("vdev %d op mode %d start bss is pending",
 				 *ap_starting_vdev_id, op_mode);
 	}

@@ -422,23 +422,6 @@ void dp_rx_buffer_pool_deinit(struct dp_soc *soc, u8 mac_id)
 #endif /* WLAN_FEATURE_RX_PREALLOC_BUFFER_POOL */
 
 #ifdef DP_FEATURE_RX_BUFFER_RECYCLE
-
-#if PAGE_SIZE == 4096
-#define DP_RX_PP_PAGE_SIZE_HIGHER_ORDER		(2 * DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER)
-#define DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER		(4 * DP_RX_PP_PAGE_SIZE_LOWER_ORDER)
-#define DP_RX_PP_PAGE_SIZE_LOWER_ORDER		PAGE_SIZE
-#elif PAGE_SIZE == 16384
-#define DP_RX_PP_PAGE_SIZE_HIGHER_ORDER		(2 * DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER)
-#define DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER		DP_RX_PP_PAGE_SIZE_LOWER_ORDER
-#define DP_RX_PP_PAGE_SIZE_LOWER_ORDER		PAGE_SIZE
-#else
-#error "Unsupported kernel PAGE_SIZE"
-#endif
-
-#define DP_RX_PP_POOL_SIZE_THRES	 4096
-#define DP_RX_PP_AUX_POOL_SIZE           2048
-#define DP_RX_PP_INACTIVE_WORK_DELAY_MS	10000
-
 static struct dp_rx_pp_params *
 dp_rx_get_base_pp(struct dp_rx_page_pool *rx_pp)
 {
@@ -616,6 +599,18 @@ dp_rx_pp_prealloc_get(struct dp_soc *soc, size_t *pp_size,
 	if (pool_t && pool_t->pp && pool_t->pp_size == *pp_size &&
 	    pool_t->page_size == *page_size)
 		return pool_t->pp;
+
+	/*
+	 * Since the prealloc entry has already been marked as in_use,
+	 * return this entry back to prealloc, since this won't be used due to
+	 * size mismatch in pool_size
+	 */
+	if (pool_t && pool_t->pp && soc->cdp_soc.ol_ops->dp_put_page_pool) {
+		dp_info("return: pool size mismatch req_size %lu got_size %lu",
+			*pp_size, pool_t->pp_size);
+		soc->cdp_soc.ol_ops->dp_put_page_pool(pool_t->pp,
+						      QDF_DP_PAGE_POOL_RX);
+	}
 
 	return NULL;
 }
@@ -868,7 +863,8 @@ __dp_rx_page_pool_create(struct dp_soc *soc, uint32_t pool_size,
 	size_t bufs_per_page;
 	QDF_STATUS status;
 
-	*page_size = DP_RX_PP_PAGE_SIZE_HIGHER_ORDER;
+	*prealloc = 0;
+	*page_size = DP_PP_PAGE_SIZE_HIGHER_ORDER;
 alloc_page_pool:
 	bufs_per_page = *page_size / buf_size;
 	*pp_size = pool_size / bufs_per_page;
@@ -897,16 +893,16 @@ alloc_page_pool:
 		qdf_page_pool_destroy(pp);
 		pp = NULL;
 
-		if (*page_size == DP_RX_PP_PAGE_SIZE_HIGHER_ORDER) {
-			if (DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER ==
-			    DP_RX_PP_PAGE_SIZE_LOWER_ORDER)
-				*page_size = DP_RX_PP_PAGE_SIZE_LOWER_ORDER;
+		if (*page_size == DP_PP_PAGE_SIZE_HIGHER_ORDER) {
+			if (DP_PP_PAGE_SIZE_MIDDLE_ORDER ==
+			    DP_PP_PAGE_SIZE_LOWER_ORDER)
+				*page_size = DP_PP_PAGE_SIZE_LOWER_ORDER;
 			else
-				*page_size = DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER;
+				*page_size = DP_PP_PAGE_SIZE_MIDDLE_ORDER;
 			goto alloc_page_pool;
-		} else if (*page_size == DP_RX_PP_PAGE_SIZE_MIDDLE_ORDER &&
+		} else if (*page_size == DP_PP_PAGE_SIZE_MIDDLE_ORDER &&
 			   PAGE_SIZE == 4096) {
-			*page_size = DP_RX_PP_PAGE_SIZE_LOWER_ORDER;
+			*page_size = DP_PP_PAGE_SIZE_LOWER_ORDER;
 			goto alloc_page_pool;
 		}
 	}

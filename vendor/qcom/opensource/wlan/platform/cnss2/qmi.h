@@ -364,8 +364,9 @@ static inline int cnss_wlfw_req_bt_dump_send_sync(
 	return 0;
 }
 
-int cnss_wlfw_xo_trim_result_send_sync(struct cnss_plat_data *plat_priv,
-				       int result)
+static inline int
+cnss_wlfw_xo_trim_result_send_sync(struct cnss_plat_data *plat_priv,
+				   int result)
 {
 	return 0;
 }

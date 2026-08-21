@@ -43,6 +43,7 @@
 #include "wlan_cm_roam_api.h"
 #include "hif_main.h"
 #include "wlan_dp_stc.h"
+#include "wlan_dp_haps.h"
 
 #ifdef FEATURE_BUS_BANDWIDTH_MGR
 /*
@@ -267,15 +268,13 @@ bbm_apply_tput_policy(struct wlan_dp_psoc_context *dp_ctx,
 	enum bus_bw_level next_vote = BUS_BW_LEVEL_NONE;
 	enum bus_bw_level tmp_vote;
 	struct bbm_context *bbm_ctx = dp_ctx->bbm_ctx;
-	hdd_cb_handle ctx = dp_ctx->dp_ops.callback_ctx;
 
 	if (tput_level == TPUT_LEVEL_NONE) {
 		/*
 		 * This is to handle the scenario where bus bw periodic work
 		 * is force cancelled
 		 */
-		if (dp_ctx->dp_ops.dp_any_adapter_connected(ctx))
-			bbm_ctx->per_policy_vote[BBM_TPUT_POLICY] = next_vote;
+		bbm_ctx->per_policy_vote[BBM_TPUT_POLICY] = next_vote;
 		return;
 	}
 
@@ -1202,6 +1201,7 @@ static void dp_display_periodic_stats(struct wlan_dp_psoc_context *dp_ctx,
 			qdf_dp_trace_dump_stats();
 			wlan_dp_stc_dump_periodic_stats(dp_ctx);
 			ucfg_ipa_dump_logging_stats();
+			dp_print_haps_stats(dp_ctx->psoc);
 		}
 		counter = 0;
 		data_in_time_period = false;
@@ -1956,6 +1956,28 @@ dp_link_monitoring(struct wlan_dp_psoc_context *dp_ctx,
 	qdf_mem_free(peer_stats);
 }
 
+#ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
+static inline void
+dp_dump_periodic_stats(struct wlan_dp_intf *dp_intf,
+		       struct wlan_dp_psoc_context *dp_ctx)
+{
+	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
+	struct wlan_dp_psoc_callbacks *dp_ops = &dp_ctx->dp_ops;
+	hdd_cb_handle ctx = dp_ctx->dp_ops.callback_ctx;
+
+	if (dp_intf->dump_periodic_custom_stats &&
+	    !dp_ops->dp_is_roaming_in_progress(ctx))
+		cdp_dump_custom_stats(soc, dp_intf->def_link->link_id);
+}
+#else
+
+static inline void
+dp_dump_periodic_stats(struct wlan_dp_intf *dp_intf,
+		       struct wlan_dp_psoc_context *dp_ctx)
+{
+}
+#endif
+
 /**
  * __dp_bus_bw_work_handler() - Bus bandwidth work handler
  * @dp_ctx: handle to DP context
@@ -2049,6 +2071,7 @@ static void __dp_bus_bw_work_handler(struct wlan_dp_psoc_context *dp_ctx)
 		}
 
 		cdp_process_ul_delay(soc, dp_intf->def_link->link_id);
+		dp_dump_periodic_stats(dp_intf, dp_ctx);
 
 		ret = A_ERROR;
 		fwd_tx_packets = 0;

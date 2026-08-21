@@ -748,7 +748,7 @@ lim_check_and_trigger_pmf_sta_deletion(struct mac_context *mac,
 		pe_debug("TODO:Ack for deauth frame is pending Issue del sta for "
 			 QDF_MAC_ADDR_FMT,
 			 QDF_MAC_ADDR_REF(mlm_deauth_req->peer_macaddr.bytes));
-		lim_process_deauth_ack_timeout(mac, pe_session->vdev_id);
+		lim_send_deauth_cnf(mac, pe_session->vdev_id);
 		is_connected = false;
 	}
 
@@ -1827,10 +1827,21 @@ lim_process_auth_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_info,
 		return;
 	}
 
+	if (wlan_vdev_mlme_is_mlo_link_removal_in_progress(pe_session->vdev)) {
+		pe_debug("vdev %d is link removal, drop auth frame sa:" QDF_MAC_ADDR_FMT,
+			 pe_session->vdev_id,
+			 QDF_MAC_ADDR_REF(mac_hdr->sa));
+		return;
+	}
+
 	curr_seq_num = (mac_hdr->seqControl.seqNumHi << 4) |
 		(mac_hdr->seqControl.seqNumLo);
 
-	if (pe_session->prev_auth_seq_num == curr_seq_num &&
+	/* Need to check in case of STA, As in case of SAP
+	 * mode reconnects may use same sequence number.
+	 */
+	if (!LIM_IS_AP_ROLE(pe_session) &&
+	    pe_session->prev_auth_seq_num == curr_seq_num &&
 	    !qdf_mem_cmp(pe_session->prev_auth_mac_addr, &mac_hdr->sa,
 			 ETH_ALEN) &&
 	    mac_hdr->fc.retry) {
@@ -1842,8 +1853,8 @@ lim_process_auth_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_info,
 	/* Duplicate Auth frame from peer */
 	auth_node = lim_search_pre_auth_list(mac_ctx, mac_hdr->sa);
 	if (auth_node && (auth_node->seq_num == curr_seq_num)) {
-		pe_err("Received an already processed auth frame with seq_num : %d",
-		       curr_seq_num);
+		pe_debug("Received an already processed auth frame with seq_num : %d",
+			 curr_seq_num);
 		if (LIM_IS_AP_ROLE(pe_session))
 			lim_del_stale_auth_node_assoc_req_timeout(mac_ctx,
 								  auth_node);

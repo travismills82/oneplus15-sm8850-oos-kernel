@@ -696,7 +696,6 @@ struct punc_chan_info {
  * @bss_color_info:
  * @bss_color_changing:
  * @deauth_retry:
- * @enable_bcast_probe_rsp:
  * @ht_client_cnt:
  * @ch_switch_in_progress:
  * @post_csa_notify_cap: Send notify capability pending post CSA
@@ -720,7 +719,6 @@ struct punc_chan_info {
  * @mu_edca_present:
  * @def_max_tx_pwr:
  * @active_ba_64_session:
- * @is_mbssid_enabled:
  * @peer_twt_requestor:
  * @peer_twt_responder:
  * @enable_session_twt_support:
@@ -742,6 +740,7 @@ struct punc_chan_info {
  * @start_bss_rnr_ie: RNRIE
  * @user_edca_set:
  * @is_oui_auth_assoc_6mbps_2ghz_enable: send auth/assoc req with 6 Mbps rate
+ * @action_oui_limit_bw_2g: Disable 40 MHz BW when connect 2 GHz IoT AP
  * @is_unexpected_peer_error: true if unexpected peer error
  * on 2.4 GHz
  * @is_amsdu_2g_enabled: Is amsdu enabled for 2g connection with IoT AP
@@ -750,6 +749,7 @@ struct punc_chan_info {
  * @rsno_gen_used: rsno gen used for connection
  * @wnm_action_dialog_token: Dialog token for WNM action frames.
  * @dfs_p2p_info: DFS P2P group operation info.
+ * @qcn_ie_present_in_beacon: QCN Ie Present in beacon
  */
 struct pe_session {
 	uint8_t available;
@@ -1025,7 +1025,6 @@ struct pe_session {
 #endif
 	struct punc_chan_info he_punc_chan_info;
 	struct deauth_retry_params deauth_retry;
-	bool enable_bcast_probe_rsp;
 	uint8_t ht_client_cnt;
 	bool ch_switch_in_progress;
 	bool post_csa_notify_cap;
@@ -1053,7 +1052,6 @@ struct pe_session {
 	bool mu_edca_present;
 	int8_t def_max_tx_pwr;
 	bool active_ba_64_session;
-	bool is_mbssid_enabled;
 #ifdef WLAN_SUPPORT_TWT
 	uint8_t peer_twt_requestor;
 	uint8_t peer_twt_responder;
@@ -1082,12 +1080,14 @@ struct pe_session {
 	uint8_t user_edca_set;
 	bool is_oui_auth_assoc_6mbps_2ghz_enable;
 	bool is_unexpected_peer_error;
+	bool action_oui_limit_bw_2g;
 	bool is_amsdu_2g_enabled;
 	uint8_t join_probe_cnt;
 	bool cal_tpc_post_csa;
 	uint8_t rsno_gen_used;
 	uint8_t wnm_action_dialog_token;
 	struct dfs_p2p_group_info dfs_p2p_info;
+	uint8_t qcn_ie_present_in_beacon;
 };
 
 /*-------------------------------------------------------------------------

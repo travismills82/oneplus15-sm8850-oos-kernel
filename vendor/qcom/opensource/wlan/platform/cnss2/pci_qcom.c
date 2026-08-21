@@ -362,10 +362,11 @@ int cnss_set_pci_link(struct cnss_pci_data *pci_priv, bool link_up)
 {
 	int ret = 0, retry = 0;
 	struct cnss_plat_data *plat_priv;
-	int sw_ctrl_gpio;
+	int sw_ctrl_gpio, wlan_sw_ctrl_gpio;
 
 	plat_priv = pci_priv->plat_priv;
 	sw_ctrl_gpio = plat_priv->pinctrl_info.sw_ctrl_gpio;
+	wlan_sw_ctrl_gpio = plat_priv->pinctrl_info.wlan_sw_ctrl_gpio;
 
 	cnss_pr_vdbg("%s PCI link\n", link_up ? "Resuming" : "Suspending");
 
@@ -374,8 +375,9 @@ retry:
 		ret = cnss_pci_set_link_up(pci_priv);
 		if (ret && retry++ < LINK_TRAINING_RETRY_MAX_TIMES) {
 			cnss_pr_dbg("Retry PCI link training #%d\n", retry);
-			cnss_pr_dbg("Value of SW_CTRL GPIO: %d\n",
-				    cnss_get_input_gpio_value(plat_priv, sw_ctrl_gpio));
+			cnss_pr_dbg("Values of SW_CTRL GPIO: %d WLAN_SW_CTRL_GPIO: %d\n",
+				    cnss_get_input_gpio_value(plat_priv, sw_ctrl_gpio),
+				    cnss_get_input_gpio_value(plat_priv, wlan_sw_ctrl_gpio));
 			if (pci_priv->pci_link_down_ind)
 				msleep(LINK_TRAINING_RETRY_DELAY_MS * retry);
 			goto retry;

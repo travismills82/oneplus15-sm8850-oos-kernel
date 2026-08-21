@@ -197,6 +197,9 @@ static int cnss_stats_show_state(struct seq_file *s,
 		case CNSS_SEC_DOWNLOAD:
 			seq_puts(s, "DOWNLOAD SEC_IN_BOOTUP");
 			continue;
+		case CNSS_RADIO_OFF:
+			seq_puts(s, "RADIO OFF");
+			continue;
 		}
 
 		seq_printf(s, "UNKNOWN-%d", i);

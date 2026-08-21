@@ -2610,31 +2610,17 @@ void dp_srng_access_end(struct dp_intr *int_ctx, struct dp_soc *dp_soc,
 	return dp_hal_srng_access_end(hal_soc, hal_ring_hdl);
 }
 
-static inline void dp_srng_record_timer_entry(struct dp_soc *dp_soc,
-					      uint8_t hist_group_id)
+void dp_srng_record_timer_entry(struct dp_soc *dp_soc, uint8_t hist_group_id)
 {
 	hif_record_event(dp_soc->hif_handle, hist_group_id,
 			 0, 0, 0, HIF_EVENT_TIMER_ENTRY);
 }
 
-static inline void dp_srng_record_timer_exit(struct dp_soc *dp_soc,
-					     uint8_t hist_group_id)
+void dp_srng_record_timer_exit(struct dp_soc *dp_soc, uint8_t hist_group_id)
 {
 	hif_record_event(dp_soc->hif_handle, hist_group_id,
 			 0, 0, 0, HIF_EVENT_TIMER_EXIT);
 }
-#else
-
-static inline void dp_srng_record_timer_entry(struct dp_soc *dp_soc,
-					      uint8_t hist_group_id)
-{
-}
-
-static inline void dp_srng_record_timer_exit(struct dp_soc *dp_soc,
-					     uint8_t hist_group_id)
-{
-}
-
 #endif /* WLAN_FEATURE_DP_EVENT_HISTORY */
 
 enum timer_yield_status
@@ -3726,6 +3712,68 @@ static void dp_soc_tx_mon_buf_ring_history_detach(struct dp_soc *soc)
 }
 #endif
 
+#ifdef WLAN_FEATURE_DP_MON_DEST_RING_HISTORY
+/**
+ * dp_soc_mon_dest_ring_history_attach() - Attach the monitor destination
+ *					   record history.
+ * @soc: DP soc handle
+ *
+ * This function allocates memory to track the buffers of mismatched ppdu
+ * of mon dest ring.
+ *
+ * Return: None
+ */
+static void dp_soc_mon_dest_ring_history_attach(struct dp_soc *soc)
+{
+	int i;
+	uint32_t mon_dest_ring_history_size;
+
+	mon_dest_ring_history_size = sizeof(*soc->mon_dest_ring_history[0]);
+	for (i = 0; i < MAX_NUM_LMAC_HW; i++) {
+		soc->mon_dest_ring_history[i] =
+			dp_context_alloc_mem(
+				      soc,
+				      DP_MON_DEST_BUF_HIST_TYPE,
+				      mon_dest_ring_history_size);
+
+		if (!soc->mon_dest_ring_history[i]) {
+			dp_err("Failed to alloc memory for mon dest ring history, mac - %d",
+			       i);
+		} else {
+			qdf_atomic_init(&soc->mon_dest_ring_history[i]->index);
+			qdf_atomic_init(
+				&soc->mon_dest_ring_history[i]->ppdu_index);
+		}
+	}
+}
+
+/**
+ * dp_soc_mon_dest_ring_history_detach() - Detach the monitor dest buffer
+ *					   record history.
+ * @soc: DP soc handle
+ *
+ * Return: None
+ */
+static void dp_soc_mon_dest_ring_history_detach(struct dp_soc *soc)
+{
+	int i;
+
+	for (i = 0; i < MAX_NUM_LMAC_HW; i++) {
+		dp_context_free_mem(soc, DP_MON_DEST_BUF_HIST_TYPE,
+				    soc->mon_dest_ring_history[i]);
+	}
+}
+
+#else
+static void dp_soc_mon_dest_ring_history_attach(struct dp_soc *soc)
+{
+}
+
+static void dp_soc_mon_dest_ring_history_detach(struct dp_soc *soc)
+{
+}
+#endif
+
 #ifdef WLAN_FEATURE_DP_MON_STATUS_RING_HISTORY
 /**
  * dp_soc_mon_status_ring_history_attach() - Attach the monitor status
@@ -3760,6 +3808,7 @@ static void dp_soc_mon_status_ring_history_detach(struct dp_soc *soc)
 	dp_context_free_mem(soc, DP_MON_STATUS_BUF_HIST_TYPE,
 			    soc->mon_status_ring_history);
 }
+
 #else
 static void dp_soc_mon_status_ring_history_attach(struct dp_soc *soc)
 {
@@ -4508,6 +4557,7 @@ static void dp_soc_detach(struct cdp_soc_t *txrx_soc)
 	dp_soc_tx_hw_desc_history_detach(soc);
 	dp_soc_tx_history_detach(soc);
 	dp_soc_tx_mon_buf_ring_history_detach(soc);
+	dp_soc_mon_dest_ring_history_detach(soc);
 	dp_soc_mon_status_ring_history_detach(soc);
 	dp_soc_rx_history_detach(soc);
 	dp_soc_cfg_history_detach(soc);
@@ -5401,6 +5451,11 @@ static QDF_STATUS dp_vdev_attach_wifi3(struct cdp_soc_t *cdp_soc,
 				     vdev->mac_addr.raw, CDP_LINK_PEER_TYPE);
 
 	dp_pdev_update_fast_rx_flag(soc, pdev);
+
+	for (i = 0; i < UL_DELAY_CALC_ID_MAX; i++) {
+		vdev->ul_delay_stats[i].prev_delay_accum = 0;
+		vdev->ul_delay_stats[i].prev_pkt_accum = 0;
+	}
 
 	return QDF_STATUS_SUCCESS;
 
@@ -13981,7 +14036,33 @@ update_tx_ilp:
 	return soc->tx_ilp_enable;
 }
 #endif
+#ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
+static QDF_STATUS
+dp_dump_custom_stats(struct cdp_soc_t *soc_hdl, uint8_t vdev_id)
+{
+	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
+	struct dp_vdev *vdev = dp_vdev_get_ref_by_id(soc, vdev_id,
+						     DP_MOD_ID_CDP);
+	struct dp_pdev *pdev;
+	uint32_t val;
+	int pkt_count;
 
+	if (!vdev)
+		return QDF_STATUS_E_INVAL;
+
+	pdev = vdev->pdev;
+	pkt_count = dp_tx_average_ul_delay(vdev, UL_DELAY_CALC_ID_INTERNAL,
+					   &val);
+	dp_info("UL delay = %u, pkts %d", val, pkt_count);
+	dp_print_tx_rates(pdev);
+	dp_print_rx_rates(pdev);
+	dp_info("PER: %d", dp_get_total_per(soc_hdl, 0));
+	dp_info("Tx Retries = %d", pdev->stats.tx.retries);
+	dp_vdev_unref_delete(soc, vdev, DP_MOD_ID_CDP);
+
+	return QDF_STATUS_SUCCESS;
+}
+#endif
 static struct cdp_cmn_ops dp_ops_cmn = {
 	.txrx_soc_attach_target = dp_soc_attach_target_wifi3,
 	.txrx_vdev_attach = dp_vdev_attach_wifi3,
@@ -14194,6 +14275,7 @@ static struct cdp_ctrl_ops dp_ops_ctrl = {
 #ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
 	.txrx_set_tsf_ul_delay_report = dp_set_tsf_ul_delay_report,
 	.txrx_get_uplink_delay = dp_get_uplink_delay,
+	.txrx_enable_ul_delay = dp_txrx_enable_ul_delay,
 	.txrx_qos_latency_stats_request = dp_qos_latency_stats_request,
 	.txrx_qos_latency_get_stats = dp_qos_latency_get_stats,
 #endif
@@ -14300,6 +14382,7 @@ static struct cdp_host_stats_ops dp_ops_host_stats = {
 #endif
 #ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
 	.txrx_process_ul_delay = dp_process_ul_delay,
+	.txrx_dump_custom_stats = dp_dump_custom_stats,
 #endif
 	/* TODO */
 };
@@ -14350,12 +14433,6 @@ static struct cdp_fse_ops dp_ops_fse = {
 };
 #endif
 
-#ifdef WLAN_HAPS_ENABLE
-static struct cdp_haps_ops dp_ops_haps = {
-	.haps_handle_ind = dp_haps_handle_ind,
-};
-#endif
-
 #ifdef CONFIG_SAWF_DEF_QUEUES
 static struct cdp_sawf_ops dp_ops_sawf = {
 	.sawf_def_queues_map_req = dp_sawf_def_queues_map_req,
@@ -14398,6 +14475,8 @@ static struct cdp_sawf_ops dp_ops_sawf = {
 #ifdef DP_TX_TRACKING
 
 #define DP_TX_COMP_MAX_LATENCY_MS 60000
+#define DP_TX_COMP_MAX_LATENCY_2ND_STAGE 60
+#define DP_TX_COMP_MAX_DEFERRED_TIMESTAMP_SEC 255
 
 static bool dp_check_pending_tx(struct dp_soc *soc)
 {
@@ -14445,34 +14524,47 @@ static bool dp_check_pending_tx(struct dp_soc *soc)
  */
 static bool dp_tx_comp_delay_check(struct dp_tx_desc_s *tx_desc)
 {
-	uint64_t time_latency, timestamp_tick = tx_desc->timestamp_tick;
-	qdf_ktime_t current_time = qdf_ktime_real_get();
-	qdf_ktime_t timestamp = tx_desc->timestamp;
+	uint64_t time_latency;
+	qdf_ktime_t current_time;
+	bool use_ktime = dp_tx_pkt_tracepoints_enabled();
+	uint16_t time_latency_sec;
 
-	if (dp_tx_pkt_tracepoints_enabled()) {
-		if (!timestamp)
+	if (use_ktime) {
+		if (!tx_desc->timestamp)
 			return false;
 
+		current_time = qdf_ktime_real_get();
 		time_latency = qdf_ktime_to_ms(current_time) -
-				qdf_ktime_to_ms(timestamp);
-		if (time_latency >= DP_TX_COMP_MAX_LATENCY_MS) {
-			dp_err_rl("enqueued: %llu ms, current : %llu ms",
-				  timestamp, current_time);
-			return true;
-		}
+			qdf_ktime_to_ms(tx_desc->timestamp);
 	} else {
-		if (!timestamp_tick)
+		if (!tx_desc->timestamp_tick)
 			return false;
 
 		current_time = qdf_system_ticks();
 		time_latency = qdf_system_ticks_to_msecs(current_time -
-							 timestamp_tick);
-		if (time_latency >= DP_TX_COMP_MAX_LATENCY_MS) {
-			dp_err_rl("enqueued: %u ms, current : %u ms",
-				  qdf_system_ticks_to_msecs(timestamp_tick),
-				  qdf_system_ticks_to_msecs(current_time));
-			return true;
+							 tx_desc->timestamp_tick);
+	}
+	time_latency_sec = time_latency / 1000;
+	if (time_latency >= DP_TX_COMP_MAX_LATENCY_MS &&
+	    !tx_desc->deferred_timestamp) {
+		if (!hal_get_reg_write_pending_work(tx_desc->pdev->soc->hal_soc)) {
+			dp_debug("Desc %d: delayed work over, timeout set",
+				 tx_desc->id);
+			tx_desc->deferred_timestamp = time_latency_sec +
+				DP_TX_COMP_MAX_LATENCY_2ND_STAGE;
+			return false;
 		}
+	} else if (tx_desc->deferred_timestamp &&
+		   (time_latency_sec >= tx_desc->deferred_timestamp)) {
+		if (use_ktime) {
+			dp_err_rl("enqueued: %llu ms, current : %llu ms",
+				  tx_desc->timestamp, current_time);
+		} else {
+			dp_err_rl("enqueued: %u ms, current : %u ms",
+				  qdf_system_ticks_to_msecs(tx_desc->timestamp_tick),
+				  qdf_system_ticks_to_msecs(current_time));
+		}
+		return true;
 	}
 
 	return false;
@@ -15080,6 +15172,8 @@ static struct cdp_ipa_ops dp_ops_ipa = {
 	.ipa_tx_opt_dp_ctrl_pkt = dp_ipa_tx_opt_dp_ctrl_pkt,
 	.ipa_pcie_link_up = dp_ipa_pcie_link_up,
 	.ipa_pcie_link_down = dp_ipa_pcie_link_down,
+	.ipa_dump_ring_hp_tp = dp_ipa_dump_ring_hp_tp,
+	.ipa_print_opt_dp_log = dp_ipa_print_opt_dp_log,
 #ifdef IPA_OPT_WIFI_DP_CTRL
 	.ipa_opt_dp_ctrl_debug_enable = dp_ipa_opt_dp_ctrl_debug_enable,
 #endif
@@ -15293,9 +15387,6 @@ static void dp_soc_txrx_ops_attach(struct dp_soc *soc)
 #ifdef WLAN_SUPPORT_RX_FLOW_TAG
 	soc->cdp_soc.ops->fse_ops = &dp_ops_fse;
 #endif
-#ifdef WLAN_HAPS_ENABLE
-	soc->cdp_soc.ops->haps_ops = &dp_ops_haps;
-#endif
 };
 
 #if defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6018) || \
@@ -15468,6 +15559,7 @@ dp_soc_attach(struct cdp_ctrl_objmgr_psoc *ctrl_psoc,
 	dp_soc_tx_hw_desc_history_attach(soc);
 	dp_soc_rx_history_attach(soc);
 	dp_soc_mon_status_ring_history_attach(soc);
+	dp_soc_mon_dest_ring_history_attach(soc);
 	dp_soc_tx_mon_buf_ring_history_attach(soc);
 	dp_soc_tx_history_attach(soc);
 	dp_soc_msdu_done_fail_desc_list_attach(soc);

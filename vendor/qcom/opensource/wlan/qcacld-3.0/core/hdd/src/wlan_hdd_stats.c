@@ -207,7 +207,11 @@ static int rssi_mcs_tbl[][MAX_RSSI_MCS_INDEX] = {
 	/* 40 */
 	{-79, -76, -74, -71, -67, -63, -62, -61, -56, -54, -49, -45, -43, -39},
 	/* 80 */
-	{-76, -73, -71, -68, -64, -60, -59, -58, -53, -51, -46, -42, -46, -36}
+	{-76, -73, -71, -68, -64, -60, -59, -58, -53, -51, -46, -42, -46, -36},
+	/* 160 */
+	{-73, -70, -68, -65, -61, -57, -56, -55, -50, -48, -43, -39, -43, -33},
+	/* 320 */
+	{-70, -67, -65, -62, -58, -54, -53, -52, -47, -45, -40, -36, -40, -30}
 };
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
@@ -1390,6 +1394,79 @@ static tSirWifiInterfaceMode hdd_map_device_to_ll_iface_mode(int device_mode)
 	}
 }
 
+/**
+ * hdd_get_link_tx_stats() - Get connected links' tx stats
+ * @link_info: Link info pointerin adapter
+ * @info: Pointer to wifi_interface_info struct
+ * Return: void
+ */
+static void hdd_get_link_tx_stats(struct wlan_hdd_link_info *link_info,
+				  struct wifi_interface_info *info)
+{
+	QDF_STATUS status;
+	struct cds_vdev_dp_stats dp_stats;
+	ol_txrx_soc_handle soc;
+	uint8_t *peer_mac;
+	struct cdp_peer_stats *peer_stats;
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(link_info->adapter);
+
+	if (!hdd_cm_is_vdev_connected(link_info)) {
+		info->link_stats_valid = false;
+		return;
+	}
+
+	soc = cds_get_context(QDF_MODULE_ID_SOC);
+	if (!soc) {
+		info->link_stats_valid = false;
+		return;
+	}
+
+	peer_mac = link_info->session.station.conn_info.bssid.bytes;
+
+	peer_stats = qdf_mem_malloc(sizeof(*peer_stats));
+	if (!peer_stats) {
+		info->link_stats_valid = false;
+		hdd_err("Failed to allocated memory for peer_stats");
+		return;
+	}
+
+	if (!wlan_hdd_is_per_link_stats_supported(hdd_ctx)) {
+		status = cdp_host_get_peer_stats(soc, link_info->vdev_id,
+						 peer_mac, peer_stats);
+	} else {
+		status = ucfg_dp_get_per_link_peer_stats(soc,
+						link_info->vdev_id,
+						peer_mac, peer_stats,
+						CDP_WILD_PEER_TYPE,
+						DP_STAT_NUM_SINGLE_LINK);
+	}
+
+	if (QDF_IS_STATUS_ERROR(status)) {
+		info->link_stats_valid = false;
+		qdf_mem_free(peer_stats);
+		return;
+	}
+
+	info->link_stats_valid = true;
+	info->link_tx_success  = peer_stats->tx.tx_success.num;
+	info->link_tx_retries  = peer_stats->tx.retries;
+	info->link_tx_failed   = peer_stats->tx.tx_failed;
+
+	qdf_mem_free(peer_stats);
+
+	if (cds_dp_get_vdev_stats(link_info->vdev_id, &dp_stats))
+		info->tx_dropped = dp_stats.tx_dropped;
+	else
+		info->tx_dropped = 0;
+
+	hdd_debug("vdev id %d peer mac " QDF_MAC_ADDR_FMT
+		  " tx_succ %d tx_retry %d tx_failed %d tx_drop %d",
+		  link_info->vdev_id,
+		  QDF_MAC_ADDR_REF(peer_mac),
+		  info->link_tx_success, info->link_tx_retries,
+		  info->link_tx_failed, info->tx_dropped);
+}
+
 bool hdd_get_interface_info(struct wlan_hdd_link_info *link_info,
 			    struct wifi_interface_info *info)
 {
@@ -1546,6 +1623,17 @@ wlan_hdd_update_iface_stats_info(struct wlan_hdd_link_info *link_info,
 
 	hdd_stats = &link_info->ll_iface_stats.link_stats;
 	stats = &if_stat->link_stats;
+
+	if (link_info->ll_iface_stats.info.link_stats_valid) {
+		if_stat->info.link_tx_success +=
+				link_info->ll_iface_stats.info.link_tx_success;
+		if_stat->info.link_tx_retries +=
+				link_info->ll_iface_stats.info.link_tx_retries;
+		if_stat->info.link_tx_failed  +=
+				link_info->ll_iface_stats.info.link_tx_failed;
+		if_stat->info.tx_dropped      +=
+				link_info->ll_iface_stats.info.tx_dropped;
+	}
 
 	if (!update_stats) {
 		wlan_hdd_update_wmm_ac_stats(link_info, if_stat, update_stats);
@@ -2119,6 +2207,8 @@ wlan_hdd_send_mlo_ll_iface_stats_to_user(struct hdd_adapter *adapter)
 			goto err;
 		}
 
+		hdd_get_link_tx_stats(link_info, iface_info);
+
 		wlan_hdd_update_iface_stats_info(link_info, &cumulative_if_stat,
 						 update_stats);
 	}
@@ -2159,6 +2249,8 @@ wlan_hdd_send_mlo_ll_iface_stats_to_user(struct hdd_adapter *adapter)
 
 		stats = &link_info->ll_iface_stats;
 		per_link_peers = stats->link_stats.num_peers;
+
+		hdd_get_link_tx_stats(link_info, iface_info);
 
 		if (!wlan_hdd_put_mlo_link_iface_info(&info, skb))
 			goto err;
@@ -2370,6 +2462,8 @@ hdd_link_layer_process_iface_stats(struct wlan_hdd_link_info *link_info,
 		wlan_cfg80211_vendor_free_skb(skb);
 		return;
 	}
+
+	hdd_get_link_tx_stats(link_info, &if_stat->info);
 
 	if (!put_wifi_iface_stats(if_stat, num_peers, skb, link_info)) {
 		hdd_err("put_wifi_iface_stats fail");
@@ -8600,7 +8694,6 @@ wlan_hdd_get_sta_tx_rate_stats(struct wlan_hdd_link_info *link_info)
 	struct stats_event *stats;
 	struct hdd_fw_txrx_stats txrx_stats = {0};
 	struct hdd_stats *hdd_stats = &link_info->hdd_stats;
-	int errno = 0;
 	uint8_t *peer_addr;
 
 	if (hdd_stats->class_a_stat.is_tx_rate_version_checked &&
@@ -8614,10 +8707,11 @@ wlan_hdd_get_sta_tx_rate_stats(struct wlan_hdd_link_info *link_info)
 
 	peer_addr = link_info->session.station.conn_info.bssid.bytes;
 	stats = wlan_cfg80211_mc_cp_stats_get_peer_stats_ext(link_info->vdev,
-							     peer_addr,
-							     &errno);
-	if (errno)
+							     peer_addr);
+	if (!stats) {
+		hdd_err_rl("Failed to get peer_stats");
 		return;
+	}
 
 	wlan_hdd_fill_rate_info(&txrx_stats, stats->peer_stats_info_ext);
 	hdd_stats->class_a_stat.tx_rate_version = txrx_stats.tx_rate.version;
@@ -12637,21 +12731,38 @@ static void hdd_print_second_64_bits_cstats_fw_type(char *buffer,
 {
 	const char *start_marker = "CS_FSM";
 	const char *end_marker = "CS_FEM";
-	uint32_t i, j, start, end, payload_len;
+	uint32_t i, j, start, payload_len;
+	bool end_found = false;
 	uint64_t second_64 = 0;
 
-	/* skips the 2-byte ANI HDR at the beginning */
-	for (i = ANI_HDR_SIZE; i < len - 1; i++) {
+	if (!buffer) {
+		hdd_debug("Buffer is NULL");
+		return;
+	}
+
+	if (len < ANI_HDR_SIZE + MARKER_LEN) {
+		hdd_debug("Buffer too short for markers");
+		return;
+	}
+
+	/* skip the 2-byte ANI HDR at the beginning */
+	i = ANI_HDR_SIZE;
+
+	while (i + MARKER_LEN <= len) {
 		/* Look for start marker */
 		if (qdf_mem_cmp(&buffer[i], start_marker, MARKER_LEN) == 0) {
 			start = i + MARKER_LEN;
+			end_found = false;
 			/* look for end marker */
-			for (j = start; j < len - 1; j++) {
+			j = start;
+			while (j + MARKER_LEN <= len) {
 				if (qdf_mem_cmp(&buffer[j], end_marker,
 						MARKER_LEN) == 0) {
-					end = j;
-					payload_len = end - start;
-					if (payload_len >= 16) {
+					payload_len = j - start;
+
+					/* Verify bounds before extraction */
+					if (payload_len >= 16 &&
+					    (start + 16) <= len) {
 						/*
 						 * extract second 64 bits
 						 * (bytes 8 to 15) of payload
@@ -12666,12 +12777,25 @@ static void hdd_print_second_64_bits_cstats_fw_type(char *buffer,
 						hdd_debug("Payload too short");
 					}
 					/* move past this payload */
-					i = j + MARKER_LEN - 1;
+					i = j + MARKER_LEN;
+					end_found = true;
 					break;
 				}
+
+				j++;
 			}
+
+			if (!end_found) {
+				hdd_debug("End marker not found after start marker");
+				i++;
+			}
+
+			continue;
 		}
+
+		i++;
 	}
+
 }
 
 int hdd_cstats_send_data_to_userspace(char *buff, unsigned int len,

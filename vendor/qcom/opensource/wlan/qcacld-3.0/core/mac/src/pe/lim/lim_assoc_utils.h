@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -450,4 +450,33 @@ void lim_free_assoc_req_frm_buf(tpSirAssocReq assoc_req);
 bool lim_alloc_assoc_req_frm_buf(tpSirAssocReq assoc_req,
 				 qdf_nbuf_t buf, uint32_t mac_header_len,
 				 uint32_t frame_len);
+
+#if (defined(CONNECTIVITY_DIAG_EVENT) && \
+	defined(WLAN_FEATURE_ROAM_OFFLOAD))
+/**
+ * lim_clear_log_instance_id() - Clear log instance id
+ *
+ * @session: PE session entry
+ *
+ * Return: None
+ */
+void lim_clear_log_instance_id(struct pe_session *session);
+#else
+static inline void lim_clear_log_instance_id(struct pe_session *session)
+{}
+#endif
+
+/**
+ * lim_update_add_sta_cck_5g_support() - update add sta CCK RX/TX
+ * @mac_ctx: mac context
+ * @add_sta: pointer to tAddStaParams
+ * @assoc_rsp: Assoc response
+ * @session_entry: pe session
+ *
+ * Return: NA
+ */
+void
+lim_update_add_sta_cck_5g_support(struct mac_context *mac_ctx,
+				  tAddStaParams *add_sta, tpSirAssocRsp assoc_rsp,
+				  struct pe_session *session_entry);
 #endif /* __LIM_ASSOC_UTILS_H */

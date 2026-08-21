@@ -4,6 +4,7 @@
 #include "pci_platform.h"
 #include "debug.h"
 #include <linux/pm.h>
+#include <linux/of_address.h>
 
 static struct cnss_msi_config msi_config = {
 	.total_vectors = 32,
@@ -96,8 +97,9 @@ int cnss_set_pci_link(struct cnss_pci_data *pci_priv, bool link_up)
 		     dev->power.runtime_status);
 
 	if (link_up) {
-		dev->power.ignore_children = false;
-		ret = pm_runtime_get_sync(dev);
+		pm_suspend_ignore_children(dev, false);
+		ret = pm_runtime_resume(dev);
+		pm_runtime_barrier(dev);
 		cnss_pr_info("PCIe resume: ret:%d, usage_count:%d, runtime_status:%d\n",
 			     ret, atomic_read(&dev->power.usage_count),
 			     dev->power.runtime_status);
@@ -108,8 +110,9 @@ int cnss_set_pci_link(struct cnss_pci_data *pci_priv, bool link_up)
 			return ret;
 		}
 	} else {
-		dev->power.ignore_children = true;
-		ret = pm_runtime_put_sync(dev);
+		pm_suspend_ignore_children(dev, true);
+		ret = pm_runtime_suspend(dev);
+		pm_runtime_barrier(dev);
 		cnss_pr_info("PCIe suspend: ret:%d, usage_count:%d, runtime_status:%d\n",
 			     ret, atomic_read(&dev->power.usage_count),
 			     dev->power.runtime_status);

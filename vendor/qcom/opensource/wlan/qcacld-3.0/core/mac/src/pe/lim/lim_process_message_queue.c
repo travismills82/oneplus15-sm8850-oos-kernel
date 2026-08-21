@@ -484,7 +484,6 @@ static void lim_process_set_default_scan_ie_request(struct mac_context *mac_ctx,
 	uint16_t local_ie_len;
 	struct scheduler_msg msg_q = {0};
 	QDF_STATUS ret_code;
-	struct pe_session *pe_session;
 
 	if (!msg_buf) {
 		pe_err("msg_buf is NULL");
@@ -498,11 +497,9 @@ static void lim_process_set_default_scan_ie_request(struct mac_context *mac_ctx,
 	if (!local_ie_buf)
 		return;
 
-	pe_session = pe_find_session_by_vdev_id(mac_ctx,
-						set_ie_params->vdev_id);
 	if (lim_update_ext_cap_ie(mac_ctx,
 			(uint8_t *)set_ie_params->ie_data,
-			local_ie_buf, &local_ie_len, pe_session)) {
+			local_ie_buf, &local_ie_len, set_ie_params->vdev_id)) {
 		pe_err("Update ext cap IEs fails");
 		goto scan_ie_send_fail;
 	}
@@ -1992,6 +1989,7 @@ static void lim_process_messages(struct mac_context *mac_ctx,
 	case SIR_LIM_AUTH_FAIL_TIMEOUT:
 	case SIR_LIM_AUTH_RSP_TIMEOUT:
 	case SIR_LIM_ASSOC_FAIL_TIMEOUT:
+	case SIR_LIM_DEAUTH_ACK_TIMEOUT:
 	case SIR_LIM_REASSOC_FAIL_TIMEOUT:
 	case SIR_LIM_FT_PREAUTH_RSP_TIMEOUT:
 	case SIR_LIM_DISASSOC_ACK_TIMEOUT:

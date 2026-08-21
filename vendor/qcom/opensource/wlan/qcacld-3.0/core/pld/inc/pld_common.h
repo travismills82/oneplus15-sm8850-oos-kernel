@@ -2011,14 +2011,6 @@ int pld_get_thermal_state(struct device *dev, unsigned long *thermal_state,
 void pld_set_tsf_sync_period(struct device *dev, u32 val);
 
 /**
- * pld_get_tsf_gpio() - Get GPIO pin number for GPIO IRQ based TSF sync
- * @dev: device
- *
- * Return: GPIO pin number; Negative error code for failure
- */
-int pld_get_tsf_gpio(struct device *dev);
-
-/**
  * pld_reset_tsf_sync_period() - Reset TSF sync period
  * @dev: device
  *
@@ -2293,20 +2285,6 @@ pld_get_cpumask_for_wlan_tx_comp_interrupts(struct device *dev,
 					    unsigned int *cpumask)
 {
 }
-#endif
-
-#ifdef FEATURE_WLAN_DIRECT_CX
-/**
- * pld_set_cxpc()- Set CXPC Status
- * @dev: device
- *
- * Set cxpc status
- *
- * Return: 0 for success. Negative error codes.
- */
-void pld_set_cxpc(struct device *dev);
-#else
-static inline void pld_set_cxpc(struct device *dev) {}
 #endif
 
 #if defined(DP_FEATURE_RX_BUFFER_RECYCLE) && defined(IPA_OFFLOAD)

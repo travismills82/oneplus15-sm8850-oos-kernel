@@ -53,6 +53,9 @@
 #include <linux/soc/qcom/slate_events_bridge_intf.h>
 #include <uapi/linux/slatecom_interface.h>
 #endif
+#include <linux/regulator/consumer.h>
+#include <linux/nvmem-consumer.h>
+
 #include <linux/qcom-iommu-util.h>
 #include <soc/qcom/of_common.h>
 #include "main.h"
@@ -60,6 +63,11 @@
 #include "debug.h"
 #include "power.h"
 #include "genl.h"
+
+#ifdef OPLUS_FEATURE_WIFI_MAC
+#include <soc/oplus/system/boot_mode.h>
+#include <soc/oplus/system/oplus_project.h>
+#endif /* OPLUS_FEATURE_WIFI_MAC */
 
 #define MAX_PROP_SIZE			32
 #define NUM_LOG_PAGES			10
@@ -129,6 +137,11 @@ enum icnss_pdr_cause_index {
 	ICNSS_ROOT_PD_SHUTDOWN,
 	ICNSS_HOST_ERROR,
 };
+
+#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+//Add for wifi switch monitor
+static unsigned int cnssprobestate = 0;
+#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 
 static const char * const icnss_pdr_cause[] = {
 	[ICNSS_FW_CRASH] = "FW crash",
@@ -282,6 +295,8 @@ char *icnss_driver_event_to_str(enum icnss_driver_event_type type)
 		return "QDSS_TRACE_REQ_DATA";
 	case ICNSS_DRIVER_EVENT_SUBSYS_RESTART_LEVEL:
 		return "SUBSYS_RESTART_LEVEL";
+	case ICNSS_DRIVER_EVENT_XO_TRIM_IND:
+		return "XO_TRIM_IND";
 	case ICNSS_DRIVER_EVENT_MAX:
 		return "EVENT_MAX";
 	}
@@ -866,8 +881,12 @@ static irqreturn_t fw_crash_indication_handler(int irq, void *ctx)
 
 		set_bit(ICNSS_FW_DOWN, &priv->state);
 		icnss_ignore_fw_timeout(true);
-		clear_bit(ICNSS_SOC_WAKE_DONE, &priv->state);
-		complete(&priv->smp2p_soc_wake_wait);
+		if (priv->device_id == WCN6750_DEVICE_ID ||
+		    priv->device_id == WCN7750_DEVICE_ID ||
+		    priv->device_id == WCN6450_DEVICE_ID) {
+			clear_bit(ICNSS_SOC_WAKE_DONE, &priv->state);
+			complete(&priv->smp2p_soc_wake_wait);
+		}
 
 		if (test_bit(ICNSS_FW_READY, &priv->state)) {
 			clear_bit(ICNSS_FW_READY, &priv->state);
@@ -1072,7 +1091,12 @@ static int icnss_setup_dms_mac(struct icnss_priv *priv)
 	/* DTSI property use-nv-mac is used to force DMS MAC address for WLAN.
 	 * Thus assert on failure to get MAC from DMS even after retries
 	 */
+	#ifndef OPLUS_FEATURE_WIFI_MAC
+	//Add for boot wlan mode not use NV mac
 	if (priv->use_nv_mac) {
+	#else
+	if ((get_boot_mode() !=  MSM_BOOT_MODE__WLAN) && priv->use_nv_mac) {
+	#endif /* OPLUS_FEATURE_WIFI_MAC */
 		for (i = 0; i < ICNSS_DMS_QMI_CONNECTION_WAIT_RETRY; i++) {
 			if (priv->dms.mac_valid)
 				break;
@@ -1084,7 +1108,9 @@ static int icnss_setup_dms_mac(struct icnss_priv *priv)
 		}
 		if (!priv->dms.nv_mac_not_prov && !priv->dms.mac_valid) {
 			icnss_pr_err("Unable to get MAC from DMS after retries\n");
+			#ifndef OPLUS_FEATURE_WIFI_MAC
 			ICNSS_ASSERT(0);
+			#endif /* OPLUS_FEATURE_WIFI_MAC */
 			return -EINVAL;
 		}
 	}
@@ -1254,6 +1280,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 	set_bit(ICNSS_WLFW_EXISTS, &priv->state);
 	clear_bit(ICNSS_FW_DOWN, &priv->state);
 	clear_bit(ICNSS_FW_READY, &priv->state);
+	priv->soc_wake_req_fail = 0;
 
 	if (priv->is_slate_rfa) {
 		ret = icnss_wait_for_slate_complete(priv);
@@ -1290,7 +1317,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 			goto qmi_registered;
 		}
 		ignore_assert = true;
-		goto fail;
+		goto cleanup_hw_poweroff;
 	}
 
 	if (priv->is_rf_subtype_valid) {
@@ -1317,26 +1344,26 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 
 		ret = wlfw_host_cap_send_sync(priv);
 		if (ret < 0)
-			goto fail;
+			goto cleanup_hw_poweroff;
 	}
 
 	if (priv->device_id == ADRASTEA_DEVICE_ID) {
 		if (!priv->msa_va) {
 			icnss_pr_err("Invalid MSA address\n");
 			ret = -EINVAL;
-			goto fail;
+			goto cleanup_hw_poweroff;
 		}
 
 		ret = wlfw_msa_mem_info_send_sync_msg(priv);
 		if (ret < 0) {
 			ignore_assert = true;
-			goto fail;
+			goto cleanup_hw_poweroff;
 		}
 
 		ret = wlfw_msa_ready_send_sync_msg(priv);
 		if (ret < 0) {
 			ignore_assert = true;
-			goto fail;
+			goto cleanup_hw_poweroff;
 		}
 	}
 
@@ -1346,14 +1373,14 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 	ret = wlfw_cap_send_sync_msg(priv);
 	if (ret < 0) {
 		ignore_assert = true;
-		goto fail;
+		goto cleanup_hw_poweroff;
 	}
 
 	if (priv->device_id == ADRASTEA_DEVICE_ID && priv->is_chain1_supported) {
 		ret = icnss_power_on_chain1_reg(priv);
 		if (ret) {
 			ignore_assert = true;
-			goto fail;
+			goto cleanup_hw_poweroff;
 		}
 	}
 
@@ -1371,7 +1398,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 		ret = wlfw_device_info_send_msg(priv);
 		if (ret < 0) {
 			ignore_assert = true;
-			goto  device_info_failure;
+			goto  cleanup_hw_poweroff;
 		}
 
 		if (priv->shared_mem[WLFW_SHARED_MEM_CLIENT_XPAN_V01].size)
@@ -1386,7 +1413,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 				icnss_pr_err("DMA map failed for lpass shared mem address:0x%llx\n",
 						priv->shared_mem[WLFW_SHARED_MEM_CLIENT_XPAN_V01].pa_addr);
 
-				goto device_info_failure;
+				goto cleanup_hw_poweroff;
 			}
 		}
 
@@ -1395,7 +1422,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 						 priv->mem_base_size);
 		if (!priv->mem_base_va) {
 			icnss_pr_err("Ioremap failed for bar address\n");
-			goto device_info_failure;
+			goto cleanup_hw_poweroff;
 		}
 
 		icnss_pr_dbg("Non-Secured Bar Address pa: %pa, va: 0x%pK\n",
@@ -1420,20 +1447,20 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 		ret = icnss_wlfw_bdf_dnld_send_sync(priv,
 						    priv->ctrl_params.bdf_type);
 		if (ret < 0)
-			goto device_info_failure;
+			goto cleanup_hw_poweroff;
 	}
 
 	if (priv->device_id == WCN7750_DEVICE_ID) {
 		ret = icnss_load_phy_ucode(priv);
 		if (ret < 0) {
 			icnss_pr_err("Phy ucode image loading failed, ret = %d\n", ret);
-			goto device_info_failure;
+			goto cleanup_hw_poweroff;
 		}
 
 		ret = icnss_wlfw_phy_ucode_dnld_send_sync(priv);
 		if (ret < 0) {
 			icnss_pr_err("Phy ucode download to wlan fw failed, ret = %d\n", ret);
-			goto device_info_failure;
+			goto cleanup_hw_poweroff;
 		}
 	}
 
@@ -1441,13 +1468,13 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 		ret = icnss_load_aux(priv);
 		if (ret < 0) {
 			icnss_pr_err("AUX image loading failed, ret = %d\n", ret);
-			goto device_info_failure;
+			goto cleanup_hw_poweroff;
 		}
 
 		ret = icnss_wlfw_aux_dnld_send_sync(priv);
 		if (ret < 0) {
 			icnss_pr_err("AUX download to wlan fw failed, ret = %d\n", ret);
-			goto device_info_failure;
+			goto cleanup_hw_poweroff;
 		}
 	}
 
@@ -1476,7 +1503,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 		if (priv->bdf_download_support) {
 			ret = wlfw_cal_report_req(priv);
 			if (ret < 0)
-				goto device_info_failure;
+				goto cleanup_hw_poweroff;
 		}
 
 		wlfw_dynamic_feature_mask_send_sync_msg(priv,
@@ -1494,7 +1521,7 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 
 	return ret;
 
-device_info_failure:
+cleanup_hw_poweroff:
 	icnss_hw_power_off(priv);
 fail:
 	ICNSS_ASSERT(ignore_assert);
@@ -2733,6 +2760,127 @@ static void icnss_wpss_self_recovery(struct work_struct *wpss_load_work)
 	}
 }
 
+/**
+ * icnss_xo_trim_init - Initialize configurations for XO trim
+ * @priv: Pointer to icnss platform data
+ *
+ * This function attempts to retrieve the register for inputting XO calibration
+ * data and the regulator to trigger the PBS from DTS.
+ *
+ * Return: None
+ */
+static void icnss_xo_trim_init(struct icnss_priv *priv)
+{
+	struct device *dev;
+	struct icnss_xo_trim_config *xo_trim_conf;
+
+	dev = &priv->pdev->dev;
+	xo_trim_conf = &priv->xo_trim_conf;
+
+	xo_trim_conf->xo_calib_reg = devm_nvmem_cell_get(dev, "xo_calib_reg");
+	if (IS_ERR(xo_trim_conf->xo_calib_reg)) {
+		icnss_pr_dbg("Invalid xo_calib_reg: %ld\n",
+			     PTR_ERR(xo_trim_conf->xo_calib_reg));
+		return;
+	}
+
+	xo_trim_conf->wcal_pbs = devm_regulator_get_optional(dev, "wcal-pbs");
+	if (IS_ERR(xo_trim_conf->wcal_pbs)) {
+		icnss_pr_dbg("Invalid wcal_pbs: %ld\n",
+			     PTR_ERR(xo_trim_conf->wcal_pbs));
+		return;
+	}
+
+	icnss_pr_dbg("XO trim initialized\n");
+}
+
+/**
+ * icnss_xo_trim_deinit - Deinitialize configurations for XO trim
+ * @priv: Pointer to icnss platform data
+ *
+ * Return: None
+ */
+void icnss_xo_trim_deinit(struct icnss_priv *priv)
+{
+	/* The resources allocated by devm_* functions will be automatically
+	 * freed by the resource manager when the device is released.
+	 */
+	icnss_pr_dbg("XO trim de-initialized\n");
+}
+
+/**
+ * icnss_xo_trim_perform - Perform the XO trim
+ * @xo_trim_conf: pointer to config for XO trim
+ *
+ * This function writes the new XO trim value to the NVMEM location exposed by
+ * PMIC. It then triggers PBS sequence using the WLAN_CAL regulator resource by
+ * calling regulator_enable(), followed by regulator_disable().
+ * This sequence causes PMIC PBS to apply the new trim value to PMIC XO trim
+ * settings, leading to an adjustment in the crystal oscillator frequency.
+ *
+ * Return: 0 on success, errno otherwise
+ */
+static int icnss_xo_trim_perform(struct icnss_xo_trim_config *xo_trim_conf)
+{
+	int ret;
+
+	if (IS_ERR_OR_NULL(xo_trim_conf->xo_calib_reg) ||
+	    IS_ERR_OR_NULL(xo_trim_conf->wcal_pbs)) {
+		icnss_pr_err("Invalid xo trim config\n");
+		return -EINVAL;
+	}
+
+	ret = nvmem_cell_write(xo_trim_conf->xo_calib_reg,
+			       &xo_trim_conf->trim_val,
+			       sizeof(xo_trim_conf->trim_val));
+	if (ret < 0) {
+		icnss_pr_err("Fail to write xo_calib_reg, ret = %d\n", ret);
+		return ret;
+	}
+
+	/* Enable/disable regulator to trigger PBS sequence */
+	ret = regulator_enable(xo_trim_conf->wcal_pbs);
+	if (ret) {
+		icnss_pr_err("Fail to enable wcal_pbs: %d\n", ret);
+		return ret;
+	}
+
+	ret = regulator_disable(xo_trim_conf->wcal_pbs);
+	if (ret) {
+		icnss_pr_err("Fail to disable wcal_pbs: %d\n", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * icnss_set_xo_trim - API for XO trim operation.
+ * @priv: Pointer to platform driver context.
+ * @data: Pointer to event data that holds the trim value.
+ *
+ * This function performs XO trim and notifies target of the result.
+ *
+ * Return: 0 on success, errno othrewise
+ */
+static int icnss_set_xo_trim(struct icnss_priv *priv, void *data)
+{
+	int ret = -EINVAL;
+
+	if (!data)
+		goto out;
+
+	priv->xo_trim_conf.trim_val = *((u8 *)data);
+	kfree(data);
+
+	ret = icnss_xo_trim_perform(&priv->xo_trim_conf);
+	icnss_pr_dbg("XO trim result with value(%u): %d\n",
+		     priv->xo_trim_conf.trim_val, ret);
+
+out:
+	return icnss_wlfw_xo_trim_result_send_sync(priv, ret);
+}
+
 static void icnss_driver_event_work(struct work_struct *work)
 {
 	struct icnss_priv *priv =
@@ -2785,10 +2933,16 @@ static void icnss_driver_event_work(struct work_struct *work)
 								 event->data);
 			break;
 		case ICNSS_DRIVER_EVENT_IDLE_SHUTDOWN:
+			#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+			idle_shutdown = true;
+			#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 			ret = icnss_driver_event_idle_shutdown(priv,
 							       event->data);
 			break;
 		case ICNSS_DRIVER_EVENT_IDLE_RESTART:
+			#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+			idle_shutdown = false;
+			#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 			ret = icnss_driver_event_idle_restart(priv,
 							      event->data);
 			break;
@@ -2823,6 +2977,9 @@ static void icnss_driver_event_work(struct work_struct *work)
 		case ICNSS_DRIVER_EVENT_WLFW_TWT_CFG_IND:
 			ret = icnss_process_twt_cfg_ind_event(priv,
 							     event->data);
+			break;
+		case ICNSS_DRIVER_EVENT_XO_TRIM_IND:
+			ret = icnss_set_xo_trim(priv, event->data);
 			break;
 		default:
 			icnss_pr_err("Invalid Event type: %d", event->type);
@@ -2881,6 +3038,10 @@ static void icnss_soc_wake_msg_work(struct work_struct *work)
 		case ICNSS_SOC_WAKE_REQUEST_EVENT:
 			ret = icnss_event_soc_wake_request(priv,
 							   event->data);
+			if (ret == -ETIMEDOUT)
+				priv->soc_wake_req_fail++;
+			else
+				priv->soc_wake_req_fail = 0;
 			break;
 		case ICNSS_SOC_WAKE_RELEASE_EVENT:
 			ret = icnss_event_soc_wake_release(priv,
@@ -2894,10 +3055,10 @@ static void icnss_soc_wake_msg_work(struct work_struct *work)
 
 		priv->stats.soc_wake_events[event->type].processed++;
 
-		icnss_pr_soc_wake("Event Processed: %s%s(%d), ret: %d, state: 0x%lx\n",
+		icnss_pr_soc_wake("Event Processed: %s%s(%d), ret: %d, state: 0x%lx soc_wake_fail_count:%u\n",
 				  icnss_soc_wake_event_to_str(event->type),
 				  event->sync ? "-sync" : "", event->type, ret,
-				  priv->state);
+				  priv->state, priv->soc_wake_req_fail);
 
 		spin_lock_irqsave(&priv->soc_wake_msg_lock, flags);
 		if (event->sync) {
@@ -2914,6 +3075,22 @@ static void icnss_soc_wake_msg_work(struct work_struct *work)
 	spin_unlock_irqrestore(&priv->soc_wake_msg_lock, flags);
 
 	icnss_pm_relax(priv);
+
+	/*Check if recovery is required based on fail count*/
+	if (priv->soc_wake_req_fail >= ICNSS_SOC_WAKE_RECOVERY_COUNT &&
+	    !test_bit(ICNSS_FW_DOWN, &priv->state)) {
+		priv->stats.soc_wake_events[ICNSS_SOC_WAKE_REQUEST_EVENT].recovery_count++;
+		icnss_pr_info("Triggering recovery due to soc wake fail count: %u\n",
+		priv->stats.soc_wake_events[ICNSS_SOC_WAKE_REQUEST_EVENT].recovery_count);
+
+		priv->soc_wake_req_fail = 0;
+		ret = icnss_trigger_recovery(&priv->pdev->dev);
+		if (ret < 0) {
+			icnss_fatal_err("Soc wake recovery fail: ret: %d, state: 0x%lx\n",
+					ret, priv->state);
+			ICNSS_ASSERT_ALWAYS(0);
+		}
+	}
 }
 
 static int icnss_msa0_ramdump(struct icnss_priv *priv)
@@ -2969,23 +3146,10 @@ static void icnss_update_shutdown_state_to_fw(struct icnss_priv *priv,
 				!test_bit(ICNSS_BLOCK_SHUTDOWN, &priv->state) &&
 				!atomic_read(&priv->is_idle_shutdown)) {
 
-				icnss_pr_info("WLAN_EN Value: %d\n",
-					      gpio_get_value(priv->pinctrl_info.wlan_en_gpio));
-
 				icnss_driver_event_post(priv,
 					  ICNSS_DRIVER_EVENT_UNREGISTER_DRIVER,
 					  ICNSS_EVENT_SYNC_UNINTERRUPTIBLE,
 					  NULL);
-
-				if (gpio_get_value(priv->pinctrl_info.wlan_en_gpio)) {
-					ret = icnss_select_pinctrl_state(priv, false);
-					if (ret)
-						icnss_pr_err("Failed to select pinctrl state, err = %d\n",
-							     ret);
-				}
-
-				icnss_pr_info("WLAN_EN Value: %d\n",
-					      gpio_get_value(priv->pinctrl_info.wlan_en_gpio));
 
 				clear_bit(ICNSS_FW_READY, &priv->state);
 			}
@@ -3034,8 +3198,12 @@ static int icnss_wpss_early_notifier_nb(struct notifier_block *nb,
 	if (code == QCOM_SSR_BEFORE_SHUTDOWN) {
 		set_bit(ICNSS_FW_DOWN, &priv->state);
 		icnss_ignore_fw_timeout(true);
-		clear_bit(ICNSS_SOC_WAKE_DONE, &priv->state);
-		complete(&priv->smp2p_soc_wake_wait);
+		if (priv->device_id == WCN6750_DEVICE_ID ||
+		    priv->device_id == WCN7750_DEVICE_ID ||
+		    priv->device_id == WCN6450_DEVICE_ID) {
+			clear_bit(ICNSS_SOC_WAKE_DONE, &priv->state);
+			complete(&priv->smp2p_soc_wake_wait);
+		}
 	}
 
 	return NOTIFY_DONE;
@@ -3067,6 +3235,8 @@ static int icnss_wpss_notifier_nb(struct notifier_block *nb,
 	struct icnss_priv *priv = container_of(nb, struct icnss_priv,
 					       wpss_ssr_nb);
 	struct icnss_uevent_fw_down_data fw_down_data = {0};
+	int ret = 0;
+	int gpio_val = 0;
 
 	icnss_pr_info("WPSS-Notify: event %s(%lu)\n",
 		      icnss_qcom_ssr_notify_state_to_str(code), code);
@@ -3081,7 +3251,25 @@ static int icnss_wpss_notifier_nb(struct notifier_block *nb,
 			icnss_pr_info("Collecting msa0 segment dump\n");
 			icnss_msa0_ramdump(priv);
 			priv->notif_crashed = false;
+		} else {
+			if (priv->device_id == WCN7750_DEVICE_ID) {
+
+				if (priv->pinctrl_info.wlan_en_gpio) {
+					gpio_val = gpio_get_value(priv->pinctrl_info.wlan_en_gpio);
+					icnss_pr_info("WLAN_EN Value: %d\n", gpio_val);
+
+					if (gpio_val > 0) {
+						ret = icnss_select_pinctrl_state(priv, false);
+						if (ret)
+							icnss_pr_err("Failed to select pinctrl state, err = %d\n",
+									ret);
+					}
+				} else {
+					icnss_pr_err("Invalid WLAN_EN GPIO\n");
+				}
+			}
 		}
+
 		goto out;
 	default:
 		goto out;
@@ -3650,7 +3838,7 @@ static void *icnss_create_ramdump_device(struct icnss_priv *priv, const char *de
 
 	snprintf(ramdump_info->name, ARRAY_SIZE(ramdump_info->name), "icnss_%s", dev_name);
 
-	ramdump_info->minor = ida_simple_get(&rd_minor_id, 0, RAMDUMP_NUM_DEVICES, GFP_KERNEL);
+	ramdump_info->minor = ida_alloc_max(&rd_minor_id, RAMDUMP_NUM_DEVICES - 1, GFP_KERNEL);
 	if (ramdump_info->minor < 0) {
 		icnss_pr_err("%s: No more minor numbers left! rc:%d\n", __func__,
 			     ramdump_info->minor);
@@ -3671,7 +3859,7 @@ static void *icnss_create_ramdump_device(struct icnss_priv *priv, const char *de
 	return (void *)ramdump_info;
 
 fail_device_create:
-	ida_simple_remove(&rd_minor_id, ramdump_info->minor);
+	ida_free(&rd_minor_id, ramdump_info->minor);
 fail_out_of_minors:
 	kfree(ramdump_info);
 	return ERR_PTR(ret);
@@ -5488,6 +5676,42 @@ static void icnss_sysfs_destroy(struct icnss_priv *priv)
 	icnss_devm_device_remove_group(priv);
 }
 
+static int icnss_get_wcn_ktb_info(struct icnss_priv *priv)
+{
+	int ret = 0;
+	struct platform_device *pdev = priv->pdev;
+	struct device *dev = &pdev->dev;
+	u8 *buf;
+	size_t len = 0;
+
+	priv->wcn_ktb_info_reg = devm_nvmem_cell_get(dev, "wcn_info_reg");
+	if (IS_ERR(priv->wcn_ktb_info_reg)) {
+		ret = PTR_ERR(priv->wcn_ktb_info_reg);
+		icnss_pr_dbg(" WCN_KTB_rail not supported \n");
+		priv->wcn_ktb_info_reg = NULL;
+		priv->wcn_ktb_info_buf = NULL;
+	} else {
+		buf = nvmem_cell_read(priv->wcn_ktb_info_reg, &len);
+		if (IS_ERR(buf)) {
+			ret = PTR_ERR(buf);
+			icnss_pr_err("Failed to read wcn_ktb_info cell, ret=%d\n", ret);
+			priv->wcn_ktb_info_reg = NULL;
+			priv->wcn_ktb_info_buf = NULL;
+			return ret;
+		}
+		if (len < 1) {
+			icnss_pr_err("Invalid wcn_ktb_info length: %zu\n", len);
+			kfree(buf);
+			priv->wcn_ktb_info_reg = NULL;
+			priv->wcn_ktb_info_buf = NULL;
+			return -EINVAL;
+		}
+		priv->wcn_ktb_info_buf = buf;
+	}
+
+	return 0;
+}
+
 static int icnss_resource_parse(struct icnss_priv *priv)
 {
 	int ret = 0, i = 0, irq = 0;
@@ -5496,10 +5720,16 @@ static int icnss_resource_parse(struct icnss_priv *priv)
 	struct resource *res;
 	u32 int_prop;
 
+	if (priv->device_id == WCN7750_DEVICE_ID) {
+		ret = icnss_get_wcn_ktb_info(priv);
+		if (ret)
+			goto out;
+	}
+
 	ret = icnss_get_vreg(priv);
 	if (ret) {
 		icnss_pr_err("Failed to get vreg, err = %d\n", ret);
-		goto out;
+		goto cleanup_ktb_info;
 	}
 
 	ret = icnss_get_clk(priv);
@@ -5626,12 +5856,19 @@ static int icnss_resource_parse(struct icnss_priv *priv)
 		}
 	}
 
+	/* Non-fatal and continue if configuration is unavailable */
+	icnss_xo_trim_init(priv);
 	return 0;
 
 put_clk:
 	icnss_put_clk(priv);
 put_vreg:
 	icnss_put_vreg(priv);
+cleanup_ktb_info:
+	if (priv->wcn_ktb_info_buf) {
+		kfree(priv->wcn_ktb_info_buf);
+		priv->wcn_ktb_info_buf = NULL;
+	}
 out:
 	return ret;
 }
@@ -6121,6 +6358,99 @@ static inline void icnss_runtime_pm_init(struct icnss_priv *priv)
 	pm_runtime_enable(&priv->pdev->dev);
 }
 
+#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+//Add for wifi switch monitor
+static void icnss_create_fw_state_kobj(void);
+static void icnss_create_debug_kobj(void);
+extern ssize_t icnss_show_cnss_debug(struct device_driver *driver, char *buf);
+bool idle_shutdown = false;
+
+static ssize_t icnss_show_fw_ready(struct device_driver *driver, char *buf)
+{
+	bool firmware_ready = false;
+	bool bdfloadsuccess = false;
+	bool regdbloadsuccess = false;
+	bool cnssprobesuccess = false;
+	bool plat_env_null = false;
+	bool pcie_link_down = false;
+	bool pcie_bus_fail = false;
+	bool pcie_enumerate_fail = false;
+	bool pcie_l1_fail = false;
+
+	if (!penv) {
+		icnss_pr_err("icnss_show_fw_ready plat_env is NULL!\n");
+		plat_env_null = true;
+	} else {
+		firmware_ready = test_bit(ICNSS_FW_READY, &penv->state);
+		regdbloadsuccess = test_bit(CNSS_LOAD_REGDB_SUCCESS, &penv->loadRegdbState);
+		bdfloadsuccess = test_bit(CNSS_LOAD_BDF_SUCCESS, &penv->loadBdfState);
+		plat_env_null = false;
+		pcie_link_down = test_bit(CNSS_PCIE_LINK_DOWN,&penv->pcieLinkDown);
+		pcie_bus_fail = test_bit(CNSS_PCIEBUS_FAIL, &penv->pcieBusState);
+		pcie_enumerate_fail = test_bit(CNSS_PCIE_ENUM_FAIL, &penv->pcieEnumState);
+		pcie_l1_fail = test_bit(CNSS_PCIE_L1_FAIL,&penv->pcieL1Fail);
+	}
+	cnssprobesuccess = (cnssprobestate == CNSS_PROBE_SUCCESS);
+	return sprintf(buf, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s_%s:%s_%s",
+           (idle_shutdown ? "idle_shutdown" : (firmware_ready ? "fwstatus_ready" : "fwstatus_not_ready")),
+           (regdbloadsuccess ? "regdb_loadsuccess" : "regdb_loadfail"),
+           (bdfloadsuccess ? "bdf_loadsuccess" : "bdf_loadfail"),
+           (cnssprobesuccess ? "cnssprobe_success" : "cnssprobe_fail"),
+           (plat_env_null ? "platenv_fail" : "platenv_success"),
+           (pcie_link_down ? "pcie_link_down" : "pcie_link_up"),
+           (pcie_bus_fail ? "pcie_bus_fail" : "pcie_bus_success"),
+           (pcie_enumerate_fail ? "pcie_enumerate_fail" : "pcie_enumerate_success"),
+           (pcie_l1_fail ? "pcie_l1_fail" : "pcie_l1_success"),
+           "bdf_name", ((penv && penv->bdf_name && strlen(penv->bdf_name)) ? penv->bdf_name : ""),
+           "region_name", ((penv && penv->region_name && strlen(penv->region_name)) ? penv->region_name : "")
+           );
+}
+
+struct driver_attribute fw_ready_attr = {
+	.attr = {
+		.name = "firmware_ready",
+		.mode = S_IRUGO,
+	},
+	.show = icnss_show_fw_ready,
+	//read only so we don't need to impl store func
+};
+
+struct driver_attribute cnss_debug_attr = {
+	.attr = {
+		.name = "cnss_debug",
+		.mode = S_IRUGO,
+	},
+	.show = icnss_show_cnss_debug,
+};
+
+#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
+
+#ifdef OPLUS_FEATURE_WIFI_FTM
+//Add for QCOM WCN chip id
+static void icnss_create_device_id_kobj(void);
+
+static ssize_t icnss_show_device_id(struct device_driver *driver, char *buf)
+{
+    unsigned long device_id = 0;
+    if (!penv) {
+        icnss_pr_err("icnss_show_device_id penv is NULL!\n");
+    } else {
+        device_id = penv->device_id;
+    }
+    return sprintf(buf, "0x%lx", device_id);
+}
+
+struct driver_attribute device_id_attr = {
+	.attr = {
+		.name = "device_id",
+		.mode = S_IRUGO,
+	},
+	.show = icnss_show_device_id,
+	//read only so we don't need to impl store func
+};
+#endif /* OPLUS_FEATURE_WIFI_FTM */
+
+
 static inline void icnss_runtime_pm_deinit(struct icnss_priv *priv)
 {
 	pm_runtime_disable(&priv->pdev->dev);
@@ -6309,6 +6639,16 @@ static int icnss_probe(struct platform_device *pdev)
 
 	icnss_init_control_params(priv);
 
+	#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+	//Add for wifi switch monitor
+	icnss_create_fw_state_kobj();
+	icnss_create_debug_kobj();
+	#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
+	#ifdef OPLUS_FEATURE_WIFI_FTM
+	//Add for QCOM WCN chip id
+	icnss_create_device_id_kobj();
+	#endif /* OPLUS_FEATURE_WIFI_FTM */
+
 	icnss_read_device_configs(priv);
 
 	ret = icnss_resource_parse(priv);
@@ -6423,6 +6763,11 @@ static int icnss_probe(struct platform_device *pdev)
 	icnss_register_ims_service(priv);
 	INIT_LIST_HEAD(&priv->icnss_tcdev_list);
 
+	#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+	//Add for: check fw status for switch issue
+	cnssprobestate = CNSS_PROBE_SUCCESS;
+	#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
+
 	icnss_pr_info("Platform driver probed successfully\n");
 
 	return 0;
@@ -6439,6 +6784,12 @@ out_free_resources:
 	icnss_put_resources(priv);
 out_reset_drvdata:
 	dev_set_drvdata(dev, NULL);
+
+#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+//Add for: check fw status for switch issue
+	cnssprobestate = CNSS_PROBE_FAIL;
+#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
+
 	return ret;
 }
 
@@ -6450,7 +6801,7 @@ static void icnss_destroy_ramdump_device(struct icnss_ramdump_info *ramdump_info
 
 	device_unregister(ramdump_info->dev);
 
-	ida_simple_remove(&rd_minor_id, ramdump_info->minor);
+	ida_free(&rd_minor_id, ramdump_info->minor);
 
 	kfree(ramdump_info);
 }
@@ -6542,6 +6893,9 @@ static void icnss_remove(struct platform_device *pdev)
 	priv->iommu_domain = NULL;
 
 	icnss_hw_power_off(priv);
+
+	if (priv->wcn_ktb_info_buf)
+		kfree(priv->wcn_ktb_info_buf);
 
 	icnss_put_resources(priv);
 
@@ -6847,6 +7201,32 @@ static struct platform_driver icnss_direct_link_driver = {
 		.of_match_table = icnss_direct_link_dt_match,
 	},
 };
+
+#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+//Add for wifi switch monitor
+static void icnss_create_fw_state_kobj(void) {
+	if (driver_create_file(&(icnss_driver.driver), &fw_ready_attr)) {
+		icnss_pr_info("failed to create %s", fw_ready_attr.attr.name);
+	}
+}
+
+static void icnss_create_debug_kobj(void)
+{
+    if (driver_create_file(&(icnss_driver.driver), &cnss_debug_attr)) {
+        icnss_pr_info("failed to create %s", cnss_debug_attr.attr.name);
+    }
+}
+#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
+
+#ifdef OPLUS_FEATURE_WIFI_FTM
+//Add for QCOM WCN chip id
+static void icnss_create_device_id_kobj(void)
+{
+    if (driver_create_file(&(icnss_driver.driver), &device_id_attr)) {
+        icnss_pr_info("failed to create %s", device_id_attr.attr.name);
+    }
+}
+#endif /* OPLUS_FEATURE_WIFI_FTM */
 
 /**
  * icnss_has_valid_dt_node() - Check if valid device tree node present

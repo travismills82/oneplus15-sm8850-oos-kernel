@@ -1451,6 +1451,7 @@ cm_roam_scan_offload_rssi_thresh(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 	params->bg_scan_client_bitmap = lfr_cfg->roam_bg_scan_client_bitmap;
 	params->roam_bad_rssi_thresh_offset_2g =
 			lfr_cfg->roam_bg_scan_bad_rssi_offset_2g;
+	params->bg_roam_scan_flag = lfr_cfg->bg_roam_scan_flag;
 	params->roam_data_rssi_threshold_triggers =
 		lfr_cfg->roam_data_rssi_threshold_triggers;
 	params->roam_data_rssi_threshold = lfr_cfg->roam_data_rssi_threshold;
@@ -5175,7 +5176,8 @@ cm_roam_switch_to_roam_sync(struct wlan_objmgr_pdev *pdev,
 		* In this case host should send RSO STOP with scan mode = 0
 		* to allow FW to move into RSO STOP state
 		*/
-		status = cm_roam_stop_req(psoc, vdev_id, REASON_ROAM_ABORT,
+		status = cm_roam_stop_req(psoc, vdev_id,
+					  REASON_ROAM_SYNCH_FAILED,
 					  NULL, false);
 		if (QDF_IS_STATUS_ERROR(status))
 			mlme_err("ROAM: Unable to process RSO STOP req");
@@ -5531,14 +5533,6 @@ cm_roam_state_change(struct wlan_objmgr_pdev *pdev,
 	if ((requested_state != WLAN_ROAM_DEINIT &&
 	     requested_state != WLAN_ROAM_RSO_STOPPED) && !is_up) {
 		mlme_debug("ROAM: roam state(%d) change requested in non-connected state",
-			   requested_state);
-		goto end;
-	}
-
-	if (requested_state == WLAN_ROAM_RSO_ENABLED &&
-	    (policy_mgr_is_chan_switch_in_progress(psoc) ||
-	     policy_mgr_is_conc_sap_ready_for_mcc_to_scc_trans(psoc))) {
-		mlme_debug("ROAM: roam state(%d) change requested when a concurrent SAP is in MCC or CSA is in progress",
 			   requested_state);
 		goto end;
 	}
@@ -7227,6 +7221,8 @@ cm_roam_cancel_event(uint8_t vdev_id, enum wlan_roam_failure_reason_code reason,
 #define ROAM_STATUS_FAILURE 1
 #define ROAM_STATUS_NO_ROAM 2
 
+#define ROAM_FAIL_REASON_FW_INTERNAL 0
+
 void cm_roam_result_info_event(struct wlan_objmgr_psoc *psoc,
 			       struct wmi_roam_trigger_info *trigger,
 			       struct wmi_roam_result *res,
@@ -7259,6 +7255,9 @@ void cm_roam_result_info_event(struct wlan_objmgr_psoc *psoc,
 			 WMI_ROAM_SCAN_CANCEL_OTHER_PRIORITY_ROAM_SCAN) {
 			roam_cancel_reason =
 				ROAM_FAIL_REASON_OTHER_PRIORITY_ROAM_SCAN;
+		} else if (res->roam_abort_reason ==
+			   WMI_ROAM_ABORT_UNSPECIFIED) {
+			roam_cancel_reason = ROAM_FAIL_REASON_FW_INTERNAL;
 		} else {
 			mlme_debug("vdev:%d Unsupported abort reason:%d",
 				   vdev_id, res->roam_abort_reason);
@@ -8025,11 +8024,12 @@ wlan_convert_bitmap_to_band(uint8_t bitmap)
 {
 	uint8_t i;
 	enum wlan_diag_wifi_band band = WLAN_INVALID_BAND;
-	unsigned long band_bitmap = bitmap;
+	qdf_bitmap(band_bitmap, WLAN_6GHZ_BAND + 1);
 
+	band_bitmap[0] = bitmap;
 	for (i = WLAN_24GHZ_BAND; i <= WLAN_6GHZ_BAND; i++) {
 		/* 2.4 GHz band will be populated at 0th bit in the bitmap*/
-		if (qdf_test_bit((i - 1), &band_bitmap)) {
+		if (qdf_atomic_test_bit((i - 1), band_bitmap)) {
 			band = i;
 			break;
 		}

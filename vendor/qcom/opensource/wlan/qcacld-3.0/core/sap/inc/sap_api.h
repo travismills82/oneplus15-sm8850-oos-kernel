@@ -606,6 +606,9 @@ struct sap_config {
 #endif
 	qdf_freq_t last_acs_freq;
 	qdf_time_t last_acs_complete_time;
+	/* RSNO MAX *2 + 2(EID size + LEN size) */
+	uint8_t mrsno_ie[(WLAN_MAX_IE_LEN * 2) + 4];
+	uint16_t mrsno_ie_len;
 };
 
 #ifdef FEATURE_WLAN_AP_AP_ACS_OPTIMIZE
@@ -1688,6 +1691,7 @@ uint32_t wlansap_get_safe_channel_from_pcl_for_sap(struct sap_context *sap_ctx);
  * wlansap_get_chan_band_restrict() -  get new chan for band change
  * @sap_ctx: sap context pointer
  * @csa_reason: channel switch reason to update
+ * @ch_width: new bandwidth to restart
  *
  * Sap/p2p go channel switch from 5G to 2G by CSA when 5G band disabled to
  * avoid conflict with modem N79.
@@ -1698,7 +1702,8 @@ uint32_t wlansap_get_safe_channel_from_pcl_for_sap(struct sap_context *sap_ctx);
  * Return - restart channel in MHZ
  */
 qdf_freq_t wlansap_get_chan_band_restrict(struct sap_context *sap_ctx,
-					  enum sap_csa_reason_code *csa_reason);
+					  enum sap_csa_reason_code *csa_reason,
+					  enum phy_ch_width *ch_width);
 
 /**
  * wlansap_override_csa_strict_for_sap() - check user CSA strict or not
@@ -2091,6 +2096,27 @@ void wlansap_free_chan_info(struct sap_sel_ch_info *ch_param);
  */
 QDF_STATUS wlansap_get_user_config_acs_ch_list(uint8_t vdev_id,
 					       struct scan_filter *filter);
+
+/**
+ * sap_get_coex_fixed_chan_cap() - Wrapper to get coex fixed channel capability
+ * MDM requires to start SAP on unsafe channel even through FW doesn't support
+ * coex fixed channel for acs disabled case, and other platforms prefer to abort
+ * the SAP. If acs disabled and allow SAP on unsafe channel, please define
+ * WLAN_SAP_UNSAFE_FIXED_CHAN_ALLOW.
+ *
+ * @psoc: pointer to psoc
+ *
+ * Return: true or false
+ */
+#ifdef WLAN_SAP_UNSAFE_FIXED_CHAN_ALLOW
+static inline bool sap_get_coex_fixed_chan_cap(struct wlan_objmgr_psoc *psoc)
+{
+	return true;
+}
+#else
+bool sap_get_coex_fixed_chan_cap(struct wlan_objmgr_psoc *psoc);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

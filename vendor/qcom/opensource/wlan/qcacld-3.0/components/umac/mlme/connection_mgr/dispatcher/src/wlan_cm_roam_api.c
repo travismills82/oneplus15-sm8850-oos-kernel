@@ -185,6 +185,15 @@ cm_update_associated_ch_info(struct wlan_objmgr_vdev *vdev, bool is_update)
 	else
 		assoc_chan_info->assoc_ch_width = ch_width;
 
+	status = wlan_mlme_update_cur_ch_width(vdev,
+					       assoc_chan_info->assoc_ch_width,
+					       false);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		mlme_err("Failed to update chwidth %d",
+			 assoc_chan_info->assoc_ch_width);
+		return;
+	}
+
 	if (WLAN_REG_IS_24GHZ_CH_FREQ(des_chan->ch_freq) &&
 	    des_chan->ch_width == CH_WIDTH_40MHZ) {
 		if (des_chan->ch_cfreq1 == des_chan->ch_freq + BW_10_MHZ)
@@ -3596,7 +3605,7 @@ cm_roam_stats_print_trigger_info(struct wlan_objmgr_psoc *psoc,
 	/* Update roam trigger info to userspace */
 	cm_roam_trigger_info_event(data, scan_data, vdev_id, is_full_scan);
 
-	mlme_rl_nofl_info("%s [ROAM_TRIGGER]: VDEV[%d] %s", time, vdev_id, buf);
+	mlme_nofl_info("%s [ROAM_TRIGGER]: VDEV[%d] %s", time, vdev_id, buf);
 	qdf_mem_free(buf);
 
 	status = wlan_cm_update_roam_states(psoc, vdev_id, data->trigger_reason,
@@ -3814,10 +3823,14 @@ cm_roam_stats_print_scan_info(struct wlan_objmgr_psoc *psoc,
 		buf_cons = qdf_snprint(tmp, buf_left, "{");
 		buf_left -= buf_cons;
 		tmp += buf_cons;
-
 		for (i = 0; i < num_ch; i++) {
 			buf_cons = qdf_snprint(tmp, buf_left, "%d ",
 					       scan->chan_freq[i]);
+			if (buf_cons > buf_left) {
+				mlme_err("buf_left size insufficient");
+				qdf_mem_free(buf);
+				return;
+			}
 			buf_left -= buf_cons;
 			tmp += buf_cons;
 		}
@@ -3885,12 +3898,12 @@ cm_roam_stats_print_roam_result(struct wlan_objmgr_psoc *psoc,
 	mlme_get_converted_timestamp(res->timestamp, time);
 
 	if (res->fail_reason == ROAM_FAIL_REASON_CURR_AP_STILL_OK)
-		mlme_rl_nofl_info("%s [ROAM_RESULT]: VDEV[%d] %s",
-				  time, vdev_id, buf);
+		mlme_nofl_info("%s [ROAM_RESULT]: VDEV[%d] %s",
+			       time, vdev_id, buf);
 	else
-		mlme_rl_nofl_info("%s [ROAM_RESULT]: VDEV[%d] %s %s",
-				  time, vdev_id,
-				  mlme_get_roam_status_str(res->status), buf);
+		mlme_nofl_info("%s [ROAM_RESULT]: VDEV[%d] %s %s",
+			       time, vdev_id,
+			       mlme_get_roam_status_str(res->status), buf);
 	qdf_mem_free(buf);
 
 	status = wlan_cm_update_roam_states(psoc, vdev_id, res->fail_reason,
@@ -4034,18 +4047,31 @@ cm_roam_print_frame_info(struct wlan_objmgr_psoc *psoc,
 	for (i = 0; i < frame_data->num_frame; i++) {
 		cached_vdev_id = vdev_id;
 		frame_info = &frame_data->frame_info[i];
+
+		mlme_rl_nofl_info("VDEV[%d] Auth algo: %d, bssid: " QDF_MAC_ADDR_FMT,
+				  vdev_id, frame_info->auth_algo,
+				  QDF_MAC_ADDR_REF(frame_info->bssid.bytes));
+
 		/*
 		 * For SAE auth frame, since host sends the authentication
 		 * frames, its cached in the TX/RX path and the cached
 		 * frames are printed from here.
 		 */
-		if (frame_info->auth_algo == WLAN_SAE_AUTH_ALGO &&
-		    wlan_is_sae_auth_log_present_for_bssid(psoc,
-							   &frame_info->bssid,
-							   &cached_vdev_id)) {
-			wlan_print_cached_sae_auth_logs(psoc,
+		if (frame_info->auth_algo == WLAN_SAE_AUTH_ALGO) {
+			if (wlan_is_sae_auth_log_present_for_bssid(
+							psoc,
+							&frame_info->bssid,
+							&cached_vdev_id))
+				wlan_print_cached_sae_auth_logs(
+							psoc,
 							&frame_info->bssid,
 							cached_vdev_id);
+			else
+				mlme_rl_nofl_info("VDEV[%d] bssid: "
+						  QDF_MAC_ADDR_FMT,
+						  vdev_id,
+						  QDF_MAC_ADDR_REF(
+						  frame_info->bssid.bytes));
 			continue;
 		}
 
@@ -5751,7 +5777,14 @@ QDF_STATUS
 cm_cleanup_mlo_link(struct wlan_objmgr_vdev *vdev)
 {
 	QDF_STATUS status;
+	struct wlan_objmgr_psoc *psoc;
 
+	psoc = wlan_vdev_get_psoc(vdev);
+	if (!psoc)
+		return QDF_STATUS_E_INVAL;
+
+	policy_mgr_move_vdev_from_disabled_to_connection_tbl(psoc,
+							     wlan_vdev_get_id(vdev));
 	/* Use MLO roam internal disconnect as this is for cleanup and
 	 * no need to inform OSIF, and REASON_FW_TRIGGERED_ROAM_FAILURE will
 	 * cleanup host without informing the FW
@@ -6391,3 +6424,30 @@ uint32_t cm_roam_get_roam_score_algo(struct wlan_objmgr_psoc *psoc)
 
 	return score_config->vendor_roam_score_algorithm;
 }
+
+#if (defined(CONNECTIVITY_DIAG_EVENT) && \
+	defined(WLAN_FEATURE_ROAM_OFFLOAD))
+void
+wlan_set_log_instance_id(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
+{
+	struct mlme_legacy_priv *mlme_priv;
+	struct wlan_objmgr_vdev *vdev;
+
+	if (!pdev)
+		return;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id,
+						    WLAN_MLME_CM_ID);
+	if (!vdev)
+		return;
+
+	mlme_priv = wlan_vdev_mlme_get_ext_hdl(vdev);
+	if (!mlme_priv) {
+		mlme_legacy_err("vdev legacy private object is NULL");
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_CM_ID);
+		return;
+	}
+	mlme_priv->instance++;
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_CM_ID);
+}
+#endif

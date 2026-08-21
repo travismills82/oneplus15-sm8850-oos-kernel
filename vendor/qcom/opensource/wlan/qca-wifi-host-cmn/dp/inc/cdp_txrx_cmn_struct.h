@@ -100,6 +100,7 @@
 #define CDP_DP_TX_HW_LATENCY_STATS 28
 #define CDP_DP_LAPB_STATS	   29
 #define CDP_TXRX_SOC_STATS	   30
+#define CDP_DP_HAPS_STATS          31
 
 #define WME_AC_TO_TID(_ac) (       \
 		((_ac) == WME_AC_VO) ? 6 : \
@@ -177,7 +178,8 @@
 #define FILTER_DATA_DATA		0x0001
 #define FILTER_DATA_NULL		0x0008
 
-#if defined(QCA_WIFI_PEACH) || defined(QCA_WIFI_WCN7750)
+#if defined(QCA_WIFI_PEACH) || defined(QCA_WIFI_WCN7750) || \
+    defined(QCA_WIFI_QCC2072)
 #define FP_MGMT_FILTER	FILTER_MGMT_ALL & \
 			~(FILTER_MGMT_PROBE_RES | FILTER_MGMT_BEACON)
 #else
@@ -2172,6 +2174,16 @@ enum cdp_stat_update_type {
 	UPDATE_VDEV_STATS = 1,
 	UPDATE_PDEV_STATS = 2,
 	UPDATE_VDEV_STATS_MLD = 3,
+};
+
+/**
+ * enum cdp_haps_state - Different HAPS states
+ * @STATE_UNPAUSE: unpause state
+ * @STATE_PAUSE: pause state
+ */
+enum cdp_haps_state {
+	STATE_UNPAUSE = 0,
+	STATE_PAUSE
 };
 
 /**

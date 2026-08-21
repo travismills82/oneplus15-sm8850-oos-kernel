@@ -32,6 +32,9 @@
 #include "qdf_status.h"
 #include "osif_cm_util.h"
 #include <wlan_cfg80211.h>
+#ifdef WLAN_FEATURE_MLO_SAP_LINK_REMOVAL
+#include "osif_link_reconfig.h"
+#endif
 
 enum links_reconfig_op {
 	LINKS_RECONFIG_OP_ADD,
@@ -113,7 +116,10 @@ osif_fill_link_reconfig_deleted_links_params(
 		return false;
 
 	del_link_info = recfg_ctx->curr_recfg_req.del_link_info;
-	for (i = 0; i < num_del_links && i < IEEE80211_MLD_MAX_NUM_LINKS; i++) {
+	for (i = 0;
+	     i < num_del_links &&
+	     i < IEEE80211_MLD_MAX_NUM_LINKS &&
+	     i < WLAN_MAX_ML_BSS_LINKS; i++) {
 		if (del_link_info.link[i].link_id != WLAN_INVALID_LINK_ID)
 			*delete_valid_links |=
 				1 << del_link_info.link[i].link_id;
@@ -177,13 +183,13 @@ osif_fill_link_reconfig_added_links_params(
 	 */
 	for (i = 0; i < QDF_MIN(req_param->num_link_add_param,
 				IEEE80211_MLD_MAX_NUM_LINKS) &&
-	     !cfg_rsp->driver_initiated; i++) {
+	     i < WLAN_MAX_ML_BSS_LINKS && !cfg_rsp->driver_initiated; i++) {
 		link_id = req_param->add_link[i].link_id;
 		cfg_rsp->links[link_id].bss = req_param->add_link[i].bss;
 	}
 
-	for (i = 0; i < QDF_MIN(num_add_links, IEEE80211_MLD_MAX_NUM_LINKS);
-	     i++) {
+	for (i = 0; i < QDF_MIN(num_add_links, IEEE80211_MLD_MAX_NUM_LINKS) &&
+	     i < WLAN_MAX_ML_BSS_LINKS; i++) {
 		if (add_link_info.link[i].link_id == WLAN_INVALID_LINK_ID) {
 			osif_err_rl("link id is invalid %d",
 				    WLAN_INVALID_LINK_ID);
@@ -391,6 +397,50 @@ end:
 
 	if (vdev)
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_LINK_RECFG_ID);
+
+	return status;
+}
+#endif
+
+#ifdef WLAN_FEATURE_MLO_SAP_LINK_REMOVAL
+QDF_STATUS osif_mlo_sap_link_removal_evt_handler(struct wlan_objmgr_vdev *vdev,
+						 uint32_t tbtt_count,
+						 uint64_t tsf,
+						 uint16_t link_id)
+{
+	int ret;
+	struct vdev_osif_priv *osif_priv;
+	QDF_STATUS status = QDF_STATUS_SUCCESS;
+
+	if (!vdev) {
+		osif_err("Invalid vdev");
+		return QDF_STATUS_E_INVAL;
+	}
+
+	osif_priv = wlan_vdev_get_ospriv(vdev);
+	if (!osif_priv) {
+		osif_err("Invalid vdev osif priv");
+		return QDF_STATUS_E_INVAL;
+	}
+	osif_debug("update tbtt event to userspace: tbtt:%d", tbtt_count);
+
+	if (tbtt_count)
+		ret = cfg80211_update_link_reconfig_remove_update(osif_priv->wdev->netdev,
+								  link_id,
+								  tbtt_count,
+								  tsf,
+								  NL80211_CMD_LINK_REMOVAL_STARTED);
+	else
+		ret = cfg80211_update_link_reconfig_remove_update(osif_priv->wdev->netdev,
+								  link_id,
+								  tbtt_count,
+								  tsf,
+								  NL80211_CMD_LINK_REMOVAL_COMPLETED);
+
+	status =  qdf_status_from_os_return(ret);
+	if (QDF_IS_STATUS_ERROR(status))
+		osif_err("Failed to update link removal event to userspace:%d",
+			 ret);
 
 	return status;
 }

@@ -91,6 +91,8 @@
 #include "wlan_vdev_mlme_main.h"
 #include "wlan_tdls_api.h"
 #include "wlan_twt_ucfg_ext_api.h"
+#include "wlan_ll_sap_api.h"
+#include "wlan_wfa_tgt_if_tx_api.h"
 
 static QDF_STATUS init_sme_cmd_list(struct mac_context *mac);
 
@@ -5261,7 +5263,7 @@ QDF_STATUS sme_vdev_post_vdev_create_setup(mac_handle_t mac_handle,
 	status = csr_setup_vdev_session(vdev_mlme);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		sme_err("Failed to setup CSR layer for vdev: %d", vdev_id);
-		goto cleanup_wma;
+		return status;
 	}
 
 	wlan_vdev_set_dot11mode(mac_ctx->mlme_cfg, vdev->vdev_mlme.vdev_opmode,
@@ -5277,8 +5279,6 @@ QDF_STATUS sme_vdev_post_vdev_create_setup(mac_handle_t mac_handle,
 
 csr_cleanup_vdev_session:
 	csr_cleanup_vdev_session(mac_ctx, vdev_id);
-cleanup_wma:
-	wma_cleanup_vdev(vdev);
 	return status;
 }
 
@@ -6424,6 +6424,13 @@ void sme_set_listen_interval(mac_handle_t mac_handle, uint8_t vdev_id)
 	val = session->dtimPeriod;
 	pe_debug("Listen interval: %d vdev id: %d", val, vdev_id);
 	wma_vdev_set_listen_interval(vdev_id, val);
+}
+
+void sme_set_eht_data_extra_ltf_tx(mac_handle_t mac_handle, uint8_t vdev_id,
+				   uint8_t val)
+{
+	pe_debug("EHT Extra LTF: %d", val);
+	wma_vdev_set_eht_data_extra_ltf_tx(vdev_id, val);
 }
 
 /*
@@ -9324,16 +9331,15 @@ QDF_STATUS sme_update_connect_debug(mac_handle_t mac_handle, uint32_t set_value)
  * Return QDF_STATUS
  */
 QDF_STATUS sme_ap_disable_intra_bss_fwd(mac_handle_t mac_handle,
-					uint8_t sessionId,
-					bool disablefwd)
+					 uint8_t sessionId,
+					 bool disablefwd)
 {
 	struct mac_context *mac = MAC_CONTEXT(mac_handle);
-	int status = QDF_STATUS_SUCCESS;
-	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
+	QDF_STATUS status;
 	struct scheduler_msg message = {0};
-	tpDisableIntraBssFwd pSapDisableIntraFwd = NULL;
+	tpDisableIntraBssFwd pSapDisableIntraFwd;
 
-	/* Prepare the request to send to SME. */
+	/* Prepare the request to send to SME */
 	pSapDisableIntraFwd = qdf_mem_malloc(sizeof(tDisableIntraBssFwd));
 	if (!pSapDisableIntraFwd)
 		return QDF_STATUS_E_NOMEM;
@@ -9342,22 +9348,21 @@ QDF_STATUS sme_ap_disable_intra_bss_fwd(mac_handle_t mac_handle,
 	pSapDisableIntraFwd->disableintrabssfwd = disablefwd;
 
 	status = sme_acquire_global_lock(&mac->sme);
-
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(pSapDisableIntraFwd);
-		return QDF_STATUS_E_FAILURE;
+		return status;
 	}
-	/* serialize the req through MC thread */
+
+	/* Serialize the req through MC thread */
 	message.bodyptr = pSapDisableIntraFwd;
 	message.type = WMA_SET_SAP_INTRABSS_DIS;
-	qdf_status = scheduler_post_message(QDF_MODULE_ID_SME,
-					    QDF_MODULE_ID_WMA,
-					    QDF_MODULE_ID_WMA,
-					    &message);
-	if (QDF_IS_STATUS_ERROR(status)) {
-		status = QDF_STATUS_E_FAILURE;
+	status = scheduler_post_message(QDF_MODULE_ID_SME,
+					QDF_MODULE_ID_WMA,
+					QDF_MODULE_ID_WMA,
+					&message);
+	if (QDF_IS_STATUS_ERROR(status))
 		qdf_mem_free(pSapDisableIntraFwd);
-	}
+
 	sme_release_global_lock(&mac->sme);
 
 	return status;
@@ -11453,6 +11458,17 @@ void sme_update_tgt_he_cap(mac_handle_t mac_handle,
 
 	if (cfg_in_range(CFG_HE_FRAGMENTATION, value))
 		mac_ctx->he_cap_5g.fragmentation = value;
+
+	/*
+	 * HE SMPS follows HT SMPS configuration (gEnableHtSMPS).
+	 * If HT SMPS is disabled, HE SMPS is also disabled for consistency.
+	 */
+	mac_ctx->he_cap_2g.he_dynamic_smps =
+		mac_ctx->mlme_cfg->ht_caps.enable_smps ? cfg->he_cap_2g.he_dynamic_smps : 0;
+	mac_ctx->he_cap_5g.he_dynamic_smps =
+		mac_ctx->mlme_cfg->ht_caps.enable_smps ? cfg->he_cap_5g.he_dynamic_smps : 0;
+	mlme_debug("he smps 2g %d 5g %d", mac_ctx->he_cap_2g.he_dynamic_smps,
+		   mac_ctx->he_cap_5g.he_dynamic_smps);
 
 	qdf_mem_copy(&mac_ctx->he_cap_2g_orig,
 		     &mac_ctx->he_cap_2g,
@@ -15879,12 +15895,17 @@ void sme_reset_he_caps(mac_handle_t mac_handle, uint8_t vdev_id)
 		sme_err("Failed to set scan mode for 6 GHz, %d", status);
 }
 
+#define BA_BUFF_SIZE_512                 5
+#define CMD_DISABLE_BW_SUBFRAME_SIZING   0x48
+#define PARAM_DISABLE_BW_SUBFRAME_SIZING 702
+
 void sme_config_ba_mode_all_vdevs(mac_handle_t mac_handle, uint8_t val)
 {
 	struct mac_context *mac = MAC_CONTEXT(mac_handle);
 	uint8_t vdev_id;
 	int ret_val = 0;
 	struct wlan_objmgr_vdev *vdev;
+	uint32_t arg[2];
 
 	for (vdev_id = 0; vdev_id < WLAN_MAX_VDEVS; vdev_id++) {
 		vdev = wlan_objmgr_get_vdev_by_id_from_pdev(mac->pdev,
@@ -15904,6 +15925,17 @@ void sme_config_ba_mode_all_vdevs(mac_handle_t mac_handle, uint8_t val)
 		else
 			sme_debug("vdev: %d ba mode: %d param id %d",
 				  vdev_id, val, wmi_vdev_param_set_ba_mode);
+		if (val == BA_BUFF_SIZE_512) {
+			arg[0] = PARAM_DISABLE_BW_SUBFRAME_SIZING;
+			arg[1] = 0;
+			ret_val =
+			sme_send_unit_test_cmd(vdev_id,
+					       CMD_DISABLE_BW_SUBFRAME_SIZING,
+					       2, arg);
+			if (QDF_IS_STATUS_ERROR(ret_val))
+				sme_err("Failed to disable bw based subframe sizing");
+		}
+
 	}
 }
 #endif
@@ -15973,6 +16005,28 @@ void sme_set_mlo_assoc_link_band(mac_handle_t mac_handle, uint8_t vdev_id,
 		return;
 	}
 	wlan_mlme_set_sta_mlo_conn_band_bmp(mac_ctx->psoc, val);
+}
+
+void sme_send_ext_mld_cap_wfatest_cmd(mac_handle_t mac_handle, uint8_t vdev_id,
+				      uint8_t value)
+{
+	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
+	struct wlan_objmgr_vdev *vdev;
+	struct set_wfatest_params wfa_param = {0};
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc, vdev_id,
+						    WLAN_LEGACY_SME_ID);
+	if (!vdev)
+		return;
+
+	wfa_param.vdev_id = vdev_id;
+	wfa_param.value = value;
+
+	wfa_param.cmd = WFA_CONFIG_ML;
+	sme_debug("send wfa test config for ext MLD cap support: %d", value);
+
+	wlan_send_wfatest_cmd(vdev, &wfa_param);
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
 }
 
 void sme_set_eht_testbed_def(mac_handle_t mac_handle, uint8_t vdev_id)
@@ -16075,6 +16129,8 @@ void sme_set_eht_testbed_def(mac_handle_t mac_handle, uint8_t vdev_id)
 	mac_ctx->roam.configParam.channelBondingMode24GHz = 0;
 	wlan_mlme_set_sta_mlo_conn_max_num(mac_ctx->psoc, 1);
 	ucfg_mlme_set_bss_color_collision_det_sta(mac_ctx->psoc, false);
+	wlan_mlme_set_exclude_ext_mld_cap(mac_ctx->psoc, true);
+	sme_send_ext_mld_cap_wfatest_cmd(mac_handle, vdev_id, false);
 }
 
 static inline
@@ -16136,6 +16192,8 @@ void sme_reset_eht_caps(mac_handle_t mac_handle, uint8_t vdev_id)
 	wlan_mlme_set_btm_abridge_flag(mac_ctx->psoc, false);
 	wlan_mlme_set_eht_mld_id(mac_ctx->psoc, 0);
 	wlan_mlme_set_ext_mld_cap_supp(mac_ctx->psoc, true);
+	wlan_mlme_set_exclude_ext_mld_cap(mac_ctx->psoc, false);
+	sme_send_ext_mld_cap_wfatest_cmd(mac_handle, vdev_id, true);
 }
 
 void sme_update_eht_cap_nss(mac_handle_t mac_handle, uint8_t vdev_id,
@@ -16311,7 +16369,7 @@ void sme_activate_mlo_links(mac_handle_t mac_handle, uint8_t session_id,
 }
 
 int sme_update_eht_caps(mac_handle_t mac_handle, uint8_t session_id,
-			uint8_t cfg_val, enum sme_eht_tx_bfee_cap_type cap_type,
+			uint8_t cfg_val, enum sme_eht_cap_type cap_type,
 			enum QDF_OPMODE op_mode)
 {
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
@@ -16348,12 +16406,15 @@ int sme_update_eht_caps(mac_handle_t mac_handle, uint8_t session_id,
 	case EHT_RX_EXTRA_ETH_LTF:
 		cfg_eht_cap->max_num_eht_ltf = cfg_val;
 		break;
+	case EHT_RTWT_SUPPORT:
+		cfg_eht_cap->restricted_twt = cfg_val;
+		break;
 	default:
 		sme_debug("default: Unhandled cap type %d", cap_type);
 		return -EINVAL;
 	}
 
-	sme_debug("EHT cap: cap type %d, cfg val %d", cap_type, cfg_val);
+	sme_debug("EHT cap type: %d, cfg val: %d", cap_type, cfg_val);
 	csr_update_session_eht_cap(mac_ctx, session);
 
 	qdf_mem_copy(&mac_ctx->eht_cap_2g, cfg_eht_cap,
@@ -17611,6 +17672,39 @@ p2p_self_peer_create:
 }
 #endif
 
+/**
+ * sme_validate_n_update_ll_lt_sap_freq() - Validate and update the LL_LT_SAP
+ * frequency.
+ *
+ * This function checks if the LL_LT_SAP can start on the current frequency.
+ * If not, it updates the frequency from the valid frequency list.
+ *
+ * @mac: Pointer to the MAC context.
+ * @con_mode: The connection mode.
+ * @cfg: Pointer to the start BSS configuration.
+ *
+ * Return: None
+ */
+static void sme_validate_n_update_ll_lt_sap_freq(struct mac_context *mac,
+					enum policy_mgr_con_mode con_mode,
+					struct start_bss_config *cfg)
+{
+	enum sap_csa_reason_code csa_reason;
+	qdf_freq_t new_freq;
+
+	if (con_mode != PM_LL_LT_SAP_MODE)
+		return;
+
+	new_freq = wlan_get_ll_lt_sap_restart_freq(mac->pdev, cfg->oper_ch_freq,
+						   cfg->vdev_id, &csa_reason);
+	if (new_freq == cfg->oper_ch_freq)
+		return;
+
+	sme_debug("LL_LT_SAP %d: concurrency updated freq %d => %d",
+		  cfg->vdev_id, cfg->oper_ch_freq, new_freq);
+	cfg->oper_ch_freq = new_freq;
+}
+
 static QDF_STATUS sme_send_start_bss_msg(struct mac_context *mac,
 					 struct start_bss_config *cfg)
 {
@@ -17634,8 +17728,7 @@ static QDF_STATUS sme_send_start_bss_msg(struct mac_context *mac,
 	 * condition case.
 	 */
 	conn_count = policy_mgr_get_connection_count(mac->psoc);
-	if ((pm_con_mode == PM_SAP_MODE ||
-	     pm_con_mode == PM_P2P_GO_MODE) &&
+	if (policy_mgr_is_beaconing_mode(pm_con_mode) &&
 	    conn_count != cfg->curr_conn_count &&
 	    conn_count > 1 &&
 	    !policy_mgr_allow_concurrency(mac->psoc,
@@ -17647,6 +17740,9 @@ static QDF_STATUS sme_send_start_bss_msg(struct mac_context *mac,
 			  cfg->oper_ch_freq, cfg->vdev_id, op_mode);
 		goto failure;
 	}
+
+	if (pm_con_mode == PM_LL_LT_SAP_MODE)
+		sme_validate_n_update_ll_lt_sap_freq(mac, pm_con_mode, cfg);
 
 	csr_roam_state_change(mac, eCSR_ROAMING_STATE_JOINING, cfg->vdev_id);
 	csr_roam_substate_change(mac, eCSR_ROAM_SUBSTATE_START_BSS_REQ,

@@ -2117,6 +2117,7 @@ typedef struct sSirScanOffloadEvent {
  * @half_rate: is the channel operating at 10MHz
  * @quarter_rate: is the channel operating at 5MHz
  * @nan_disabled: is NAN disabled on @freq
+ * @is_passive: is indoor frequency
  */
 typedef struct sSirUpdateChanParam {
 	uint32_t freq;
@@ -2125,6 +2126,7 @@ typedef struct sSirUpdateChanParam {
 	bool half_rate;
 	bool quarter_rate;
 	bool nan_disabled;
+	bool is_passive;
 } tSirUpdateChanParam, *tpSirUpdateChanParam;
 
 typedef struct sSirUpdateChan {
@@ -2950,6 +2952,16 @@ struct wifi_interface_info {
 	/* country string for this association */
 	uint8_t countryStr[REG_ALPHA2_LEN + 1];
 	uint8_t time_slice_duty_cycle;
+	/* link stats valid*/
+	bool link_stats_valid;
+	/* TX success counter */
+	uint32_t link_tx_success;
+	/* TX retries counter */
+	uint32_t link_tx_retries;
+	/* TX failed counter */
+	uint32_t link_tx_failed;
+	/* Overall TX drop counter */
+	uint32_t tx_dropped;
 };
 
 /**

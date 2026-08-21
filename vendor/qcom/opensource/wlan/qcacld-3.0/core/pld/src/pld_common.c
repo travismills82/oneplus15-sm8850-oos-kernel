@@ -2856,27 +2856,6 @@ void pld_set_tsf_sync_period(struct device *dev, u32 val)
 	}
 }
 
-int pld_get_tsf_gpio(struct device *dev)
-{
-	switch (pld_get_bus_type(dev)) {
-	case PLD_BUS_TYPE_PCIE:
-		return pld_pcie_get_tsf_gpio(dev);
-	case PLD_BUS_TYPE_PCIE_FW_SIM:
-	case PLD_BUS_TYPE_IPCI_FW_SIM:
-	case PLD_BUS_TYPE_SNOC_FW_SIM:
-	case PLD_BUS_TYPE_SNOC:
-	case PLD_BUS_TYPE_IPCI:
-	case PLD_BUS_TYPE_SDIO:
-	case PLD_BUS_TYPE_USB:
-		break;
-	default:
-		pr_err("Invalid device type\n");
-		break;
-	}
-
-	return -EINVAL;
-}
-
 void pld_reset_tsf_sync_period(struct device *dev)
 {
 	switch (pld_get_bus_type(dev)) {
@@ -3075,24 +3054,6 @@ void pld_get_cpumask_for_wlan_tx_comp_interrupts(struct device *dev,
 		pld_ipci_get_cpumask_for_wlan_tx_comp_interrupts(dev, cpumask);
 		break;
 	default:
-		break;
-	}
-}
-#endif
-
-#ifdef FEATURE_WLAN_DIRECT_CX
-void pld_set_cxpc(struct device *dev)
-{
-	int ret;
-
-	switch (pld_get_bus_type(dev)) {
-	case PLD_BUS_TYPE_PCIE:
-		ret = cnss_set_cxpc(dev, CX_OFF);
-		if (ret)
-			pr_err("Failed to set cxpc. Ret = %d\n", ret);
-		break;
-	default:
-		pr_err("Invalid device type\n");
 		break;
 	}
 }

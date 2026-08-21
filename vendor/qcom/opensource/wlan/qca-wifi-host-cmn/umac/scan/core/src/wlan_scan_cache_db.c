@@ -58,6 +58,7 @@
 #include "wlan_cm_bss_score_param.h"
 #include "wlan_mlme_api.h"
 #include <wlan_action_oui_main.h>
+#include <wlan_mlo_mgr_sta.h>
 
 #ifdef FEATURE_6G_SCAN_CHAN_SORT_ALGO
 
@@ -1201,6 +1202,7 @@ static bool scm_skip_bcn_ch_mismatch_check_by_oui(
 	qdf_mem_zero(&attr, sizeof(attr));
 	attr.ie_data = util_scan_entry_ie_data(scan_entry);
 	attr.ie_length = util_scan_entry_ie_len(scan_entry);
+	attr.mac_addr = scan_entry->bssid.bytes;
 
 	if (!wlan_action_oui_search(psoc, &attr,
 				    ACTION_OUI_SKIP_BCN_CH_MISMATCH_CHK))
@@ -1325,6 +1327,17 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 
 		scan_entry = scan_node->entry;
 
+		if (wlan_reg_is_6ghz_chan_freq(scan_entry->channel.chan_freq) &&
+		    (!scan_entry->ie_list.hecap || !scan_entry->ie_list.heop)) {
+			scm_nofl_debug(QDF_MAC_ADDR_FMT ": Drop frame(%d) as HE cap or HE op not present for 6GHz(%d)",
+				  QDF_MAC_ADDR_REF(
+				  scan_entry->bssid.bytes),
+				  bcn->frm_type,
+				  scan_entry->channel.chan_freq);
+			util_scan_free_cache_entry(scan_entry);
+			qdf_mem_free(scan_node);
+			continue;
+		}
 		if (scan_obj->drop_bcn_on_chan_mismatch &&
 		    scan_entry->channel_mismatch &&
 		    !scm_skip_bcn_ch_mismatch_check_by_oui(psoc, scan_entry,
@@ -2335,10 +2348,31 @@ done:
 	return status;
 }
 
+#ifdef WLAN_FEATURE_11BE_MLO
+static void scm_set_mld_addr_filter(struct wlan_objmgr_vdev *vdev,
+				    struct scan_filter *filter,
+				    struct qdf_mac_addr *ap_mld_addr)
+{
+	if (mlo_is_mld_sta(vdev) &&
+	    QDF_IS_STATUS_SUCCESS(wlan_vdev_get_bss_peer_mld_mac(
+						vdev, ap_mld_addr))) {
+		filter->match_mld_addr = 1;
+		filter->mld_addr = *ap_mld_addr;
+	}
+}
+#else
+static void scm_set_mld_addr_filter(struct wlan_objmgr_vdev *vdev,
+				    struct scan_filter *filter,
+				    struct qdf_mac_addr *ap_mld_addr)
+{
+}
+#endif
+
 struct scan_cache_entry *
 scm_scan_get_entry_by_bssid_and_security(struct wlan_objmgr_pdev *pdev,
 					 struct qdf_mac_addr *bssid,
-					 uint8_t vdev_id)
+					 uint8_t vdev_id,
+					 qdf_freq_t ch_freq)
 {
 	struct scan_filter *filter;
 	qdf_list_t *list = NULL;
@@ -2346,6 +2380,7 @@ scm_scan_get_entry_by_bssid_and_security(struct wlan_objmgr_pdev *pdev,
 	qdf_list_node_t *cur_node = NULL;
 	struct scan_cache_entry *scan_entry = NULL;
 	struct wlan_objmgr_vdev *vdev;
+	struct qdf_mac_addr ap_mld_addr = QDF_MAC_ADDR_ZERO_INIT;
 
 	filter = qdf_mem_malloc(sizeof(*filter));
 	if (!filter)
@@ -2372,6 +2407,13 @@ scm_scan_get_entry_by_bssid_and_security(struct wlan_objmgr_pdev *pdev,
 				  vdev_id);
 	}
 
+	scm_set_mld_addr_filter(vdev, filter, &ap_mld_addr);
+
+	if (ch_freq) {
+		filter->chan_freq_list[0] = ch_freq;
+		filter->num_of_channels = 1;
+	}
+
 	filter->authmodeset =
 		wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_AUTH_MODE);
 	filter->ucastcipherset =
@@ -2388,10 +2430,12 @@ scm_scan_get_entry_by_bssid_and_security(struct wlan_objmgr_pdev *pdev,
 	list = scm_get_scan_result(pdev, filter);
 
 	if (!list || (list && !qdf_list_size(list))) {
-		scm_debug("Scan entry for ssid:" QDF_SSID_FMT " bssid:" QDF_MAC_ADDR_FMT "not found",
+		scm_debug("Scan entry for ssid:" QDF_SSID_FMT " bssid:" QDF_MAC_ADDR_FMT " ch_freq %d mld " QDF_MAC_ADDR_FMT " not found",
 			  QDF_SSID_REF(filter->ssid_list[0].length,
 				       filter->ssid_list[0].ssid),
-			  QDF_MAC_ADDR_REF(bssid->bytes));
+			  QDF_MAC_ADDR_REF(bssid->bytes),
+			  ch_freq,
+			  QDF_MAC_ADDR_REF(ap_mld_addr.bytes));
 		goto done;
 	}
 

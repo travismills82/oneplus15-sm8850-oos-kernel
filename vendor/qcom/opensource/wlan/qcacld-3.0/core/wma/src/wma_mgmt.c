@@ -2078,6 +2078,8 @@ QDF_STATUS wma_send_peer_assoc(tp_wma_handle wma,
 	cmd->peer_max_tx_nss =
 		params->bcn_tx_nss ? params->bcn_tx_nss : cmd->peer_nss;
 
+	cmd->peer_cck_rx_support_5ghz = params->peer_cck_rx_support_5ghz;
+	cmd->peer_cck_tx_support_5ghz = params->peer_cck_tx_support_5ghz;
 	/*
 	 * For STA/P2P CLI mode get the Vdev AKM.
 	 * For SAP mode, since the associating client can choose one
@@ -3050,6 +3052,7 @@ void wma_send_beacon(tp_wma_handle wma, tpSendbeaconParams bcn_info)
 			}
 		}
 	}
+
 	status = wma_store_bcn_tmpl(wma, vdev_id, bcn_info);
 	if (status != QDF_STATUS_SUCCESS) {
 		wma_err("wma_store_bcn_tmpl Failed");
