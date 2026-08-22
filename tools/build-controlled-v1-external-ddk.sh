@@ -126,12 +126,21 @@ tools/bazel build "${bazel_args[@]}" \
 
 rm -rf -- "$out_dir/modules"
 mkdir -p "$out_dir/modules"
+sign_file="$kernel_build_dir/scripts/sign-file"
+[[ -x "$sign_file" ]] || die "missing kernel sign-file output: $sign_file"
+expected_signer=$(openssl x509 -inform DER -in "$signing_repo/module-signing-v1.x509" \
+    -noout -subject -nameopt RFC2253 | sed -n 's/.*CN=\([^,]*\).*/\1/p')
+[[ -n "$expected_signer" ]] || die "unable to derive controlled-v1 signer identity"
 for module in btpower bt_fm_swr btfm_slim_codec; do
     target_output="$repo_root/kernel_platform/bazel-bin/vendor/qcom/opensource/bt-kernel/canoe_perf_${module}/${module}.ko"
     [[ -f "$target_output" ]] || die "missing canonical signed target output: $target_output"
     cp -a -- "$target_output" "$out_dir/modules/${module}.ko"
+    "$sign_file" sha256 "$signing_repo/module-signing-v1.pem" \
+        "$signing_repo/module-signing-v1.x509" "$out_dir/modules/${module}.ko"
     [[ $(modinfo -F vermagic "$out_dir/modules/${module}.ko") == "$release "* ]] ||
         die "${module}.ko does not inherit the qualified kernel release"
+    [[ $(modinfo -F signer "$out_dir/modules/${module}.ko") == "$expected_signer" ]] ||
+        die "${module}.ko was not signed by controlled-v1"
 done
 
 sha256sum "$out_dir/modules/"*.ko > "$out_dir/SHA256SUMS"
