@@ -1,0 +1,7 @@
+batch	name	modules	providers_retained	risk	disposition
+A	Independent qdisc leaf	rmnet_sch	vmlinux	LOW	Selected Batch 01; current .097 source ownership only
+B	RMNET policy/flow leaves	rmnet_aps,rmnet_offload,rmnet_perf,rmnet_perf_tether,rmnet_shs,rmnet_wlan	rmnet_core and frozen providers	MEDIUM-HIGH	Test as smaller leaf sub-batches before combining
+C	RMNET provider core	rmnet_core,rmnet_ctl,rmnet_mem	IPA/QMI and frozen providers	HIGH	Requires all affected RMNET consumers rebuilt or CRC-proven
+D	GSI and IPA	gsim,ipam,ipanetm	modem IPC, USB GSI, RMNET providers	HIGH	Foundational data-plane and firmware/SSR batch
+E	Modem IPC and diagnostics	qcom_glink,qcom_glink_smem,qcom_ramdump,qcom_smd,qcom_va_minidump,qmi_helpers,rproc_qcom_common	Image and broader stock platform providers	HIGH	Shared by WLAN, remoteproc and many non-cellular clients
+F	USB tethering/shared support	dwc3_msm,oplus_mm_kevent,oplus_mm_kevent_fb,redriver,repeater,usb_f_gsi,wcd_usbss_i2c	Image and retained USB/audio providers	HIGH	Shared USB/audio/charging path; migrate only for proven need

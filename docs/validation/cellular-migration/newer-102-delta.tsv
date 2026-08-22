@@ -1,0 +1,25 @@
+path	old_generation	new_generation	classification	affected_batch	ABI_export_risk	recommendation
+vendor/qcom/opensource/dataipa/BUILD.bazel	.078	.102	BUILD ONLY	D	LOW	Review only with the IPA/GSI batch
+vendor/qcom/opensource/dataipa/define_modules.bzl	.078	.102	BUILD ONLY	D	MEDIUM	Build graph changes belong to the coherent IPA/GSI batch
+vendor/qcom/opensource/dataipa/drivers/platform/msm/gsi/gsi.c	.078	.102	GSI; SSR; ABI/EXPORT CHANGE	D	HIGH	Adds gsi_status_enabled export and changes GSI mapping lifecycle; do not isolate
+vendor/qcom/opensource/dataipa/drivers/platform/msm/gsi/gsi.h	.078	.102	GSI; ABI/EXPORT CHANGE	D	HIGH	New exported provider interface; rebuild and validate all consumers
+vendor/qcom/opensource/dataipa/drivers/platform/msm/gsi/gsihal/gsihal.c	.078	.102	BUILD ONLY	D	LOW	Copyright-only source delta
+vendor/qcom/opensource/dataipa/drivers/platform/msm/include/linux/ipa.h	.078	.102	DATA PATH; ABI/EXPORT CHANGE	D	HIGH	ipa_tx_meta layout changes; treat every source and stock consumer as an ABI boundary
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipa.c	.078	.102	SSR; DATA CALL FIX; GSI; POWER	D	HIGH	Firmware already-loaded handling and allocation/retry behavior require coherent IPA/GSI qualification
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipa_dp.c	.078	.102	DATA PATH; ROUTING; PERFORMANCE	D	HIGH	Low-latency and packet-init behavior changes are foundational
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipa_hdr.c	.078	.102	BUG FIX; RACE/LIFETIME	D	HIGH	Header/proc-context relationship cleanup is useful but cannot be isolated from IPA core
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipa_i.h	.078	.102	SSR; INTERNAL STRUCTURE	D	HIGH	Internal state/statistics contract changes with IPA core
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipa_utils.c	.078	.102	POWER; SSR; PERFORMANCE; DEVICE-SPECIFIC	D	HIGH	Allocation retries and mapping validity checks are generic; IoT clock additions are not Canoe value
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipahal/ipahal_fltrt.c	.078	.102	BUG FIX; SSR	D	HIGH	DMA allocation retry changes belong to IPA core
+vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/rmnet_ctl_ipa.c	.078	.102	DATA CALL FIX; QMI; SSR	D	HIGH	Control-plane changes cross IPA/RMNET boundary
+vendor/qcom/opensource/dataipa/target_variants.bzl	.078	.102	BUILD ONLY	D	LOW	Newer target selection; do not import foreign device variants
+vendor/qcom/opensource/datarmnet-ext/aps/define_aps.bzl	.097	.102	BUILD ONLY	B	LOW	No runtime source change in this snapshot
+vendor/qcom/opensource/datarmnet-ext/mem/define_mem.bzl	.097	.102	BUILD ONLY	C	LOW	No runtime source change in this snapshot
+vendor/qcom/opensource/datarmnet-ext/offload/define_offload.bzl	.097	.102	BUILD ONLY	B	LOW	No runtime source change in this snapshot
+vendor/qcom/opensource/datarmnet-ext/perf/define_perf.bzl	.097	.102	BUILD ONLY	B	LOW	No runtime source change in this snapshot
+vendor/qcom/opensource/datarmnet-ext/perf_tether/define_perf_tether.bzl	.097	.102	BUILD ONLY	B	LOW	No runtime source change in this snapshot
+vendor/qcom/opensource/datarmnet-ext/sch/define_sch.bzl	.097	.102	BUILD ONLY	A	LOW	No rmnet_sch runtime source change; .097 source-built Batch 01 is sufficient
+vendor/qcom/opensource/datarmnet-ext/shs/define_shs.bzl	.097	.102	BUILD ONLY	B	LOW	No runtime source change in this snapshot
+vendor/qcom/opensource/datarmnet-ext/wlan/define_wlan.bzl	.097	.102	BUILD ONLY	B	LOW	No runtime source change; shared WLAN boundary remains high risk
+vendor/qcom/opensource/datarmnet/core/rmnet_map_data.c	.078	.102	DATA PATH; ROUTING	C	HIGH	Keeps Q6 priority marking when IPA LL pipe is not ready; physically test with RMNET core batch
+vendor/qcom/opensource/datarmnet/define_modules.bzl	.078	.102	BUILD ONLY	C	MEDIUM	Dependency/build-label changes belong to RMNET provider batch
