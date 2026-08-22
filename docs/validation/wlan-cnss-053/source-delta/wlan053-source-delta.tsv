@@ -1,0 +1,845 @@
+status	component	path	classification	decision	added_lines	deleted_lines
+M	fw-api	fw-api/fw/enet.h	FIRMWARE INTERFACE	IMPORT	16	4
+M	fw-api	fw-api/fw/htt.h	FIRMWARE INTERFACE	IMPORT	290	32
+M	fw-api	fw-api/fw/htt_ppdu_stats.h	FIRMWARE INTERFACE	IMPORT	100	16
+M	fw-api	fw-api/fw/htt_stats.h	FIRMWARE INTERFACE	IMPORT	1844	48
+M	fw-api	fw-api/fw/wlan_defs.h	FIRMWARE INTERFACE	IMPORT	14	0
+M	fw-api	fw-api/fw/wlan_module_ids.h	FIRMWARE INTERFACE	IMPORT	1	0
+M	fw-api	fw-api/fw/wmi_services.h	FIRMWARE INTERFACE	IMPORT	31	0
+M	fw-api	fw-api/fw/wmi_tlv_defs.h	FIRMWARE INTERFACE	IMPORT	434	16
+M	fw-api	fw-api/fw/wmi_unified.h	FIRMWARE INTERFACE	IMPORT	1837	65
+M	fw-api	fw-api/fw/wmi_version.h	FIRMWARE INTERFACE	IMPORT	1	1
+A	fw-api	fw-api/hw/fig/v1/HALcomdef.h	FIRMWARE INTERFACE	IMPORT	38	0
+A	fw-api	fw-api/hw/fig/v1/HALhwio.h	FIRMWARE INTERFACE	IMPORT	282	0
+A	fw-api	fw-api/hw/fig/v1/ack_report.h	FIRMWARE INTERFACE	IMPORT	52	0
+A	fw-api	fw-api/hw/fig/v1/boron_top_reg.h	FIRMWARE INTERFACE	IMPORT	12	0
+A	fw-api	fw-api/hw/fig/v1/buffer_addr_info.h	FIRMWARE INTERFACE	IMPORT	45	0
+A	fw-api	fw-api/hw/fig/v1/ce_src_desc.h	FIRMWARE INTERFACE	IMPORT	122	0
+A	fw-api	fw-api/hw/fig/v1/ce_stat_desc.h	FIRMWARE INTERFACE	IMPORT	115	0
+A	fw-api	fw-api/hw/fig/v1/coex_rx_status.h	FIRMWARE INTERFACE	IMPORT	131	0
+A	fw-api	fw-api/hw/fig/v1/coex_tx_req.h	FIRMWARE INTERFACE	IMPORT	222	0
+A	fw-api	fw-api/hw/fig/v1/coex_tx_status.h	FIRMWARE INTERFACE	IMPORT	117	0
+A	fw-api	fw-api/hw/fig/v1/com_dtypes.h	FIRMWARE INTERFACE	IMPORT	167	0
+A	fw-api	fw-api/hw/fig/v1/eht_sig_usr_mu_mimo_info.h	FIRMWARE INTERFACE	IMPORT	94	0
+A	fw-api	fw-api/hw/fig/v1/eht_sig_usr_ofdma_info.h	FIRMWARE INTERFACE	IMPORT	108	0
+A	fw-api	fw-api/hw/fig/v1/eht_sig_usr_su_info.h	FIRMWARE INTERFACE	IMPORT	73	0
+A	fw-api	fw-api/hw/fig/v1/expected_response.h	FIRMWARE INTERFACE	IMPORT	203	0
+A	fw-api	fw-api/hw/fig/v1/he_sig_a_mu_dl_info.h	FIRMWARE INTERFACE	IMPORT	171	0
+A	fw-api	fw-api/hw/fig/v1/he_sig_a_mu_ul_info.h	FIRMWARE INTERFACE	IMPORT	101	0
+A	fw-api	fw-api/hw/fig/v1/he_sig_a_su_info.h	FIRMWARE INTERFACE	IMPORT	206	0
+A	fw-api	fw-api/hw/fig/v1/he_sig_b1_mu_info.h	FIRMWARE INTERFACE	IMPORT	38	0
+A	fw-api	fw-api/hw/fig/v1/he_sig_b2_mu_info.h	FIRMWARE INTERFACE	IMPORT	94	0
+A	fw-api	fw-api/hw/fig/v1/he_sig_b2_ofdma_info.h	FIRMWARE INTERFACE	IMPORT	94	0
+A	fw-api	fw-api/hw/fig/v1/ht_sig_info.h	FIRMWARE INTERFACE	IMPORT	129	0
+A	fw-api	fw-api/hw/fig/v1/l_sig_a_info.h	FIRMWARE INTERFACE	IMPORT	80	0
+A	fw-api	fw-api/hw/fig/v1/l_sig_b_info.h	FIRMWARE INTERFACE	IMPORT	45	0
+A	fw-api	fw-api/hw/fig/v1/macrx_abort_request_info.h	FIRMWARE INTERFACE	IMPORT	31	0
+A	fw-api	fw-api/hw/fig/v1/mactx_eht_sig_usr_mu_mimo.h	FIRMWARE INTERFACE	IMPORT	77	0
+A	fw-api	fw-api/hw/fig/v1/mactx_eht_sig_usr_ofdma.h	FIRMWARE INTERFACE	IMPORT	87	0
+A	fw-api	fw-api/hw/fig/v1/mactx_eht_sig_usr_su.h	FIRMWARE INTERFACE	IMPORT	69	0
+A	fw-api	fw-api/hw/fig/v1/mactx_he_sig_a_mu_dl.h	FIRMWARE INTERFACE	IMPORT	132	0
+A	fw-api	fw-api/hw/fig/v1/mactx_he_sig_a_mu_ul.h	FIRMWARE INTERFACE	IMPORT	82	0
+A	fw-api	fw-api/hw/fig/v1/mactx_he_sig_a_su.h	FIRMWARE INTERFACE	IMPORT	157	0
+A	fw-api	fw-api/hw/fig/v1/mactx_he_sig_b1_mu.h	FIRMWARE INTERFACE	IMPORT	44	0
+A	fw-api	fw-api/hw/fig/v1/mactx_he_sig_b2_mu.h	FIRMWARE INTERFACE	IMPORT	77	0
+A	fw-api	fw-api/hw/fig/v1/mactx_he_sig_b2_ofdma.h	FIRMWARE INTERFACE	IMPORT	77	0
+A	fw-api	fw-api/hw/fig/v1/mactx_ht_sig.h	FIRMWARE INTERFACE	IMPORT	102	0
+A	fw-api	fw-api/hw/fig/v1/mactx_l_sig_a.h	FIRMWARE INTERFACE	IMPORT	74	0
+A	fw-api	fw-api/hw/fig/v1/mactx_l_sig_b.h	FIRMWARE INTERFACE	IMPORT	49	0
+A	fw-api	fw-api/hw/fig/v1/mactx_phy_desc.h	FIRMWARE INTERFACE	IMPORT	348	0
+A	fw-api	fw-api/hw/fig/v1/mactx_u_sig_eht_su_mu.h	FIRMWARE INTERFACE	IMPORT	122	0
+A	fw-api	fw-api/hw/fig/v1/mactx_u_sig_eht_tb.h	FIRMWARE INTERFACE	IMPORT	97	0
+A	fw-api	fw-api/hw/fig/v1/mactx_user_desc_common.h	FIRMWARE INTERFACE	IMPORT	482	0
+A	fw-api	fw-api/hw/fig/v1/mactx_user_desc_per_user.h	FIRMWARE INTERFACE	IMPORT	285	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_a.h	FIRMWARE INTERFACE	IMPORT	112	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_mu160.h	FIRMWARE INTERFACE	IMPORT	182	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_mu20.h	FIRMWARE INTERFACE	IMPORT	54	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_mu40.h	FIRMWARE INTERFACE	IMPORT	67	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_mu80.h	FIRMWARE INTERFACE	IMPORT	102	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_su160.h	FIRMWARE INTERFACE	IMPORT	222	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_su20.h	FIRMWARE INTERFACE	IMPORT	54	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_su40.h	FIRMWARE INTERFACE	IMPORT	72	0
+A	fw-api	fw-api/hw/fig/v1/mactx_vht_sig_b_su80.h	FIRMWARE INTERFACE	IMPORT	122	0
+A	fw-api	fw-api/hw/fig/v1/mlo_sta_id_details.h	FIRMWARE INTERFACE	IMPORT	52	0
+A	fw-api	fw-api/hw/fig/v1/mon_buffer_addr.h	FIRMWARE INTERFACE	IMPORT	75	0
+A	fw-api	fw-api/hw/fig/v1/mon_destination_ring.h	FIRMWARE INTERFACE	IMPORT	94	0
+A	fw-api	fw-api/hw/fig/v1/mon_drop.h	FIRMWARE INTERFACE	IMPORT	61	0
+A	fw-api	fw-api/hw/fig/v1/mon_ingress_ring.h	FIRMWARE INTERFACE	IMPORT	54	0
+A	fw-api	fw-api/hw/fig/v1/msmhwiobase.h	FIRMWARE INTERFACE	IMPORT	12	0
+A	fw-api	fw-api/hw/fig/v1/msmhwioreg.h	FIRMWARE INTERFACE	IMPORT	98	0
+A	fw-api	fw-api/hw/fig/v1/no_ack_report.h	FIRMWARE INTERFACE	IMPORT	108	0
+A	fw-api	fw-api/hw/fig/v1/ofdma_trigger_details.h	FIRMWARE INTERFACE	IMPORT	928	0
+A	fw-api	fw-api/hw/fig/v1/pcu_ppdu_setup_init.h	FIRMWARE INTERFACE	IMPORT	2309	0
+A	fw-api	fw-api/hw/fig/v1/pdg_response.h	FIRMWARE INTERFACE	IMPORT	503	0
+A	fw-api	fw-api/hw/fig/v1/pdg_response_rate_setting.h	FIRMWARE INTERFACE	IMPORT	409	0
+A	fw-api	fw-api/hw/fig/v1/pdg_tx_req.h	FIRMWARE INTERFACE	IMPORT	89	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_abort_request_info.h	FIRMWARE INTERFACE	IMPORT	87	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_common_user_info.h	FIRMWARE INTERFACE	IMPORT	168	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_he_sig_a_mu_dl.h	FIRMWARE INTERFACE	IMPORT	132	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_he_sig_a_mu_ul.h	FIRMWARE INTERFACE	IMPORT	82	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_he_sig_a_su.h	FIRMWARE INTERFACE	IMPORT	157	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_he_sig_b1_mu.h	FIRMWARE INTERFACE	IMPORT	44	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_he_sig_b2_mu.h	FIRMWARE INTERFACE	IMPORT	77	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_he_sig_b2_ofdma.h	FIRMWARE INTERFACE	IMPORT	77	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_ht_sig.h	FIRMWARE INTERFACE	IMPORT	102	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_l_sig_a.h	FIRMWARE INTERFACE	IMPORT	74	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_l_sig_b.h	FIRMWARE INTERFACE	IMPORT	49	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_location.h	FIRMWARE INTERFACE	IMPORT	332	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_other_receive_info_ru_details.h	FIRMWARE INTERFACE	IMPORT	47	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_pkt_end.h	FIRMWARE INTERFACE	IMPORT	427	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_pkt_end_info.h	FIRMWARE INTERFACE	IMPORT	450	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_rssi_legacy.h	FIRMWARE INTERFACE	IMPORT	806	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_user_info.h	FIRMWARE INTERFACE	IMPORT	202	0
+A	fw-api	fw-api/hw/fig/v1/phyrx_vht_sig_a.h	FIRMWARE INTERFACE	IMPORT	112	0
+A	fw-api	fw-api/hw/fig/v1/phytx_abort_request_info.h	FIRMWARE INTERFACE	IMPORT	38	0
+A	fw-api	fw-api/hw/fig/v1/phytx_pkt_end.h	FIRMWARE INTERFACE	IMPORT	243	0
+A	fw-api	fw-api/hw/fig/v1/phytx_ppdu_header_info_request.h	FIRMWARE INTERFACE	IMPORT	40	0
+A	fw-api	fw-api/hw/fig/v1/receive_pkt_start_info.h	FIRMWARE INTERFACE	IMPORT	87	0
+A	fw-api	fw-api/hw/fig/v1/receive_rssi_info.h	FIRMWARE INTERFACE	IMPORT	465	0
+A	fw-api	fw-api/hw/fig/v1/receive_user_info.h	FIRMWARE INTERFACE	IMPORT	271	0
+A	fw-api	fw-api/hw/fig/v1/received_response_user_15_8.h	FIRMWARE INTERFACE	IMPORT	1116	0
+A	fw-api	fw-api/hw/fig/v1/received_response_user_23_16.h	FIRMWARE INTERFACE	IMPORT	1116	0
+A	fw-api	fw-api/hw/fig/v1/received_response_user_31_24.h	FIRMWARE INTERFACE	IMPORT	1116	0
+A	fw-api	fw-api/hw/fig/v1/received_response_user_36_32.h	FIRMWARE INTERFACE	IMPORT	705	0
+A	fw-api	fw-api/hw/fig/v1/received_response_user_7_0.h	FIRMWARE INTERFACE	IMPORT	1116	0
+A	fw-api	fw-api/hw/fig/v1/received_response_user_info.h	FIRMWARE INTERFACE	IMPORT	206	0
+A	fw-api	fw-api/hw/fig/v1/received_trigger_info.h	FIRMWARE INTERFACE	IMPORT	142	0
+A	fw-api	fw-api/hw/fig/v1/received_trigger_info_details.h	FIRMWARE INTERFACE	IMPORT	191	0
+A	fw-api	fw-api/hw/fig/v1/reo_destination_ring.h	FIRMWARE INTERFACE	IMPORT	305	0
+A	fw-api	fw-api/hw/fig/v1/reo_destination_ring_with_pn.h	FIRMWARE INTERFACE	IMPORT	277	0
+A	fw-api	fw-api/hw/fig/v1/reo_entrance_ring.h	FIRMWARE INTERFACE	IMPORT	328	0
+A	fw-api	fw-api/hw/fig/v1/response_end_status.h	FIRMWARE INTERFACE	IMPORT	256	0
+A	fw-api	fw-api/hw/fig/v1/response_start_status.h	FIRMWARE INTERFACE	IMPORT	63	0
+A	fw-api	fw-api/hw/fig/v1/ru_allocation_160_info.h	FIRMWARE INTERFACE	IMPORT	115	0
+A	fw-api	fw-api/hw/fig/v1/rx_attention.h	FIRMWARE INTERFACE	IMPORT	376	0
+A	fw-api	fw-api/hw/fig/v1/rx_flow_search_entry.h	FIRMWARE INTERFACE	IMPORT	213	0
+A	fw-api	fw-api/hw/fig/v1/rx_frame_1k_bitmap_ack.h	FIRMWARE INTERFACE	IMPORT	362	0
+A	fw-api	fw-api/hw/fig/v1/rx_frame_bitmap_ack.h	FIRMWARE INTERFACE	IMPORT	236	0
+A	fw-api	fw-api/hw/fig/v1/rx_frame_bitmap_req.h	FIRMWARE INTERFACE	IMPORT	75	0
+A	fw-api	fw-api/hw/fig/v1/rx_location_info.h	FIRMWARE INTERFACE	IMPORT	453	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_desc_info.h	FIRMWARE INTERFACE	IMPORT	101	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_details.h	FIRMWARE INTERFACE	IMPORT	131	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_end.h	FIRMWARE INTERFACE	IMPORT	175	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_ext_desc_info.h	FIRMWARE INTERFACE	IMPORT	52	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_info.h	FIRMWARE INTERFACE	IMPORT	958	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_link_ptr.h	FIRMWARE INTERFACE	IMPORT	40	0
+A	fw-api	fw-api/hw/fig/v1/rx_mpdu_start.h	FIRMWARE INTERFACE	IMPORT	702	0
+A	fw-api	fw-api/hw/fig/v1/rx_msdu_desc_info.h	FIRMWARE INTERFACE	IMPORT	131	0
+A	fw-api	fw-api/hw/fig/v1/rx_msdu_details.h	FIRMWARE INTERFACE	IMPORT	161	0
+A	fw-api	fw-api/hw/fig/v1/rx_msdu_end.h	FIRMWARE INTERFACE	IMPORT	1087	0
+A	fw-api	fw-api/hw/fig/v1/rx_msdu_ext_desc_info.h	FIRMWARE INTERFACE	IMPORT	59	0
+A	fw-api	fw-api/hw/fig/v1/rx_msdu_link.h	FIRMWARE INTERFACE	IMPORT	2051	0
+A	fw-api	fw-api/hw/fig/v1/rx_msdu_start.h	FIRMWARE INTERFACE	IMPORT	306	0
+A	fw-api	fw-api/hw/fig/v1/rx_ppdu_ack_report.h	FIRMWARE INTERFACE	IMPORT	54	0
+A	fw-api	fw-api/hw/fig/v1/rx_ppdu_end_user_stats.h	FIRMWARE INTERFACE	IMPORT	679	0
+A	fw-api	fw-api/hw/fig/v1/rx_ppdu_end_user_stats_ext.h	FIRMWARE INTERFACE	IMPORT	133	0
+A	fw-api	fw-api/hw/fig/v1/rx_ppdu_no_ack_report.h	FIRMWARE INTERFACE	IMPORT	87	0
+A	fw-api	fw-api/hw/fig/v1/rx_ppdu_start.h	FIRMWARE INTERFACE	IMPORT	75	0
+A	fw-api	fw-api/hw/fig/v1/rx_ppdu_start_user_info.h	FIRMWARE INTERFACE	IMPORT	202	0
+A	fw-api	fw-api/hw/fig/v1/rx_preamble.h	FIRMWARE INTERFACE	IMPORT	54	0
+A	fw-api	fw-api/hw/fig/v1/rx_response_required_info.h	FIRMWARE INTERFACE	IMPORT	750	0
+A	fw-api	fw-api/hw/fig/v1/rx_rxpcu_classification_overview.h	FIRMWARE INTERFACE	IMPORT	94	0
+A	fw-api	fw-api/hw/fig/v1/rx_start_param.h	FIRMWARE INTERFACE	IMPORT	47	0
+A	fw-api	fw-api/hw/fig/v1/rx_timing_info.h	FIRMWARE INTERFACE	IMPORT	66	0
+A	fw-api	fw-api/hw/fig/v1/rx_trig_info.h	FIRMWARE INTERFACE	IMPORT	54	0
+A	fw-api	fw-api/hw/fig/v1/rxpcu_early_rx_indication.h	FIRMWARE INTERFACE	IMPORT	61	0
+A	fw-api	fw-api/hw/fig/v1/rxpcu_ppdu_end_info.h	FIRMWARE INTERFACE	IMPORT	925	0
+A	fw-api	fw-api/hw/fig/v1/rxpcu_ppdu_end_layout_info.h	FIRMWARE INTERFACE	IMPORT	320	0
+A	fw-api	fw-api/hw/fig/v1/rxpt_classify_info.h	FIRMWARE INTERFACE	IMPORT	122	0
+A	fw-api	fw-api/hw/fig/v1/seq_hwio.h	FIRMWARE INTERFACE	IMPORT	41	0
+A	fw-api	fw-api/hw/fig/v1/tcl_assist_cmd.h	FIRMWARE INTERFACE	IMPORT	411	0
+A	fw-api	fw-api/hw/fig/v1/tcl_status_ring.h	FIRMWARE INTERFACE	IMPORT	129	0
+A	fw-api	fw-api/hw/fig/v1/tlv_hdr.h	FIRMWARE INTERFACE	IMPORT	634	0
+A	fw-api	fw-api/hw/fig/v1/tlv_tag_def.h	FIRMWARE INTERFACE	IMPORT	1976	0
+A	fw-api	fw-api/hw/fig/v1/tqm2sw_completion_ring.h	FIRMWARE INTERFACE	IMPORT	262	0
+A	fw-api	fw-api/hw/fig/v1/tx_cbf_info.h	FIRMWARE INTERFACE	IMPORT	454	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_setup.h	FIRMWARE INTERFACE	IMPORT	550	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_1k_ba.h	FIRMWARE INTERFACE	IMPORT	313	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_ack_or_ba.h	FIRMWARE INTERFACE	IMPORT	145	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_end.h	FIRMWARE INTERFACE	IMPORT	581	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_prot.h	FIRMWARE INTERFACE	IMPORT	156	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_start.h	FIRMWARE INTERFACE	IMPORT	117	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_start_ppdu.h	FIRMWARE INTERFACE	IMPORT	271	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_start_prot.h	FIRMWARE INTERFACE	IMPORT	264	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_user_ppdu.h	FIRMWARE INTERFACE	IMPORT	180	0
+A	fw-api	fw-api/hw/fig/v1/tx_fes_status_user_response.h	FIRMWARE INTERFACE	IMPORT	65	0
+A	fw-api	fw-api/hw/fig/v1/tx_flush_req.h	FIRMWARE INTERFACE	IMPORT	61	0
+A	fw-api	fw-api/hw/fig/v1/tx_mpdu_start.h	FIRMWARE INTERFACE	IMPORT	292	0
+A	fw-api	fw-api/hw/fig/v1/tx_msdu_extension.h	FIRMWARE INTERFACE	IMPORT	318	0
+A	fw-api	fw-api/hw/fig/v1/tx_msdu_start.h	FIRMWARE INTERFACE	IMPORT	250	0
+A	fw-api	fw-api/hw/fig/v1/tx_peer_entry.h	FIRMWARE INTERFACE	IMPORT	391	0
+A	fw-api	fw-api/hw/fig/v1/tx_queue_extension.h	FIRMWARE INTERFACE	IMPORT	411	0
+A	fw-api	fw-api/hw/fig/v1/tx_rate_stats_info.h	FIRMWARE INTERFACE	IMPORT	108	0
+A	fw-api	fw-api/hw/fig/v1/tx_raw_or_native_frame_setup.h	FIRMWARE INTERFACE	IMPORT	285	0
+A	fw-api	fw-api/hw/fig/v1/txpcu_buffer_basics.h	FIRMWARE INTERFACE	IMPORT	38	0
+A	fw-api	fw-api/hw/fig/v1/txpcu_buffer_status.h	FIRMWARE INTERFACE	IMPORT	58	0
+A	fw-api	fw-api/hw/fig/v1/txpcu_user_buffer_status.h	FIRMWARE INTERFACE	IMPORT	65	0
+A	fw-api	fw-api/hw/fig/v1/u_sig_eht_su_mu_info.h	FIRMWARE INTERFACE	IMPORT	157	0
+A	fw-api	fw-api/hw/fig/v1/u_sig_eht_tb_info.h	FIRMWARE INTERFACE	IMPORT	122	0
+A	fw-api	fw-api/hw/fig/v1/unallocated_ru_160_info.h	FIRMWARE INTERFACE	IMPORT	45	0
+A	fw-api	fw-api/hw/fig/v1/uniform_descriptor_header.h	FIRMWARE INTERFACE	IMPORT	45	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_a_info.h	FIRMWARE INTERFACE	IMPORT	143	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_mu160_info.h	FIRMWARE INTERFACE	IMPORT	241	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_mu20_info.h	FIRMWARE INTERFACE	IMPORT	52	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_mu40_info.h	FIRMWARE INTERFACE	IMPORT	80	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_mu80_info.h	FIRMWARE INTERFACE	IMPORT	129	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_su160_info.h	FIRMWARE INTERFACE	IMPORT	297	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_su20_info.h	FIRMWARE INTERFACE	IMPORT	52	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_su40_info.h	FIRMWARE INTERFACE	IMPORT	87	0
+A	fw-api	fw-api/hw/fig/v1/vht_sig_b_su80_info.h	FIRMWARE INTERFACE	IMPORT	157	0
+A	fw-api	fw-api/hw/fig/v1/wbm2sw_completion_ring_rx.h	FIRMWARE INTERFACE	IMPORT	289	0
+A	fw-api	fw-api/hw/fig/v1/wbm_buffer_ring.h	FIRMWARE INTERFACE	IMPORT	40	0
+A	fw-api	fw-api/hw/fig/v1/wbm_link_descriptor_ring.h	FIRMWARE INTERFACE	IMPORT	40	0
+A	fw-api	fw-api/hw/fig/v1/wbm_release_ring.h	FIRMWARE INTERFACE	IMPORT	117	0
+A	fw-api	fw-api/hw/fig/v1/wbm_release_ring_rx.h	FIRMWARE INTERFACE	IMPORT	75	0
+A	fw-api	fw-api/hw/fig/v1/wbm_release_ring_tx.h	FIRMWARE INTERFACE	IMPORT	68	0
+A	fw-api	fw-api/hw/fig/v1/wcss_seq_hwiobase.h	FIRMWARE INTERFACE	IMPORT	104	0
+A	fw-api	fw-api/hw/fig/v1/wcss_seq_hwioreg_umac.h	FIRMWARE INTERFACE	IMPORT	2475	0
+A	fw-api	fw-api/hw/fig/v1/wcss_version.h	FIRMWARE INTERFACE	IMPORT	5	0
+M	platform	platform/Android.mk	CNSS	IMPORT	1	1
+M	platform	platform/Kbuild	BUILD ONLY	IMPORT	12	0
+M	platform	platform/Makefile	BUILD ONLY	IMPORT	6	6
+A	platform	platform/cnss2/art_consolidate_defconfig	BUILD ONLY	IMPORT	14	0
+A	platform	platform/cnss2/art_gki_defconfig	BUILD ONLY	IMPORT	13	0
+M	platform	platform/cnss2/autogvm_consolidate_defconfig	BUILD ONLY	IMPORT	1	0
+M	platform	platform/cnss2/autogvm_gki_defconfig	BUILD ONLY	IMPORT	1	0
+M	platform	platform/cnss2/bus.c	CNSS	IMPORT	19	0
+M	platform	platform/cnss2/bus.h	CNSS	IMPORT	2	0
+M	platform	platform/cnss2/debug.c	CNSS	IMPORT	3	0
+A	platform	platform/cnss2/hamoa_consolidate_defconfig	BUILD ONLY	IMPORT	13	0
+A	platform	platform/cnss2/hamoa_gki_defconfig	BUILD ONLY	IMPORT	12	0
+M	platform	platform/cnss2/main.c	CNSS	IMPORT	730	150
+M	platform	platform/cnss2/main.h	CNSS	IMPORT	42	10
+A	platform	platform/cnss2/parrot_consolidate_defconfig	BUILD ONLY	IMPORT	10	0
+A	platform	platform/cnss2/parrot_gki_defconfig	BUILD ONLY	IMPORT	9	0
+M	platform	platform/cnss2/pci.c	CNSS	IMPORT	554	316
+M	platform	platform/cnss2/pci.h	CNSS	IMPORT	48	0
+M	platform	platform/cnss2/pci_qcom.c	CNSS	IMPORT	5	3
+M	platform	platform/cnss2/pci_qcom_ecam.c	CNSS	IMPORT	7	4
+M	platform	platform/cnss2/power.c	POWER/PM	IMPORT	170	141
+M	platform	platform/cnss2/qmi.c	CNSS	IMPORT	160	59
+M	platform	platform/cnss2/qmi.h	CNSS	IMPORT	3	2
+M	platform	platform/cnss2/reg.h	CNSS	IMPORT	12	2
+A	platform	platform/cnss2/sa510m.1g_consolidate_defconfig	BUILD ONLY	IMPORT	7	0
+A	platform	platform/cnss2/sa510m.1g_gki_defconfig	BUILD ONLY	IMPORT	7	0
+A	platform	platform/cnss2/sa510m_consolidate_defconfig	BUILD ONLY	IMPORT	7	0
+A	platform	platform/cnss_genl/alor-le_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/alor-le_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/art_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/art_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/bengal_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/bengal_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/chora_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/chora_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/hamoa_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/hamoa_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/malabar_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/malabar_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/sa510m.1g_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/sa510m.1g_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_genl/sa510m_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+M	platform	platform/cnss_prealloc/Kconfig	BUILD ONLY	IMPORT	10	0
+M	platform	platform/cnss_prealloc/Makefile	BUILD ONLY	IMPORT	4	0
+A	platform	platform/cnss_prealloc/alor-le_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_prealloc/alor-le_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_prealloc/art_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_prealloc/art_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_prealloc/bengal_consolidate_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_prealloc/bengal_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_prealloc/chora_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_prealloc/chora_gki_defconfig	BUILD ONLY	IMPORT	2	0
+M	platform	platform/cnss_prealloc/cnss_prealloc.c	CNSS	IMPORT	222	17
+A	platform	platform/cnss_prealloc/hamoa_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_prealloc/hamoa_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_prealloc/malabar_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_prealloc/malabar_gki_defconfig	BUILD ONLY	IMPORT	2	0
+A	platform	platform/cnss_prealloc/sa510m.1g_consolidate_defconfig	BUILD ONLY	IMPORT	1	0
+A	platform	platform/cnss_prealloc/sa510m.1g_gki_defconfig	BUILD ONLY	IMPORT	1	0
+A	platform	platform/cnss_prealloc/sa510m_consolidate_defconfig	BUILD ONLY	IMPORT	1	0
+A	platform	platform/cnss_utils/alor-le_consolidate_defconfig	BUILD ONLY	IMPORT	4	0
+A	platform	platform/cnss_utils/alor-le_gki_defconfig	BUILD ONLY	IMPORT	4	0
+A	platform	platform/cnss_utils/art_consolidate_defconfig	BUILD ONLY	IMPORT	5	0
+A	platform	platform/cnss_utils/art_gki_defconfig	BUILD ONLY	IMPORT	5	0
+A	platform	platform/cnss_utils/bengal_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_utils/bengal_gki_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_utils/chora_consolidate_defconfig	BUILD ONLY	IMPORT	5	0
+A	platform	platform/cnss_utils/chora_gki_defconfig	BUILD ONLY	IMPORT	5	0
+M	platform	platform/cnss_utils/cnss_plat_ipc_qmi.c	CNSS	IMPORT	2	2
+A	platform	platform/cnss_utils/hamoa_consolidate_defconfig	BUILD ONLY	IMPORT	5	0
+A	platform	platform/cnss_utils/hamoa_gki_defconfig	BUILD ONLY	IMPORT	5	0
+A	platform	platform/cnss_utils/malabar_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_utils/malabar_gki_defconfig	BUILD ONLY	IMPORT	3	0
+M	platform	platform/cnss_utils/parrot_consolidate_defconfig	BUILD ONLY	IMPORT	1	0
+M	platform	platform/cnss_utils/parrot_gki_defconfig	BUILD ONLY	IMPORT	1	0
+A	platform	platform/cnss_utils/sa510m.1g_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_utils/sa510m.1g_gki_defconfig	BUILD ONLY	IMPORT	3	0
+A	platform	platform/cnss_utils/sa510m_consolidate_defconfig	BUILD ONLY	IMPORT	3	0
+M	platform	platform/cnss_utils/wlan_firmware_service_v01.c	FIRMWARE INTERFACE	IMPORT	319	0
+M	platform	platform/cnss_utils/wlan_firmware_service_v01.h	FIRMWARE INTERFACE	IMPORT	94	5
+A	platform	platform/icnss2/alor-le_consolidate_defconfig	BUILD ONLY	IMPORT	8	0
+A	platform	platform/icnss2/alor-le_gki_defconfig	BUILD ONLY	IMPORT	7	0
+A	platform	platform/icnss2/art_consolidate_defconfig	BUILD ONLY	IMPORT	8	0
+A	platform	platform/icnss2/art_gki_defconfig	BUILD ONLY	IMPORT	7	0
+A	platform	platform/icnss2/bengal_consolidate_defconfig	BUILD ONLY	IMPORT	6	0
+A	platform	platform/icnss2/bengal_gki_defconfig	BUILD ONLY	IMPORT	5	0
+A	platform	platform/icnss2/chora_consolidate_defconfig	BUILD ONLY	IMPORT	8	0
+A	platform	platform/icnss2/chora_gki_defconfig	BUILD ONLY	IMPORT	7	0
+M	platform	platform/icnss2/debug.c	CNSS	IMPORT	219	0
+M	platform	platform/icnss2/debug.h	CNSS	IMPORT	22	0
+M	platform	platform/icnss2/main.c	CNSS	IMPORT	420	40
+M	platform	platform/icnss2/main.h	CNSS	IMPORT	65	1
+A	platform	platform/icnss2/malabar_consolidate_defconfig	BUILD ONLY	IMPORT	6	0
+A	platform	platform/icnss2/malabar_gki_defconfig	BUILD ONLY	IMPORT	5	0
+M	platform	platform/icnss2/power.c	POWER/PM	IMPORT	16	2
+M	platform	platform/icnss2/qmi.c	CNSS	IMPORT	266	3
+M	platform	platform/icnss2/qmi.h	CNSS	IMPORT	7	1
+M	platform	platform/inc/cnss2.h	CNSS	IMPORT	8	1
+M	platform	platform/target_variants.bzl	BUILD ONLY	LOCAL BUILD GLUE ADAPTED	35	3
+M	platform	platform/wlan_platform_modules.bzl	BUILD ONLY	LOCAL BUILD GLUE ADAPTED	123	73
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_cmn.h	DATA PATH	IMPORT	6	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_cmn_struct.h	DATA PATH	IMPORT	13	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_ctrl.h	DATA PATH	IMPORT	17	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_host_stats.h	DATA PATH	IMPORT	16	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_ipa.h	DATA PATH	IMPORT	39	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_ops.h	DATA PATH	IMPORT	14	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/inc/cdp_txrx_stats_struct.h	DATA PATH	IMPORT	6	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_rx.c	DATA PATH	IMPORT	44	8
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c	DATA PATH	IMPORT	9	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal.c	DATA PATH	IMPORT	54	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal.h	DATA PATH	IMPORT	44	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal_rx.c	DATA PATH	IMPORT	24	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal_rx.h	DATA PATH	IMPORT	24	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal_sim.c	DATA PATH	IMPORT	31	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal_sim.h	DATA PATH	IMPORT	28	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal_tx.c	DATA PATH	IMPORT	32	0
+A	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dal/dp_dal_tx.h	DATA PATH	IMPORT	36	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_htt.c	DATA PATH	IMPORT	7	7
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_htt.h	DATA PATH	IMPORT	7	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_internal.h	DATA PATH	IMPORT	46	6
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_ipa.c	DATA PATH	IMPORT	105	8
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_ipa.h	DATA PATH	IMPORT	13	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_main.c	DATA PATH	IMPORT	133	41
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_peer.c	DATA PATH	IMPORT	4	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rings.h	DATA PATH	IMPORT	2	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rings_main.c	DATA PATH	IMPORT	21	6
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rx.c	DATA PATH	IMPORT	82	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rx.h	DATA PATH	IMPORT	3	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rx_buffer_pool.c	DATA PATH	IMPORT	21	25
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rx_err.c	DATA PATH	IMPORT	48	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rx_tid.c	DATA PATH	IMPORT	155	44
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_rx_tid.h	DATA PATH	IMPORT	42	24
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_stats.c	DATA PATH	IMPORT	29	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_tx.c	DATA PATH	IMPORT	146	63
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_tx.h	DATA PATH	IMPORT	20	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/dp_types.h	DATA PATH	IMPORT	125	9
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/monitor/1.0/dp_mon_1.0.c	DATA PATH	IMPORT	23	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/monitor/1.0/dp_mon_filter_1.0.c	DATA PATH	IMPORT	4	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/monitor/1.0/dp_rx_mon_1.0.h	DATA PATH	IMPORT	11	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/monitor/1.0/dp_rx_mon_dest_1.0.c	DATA PATH	IMPORT	184	21
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/monitor/dp_mon.c	DATA PATH	IMPORT	4	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/monitor/dp_mon.h	DATA PATH	IMPORT	29	5
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/rh/dp_rh_htt.c	DATA PATH	IMPORT	7	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/rh/dp_rh_rx.c	DATA PATH	IMPORT	4	7
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/dp/wifi3.0/rh/dp_rh_tx.c	DATA PATH	IMPORT	10	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hal/wifi3.0/hal_api.h	DATA PATH	IMPORT	11	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hal/wifi3.0/hal_api_mon.h	DATA PATH	IMPORT	12	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hal/wifi3.0/hal_rx_hw_defines.h	DATA PATH	IMPORT	4	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hal/wifi3.0/hal_srng.c	DATA PATH	IMPORT	11	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/inc/hif.h	BUG FIX	IMPORT	7	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ce/ce_internal.h	DATA PATH	IMPORT	10	5
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ce/ce_main.c	DATA PATH	IMPORT	58	11
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ce/ce_main.h	DATA PATH	IMPORT	39	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ce/ce_service.c	DATA PATH	IMPORT	43	13
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ce/ce_service_legacy.c	DATA PATH	IMPORT	4	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ce/ce_service_srng.c	DATA PATH	IMPORT	7	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/hif_exec.c	DATA PATH	IMPORT	46	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/hif_hw_version.h	DATA PATH	IMPORT	4	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/hif_main.c	DATA PATH	IMPORT	18	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/hif_main.h	DATA PATH	IMPORT	12	10
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/hif_napi.c	DATA PATH	IMPORT	32	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/hif/src/ipcie/if_ipci.c	BUG FIX	IMPORT	4	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/core/inc/wlan_ipa_logging.h	BUG FIX	IMPORT	14	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/core/inc/wlan_ipa_main.h	BUG FIX	IMPORT	24	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/core/src/wlan_ipa_core.c	BUG FIX	IMPORT	139	96
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/core/src/wlan_ipa_logging.c	BUG FIX	IMPORT	13	7
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/core/src/wlan_ipa_main.c	BUG FIX	IMPORT	37	6
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/dispatcher/inc/wlan_ipa_ucfg_api.h	BUG FIX	IMPORT	6	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/ipa/dispatcher/src/wlan_ipa_ucfg_api.c	BUG FIX	IMPORT	6	4
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/os_if/linux/crypto/src/wlan_cfg80211_crypto.c	SECURITY FIX	IMPORT	10	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/os_if/linux/mlme/inc/osif_link_reconfig.h	BUG FIX	IMPORT	28	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/os_if/linux/mlme/src/osif_cm_disconnect_rsp.c	BUG FIX	IMPORT	20	5
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/os_if/linux/mlme/src/osif_cm_roam_rsp.c	ROAMING	IMPORT	6	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/os_if/linux/mlme/src/osif_link_reconfig.c	BUG FIX	IMPORT	54	4
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/os_if/linux/qca_vendor.h	BUG FIX	IMPORT	373	38
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/inc/qdf_ipa.h	BUG FIX	IMPORT	9	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/inc/qdf_net_types.h	BUG FIX	IMPORT	6	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/inc/qdf_timer.h	BUG FIX	IMPORT	27	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/inc/qdf_tracepoint.h	BUG FIX	IMPORT	35	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_hrtimer.h	BUG FIX	IMPORT	33	8
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_nbuf.h	BUG FIX	IMPORT	10	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_net_types.h	BUG FIX	IMPORT	8	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_timer.h	BUG FIX	IMPORT	47	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_trace.h	BUG FIX	IMPORT	5	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_tracepoint.h	BUG FIX	IMPORT	35	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/i_qdf_util.h	BUG FIX	IMPORT	1	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/qdf_mc_timer.c	BUG FIX	IMPORT	5	5
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/qdf_threads.c	BUG FIX	IMPORT	2	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/qdf_tracepoint_defs.h	BUG FIX	IMPORT	33	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/qdf/linux/src/wondertap.h	BUG FIX	IMPORT	1	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/cfr/inc/target_if_cfr.h	BUG FIX	IMPORT	28	14
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/cfr/inc/target_if_cfr_enh.h	BUG FIX	IMPORT	194	22
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/cfr/src/target_if_cfr.c	BUG FIX	IMPORT	113	19
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/cfr/src/target_if_cfr_enh.c	BUG FIX	IMPORT	484	16
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/direct_buf_rx/src/target_if_direct_buf_rx_main.c	DATA PATH	IMPORT	16	27
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/init_deinit/src/init_event_handler.c	BUG FIX	IMPORT	13	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/mlo_mgr/inc/target_if_mlo_mgr.h	MLO/WIFI7	IMPORT	15	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/mlo_mgr/src/target_if_mlo_mgr.c	MLO/WIFI7	IMPORT	21	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/target_if/wifi_pos/src/target_if_wifi_pos.c	BUG FIX	IMPORT	1	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/core/src/cfr_common.c	BUG FIX	IMPORT	5	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/dispatcher/inc/wlan_cfr_tgt_api.h	BUG FIX	IMPORT	44	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/dispatcher/inc/wlan_cfr_ucfg_api.h	BUG FIX	IMPORT	33	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/dispatcher/inc/wlan_cfr_utils_api.h	BUG FIX	IMPORT	187	5
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/dispatcher/src/wlan_cfr_tgt_api.c	BUG FIX	IMPORT	254	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/dispatcher/src/wlan_cfr_ucfg_api.c	BUG FIX	IMPORT	163	10
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cfr/dispatcher/src/wlan_cfr_utils_api.c	BUG FIX	IMPORT	3	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/cmn_defs/inc/wlan_cmn_ieee80211.h	BUG FIX	IMPORT	17	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/crypto/inc/wlan_crypto_global_api.h	SECURITY FIX	IMPORT	56	10
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/crypto/src/wlan_crypto_def_i.h	SECURITY FIX	IMPORT	3	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/crypto/src/wlan_crypto_global_api.c	SECURITY FIX	IMPORT	147	41
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/crypto/src/wlan_crypto_obj_mgr.c	SECURITY FIX	IMPORT	8	4
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/mgmt_txrx/core/src/wlan_mgmt_txrx_main.c	DATA PATH	IMPORT	1927	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/mgmt_txrx/core/src/wlan_mgmt_txrx_main_i.h	DATA PATH	IMPORT	133	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/mgmt_txrx/dispatcher/src/wlan_mgmt_txrx_tgt_api.c	DATA PATH	IMPORT	7	1710
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/obj_mgr/inc/wlan_objmgr_peer_obj.h	BUG FIX	IMPORT	1	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/obj_mgr/inc/wlan_objmgr_vdev_obj.h	BUG FIX	IMPORT	60	12
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/obj_mgr/src/wlan_objmgr_peer_obj.c	BUG FIX	IMPORT	3	29
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/obj_mgr/src/wlan_objmgr_vdev_obj.c	BUG FIX	IMPORT	38	7
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cmn_services/utils/src/wlan_utility.c	BUG FIX	IMPORT	2	27
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/cp_stats/core/src/wlan_cp_stats_obj_mgr_handler.c	BUG FIX	IMPORT	5	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/dcs/core/src/wlan_dcs.c	BUG FIX	IMPORT	13	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/global_umac_dispatcher/lmac_if/inc/wlan_lmac_if_def.h	BUG FIX	IMPORT	13	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/global_umac_dispatcher/lmac_if/src/wlan_lmac_if.c	BUG FIX	IMPORT	4	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/core/src/wlan_cm_bss_scoring.c	BUG FIX	IMPORT	129	18
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/core/src/wlan_cm_connect.c	BUG FIX	IMPORT	138	54
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/core/src/wlan_cm_disconnect.c	BUG FIX	IMPORT	7	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/core/src/wlan_cm_main.h	BUG FIX	IMPORT	2	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/core/src/wlan_cm_main_api.h	BUG FIX	IMPORT	11	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/core/src/wlan_cm_util.c	BUG FIX	IMPORT	97	14
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/dispatcher/inc/wlan_cm_bss_score_param.h	BUG FIX	IMPORT	30	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/dispatcher/inc/wlan_cm_public_struct.h	BUG FIX	IMPORT	3	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/connection_mgr/dispatcher/src/wlan_cm_api.c	BUG FIX	IMPORT	9	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/include/cfg_cmn_mlme.h	BUG FIX	IMPORT	33	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/include/wlan_psoc_mlme.h	BUG FIX	IMPORT	2	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/include/wlan_vdev_mlme.h	BUG FIX	IMPORT	6	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/mlme_objmgr/dispatcher/inc/wlan_vdev_mlme_main.h	BUG FIX	IMPORT	8	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/psoc_mgr/dispatcher/inc/wlan_psoc_mlme_api.h	BUG FIX	IMPORT	11	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/psoc_mgr/dispatcher/src/wlan_psoc_mlme_api.c	BUG FIX	IMPORT	19	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/core/src/vdev_mgr_ops.c	BUG FIX	IMPORT	52	30
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/core/src/vdev_mlme_sm.c	BUG FIX	IMPORT	97	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/core/src/vdev_mlme_sm.h	BUG FIX	IMPORT	35	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/inc/wlan_vdev_mgr_tgt_if_rx_defs.h	DATA PATH	IMPORT	1	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/inc/wlan_vdev_mgr_tgt_if_tx_defs.h	DATA PATH	IMPORT	1	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/inc/wlan_vdev_mlme_api.h	BUG FIX	IMPORT	12	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/src/wlan_vdev_mlme_api.c	BUG FIX	IMPORT	15	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/inc/wlan_mlo_mgr_ap.h	MLO/WIFI7	IMPORT	33	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/inc/wlan_mlo_mgr_cmn.h	MLO/WIFI7	IMPORT	19	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/inc/wlan_mlo_mgr_link_switch.h	MLO/WIFI7	IMPORT	14	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/inc/wlan_mlo_mgr_public_structs.h	MLO/WIFI7	IMPORT	2	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/inc/wlan_mlo_mgr_sta.h	MLO/WIFI7	IMPORT	50	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/inc/wlan_mlo_t2lm.h	MLO/WIFI7	IMPORT	3	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/src/wlan_mlo_link_recfg.c	MLO/WIFI7	IMPORT	12	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/src/wlan_mlo_mgr_ap.c	MLO/WIFI7	IMPORT	115	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/src/wlan_mlo_mgr_link_switch.c	MLO/WIFI7	IMPORT	46	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/src/wlan_mlo_mgr_sta.c	MLO/WIFI7	IMPORT	103	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/mlo_mgr/src/wlan_mlo_t2lm.c	MLO/WIFI7	IMPORT	28	6
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_build_chan_list.c	REGULATORY	IMPORT	39	52
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_priv_objs.c	REGULATORY	IMPORT	3	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_priv_objs.h	REGULATORY	IMPORT	4	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_services_common.c	REGULATORY	IMPORT	14	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_services_common.h	REGULATORY	IMPORT	10	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_utils.c	REGULATORY	IMPORT	76	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/core/src/reg_utils.h	REGULATORY	IMPORT	32	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/dispatcher/inc/reg_services_public_struct.h	REGULATORY	IMPORT	0	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/dispatcher/inc/wlan_reg_services_api.h	REGULATORY	IMPORT	11	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/dispatcher/inc/wlan_reg_ucfg_api.h	REGULATORY	IMPORT	31	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/dispatcher/src/wlan_reg_services_api.c	REGULATORY	IMPORT	5	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/regulatory/dispatcher/src/wlan_reg_ucfg_api.c	REGULATORY	IMPORT	16	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/core/src/wlan_scan_cache_db.c	BUG FIX	IMPORT	47	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/core/src/wlan_scan_cache_db.h	BUG FIX	IMPORT	3	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/core/src/wlan_scan_filter.c	BUG FIX	IMPORT	4	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/core/src/wlan_scan_manager.c	BUG FIX	IMPORT	30	24
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/core/src/wlan_scan_manager.h	BUG FIX	IMPORT	3	3
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/dispatcher/inc/wlan_scan_api.h	BUG FIX	IMPORT	17	13
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/dispatcher/inc/wlan_scan_public_structs.h	BUG FIX	IMPORT	4	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/dispatcher/inc/wlan_scan_utils_api.h	BUG FIX	IMPORT	14	11
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/dispatcher/src/wlan_scan_api.c	BUG FIX	IMPORT	10	27
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/scan/dispatcher/src/wlan_scan_utils_api.c	BUG FIX	IMPORT	0	20
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/umac/twt/dispatcher/inc/wlan_twt_public_structs.h	POWER/PM	IMPORT	3	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/utils/nlink/src/wlan_nlink_srv.c	BUG FIX	IMPORT	3	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wlan_cfg/wlan_cfg.c	BUG FIX	IMPORT	3	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wlan_cfg/wlan_cfg.h	BUG FIX	IMPORT	4	2
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/inc/wmi_unified_api.h	FIRMWARE INTERFACE	IMPORT	0	25
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/inc/wmi_unified_cfr_api.h	FIRMWARE INTERFACE	IMPORT	15	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/inc/wmi_unified_param.h	FIRMWARE INTERFACE	IMPORT	31	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/inc/wmi_unified_priv.h	FIRMWARE INTERFACE	IMPORT	5	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_11be_tlv.c	FIRMWARE INTERFACE	IMPORT	3	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_action_oui_tlv.c	FIRMWARE INTERFACE	IMPORT	6	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_api.c	FIRMWARE INTERFACE	IMPORT	0	21
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_cfr_api.c	FIRMWARE INTERFACE	IMPORT	15	0
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_cfr_tlv.c	FIRMWARE INTERFACE	IMPORT	74	4
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_cp_stats_tlv.c	FIRMWARE INTERFACE	IMPORT	2	1
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_tlv.c	FIRMWARE INTERFACE	IMPORT	101	11
+M	qca-wifi-host-cmn	qca-wifi-host-cmn/wmi/src/wmi_unified_twt_tlv.c	FIRMWARE INTERFACE	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/Android.mk	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/BUILD.bazel	BUILD ONLY	IMPORT	7	0
+M	qcacld-3.0	qcacld-3.0/Kbuild	BUILD ONLY	IMPORT	9	0
+M	qcacld-3.0	qcacld-3.0/Kconfig	BUILD ONLY	IMPORT	161	50
+M	qcacld-3.0	qcacld-3.0/components/action_oui/core/inc/wlan_action_oui_main.h	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/components/action_oui/core/inc/wlan_action_oui_priv.h	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/components/action_oui/core/src/wlan_action_oui_main.c	BUG FIX	IMPORT	30	13
+M	qcacld-3.0	qcacld-3.0/components/action_oui/core/src/wlan_action_oui_parse.c	BUG FIX	IMPORT	29	13
+M	qcacld-3.0	qcacld-3.0/components/action_oui/dispatcher/inc/wlan_action_oui_cfg.h	BUG FIX	IMPORT	63	0
+M	qcacld-3.0	qcacld-3.0/components/action_oui/dispatcher/inc/wlan_action_oui_public_struct.h	BUG FIX	IMPORT	22	3
+M	qcacld-3.0	qcacld-3.0/components/action_oui/dispatcher/inc/wlan_action_oui_ucfg_api.h	BUG FIX	IMPORT	8	7
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/interface_mgr/src/wlan_if_mgr_sap.c	DATA PATH	IMPORT	44	8
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/interface_mgr/src/wlan_if_mgr_sta.c	DATA PATH	IMPORT	5	1
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/logging/inc/wlan_connectivity_logging.h	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/logging/src/wlan_connectivity_logging.c	BUG FIX	IMPORT	31	19
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/inc/wlan_policy_mgr_api.h	BUG FIX	IMPORT	147	30
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/inc/wlan_policy_mgr_ll_sap.h	BUG FIX	IMPORT	61	3
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/inc/wlan_policy_mgr_ucfg.h	BUG FIX	IMPORT	16	1
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_action.c	BUG FIX	IMPORT	93	32
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_core.c	BUG FIX	IMPORT	98	65
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_get_set_utils.c	BUG FIX	IMPORT	208	112
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_i.h	BUG FIX	IMPORT	4	11
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_init_deinit.c	BUG FIX	IMPORT	0	14
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_ll_sap.c	BUG FIX	IMPORT	167	44
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_pcl.c	BUG FIX	IMPORT	210	74
+M	qcacld-3.0	qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_ucfg.c	BUG FIX	IMPORT	10	1
+M	qcacld-3.0	qcacld-3.0/components/cp_stats/dispatcher/inc/wlan_cp_stats_mc_defs.h	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/components/cp_stats/dispatcher/src/wlan_cp_stats_mc_tgt_api.c	BUG FIX	IMPORT	174	34
+M	qcacld-3.0	qcacld-3.0/components/cp_stats/dispatcher/src/wlan_cp_stats_mc_ucfg_api.c	BUG FIX	IMPORT	7	3
+M	qcacld-3.0	qcacld-3.0/components/dp/core/inc/wlan_dp_haps.h	BUG FIX	IMPORT	13	13
+M	qcacld-3.0	qcacld-3.0/components/dp/core/inc/wlan_dp_main.h	BUG FIX	IMPORT	22	0
+M	qcacld-3.0	qcacld-3.0/components/dp/core/inc/wlan_dp_priv.h	BUG FIX	IMPORT	5	0
+M	qcacld-3.0	qcacld-3.0/components/dp/core/inc/wlan_dp_stc.h	BUG FIX	IMPORT	12	10
+M	qcacld-3.0	qcacld-3.0/components/dp/core/inc/wlan_dp_swlm.h	BUG FIX	IMPORT	5	1
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_bus_bandwidth.c	BUG FIX	IMPORT	26	3
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_haps.c	BUG FIX	IMPORT	52	32
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_load_balance.c	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_main.c	BUG FIX	IMPORT	43	0
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_prealloc.c	BUG FIX	IMPORT	176	81
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_rx_fst.c	DATA PATH	IMPORT	3	2
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_rx_thread.c	DATA PATH	IMPORT	16	2
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_stc.c	BUG FIX	IMPORT	8	4
+M	qcacld-3.0	qcacld-3.0/components/dp/core/src/wlan_dp_txrx.c	BUG FIX	IMPORT	4	0
+M	qcacld-3.0	qcacld-3.0/components/dp/dispatcher/inc/wlan_dp_ucfg_api.h	BUG FIX	IMPORT	59	0
+M	qcacld-3.0	qcacld-3.0/components/dp/dispatcher/src/wlan_dp_ucfg_api.c	BUG FIX	IMPORT	66	0
+M	qcacld-3.0	qcacld-3.0/components/fw_offload/dispatcher/inc/cfg_coex.h	BUG FIX	IMPORT	2	2
+M	qcacld-3.0	qcacld-3.0/components/mgmt_rx_srng/core/src/wlan_mgmt_rx_srng.c	DATA PATH	IMPORT	13	5
+M	qcacld-3.0	qcacld-3.0/components/mlme/core/inc/wlan_mlme_main.h	BUG FIX	IMPORT	52	7
+M	qcacld-3.0	qcacld-3.0/components/mlme/core/inc/wlan_mlme_vdev_mgr_interface.h	BUG FIX	IMPORT	17	0
+M	qcacld-3.0	qcacld-3.0/components/mlme/core/src/wlan_mlme_main.c	BUG FIX	IMPORT	73	18
+M	qcacld-3.0	qcacld-3.0/components/mlme/core/src/wlan_mlme_vdev_mgr_interface.c	BUG FIX	IMPORT	97	2
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/cfg_mlme_dfs.h	REGULATORY	IMPORT	5	4
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/cfg_mlme_generic.h	BUG FIX	IMPORT	26	3
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/cfg_mlme_lfr.h	BUG FIX	IMPORT	36	1
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/cfg_mlme_rates.h	BUG FIX	IMPORT	39	1
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/cfg_mlme_wifi_pos.h	BUG FIX	IMPORT	2	2
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/wlan_mlme_api.h	BUG FIX	IMPORT	150	0
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/wlan_mlme_public_struct.h	BUG FIX	IMPORT	9	1
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/inc/wlan_mlme_ucfg_api.h	BUG FIX	IMPORT	25	0
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/src/wlan_mlme_api.c	BUG FIX	IMPORT	240	5
+M	qcacld-3.0	qcacld-3.0/components/mlme/dispatcher/src/wlan_mlme_ucfg_api.c	BUG FIX	IMPORT	1	2
+M	qcacld-3.0	qcacld-3.0/components/p2p/core/src/wlan_p2p_main.c	BUG FIX	IMPORT	12	1
+M	qcacld-3.0	qcacld-3.0/components/p2p/core/src/wlan_p2p_main.h	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/components/p2p/dispatcher/inc/wlan_p2p_public_struct.h	BUG FIX	IMPORT	4	3
+M	qcacld-3.0	qcacld-3.0/components/p2p/dispatcher/inc/wlan_p2p_tgt_api.h	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/components/p2p/dispatcher/inc/wlan_p2p_ucfg_api.h	BUG FIX	IMPORT	16	0
+M	qcacld-3.0	qcacld-3.0/components/p2p/dispatcher/src/wlan_p2p_tgt_api.c	BUG FIX	IMPORT	7	0
+M	qcacld-3.0	qcacld-3.0/components/p2p/dispatcher/src/wlan_p2p_ucfg_api.c	BUG FIX	IMPORT	7	0
+M	qcacld-3.0	qcacld-3.0/components/pmo/core/inc/wlan_pmo_apf.h	BUG FIX	IMPORT	10	0
+M	qcacld-3.0	qcacld-3.0/components/pmo/core/inc/wlan_pmo_priv.h	BUG FIX	IMPORT	2	1
+M	qcacld-3.0	qcacld-3.0/components/pmo/core/src/wlan_pmo_apf.c	BUG FIX	IMPORT	12	0
+M	qcacld-3.0	qcacld-3.0/components/pmo/core/src/wlan_pmo_static_config.c	BUG FIX	IMPORT	1	4
+M	qcacld-3.0	qcacld-3.0/components/pmo/core/src/wlan_pmo_suspend_resume.c	POWER/PM	IMPORT	0	14
+M	qcacld-3.0	qcacld-3.0/components/pmo/dispatcher/inc/wlan_pmo_common_public_struct.h	BUG FIX	IMPORT	7	1
+M	qcacld-3.0	qcacld-3.0/components/pmo/dispatcher/inc/wlan_pmo_ucfg_api.h	BUG FIX	IMPORT	17	0
+M	qcacld-3.0	qcacld-3.0/components/pmo/dispatcher/src/wlan_pmo_obj_mgmt_api.c	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/components/pmo/dispatcher/src/wlan_pmo_ucfg_api.c	BUG FIX	IMPORT	9	0
+M	qcacld-3.0	qcacld-3.0/components/target_if/connection_mgr/src/target_if_cm_roam_offload.c	ROAMING	IMPORT	1	1
+M	qcacld-3.0	qcacld-3.0/components/target_if/mlme/inc/target_if_mlme.h	BUG FIX	IMPORT	8	1
+M	qcacld-3.0	qcacld-3.0/components/target_if/mlme/src/target_if_mlme.c	BUG FIX	IMPORT	22	1
+M	qcacld-3.0	qcacld-3.0/components/target_if/p2p/inc/target_if_p2p.h	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/components/target_if/p2p/src/target_if_p2p.c	BUG FIX	IMPORT	14	0
+M	qcacld-3.0	qcacld-3.0/components/target_if/pmo/src/target_if_pmo_suspend_resume.c	POWER/PM	IMPORT	4	1
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_cmds_process.c	BUG FIX	IMPORT	66	0
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_ct.c	BUG FIX	IMPORT	60	35
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_main.c	BUG FIX	IMPORT	76	2
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_main.h	BUG FIX	IMPORT	17	1
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_mgmt.c	BUG FIX	IMPORT	15	10
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_peer.c	BUG FIX	IMPORT	23	18
+M	qcacld-3.0	qcacld-3.0/components/tdls/core/src/wlan_tdls_peer.h	BUG FIX	IMPORT	17	1
+M	qcacld-3.0	qcacld-3.0/components/tdls/dispatcher/inc/wlan_tdls_api.h	BUG FIX	IMPORT	5	2
+M	qcacld-3.0	qcacld-3.0/components/tdls/dispatcher/inc/wlan_tdls_public_structs.h	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/components/tdls/dispatcher/inc/wlan_tdls_ucfg_api.h	BUG FIX	IMPORT	2	1
+M	qcacld-3.0	qcacld-3.0/components/tdls/dispatcher/src/wlan_tdls_api.c	BUG FIX	IMPORT	5	2
+M	qcacld-3.0	qcacld-3.0/components/tdls/dispatcher/src/wlan_tdls_ucfg_api.c	BUG FIX	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/core/src/wlan_cm_roam_fw_sync.c	ROAMING	IMPORT	67	89
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/core/src/wlan_cm_roam_i.h	ROAMING	IMPORT	3	10
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/core/src/wlan_cm_roam_offload.c	ROAMING	IMPORT	11	11
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/core/src/wlan_cm_vdev_connect.c	BUG FIX	IMPORT	2	9
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/dispatcher/inc/wlan_cm_roam_api.h	ROAMING	IMPORT	17	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/dispatcher/inc/wlan_cm_roam_public_struct.h	ROAMING	IMPORT	6	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/dispatcher/inc/wlan_cm_tgt_if_tx_api.h	DATA PATH	IMPORT	12	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/dispatcher/src/wlan_cm_roam_api.c	ROAMING	IMPORT	72	12
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/connection_mgr/dispatcher/src/wlan_cm_tgt_if_tx_api.c	DATA PATH	IMPORT	28	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/mlo_mgr/src/wlan_mlo_link_force.c	MLO/WIFI7	IMPORT	47	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/mlo_mgr/src/wlan_mlo_mgr_roam.c	MLO/WIFI7	IMPORT	8	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/mlo_mgr/src/wlan_t2lm_api.c	MLO/WIFI7	IMPORT	34	1
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/sap/ll_sap/core/src/wlan_ll_lt_sap_bearer_switch.c	BUG FIX	IMPORT	56	25
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/sap/ll_sap/core/src/wlan_ll_sap_main.c	BUG FIX	IMPORT	54	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/sap/ll_sap/core/src/wlan_ll_sap_main.h	BUG FIX	IMPORT	27	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/sap/ll_sap/dispatcher/inc/wlan_ll_sap_api.h	BUG FIX	IMPORT	40	0
+M	qcacld-3.0	qcacld-3.0/components/umac/mlme/sap/ll_sap/dispatcher/src/wlan_ll_sap_api.c	BUG FIX	IMPORT	17	4
+M	qcacld-3.0	qcacld-3.0/components/umac/twt/dispatcher/inc/cfg_twt.h	POWER/PM	IMPORT	2	2
+M	qcacld-3.0	qcacld-3.0/components/umac/twt/dispatcher/inc/wlan_twt_ext_defs.h	POWER/PM	IMPORT	1	1
+M	qcacld-3.0	qcacld-3.0/components/wmi/src/wmi_unified_roam_tlv.c	FIRMWARE INTERFACE	IMPORT	14	5
+A	qcacld-3.0	qcacld-3.0/configs/alor-le_consolidate_wcn7750_defconfig	BUILD ONLY	IMPORT	36	0
+A	qcacld-3.0	qcacld-3.0/configs/alor-le_gki_wcn7750_defconfig	BUILD ONLY	IMPORT	410	0
+M	qcacld-3.0	qcacld-3.0/configs/autogvm_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	2	1
+M	qcacld-3.0	qcacld-3.0/configs/canoe_consolidate_kiwi-v2_defconfig	BUILD ONLY	IMPORT	1	1
+M	qcacld-3.0	qcacld-3.0/configs/canoe_consolidate_peach-v2_defconfig	BUILD ONLY	IMPORT	1	0
+A	qcacld-3.0	qcacld-3.0/configs/canoe_consolidate_wcn6450_defconfig	BUILD ONLY	IMPORT	35	0
+M	qcacld-3.0	qcacld-3.0/configs/canoe_consolidate_wcn7750_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/canoe_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/configs/canoe_gki_peach-v2_defconfig	BUILD ONLY	IMPORT	2	0
+A	qcacld-3.0	qcacld-3.0/configs/canoe_gki_wcn6450_defconfig	BUILD ONLY	IMPORT	324	0
+M	qcacld-3.0	qcacld-3.0/configs/canoe_gki_wcn7750_defconfig	BUILD ONLY	IMPORT	8	0
+A	qcacld-3.0	qcacld-3.0/configs/chora_consolidate_wcn6450_defconfig	BUILD ONLY	IMPORT	35	0
+A	qcacld-3.0	qcacld-3.0/configs/chora_consolidate_wcn7750_defconfig	BUILD ONLY	IMPORT	36	0
+A	qcacld-3.0	qcacld-3.0/configs/chora_gki_wcn6450_defconfig	BUILD ONLY	IMPORT	324	0
+A	qcacld-3.0	qcacld-3.0/configs/chora_gki_wcn7750_defconfig	BUILD ONLY	IMPORT	417	0
+M	qcacld-3.0	qcacld-3.0/configs/config_to_feature.h	BUG FIX	IMPORT	37	4
+M	qcacld-3.0	qcacld-3.0/configs/genoa.common	BUG FIX	IMPORT	0	1
+A	qcacld-3.0	qcacld-3.0/configs/hamoa_consolidate_kiwi-v2_defconfig	BUILD ONLY	IMPORT	39	0
+A	qcacld-3.0	qcacld-3.0/configs/hamoa_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	411	0
+M	qcacld-3.0	qcacld-3.0/configs/neo-la_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/peach_defconfig	BUILD ONLY	IMPORT	26	0
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_consolidate_kiwi-v2_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_consolidate_peach-v2_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_consolidate_wcn6450_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_consolidate_wcn7750_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_gki_peach-v2_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_gki_qca6750_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_gki_wcn6450_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/pineapple_gki_wcn7750_defconfig	BUILD ONLY	IMPORT	1	0
+A	qcacld-3.0	qcacld-3.0/configs/sa510m_consolidate_qca6490_defconfig	BUILD ONLY	IMPORT	14	0
+A	qcacld-3.0	qcacld-3.0/configs/sa510m_consolidate_qca6574_defconfig	BUILD ONLY	IMPORT	12	0
+A	qcacld-3.0	qcacld-3.0/configs/sa510m_gki_qca6490_defconfig	BUILD ONLY	IMPORT	229	0
+A	qcacld-3.0	qcacld-3.0/configs/sa510m_gki_qca6574_defconfig	BUILD ONLY	IMPORT	135	0
+M	qcacld-3.0	qcacld-3.0/configs/sdxkova_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/sun_consolidate_kiwi-v2_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/sun_consolidate_peach-v2_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/sun_consolidate_qca6750_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/sun_consolidate_wcn7750_defconfig	BUILD ONLY	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/configs/sun_gki_kiwi-v2_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/sun_gki_peach-v2_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/sun_gki_qca6750_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/sun_gki_wcn7750_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/sun_gki_wcn7760_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/configs/wcn7750_defconfig	BUILD ONLY	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/configs/wcn7760_defconfig	BUILD ONLY	IMPORT	1	0
+M	qcacld-3.0	qcacld-3.0/core/cds/inc/cds_api.h	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/core/cds/inc/cds_config.h	BUG FIX	IMPORT	0	2
+M	qcacld-3.0	qcacld-3.0/core/cds/src/cds_api.c	BUG FIX	IMPORT	4	18
+M	qcacld-3.0	qcacld-3.0/core/dp/htt/htt_internal.h	DATA PATH	IMPORT	4	3
+M	qcacld-3.0	qcacld-3.0/core/dp/htt/htt_t2h.c	DATA PATH	IMPORT	3	2
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/hdd_config.h	BUG FIX	IMPORT	25	21
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_assoc.h	BUG FIX	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_cfg.h	BUG FIX	IMPORT	19	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_cfr.h	BUG FIX	IMPORT	92	0
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_driver_ops.h	BUG FIX	IMPORT	1	20
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_main.h	BUG FIX	IMPORT	9	3
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_power.h	POWER/PM	IMPORT	3	2
+M	qcacld-3.0	qcacld-3.0/core/hdd/inc/wlan_hdd_sysfs_ipa.h	BUG FIX	IMPORT	13	11
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_apf.c	BUG FIX	IMPORT	7	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_cfg.c	BUG FIX	IMPORT	7	0
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_cfg80211.c	BUG FIX	IMPORT	461	172
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_cfg80211.h	BUG FIX	IMPORT	36	22
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_cfr.c	BUG FIX	IMPORT	1479	67
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_cm_api.h	BUG FIX	IMPORT	17	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_cm_connect.c	BUG FIX	IMPORT	66	75
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_debugfs.c	BUG FIX	IMPORT	157	2
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_green_ap.c	BUG FIX	IMPORT	5	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_hostapd.c	BUG FIX	IMPORT	388	82
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_hostapd.h	BUG FIX	IMPORT	53	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_hostapd_wext.c	BUG FIX	IMPORT	30	4
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_ioctl.c	BUG FIX	IMPORT	19	4
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_ioctl.h	BUG FIX	IMPORT	15	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_main.c	BUG FIX	IMPORT	32	20
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_medium_assess.c	BUG FIX	IMPORT	6	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_mlo.c	MLO/WIFI7	IMPORT	2	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_p2p.c	BUG FIX	IMPORT	85	25
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_power.c	POWER/PM	IMPORT	26	4
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_regulatory.c	REGULATORY	IMPORT	58	6
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_stats.c	BUG FIX	IMPORT	137	13
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_sysfs_apfmode.c	BUG FIX	IMPORT	7	13
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_sysfs_connect_info.c	BUG FIX	IMPORT	31	3
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_sysfs_ipa.c	BUG FIX	IMPORT	69	56
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_sysfs_stats.c	BUG FIX	IMPORT	160	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_sysfs_stats.h	BUG FIX	IMPORT	42	0
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_tdls.c	BUG FIX	IMPORT	2	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_tsf.c	BUG FIX	IMPORT	1	7
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_tx_rx.c	DATA PATH	IMPORT	11	1
+M	qcacld-3.0	qcacld-3.0/core/hdd/src/wlan_hdd_wext.c	BUG FIX	IMPORT	0	15
+M	qcacld-3.0	qcacld-3.0/core/mac/inc/qwlan_version.h	BUG FIX	IMPORT	3	3
+M	qcacld-3.0	qcacld-3.0/core/mac/inc/sir_api.h	BUG FIX	IMPORT	12	0
+M	qcacld-3.0	qcacld-3.0/core/mac/src/cfg/cfgUtil/dot11f.frms	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/core/mac/src/include/dot11f.h	BUG FIX	IMPORT	43	2
+M	qcacld-3.0	qcacld-3.0/core/mac/src/include/dph_global.h	BUG FIX	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/core/mac/src/include/parser_api.h	BUG FIX	IMPORT	7	6
+M	qcacld-3.0	qcacld-3.0/core/mac/src/include/sir_params.h	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/include/lim_api.h	BUG FIX	IMPORT	70	24
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/include/lim_session.h	BUG FIX	IMPORT	4	4
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_api.c	BUG FIX	IMPORT	39	57
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_assoc_utils.c	BUG FIX	IMPORT	58	9
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_assoc_utils.h	BUG FIX	IMPORT	30	1
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_assoc_req_frame.c	BUG FIX	IMPORT	31	11
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_assoc_rsp_frame.c	BUG FIX	IMPORT	40	30
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_auth_frame.c	SECURITY FIX	IMPORT	15	4
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_beacon_frame.c	BUG FIX	IMPORT	0	12
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_deauth_frame.c	SECURITY FIX	IMPORT	1	1
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_disassoc_frame.c	BUG FIX	IMPORT	1	1
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_message_queue.c	BUG FIX	IMPORT	2	4
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_mlm_req_messages.c	BUG FIX	IMPORT	27	7
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_mlm_rsp_messages.c	BUG FIX	IMPORT	57	17
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_probe_rsp_frame.c	BUG FIX	IMPORT	7	3
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_process_sme_req_messages.c	BUG FIX	IMPORT	230	66
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_prop_exts_utils.c	BUG FIX	IMPORT	4	1
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_send_frames_host_roam.c	ROAMING	IMPORT	5	4
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_send_management_frames.c	BUG FIX	IMPORT	96	41
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_send_messages.c	BUG FIX	IMPORT	16	1
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_send_sme_rsp_messages.c	BUG FIX	IMPORT	23	12
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_session.c	BUG FIX	IMPORT	12	0
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_timer_utils.c	BUG FIX	IMPORT	4	3
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_types.h	BUG FIX	IMPORT	22	4
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_utils.c	BUG FIX	IMPORT	79	39
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/lim/lim_utils.h	BUG FIX	IMPORT	4	4
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/rrm/rrm_api.c	BUG FIX	IMPORT	16	14
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/sch/sch_api.c	BUG FIX	IMPORT	2	2
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/sch/sch_beacon_gen.c	BUG FIX	IMPORT	4	3
+M	qcacld-3.0	qcacld-3.0/core/mac/src/pe/sch/sch_beacon_process.c	BUG FIX	IMPORT	2	9
+M	qcacld-3.0	qcacld-3.0/core/mac/src/sys/legacy/src/platform/src/sys_wrapper.c	BUG FIX	IMPORT	5	3
+M	qcacld-3.0	qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/dot11f.c	BUG FIX	IMPORT	1895	1808
+M	qcacld-3.0	qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/mac_trace.c	BUG FIX	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/parser_api.c	BUG FIX	IMPORT	159	87
+M	qcacld-3.0	qcacld-3.0/core/pld/inc/pld_common.h	BUG FIX	IMPORT	0	22
+M	qcacld-3.0	qcacld-3.0/core/pld/src/pld_common.c	BUG FIX	IMPORT	0	39
+M	qcacld-3.0	qcacld-3.0/core/pld/src/pld_pcie.c	BUG FIX	IMPORT	0	13
+M	qcacld-3.0	qcacld-3.0/core/pld/src/pld_pcie.h	BUG FIX	IMPORT	0	13
+M	qcacld-3.0	qcacld-3.0/core/sap/inc/sap_api.h	BUG FIX	IMPORT	27	1
+M	qcacld-3.0	qcacld-3.0/core/sap/src/sap_api_link_cntl.c	BUG FIX	IMPORT	11	11
+M	qcacld-3.0	qcacld-3.0/core/sap/src/sap_ch_select.c	BUG FIX	IMPORT	15	10
+M	qcacld-3.0	qcacld-3.0/core/sap/src/sap_fsm.c	BUG FIX	IMPORT	58	28
+M	qcacld-3.0	qcacld-3.0/core/sap/src/sap_module.c	BUG FIX	IMPORT	71	18
+M	qcacld-3.0	qcacld-3.0/core/sme/inc/sme_api.h	BUG FIX	IMPORT	33	4
+M	qcacld-3.0	qcacld-3.0/core/sme/src/common/sme_api.c	BUG FIX	IMPORT	119	23
+M	qcacld-3.0	qcacld-3.0/core/sme/src/csr/csr_api_roam.c	ROAMING	IMPORT	26	5
+M	qcacld-3.0	qcacld-3.0/core/sme/src/csr/csr_util.c	BUG FIX	IMPORT	0	1
+M	qcacld-3.0	qcacld-3.0/core/sme/src/qos/sme_qos.c	BUG FIX	IMPORT	14	14
+M	qcacld-3.0	qcacld-3.0/core/wma/inc/wma.h	BUG FIX	IMPORT	0	2
+M	qcacld-3.0	qcacld-3.0/core/wma/inc/wma_api.h	BUG FIX	IMPORT	23	1
+M	qcacld-3.0	qcacld-3.0/core/wma/inc/wma_if.h	BUG FIX	IMPORT	2	0
+M	qcacld-3.0	qcacld-3.0/core/wma/inc/wma_internal.h	BUG FIX	IMPORT	11	0
+M	qcacld-3.0	qcacld-3.0/core/wma/inc/wma_types.h	BUG FIX	IMPORT	2	1
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_dev_if.c	BUG FIX	IMPORT	153	27
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_eht.c	MLO/WIFI7	IMPORT	17	0
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_eht.h	MLO/WIFI7	IMPORT	21	1
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_features.c	BUG FIX	IMPORT	95	5
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_main.c	BUG FIX	IMPORT	12	27
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_mgmt.c	BUG FIX	IMPORT	3	0
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_pasn_peer_api.c	BUG FIX	IMPORT	14	4
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_power.c	POWER/PM	IMPORT	33	0
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_scan_roam.c	ROAMING	IMPORT	5	3
+M	qcacld-3.0	qcacld-3.0/core/wma/src/wma_utils.c	BUG FIX	IMPORT	11	17
+M	qcacld-3.0	qcacld-3.0/os_if/cp_stats/inc/wlan_cfg80211_mc_cp_stats.h	BUG FIX	IMPORT	3	7
+M	qcacld-3.0	qcacld-3.0/os_if/cp_stats/src/wlan_cfg80211_mc_cp_stats.c	BUG FIX	IMPORT	16	13
+M	qcacld-3.0	qcacld-3.0/os_if/dp/src/os_if_dp_stc.c	BUG FIX	IMPORT	1	1
+M	qcacld-3.0	qcacld-3.0/os_if/dp/src/os_if_dp_txrx.c	BUG FIX	IMPORT	25	5
+M	qcacld-3.0	qcacld-3.0/os_if/nan/src/os_if_nan.c	BUG FIX	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/os_if/twt/inc/osif_twt_internal.h	POWER/PM	IMPORT	3	1
+M	qcacld-3.0	qcacld-3.0/os_if/twt/src/osif_twt_ext_req.c	POWER/PM	IMPORT	174	78
+M	qcacld-3.0	qcacld-3.0/target_variants.bzl	BUILD ONLY	LOCAL BUILD GLUE ADAPTED	21	1
+M	qcacld-3.0	qcacld-3.0/wlan_qcacld3_modules.bzl	BUILD ONLY	LOCAL BUILD GLUE ADAPTED	138	34
+M	utils	utils/sigma-dut/ap.c	BUILD ONLY	DROP — USERSPACE TEST UTILITY	22	3
+M	utils	utils/sigma-dut/p2p.c	BUILD ONLY	DROP — USERSPACE TEST UTILITY	73	17
+M	utils	utils/sigma-dut/p2p_usd.c	BUILD ONLY	DROP — USERSPACE TEST UTILITY	0	30
+M	utils	utils/sigma-dut/qca-vendor_copy.h	BUILD ONLY	DROP — USERSPACE TEST UTILITY	1310	1
+M	utils	utils/sigma-dut/sigma_dut.h	BUILD ONLY	DROP — USERSPACE TEST UTILITY	1	0
+M	utils	utils/sigma-dut/sta.c	BUILD ONLY	DROP — USERSPACE TEST UTILITY	459	99
+M	utils	utils/sigma-dut/traffic_agent.c	BUILD ONLY	DROP — USERSPACE TEST UTILITY	2	2
+M	utils	utils/sigma-dut/wpa_helpers.c	BUILD ONLY	DROP — USERSPACE TEST UTILITY	63	0
+M	utils	utils/sigma-dut/wpa_helpers.h	BUILD ONLY	DROP — USERSPACE TEST UTILITY	1	0
+M	wlan-devicetree	wlan-devicetree/Kbuild	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	21	1
+M	wlan-devicetree	wlan-devicetree/alor-peach-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	6	0
+A	wlan-devicetree	wlan-devicetree/art-fig-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	15	0
+A	wlan-devicetree	wlan-devicetree/art-fig-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	113	0
+A	wlan-devicetree	wlan-devicetree/art-peach-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	15	0
+A	wlan-devicetree	wlan-devicetree/art-peach-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	112	0
+A	wlan-devicetree	wlan-devicetree/canoe-cdp-kiwi-no-l3k.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	22	0
+A	wlan-devicetree	wlan-devicetree/canoe-cdp-kiwi-no-l3k.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	14	0
+A	wlan-devicetree	wlan-devicetree/canoe-cdp-peach-no-l3k.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	22	0
+A	wlan-devicetree	wlan-devicetree/canoe-cdp-peach-no-l3k.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	14	0
+M	wlan-devicetree	wlan-devicetree/canoe-kiwi-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	2
+M	wlan-devicetree	wlan-devicetree/canoe-kiwi-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	3	1
+M	wlan-devicetree	wlan-devicetree/canoe-peach-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	6	4
+M	wlan-devicetree	wlan-devicetree/canoe-peach-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	1	0
+M	wlan-devicetree	wlan-devicetree/kera-atp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	3
+M	wlan-devicetree	wlan-devicetree/kera-cdp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	6	4
+M	wlan-devicetree	wlan-devicetree/kera-mtp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	3
+M	wlan-devicetree	wlan-devicetree/kera-mtp-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	3
+A	wlan-devicetree	wlan-devicetree/kera-qna-atp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-cdp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-idp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-idp-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-mtp-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-mtp-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-qca6750.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	18	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-qrd-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-rcm-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-rcm-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/kera-qna-wcn7750.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	18	0
+M	wlan-devicetree	wlan-devicetree/kera-qrd-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	3
+M	wlan-devicetree	wlan-devicetree/kera-rcm-qca6750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	3
+M	wlan-devicetree	wlan-devicetree/kera-rcm-wcn7750.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	4	3
+A	wlan-devicetree	wlan-devicetree/lahaina-qca6750-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	17	0
+A	wlan-devicetree	wlan-devicetree/lahaina-qca6750-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	112	0
+A	wlan-devicetree	wlan-devicetree/monaco-vm-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	17	0
+A	wlan-devicetree	wlan-devicetree/monaco-vm-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	116	0
+R065	wlan-devicetree	wlan-devicetree/oplus/canoe-peach-cnss-overlay.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	-	-
+R100	wlan-devicetree	wlan-devicetree/oplus/canoe-peach-cnss-overlay.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	-	-
+M	wlan-devicetree	wlan-devicetree/parrot-wcn3990.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	12	2
+M	wlan-devicetree	wlan-devicetree/parrot-wcn6750.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	13	2
+M	wlan-devicetree	wlan-devicetree/parrot-wcn6755.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	13	2
+A	wlan-devicetree	wlan-devicetree/ravelin-qca6490-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/ravelin-qca6490-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	163	0
+A	wlan-devicetree	wlan-devicetree/ravelin-qca6750-icnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	17	0
+A	wlan-devicetree	wlan-devicetree/ravelin-qca6750-icnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	129	0
+M	wlan-devicetree	wlan-devicetree/sa8797p-gunyah-vm-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	1	1
+M	wlan-devicetree	wlan-devicetree/sa8797p-gunyah-vm-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	2	1
+M	wlan-devicetree	wlan-devicetree/sa8797p-gunyah-vm-dual-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	1	0
+A	wlan-devicetree	wlan-devicetree/sdxecho-fig-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	16	0
+A	wlan-devicetree	wlan-devicetree/sdxecho-fig-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	154	0
+A	wlan-devicetree	wlan-devicetree/seraph-advance-peach-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	18	0
+A	wlan-devicetree	wlan-devicetree/seraph-advance-peach-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	13	0
+M	wlan-devicetree	wlan-devicetree/seraph-peach-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	1	1
+M	wlan-devicetree	wlan-devicetree/seraph-peach-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	0	1
+M	wlan-devicetree	wlan-devicetree/sun-kiwi-cnss-v8.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	9	1
+M	wlan-devicetree	wlan-devicetree/sun-kiwi-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	3	1
+M	wlan-devicetree	wlan-devicetree/sun-peach-cnss-v8.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	6	0
+M	wlan-devicetree	wlan-devicetree/tuna-kiwi-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	9	1
+M	wlan-devicetree	wlan-devicetree/x1e80100-kiwi-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	2	2
+A	wlan-devicetree	wlan-devicetree/x1p42100-kiwi-cnss.dts	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	17	0
+A	wlan-devicetree	wlan-devicetree/x1p42100-kiwi-cnss.dtsi	DEVICE-SPECIFIC — DROP	DROP — SHIPPING CANOE DTBO RETAINED	110	0

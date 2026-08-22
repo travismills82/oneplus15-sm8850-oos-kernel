@@ -1,0 +1,3 @@
+module	firmware
+cfg80211	regulatory.db.p7s
+cfg80211	regulatory.db

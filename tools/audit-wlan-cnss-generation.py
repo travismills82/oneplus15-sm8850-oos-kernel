@@ -183,7 +183,11 @@ def actions(path: Path | None) -> dict[str, str]:
     if path is None:
         return {}
     with path.open(encoding="utf-8", newline="") as source:
-        return {row["module"]: row["action"] for row in csv.DictReader(source, delimiter="\t")}
+        rows = list(csv.DictReader(source, delimiter="\t"))
+    return {
+        row["module"]: row.get("action", row.get("required_action", ""))
+        for row in rows
+    }
 
 
 def runtime_names(path: Path | None) -> set[str]:
@@ -233,13 +237,21 @@ def main() -> int:
         if not source_path.exists():
             raise ValueError(f"missing mapped source: {source_path}")
 
+        delivery_action = action_by_name.get(item.module, "RETAIN_STOCK")
+        component_name = item.component
+        if ".053" in args.generation and delivery_action == "SOURCE_REPLACEMENT":
+            if item.module.startswith("qca_cld3_"):
+                component_name = "qcacld-3.0 .053"
+            elif item.module.startswith(("cnss", "icnss", "wlan_firmware")):
+                component_name = "WLAN platform .053"
+
         summary_rows.append(
             [
                 item.module,
                 args.generation,
                 "yes" if item.module in loaded else "no",
-                action_by_name.get(item.module, "RETAIN_STOCK"),
-                item.component,
+                delivery_action,
+                component_name,
                 item.role,
                 item.source_path,
                 item.build_target,
