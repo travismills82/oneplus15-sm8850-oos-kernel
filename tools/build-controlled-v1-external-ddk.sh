@@ -98,12 +98,12 @@ fi
 
 # Gate the base kernel before allowing any external module action to execute.
 tools/bazel build "${bazel_args[@]}" //common:kernel_aarch64 //soc-repo:canoe_perf_config
+mkdir -p "$(dirname "$aquery_json")" "$out_dir"
 tools/bazel aquery "${bazel_args[@]}" \
     'mnemonic("KernelBuild", //common:kernel_aarch64)' --output=jsonproto > "$aquery_json"
 
 kernel_build_dir="$repo_root/kernel_platform/bazel-bin/common/kernel_aarch64"
 canoe_config="$repo_root/kernel_platform/bazel-bin/soc-repo/canoe_perf_config/out_dir/.config"
-mkdir -p "$out_dir"
 python3 "$repo_root/tools/verify-controlled-v1-kernel-contract.py" \
     --contract "$contract" \
     --kernel-build-dir "$kernel_build_dir" \
