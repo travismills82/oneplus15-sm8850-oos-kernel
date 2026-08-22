@@ -27,6 +27,7 @@ unchanged.
 | CRC mismatches | 0 |
 | Protected-export closure | one source replacement; no retained re-signing and no external signed-provider edges |
 | Signature failures | 0 |
+| Rebuilt production module payload | byte-identical to staged candidate |
 | DT contract | PASS |
 | Firmware contract | PASS |
 | HAL contract | PASS |
@@ -44,7 +45,15 @@ The staged candidate is 143,986,688 bytes and has SHA-256:
 It is retained locally at:
 
 ```text
-out/controlled-v1-wlan053-nfc102-static/vendor_dlkm-nfc102.img
+out/controlled-v1-wlan053-nfc102-static-v3/vendor_dlkm-nfc102.img
+```
+
+The final helper rebuild strips debug data before applying the controlled-v1
+signature. Its resulting `nxp-nci.ko` has the same SHA-256 as the staged
+candidate module:
+
+```text
+51ef28ae123a7b2c0fd851491e1a13abfbd19b3b4a9a66acf3e4b997096ca9c2
 ```
 
 No device write was performed. A later qualification must start from an exact
