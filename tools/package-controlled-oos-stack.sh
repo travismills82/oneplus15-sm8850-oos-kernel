@@ -23,9 +23,38 @@ if [[ ${1:-} == --profile && ${2:-} == wlan-cnss-053 ]]; then
     exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-wlan-cnss-053.py" "$@"
 fi
 
+if [[ ${1:-} == --profile && ${2:-} == controlled-v1-wlan053 ]]; then
+    shift 2
+    exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-qualified-wlan-cnss-053.py" "$@"
+fi
+
+if [[ ${1:-} == --profile && ${2:-} == controlled-v1-wlan053-bt046 ]]; then
+    shift 2
+    exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-controlled-v1-bt046.py" "$@"
+fi
+
 usage() {
     cat <<'EOF'
 Usage:
+  tools/package-controlled-oos-stack.sh --profile controlled-v1-wlan053-bt046 \
+      --baseline-package <physically-qualified-controlled-v1-wlan053-package> \
+      --baseline-vendor-stage <qualified-wlan053-vendor-staging-tree> \
+      --candidate-vendor-stage <bt046-vendor-staging-output> \
+      --candidate-vendor-image <bt046-vendor_dlkm.img> \
+      --vendor-validation-dir <bt046-final-validation-output> \
+      --kernel-contract tools/controlled-v1-wlan053-kernel-contract.json \
+      --out-dir out/controlled-v1-wlan053-bt046
+
+or:
+
+  tools/package-controlled-oos-stack.sh --profile controlled-v1-wlan053 \
+      --candidate-dir <exact-physically-qualified-wlan053-candidate> \
+      --qualification-record \
+          docs/validation/wlan-cnss-053/extended-qualification-2026-08-21.md \
+      --out-dir out/controlled-v1-wlan053
+
+or build a new, not-yet-physically-qualified WLAN .053 candidate:
+
   tools/package-controlled-oos-stack.sh --profile wlan-cnss-053 \
       --boot <wlan053-boot.img> \
       --system-dlkm <wlan053-system_dlkm.img> \
