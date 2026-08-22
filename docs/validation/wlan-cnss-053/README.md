@@ -147,3 +147,23 @@ not part of the candidate.
 
 Static validation is not physical validation. No partition has been written
 by this experiment, and the `.053` status remains physical-test pending.
+
+## Prepared TWRP dry run
+
+The hardened helper at TWRP commit
+`3f499bfd1f7152ea27b27935be22ff73581709a1` accepts this candidate without a
+`vendor_boot` payload and preserves dependency-first ordering. After booting
+TWRP and decrypting user 0, stage the sanitized package files in a temporary
+recovery path and run:
+
+```sh
+/system/bin/twrp-flash-controlled-stack --dry-run \
+    --vendor-dlkm /tmp/wlan053/vendor_dlkm-wlan053.img \
+    --system-dlkm /tmp/wlan053/system_dlkm.img \
+    --boot /tmp/wlan053/boot.img
+```
+
+The future flash command is identical except for `--flash`. It is intentionally
+not run by this task. The hardened helper must have a decrypted, durable backup
+destination and a verified TEST3 vendor-DLKM restore image before that mode is
+authorized. Slot A remains unbootable and is not a rollback path.
