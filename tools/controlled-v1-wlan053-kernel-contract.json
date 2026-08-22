@@ -18,6 +18,19 @@
     "vmlinux_sha256": "b544a89858647d3257a0b50a7c03e5feefcf85399fc2bfc5ff7904544dedcb14",
     "image_sha256": "9295e2a8bd06fdb002750b8adb99e37c0e1e2f6c440cbccfa90a2095fee6356b"
   },
+  "functional_comparison": {
+    "Image": {
+      "ignored_ranges": [
+        {"offset": 33014000, "size": 20, "reason": "GNU build ID payload"}
+      ]
+    },
+    "vmlinux": {
+      "ignored_ranges": [
+        {"offset": 33079536, "size": 20, "reason": "GNU build ID payload"},
+        {"offset": 272384579, "size": 16, "reason": "non-allocating DWARF line-table source checksum"}
+      ]
+    }
+  },
   "signing": {
     "generation": "controlled-v1",
     "project_certificate_der_sha256": "04093d5e0b816927dc1e4fcdbd4ec754df6e69960918aa2eaa69bea6878f6faf",

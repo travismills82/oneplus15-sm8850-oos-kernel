@@ -32,6 +32,40 @@ def require_hash(label: str, path: pathlib.Path, expected: str) -> None:
         die(f"{label} changed: expected {expected}, got {actual}")
 
 
+def require_functionally_identical(
+    label: str,
+    qualified: pathlib.Path,
+    candidate: pathlib.Path,
+    ignored_ranges: list[dict[str, object]],
+) -> None:
+    if not qualified.is_file() or not candidate.is_file():
+        die(f"missing {label} functional-comparison input")
+    qualified_data = qualified.read_bytes()
+    candidate_data = candidate.read_bytes()
+    if len(qualified_data) != len(candidate_data):
+        die(f"{label} size changed")
+    allowed: set[int] = set()
+    for item in ignored_ranges:
+        start = int(item["offset"])
+        size = int(item["size"])
+        if start < 0 or size <= 0 or start + size > len(candidate_data):
+            die(f"invalid {label} metadata tolerance: {item}")
+        allowed.update(range(start, start + size))
+    differences = {
+        index
+        for index, (before, after) in enumerate(zip(qualified_data, candidate_data))
+        if before != after
+    }
+    outside = differences - allowed
+    if outside:
+        die(f"{label} functional byte changed at offset {min(outside)}")
+    unused = allowed - differences
+    if unused:
+        die(f"{label} metadata tolerance no longer describes the build at offset {min(unused)}")
+    print(f"{label}_functional_differences=0")
+    print(f"{label}_metadata_differences={len(differences)}")
+
+
 def artifact_paths(kernel_build_dir: pathlib.Path, canoe_config: pathlib.Path) -> dict[str, pathlib.Path]:
     return {
         "config_sha256": pathlib.Path(f"{kernel_build_dir}_config/out_dir/.config"),
@@ -80,6 +114,7 @@ def main() -> int:
     parser.add_argument("--contract", required=True, type=pathlib.Path)
     parser.add_argument("--kernel-build-dir", required=True, type=pathlib.Path)
     parser.add_argument("--canoe-config", required=True, type=pathlib.Path)
+    parser.add_argument("--qualified-dist", required=True, type=pathlib.Path)
     parser.add_argument("--aquery-json", type=pathlib.Path)
     parser.add_argument("--build-input-delta", type=pathlib.Path)
     parser.add_argument("--repo-root", type=pathlib.Path)
@@ -94,7 +129,27 @@ def main() -> int:
         die(f"kernel.release changed: expected {contract['release']}, got {actual_release}")
 
     for label, path in artifact_paths(args.kernel_build_dir, args.canoe_config).items():
+        if label in ("image_sha256", "vmlinux_sha256"):
+            continue
         require_hash(label.removesuffix("_sha256"), path, contract["artifacts"][label])
+
+    require_hash(
+        "qualified Image",
+        args.qualified_dist / "Image",
+        contract["artifacts"]["image_sha256"],
+    )
+    require_hash(
+        "qualified vmlinux",
+        args.qualified_dist / "vmlinux",
+        contract["artifacts"]["vmlinux_sha256"],
+    )
+    for label, filename in (("Image", "Image"), ("vmlinux", "vmlinux")):
+        require_functionally_identical(
+            label,
+            args.qualified_dist / filename,
+            args.kernel_build_dir / filename,
+            contract["functional_comparison"][label]["ignored_ranges"],
+        )
 
     signing_x509 = args.kernel_build_dir / "certs/signing_key.x509"
     require_hash(

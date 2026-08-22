@@ -108,6 +108,7 @@ python3 "$repo_root/tools/verify-controlled-v1-kernel-contract.py" \
     --contract "$contract" \
     --kernel-build-dir "$kernel_build_dir" \
     --canoe-config "$canoe_config" \
+    --qualified-dist "$qualified_dist" \
     --aquery-json "$aquery_json" \
     --repo-root "$repo_root" \
     --build-input-delta "$out_dir/build-input-delta.tsv"
