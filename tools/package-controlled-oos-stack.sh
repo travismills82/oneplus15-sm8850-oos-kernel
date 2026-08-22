@@ -18,9 +18,29 @@ if [[ ${1:-} == --profile && ${2:-} == controlled-v1-test3 ]]; then
     exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-controlled-v1-test3.py" "$@"
 fi
 
+if [[ ${1:-} == --profile && ${2:-} == wlan-cnss-053 ]]; then
+    shift 2
+    exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-wlan-cnss-053.py" "$@"
+fi
+
 usage() {
     cat <<'EOF'
 Usage:
+  tools/package-controlled-oos-stack.sh --profile wlan-cnss-053 \
+      --boot <wlan053-boot.img> \
+      --system-dlkm <wlan053-system_dlkm.img> \
+      --vendor-dlkm <vendor_dlkm-wlan053.img> \
+      --kernel-build-dir <kernel_aarch64-output> \
+      --system-stage-dir <wlan053-system-stage-dir> \
+      --vendor-stage-dir <wlan053-vendor-stage-dir> \
+      --vendor-validation-dir <wlan053-final-validation-dir> \
+      --wlan-contract-dir <wlan053-minimal-contract-dir> \
+      --source-delta-dir <tracked-source-delta-dir> \
+      --firmware-contract <wlan053-firmware-contract.tsv> \
+      --out-dir out/wlan-cnss-053-candidate
+
+or the frozen physically validated TEST3 profile:
+
   tools/package-controlled-oos-stack.sh --profile controlled-v1-test3 \
       --boot <physically-validated-boot.img> \
       --system-dlkm <corrected-system_dlkm.img> \
