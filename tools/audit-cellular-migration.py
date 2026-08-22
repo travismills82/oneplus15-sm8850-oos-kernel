@@ -35,7 +35,7 @@ SPECS = {
     "dwc3_msm": Spec("kernel_platform/soc-repo/drivers/usb/dwc3", "//soc-repo:canoe_perf/drivers/usb/dwc3/dwc3-msm", "CONFIG_USB_DWC3_MSM", "OTHER", "HIGH", "F", "Qualcomm USB DWC3 glue used by USB tethering/GSI"),
     "gsim": Spec("vendor/qcom/opensource/dataipa/drivers/platform/msm/gsi", "//vendor/qcom/opensource/dataipa:canoe_perf_gsim", "DDK: canoe_perf_gsim", "GSI TRANSPORT", "HIGH", "D", "GSI transport and channel/event-ring provider for IPA"),
     "ipam": Spec("vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa", "//vendor/qcom/opensource/dataipa:canoe_perf_ipam", "DDK: canoe_perf_ipam", "IPA CORE", "HIGH", "D", "IPA core, QMI control, firmware and packet-data plumbing"),
-    "ipanetm": Spec("vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/test", "//vendor/qcom/opensource/dataipa:canoe_perf_ipanetm", "DDK: canoe_perf_ipanetm", "IPA CLIENT", "HIGH", "D", "IPA net module glue invoking IPA WWAN/RNDIS registration"),
+    "ipanetm": Spec("vendor/qcom/opensource/dataipa/drivers/platform/msm/ipa/ipa_v3/ipa_net.c", "//vendor/qcom/opensource/dataipa:canoe_perf_ipanetm", "DDK: canoe_perf_ipanetm", "IPA CLIENT", "HIGH", "D", "IPA net module glue invoking IPA WWAN/RNDIS registration"),
     "oplus_mm_kevent": Spec("vendor/oplus/kernel/multimedia/feedback", "//vendor/oplus/kernel/multimedia/feedback/bazel:oplus_mm_kevent", "OPLUS DDK", "OTHER", "MEDIUM", "F", "Oplus multimedia feedback provider shared by USB/audio path"),
     "oplus_mm_kevent_fb": Spec("vendor/oplus/kernel/multimedia/feedback", "//vendor/oplus/kernel/multimedia/feedback/bazel:oplus_mm_kevent_fb", "OPLUS DDK", "OTHER", "MEDIUM", "F", "Oplus feedback bridge consumed by WCD USBSS I2C"),
     "qcom_glink": Spec("kernel_platform/soc-repo/drivers/rpmsg", "//soc-repo:canoe_perf/drivers/rpmsg/qcom_glink", "CONFIG_RPMSG_QCOM_GLINK", "FOUNDATION PROVIDER", "HIGH", "E", "Qualcomm GLINK transport and SSR notification provider"),
@@ -135,6 +135,7 @@ def read_import_contract(path: Path):
     import_providers: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
     providers: dict[str, set[str]] = defaultdict(set)
     consumers: dict[str, set[str]] = defaultdict(set)
+    boundary_edges: set[tuple[str, str, str, str]] = set()
     with path.open(encoding="utf-8", newline="") as source:
         for row in csv.DictReader(source, delimiter="\t"):
             consumer = norm(row["consumer"])
@@ -147,7 +148,10 @@ def read_import_contract(path: Path):
                 )
                 if provider in SPECS:
                     consumers[provider].add(consumer)
-    return imports, import_providers, providers, consumers
+                    boundary_edges.add(
+                        (provider, consumer, row["symbol"], row["expected_crc"])
+                    )
+    return imports, import_providers, providers, consumers, boundary_edges
 
 
 def write_tsv(path: Path, header, rows) -> None:
@@ -177,10 +181,12 @@ def main() -> int:
         raise ValueError(f"cellular manifest must contain 27 modules, found {len(SPECS)}")
     load = load_positions(args.vendor_load)
     runtime = proc_positions(args.proc_modules)
-    imports, import_providers, providers, consumers = read_import_contract(args.import_contract)
+    imports, import_providers, providers, consumers, boundary_edges = read_import_contract(
+        args.import_contract
+    )
 
     rows = []
-    edge_rows = set()
+    edge_rows = set(boundary_edges)
     exact = 0
     for name, spec in sorted(SPECS.items()):
         path = stock[name]
@@ -188,9 +194,6 @@ def main() -> int:
         qualified_path = qualified.get(name)
         unchanged = qualified_path is not None and sha256(path) == sha256(qualified_path)
         exact += int(unchanged)
-        for provider, symbol, expected in import_providers[name]:
-            if provider in SPECS:
-                edge_rows.add((provider, name, symbol, expected))
         import_text = ";".join(f"{symbol}:{crc}" for symbol, crc in sorted(imports[name]))
         export_text = ";".join(f"{symbol}:0x{crc:08x}" for symbol, crc in sorted(record.exports.items()))
         load_text = ",".join(str(value) for value in load.get(name, [])) or "not directly requested"
@@ -226,7 +229,11 @@ def main() -> int:
         "provider_modules", "hardware_runtime_role", "classification", "migration_risk",
         "batch", "stock_sha256", "qualified_byte_identical",
     ], rows)
-    write_tsv(args.out_dir / "dependency-edges.tsv", ["provider", "consumer", "symbol", "crc"], sorted(edge_rows))
+    write_tsv(
+        args.out_dir / "dependency-edges.tsv",
+        ["provider", "consumer", "symbol", "crc", "consumer_in_cellular_closure"],
+        [row + (("yes" if row[1] in SPECS else "no"),) for row in sorted(edge_rows)],
+    )
     write_tsv(args.out_dir / "migration-batches.tsv", ["batch", "name", "modules", "providers_retained", "risk", "disposition"],
               [[key, *value] for key, value in sorted(BATCHES.items())])
     print(f"CELLULAR MIGRATION AUDIT PASS modules={len(rows)} exact_stock={exact} edges={len(edge_rows)}")
