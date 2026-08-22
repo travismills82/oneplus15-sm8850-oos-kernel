@@ -119,6 +119,8 @@ at entry 21, all qualified WLAN053 module hashes, and all 27 exact-stock
 cellular hashes.  Its ext4 filesystem passes read-only `e2fsck`; its regenerated
 partition-local AVB hashtree/FEC/footer passes `avbtool verify_image`.
 
-This candidate is **statically validated only**.  It has not been flashed or
-physically qualified.
-
+This candidate is statically validated and has completed core physical
+qualification.  Equipment-dependent fresh-pair, audio, HFP, HID, and
+controlled BLE tests remain open, so the physical result is **PARTIAL** rather
+than a canonical release freeze.  See
+`physical-validation-2026-08-22.md`.
