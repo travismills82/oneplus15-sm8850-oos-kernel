@@ -150,18 +150,11 @@ int i2c_read(struct nfc_dev *nfc_dev, char *buf, size_t count, int timeout)
 					ret = wait_event_interruptible(
 						nfc_dev->read_wq,
 						!i2c_dev->irq_enabled);
-					if (ret < 0) {
+					if (ret) {
 						pr_err("NxpDrv: %s: err wakeup of wq\n",
 						       __func__);
 						goto err;
-					} else if (ret == 0 && i2c_dev->irq_enabled) {
-						pr_err("%s: spurious wakeup, irq still enabled\n", __func__);
-						goto err;
-					} else if (ret > 0) {
-						pr_err("%s: interrupted by signal\n", __func__);
-						goto err;
 					}
-
 				}
 			}
 //#if IS_ENABLED(CONFIG_NXP_NFC_VBAT_MONITOR)
