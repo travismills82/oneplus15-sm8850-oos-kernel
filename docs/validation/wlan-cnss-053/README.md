@@ -145,8 +145,14 @@ preserving the system load contract at 46 entries with `wwan.ko` present and
 zero stale or missing entries. `vendor_boot` and VBMeta remain stock and are
 not part of the candidate.
 
-Static validation is not physical validation. No partition has been written
-by this experiment, and the `.053` status remains physical-test pending.
+The minimal candidate was physically written to slot B on 2026-08-21 after a
+successful hardened-TWRP dry run and verified TEST3 backups. Both Android
+boots, the 10-cycle reload test, 6 GHz WPA3, stock cellular data, dual-stack
+RMNET, suspend/doze retention, airplane-mode recovery, and the effective
+contract/fatal scan passed. See
+[`physical-validation-2026-08-21.md`](physical-validation-2026-08-21.md) for
+the payload identities, recovery path, live module hashes, and remaining
+external-hardware test coverage.
 
 ## Prepared TWRP dry run
 
@@ -163,7 +169,8 @@ recovery path and run:
     --boot /tmp/wlan053/boot.img
 ```
 
-The future flash command is identical except for `--flash`. It is intentionally
-not run by this task. The hardened helper must have a decrypted, durable backup
-destination and a verified TEST3 vendor-DLKM restore image before that mode is
-authorized. Slot A remains unbootable and is not a rollback path.
+The flash command is identical except for `--flash`. It was run only after the
+dry run confirmed a decrypted durable backup destination and the verified
+TEST3 restore set. Slot A remains unbootable and is not a rollback path; the
+on-device TWRP backup and the host-side full partition backup remain the
+rollback mechanism.
