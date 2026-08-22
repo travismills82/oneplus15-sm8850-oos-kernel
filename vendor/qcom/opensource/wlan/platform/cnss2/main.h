@@ -90,10 +90,15 @@
 				CNSS_EVENT_UNINTERRUPTIBLE)
 #define CNSS_EVENT_SYNC_UNKILLABLE (CNSS_EVENT_SYNC | CNSS_EVENT_UNKILLABLE)
 #define QMI_WLFW_MAX_TME_OPT_FILE_NUM 3
-#define TME_OEM_FUSE_FILE_NAME		"peach_sec.dat"
-#define TME_RPR_FILE_NAME		"peach_rpr.bin"
-#define TME_DPR_FILE_NAME		"peach_dpr.bin"
-#define CGN_TME_OEM_FUSE_FILE_NAME	"cologne_sec.dat"
+#define TME_OEM_FUSE_FILE_NAME		"%s_sec.dat"
+#define TME_RPR_FILE_NAME		"%s_rpr.bin"
+#define TME_DPR_FILE_NAME		"%s_dpr.bin"
+
+enum ack_gen_mode {
+	ACK_GEN_DISABLED = 0,
+	ACK_GEN_ENABLED,
+};
+
 
 #ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
 extern bool idle_shutdown;
@@ -397,6 +402,7 @@ enum cnss_driver_state {
 	CNSS_SHUTDOWN_DEVICE,
 	CNSS_POWERING_ON,
 	CNSS_SEC_DOWNLOAD,
+	CNSS_RADIO_OFF,
 };
 
 struct cnss_recovery_data {
@@ -483,6 +489,12 @@ struct cnss_control_params {
 struct cnss_tcs_info {
 	resource_size_t cmd_base_addr;
 	void __iomem *cmd_base_addr_io;
+};
+
+struct cnss_irq_ts_info {
+	bool is_valid_addr;
+	resource_size_t cmd_ts_addr;
+	void __iomem *cmd_ts_addr_io;
 };
 
 struct cnss_cpr_info {
@@ -591,15 +603,24 @@ struct cnss_xdump_helper {
 	struct completion wl_over_bt_complete;
 };
 
+struct cnss_wlan_tsf_info {
+	int wlan_tsf_gpio;
+	int irq_num;
+	void *context;
+	uint64_t host_time_us;
+	wlan_tsf_handler_t wlan_tsf_handler;
+	struct cnss_irq_ts_info irq_ts_info;
+};
+
 struct cnss_plat_data {
 	struct platform_device *plat_dev;
+	enum cnss_driver_mode driver_mode;
 	void *bus_priv;
 	enum cnss_dev_bus_type bus_type;
 	struct list_head vreg_list;
 	struct list_head clk_list;
 	struct cnss_pinctrl_info pinctrl_info;
 	struct cnss_sol_gpio sol_gpio;
-	int wlan_tsf_gpio;
 #if IS_ENABLED(CONFIG_MSM_SUBSYSTEM_RESTART)
 	struct cnss_subsys_info subsys_info;
 #endif
@@ -764,7 +785,7 @@ struct cnss_plat_data {
 	struct notifier_block pm_notifier;
 	struct cnss_xo_trim_config xo_trim_conf;
 	struct cnss_xdump_helper xdump_helper;
-	bool direct_cx_data_pin_mode;
+	int direct_cx_data_pin_mode;
 	int direct_cx_host_sol_gpio;
 #if IS_ENABLED(CONFIG_CNSS2_DIRECT_CX_SDAM)
 	struct nvmem_cell *nvmem_cell_wlan_data_pin_mode_en;
@@ -775,8 +796,12 @@ struct cnss_plat_data {
 	struct nvmem_cell *nvmem_cell_wlan_cx_nom_mv;
 	struct nvmem_cell *nvmem_cell_wlan_seq_debug;
 	struct nvmem_cell *nvmem_cell_wlan_seq_count;
+	struct regulator *cngo_pbs;
 #endif
 	struct cnss_wlan_host_param *host_param;
+	struct cnss_wlan_tsf_info tsf_info;
+	bool rc_pm_control;
+	enum cx_modes cx_mode;
 };
 
 #ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
@@ -803,6 +828,10 @@ struct cel_list {
     struct cel_list *next;
 };
 #endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0))
+#define from_timer timer_container_of
+#endif
 
 #if IS_ENABLED(CONFIG_ARCH_QCOM)
 static inline u64 cnss_get_host_timestamp(struct cnss_plat_data *plat_priv)
@@ -879,7 +908,6 @@ int cnss_do_host_ramdump(struct cnss_plat_data *plat_priv,
 			 size_t num_entries_loaded);
 void cnss_set_pin_connect_status(struct cnss_plat_data *plat_priv);
 int cnss_get_cpr_info(struct cnss_plat_data *plat_priv);
-void cnss_get_wlan_tsf_gpio_info(struct cnss_plat_data *plat_priv);
 int cnss_update_cpr_info(struct cnss_plat_data *plat_priv);
 int cnss_va_to_pa(struct device *dev, size_t size, void *va, dma_addr_t dma,
 		  phys_addr_t *pa, unsigned long attrs);
@@ -935,14 +963,18 @@ void cnss_xdump_wl_over_bt_complete(struct cnss_plat_data *plat_priv,
 				    s32 result);
 int cnss_xdump_update_wl_cap(struct cnss_plat_data *plat_priv,
 			     u8 wl_over_bt, u8 bt_over_wl);
-
 int cnss_set_cx_mode(struct cnss_plat_data *plat_priv, enum cx_modes arg);
-int cnss_set_cxpc_power_off(struct cnss_plat_data *plat_priv,
-			    enum cxpc_status arg);
+int cnss_get_cx_mode(struct cnss_plat_data *plat_priv);
+int cnss_set_cxpc_power_on_off(struct cnss_plat_data *plat_priv,
+			       enum cxpc_status arg);
 int cnss_get_cxpc(struct cnss_plat_data *plat_priv);
 int cnss_set_cx_voltage_corner(struct cnss_plat_data *plat_priv,
 			       enum cx_voltage_corners vc, u16 arg);
+int cnss_set_bidirectional_ack_pdc(struct cnss_plat_data *plat_priv,
+				   enum ack_gen_mode arg);
 u8 *cnss_debug_direct_cx(struct cnss_plat_data *plat_priv);
+int cnss_cx_voltage_corners_init(struct cnss_plat_data *plat_priv);
+int cnss_xo_trim_perform(struct cnss_xo_trim_config *conf);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
 static inline int cnss_timer_delete(struct timer_list *timer)

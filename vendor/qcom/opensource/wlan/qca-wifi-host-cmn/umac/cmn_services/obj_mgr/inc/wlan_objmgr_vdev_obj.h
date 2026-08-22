@@ -309,7 +309,7 @@ struct wlan_vdev_create_params {
 	uint8_t mataddr[QDF_MAC_ADDR_SIZE];
 	uint8_t mldaddr[QDF_MAC_ADDR_SIZE];
 	bool mlo_sap_sync_disable;
-#ifdef FEATURE_WLAN_SUPPORT_P2P_R2
+#if defined(FEATURE_WLAN_SUPPORT_P2P_R2) || defined(FEATURE_WLAN_SUPPORT_PCC)
 	uint32_t wfd_mode;
 #endif
 };
@@ -407,7 +407,7 @@ struct wlan_objmgr_vdev_mlme {
 #endif
 #endif
 	uint8_t rsno_gen_supported;
-#ifdef FEATURE_WLAN_SUPPORT_P2P_R2
+#if defined(FEATURE_WLAN_SUPPORT_P2P_R2) || defined(FEATURE_WLAN_SUPPORT_PCC)
 	uint32_t wfd_mode;
 #endif
 };
@@ -2339,7 +2339,28 @@ wlan_vdev_mlme_is_mlo_link_rejection_in_progress(struct wlan_objmgr_vdev *vdev)
 {
 	return false;
 }
+#endif
 
+#ifdef WLAN_FEATURE_MLO_SAP_LINK_REMOVAL
+/**
+ * wlan_vdev_mlme_is_mlo_link_removal_in_progress() - whether it is mlo sap in
+ * link removal progress
+ * @vdev: VDEV object
+ *
+ * Return: True if it is mlo sap link removal, otherwise false.
+ */
+static inline
+bool wlan_vdev_mlme_is_mlo_link_removal_in_progress(struct wlan_objmgr_vdev *vdev)
+{
+	return wlan_vdev_mlme_op_flags_get(vdev,
+				WLAN_VDEV_OP_MLO_LINK_REMOVAL_IN_PROGRESS);
+}
+#else
+static inline
+bool wlan_vdev_mlme_is_mlo_link_removal_in_progress(struct wlan_objmgr_vdev *vdev)
+{
+	return false;
+}
 #endif
 
 /**
@@ -2852,7 +2873,7 @@ wlan_vdev_read_skip_pumac_cnt(struct wlan_objmgr_vdev *vdev)
  */
 uint8_t wlan_vdev_get_peer_sta_count(struct wlan_objmgr_vdev *vdev);
 
-#ifdef FEATURE_WLAN_SUPPORT_P2P_R2
+#if defined(FEATURE_WLAN_SUPPORT_P2P_R2) || defined(FEATURE_WLAN_SUPPORT_PCC)
 /**
  * wlan_vdev_mlme_get_wfd_mode() - get WFD mode from VDEV MLME object
  * @vdev: VDEV object
@@ -2874,16 +2895,6 @@ wlan_vdev_mlme_get_wfd_mode(struct wlan_objmgr_vdev *vdev)
  */
 void wlan_vdev_set_wfd_mode(struct wlan_objmgr_vdev *vdev, uint8_t wfd_mode);
 
-/**
- * wlan_vdev_p2p_is_wfd_r2_mode() - This API checks whether P2P has WFD R2
- * mode or not.
- * @psoc: Pointer to PSOC object
- * @vdev_id: VDEV ID
- *
- * Return: true if P2P is in WFD R2 mode, otherwise false
- */
-bool wlan_vdev_p2p_is_wfd_r2_mode(struct wlan_objmgr_psoc *psoc,
-				  uint8_t vdev_id);
 #else
 static inline uint8_t
 wlan_vdev_mlme_get_wfd_mode(struct wlan_objmgr_vdev *vdev)
@@ -2896,10 +2907,47 @@ wlan_vdev_set_wfd_mode(struct wlan_objmgr_vdev *vdev, uint8_t wfd_mode)
 {
 }
 
+#endif /* FEATURE_WLAN_SUPPORT_P2P_R2 || FEATURE_WLAN_SUPPORT_PCC */
+
+#ifdef FEATURE_WLAN_SUPPORT_P2P_R2
+/**
+ * wlan_vdev_p2p_is_wfd_r2_mode() - This API checks whether P2P has WFD R2
+ * mode or not.
+ * @psoc: Pointer to PSOC object
+ * @vdev_id: VDEV ID
+ *
+ * Return: true if P2P is in WFD R2 mode, otherwise false
+ */
+bool wlan_vdev_p2p_is_wfd_r2_mode(struct wlan_objmgr_psoc *psoc,
+				  uint8_t vdev_id);
+
+#else
 static inline bool
 wlan_vdev_p2p_is_wfd_r2_mode(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 {
 	return false;
 }
+
 #endif /* FEATURE_WLAN_SUPPORT_P2P_R2 */
+
+#ifdef FEATURE_WLAN_SUPPORT_PCC
+/**
+ * wlan_vdev_p2p_is_pcc_mode() - This API checks whether P2P has PCC
+ * mode or not.
+ * @psoc: Pointer to PSOC object
+ * @vdev_id: VDEV ID
+ *
+ * Return: true if P2P is in PCC mode, otherwise false
+ */
+bool wlan_vdev_p2p_is_pcc_mode(struct wlan_objmgr_psoc *psoc,
+			       uint8_t vdev_id);
+
+#else
+static inline bool
+wlan_vdev_p2p_is_pcc_mode(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+{
+	return false;
+}
+
+#endif /* FEATURE_WLAN_SUPPORT_PCC */
 #endif /* _WLAN_OBJMGR_VDEV_OBJ_H_*/

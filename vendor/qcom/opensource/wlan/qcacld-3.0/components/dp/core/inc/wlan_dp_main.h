@@ -387,6 +387,15 @@ QDF_STATUS __wlan_dp_runtime_resume(ol_txrx_soc_handle soc, uint8_t pdev_id);
 QDF_STATUS __wlan_dp_bus_suspend(ol_txrx_soc_handle soc, uint8_t pdev_id);
 
 /**
+ * __wlan_dp_fisa_suspend() - FISA suspend DP handler
+ * @soc: CDP SoC handle
+ * @pdev_id: DP PDEV ID
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS __wlan_dp_fisa_suspend(ol_txrx_soc_handle soc, uint8_t pdev_id);
+
+/**
  * __wlan_dp_bus_resume() - BUS resume DP handler
  * @soc: CDP SoC handle
  * @pdev_id: DP PDEV ID
@@ -1227,6 +1236,19 @@ wlan_dp_rx_aggr_dis_req(struct wlan_dp_intf *dp_intf,
 			enum ctrl_rx_aggr_client_id id, bool disable)
 {
 }
+#endif
+
+#ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
+/**
+ * wlan_dp_dump_periodic_custom_stats_enable_req() - Enable/disable dump
+ *						     periodic custom stats
+ * @dp_link: DP link handle
+ * @enable: Enable/disable dump periodic custom stats
+ *
+ * Return: None
+ */
+void wlan_dp_dump_periodic_custom_stats_enable_req(struct wlan_dp_link *dp_link,
+						   bool enable);
 #endif
 
 #ifdef IPA_OFFLOAD

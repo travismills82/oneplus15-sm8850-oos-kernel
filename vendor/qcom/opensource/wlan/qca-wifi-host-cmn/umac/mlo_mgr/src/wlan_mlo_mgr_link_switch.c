@@ -2122,6 +2122,8 @@ QDF_STATUS mlo_mgr_link_switch_complete(struct wlan_objmgr_vdev *vdev)
 	struct wlan_objmgr_psoc *psoc;
 	QDF_STATUS comp_status = QDF_STATUS_SUCCESS;
 	bool link_recfg_in_prog = mlo_is_link_recfg_in_progress(vdev);
+	struct wlan_objmgr_peer *peer;
+	struct wlan_mlo_peer_context *ml_peer;
 
 	/* Not checking NULL value as reference is already taken for vdev */
 	psoc = wlan_vdev_get_psoc(vdev);
@@ -2129,6 +2131,7 @@ QDF_STATUS mlo_mgr_link_switch_complete(struct wlan_objmgr_vdev *vdev)
 	if (!vdev->mlo_dev_ctx) {
 		mlo_err("mlo_dev_ctx for vdev is null vedv_id %d",
 			wlan_vdev_get_id(vdev));
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_MLO_MGR_ID);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -2157,9 +2160,32 @@ QDF_STATUS mlo_mgr_link_switch_complete(struct wlan_objmgr_vdev *vdev)
 
 		mlo_link_recfg_linksw_completion_indication(vdev, comp_status);
 	}
+
+	peer = wlan_objmgr_vdev_try_get_bsspeer(vdev, WLAN_MLO_MGR_ID);
+	if (!peer) {
+		mlo_err("peer is null");
+		comp_status = QDF_STATUS_E_NULL_VALUE;
+		goto end;
+	}
+
+	ml_peer = peer->mlo_peer_ctx;
+	if (!ml_peer) {
+		mlo_err("ml peer is null");
+		comp_status = QDF_STATUS_E_NULL_VALUE;
+		goto end;
+	}
+
+	if (ml_peer->t2lm_policy.is_standby_link_enabled) {
+		mlme_cm_osif_roam_abort_ind(vdev);
+		ml_peer->t2lm_policy.is_standby_link_enabled = false;
+		t2lm_debug("Enable all queues");
+	}
+
+	wlan_objmgr_peer_release_ref(peer, WLAN_MLO_MGR_ID);
+end:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLO_MGR_ID);
 
-	return QDF_STATUS_SUCCESS;
+	return comp_status;
 }
 
 QDF_STATUS
@@ -2230,5 +2256,24 @@ mlo_mgr_link_switch_defer_disconnect_req(struct wlan_objmgr_vdev *vdev,
 
 	mlo_debug("Deferred disconnect source: %d, reason: %d", source, reason);
 	return QDF_STATUS_SUCCESS;
+}
+
+bool mlo_mgr_is_mlo_vdev_active(struct wlan_objmgr_vdev *vdev)
+{
+	struct mlo_link_info *link_info;
+	uint8_t link_id = WLAN_INVALID_LINK_ID;
+
+	if (!wlan_vdev_mlme_is_mlo_vdev(vdev) || !vdev->mlo_dev_ctx)
+		return false;
+
+	link_id = wlan_vdev_get_link_id(vdev);
+	link_info = mlo_mgr_get_ap_link_by_link_id(vdev->mlo_dev_ctx, link_id);
+	if (!link_info) {
+		mlo_debug("Link info not found for link_id %d vdev %d",
+			  link_id, wlan_vdev_get_id(vdev));
+		return false;
+	}
+
+	return link_info->is_link_active;
 }
 #endif

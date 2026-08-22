@@ -877,3 +877,22 @@ void cnss_bus_start_xdump_timer(struct cnss_plat_data *plat_priv)
 		cnss_pr_dbg("Unsupported bus type: %d\n", plat_priv->bus_type);
 	}
 }
+
+int cnss_bus_get_msi_address(struct cnss_plat_data *plat_priv,
+			     u32 *msi_addr_low, u32 *msi_addr_high)
+{
+	if (!plat_priv)
+		return -ENODEV;
+
+	switch (plat_priv->bus_type) {
+	case CNSS_BUS_PCI:
+		return cnss_pci_get_msi_address(plat_priv->bus_priv,
+						msi_addr_low,
+						msi_addr_high);
+	default:
+		cnss_pr_err("Unsupported bus type: %d\n",
+			    plat_priv->bus_type);
+		return -EINVAL;
+	}
+}
+

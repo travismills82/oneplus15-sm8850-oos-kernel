@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -232,10 +232,13 @@ lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
 	if (QDF_IS_STATUS_ERROR(status))
 		pe_err("failed to add assoc link probe rsp %d freq %d", status,
 		       probe_rsp->chan_freq);
+	if (session_entry->curr_op_freq != probe_rsp->chan_freq)
+		pe_debug("probe_rsp->chan_freq %d curr_op_freq %d mismatching",
+			 probe_rsp->chan_freq, session_entry->curr_op_freq);
 
 	lim_update_mlo_mgr_info(mac_ctx, session_entry->vdev, mac_addr,
 				session_entry->lim_join_req->assoc_link_id,
-				probe_rsp->chan_freq);
+				session_entry->curr_op_freq);
 
 	link_info = mlo_mgr_get_ap_link_by_link_id(
 			session_entry->vdev->mlo_dev_ctx,
@@ -417,7 +420,8 @@ lim_process_probe_rsp_frame(struct mac_context *mac_ctx, uint8_t *rx_Packet_info
 					frame_len,
 					mac_ctx->lim.bss_rssi);
 
-	if (mlo_is_mld_sta(session_entry->vdev)) {
+	if (mlo_is_mld_sta(session_entry->vdev) &&
+	    wlan_cm_is_vdev_connected(session_entry->vdev)) {
 		cu_flag = false;
 		status = lim_get_bpcc_from_mlo_ie(probe_rsp, &bpcc);
 		if (QDF_IS_STATUS_SUCCESS(status)) {

@@ -1921,6 +1921,24 @@ void ucfg_dp_nud_indicate_roam(struct wlan_objmgr_vdev *vdev)
 	dp_nud_indicate_roam(vdev);
 }
 
+#ifdef WLAN_HAPS_ENABLE
+uint32_t ucfg_dp_get_haps_config(struct wlan_objmgr_psoc *psoc)
+{
+	struct wlan_dp_psoc_context *dp_ctx = dp_psoc_get_priv(psoc);
+
+	if (!dp_ctx) {
+		dp_err("DP Context is NULL");
+		return 0;
+	}
+	return dp_ctx->dp_cfg.haps_config;
+}
+#else
+uint32_t ucfg_dp_get_haps_config(struct wlan_objmgr_psoc *psoc)
+{
+	return 0;
+}
+#endif
+
 void ucfg_dp_clear_arp_stats(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_dp_link *dp_link = dp_get_vdev_priv_obj(vdev);
@@ -3136,6 +3154,11 @@ QDF_STATUS ucfg_dp_bus_suspend(ol_txrx_soc_handle soc, uint8_t pdev_id)
 	return __wlan_dp_bus_suspend(soc, pdev_id);
 }
 
+QDF_STATUS ucfg_dp_fisa_suspend(ol_txrx_soc_handle soc, uint8_t pdev_id)
+{
+	return __wlan_dp_fisa_suspend(soc, pdev_id);
+}
+
 QDF_STATUS ucfg_dp_bus_resume(ol_txrx_soc_handle soc, uint8_t pdev_id)
 {
 	return __wlan_dp_bus_resume(soc, pdev_id);
@@ -3195,6 +3218,16 @@ QDF_STATUS ucfg_dp_txrx_ext_dump_stats(ol_txrx_soc_handle soc,
 				       uint8_t stats_id)
 {
 	return dp_txrx_ext_dump_stats(soc, stats_id);
+}
+
+QDF_STATUS ucfg_dp_haps_dump_stats(struct wlan_objmgr_psoc *psoc)
+{
+	return dp_print_haps_stats(psoc);
+}
+
+void ucfg_dp_haps_clear_stats(struct wlan_objmgr_psoc *psoc)
+{
+	return dp_clear_haps_stats(psoc);
 }
 
 QDF_STATUS ucfg_dp_txrx_set_cpu_mask(ol_txrx_soc_handle soc,
@@ -3307,6 +3340,39 @@ ucfg_dp_rx_aggr_dis_req(struct wlan_objmgr_vdev *vdev,
 
 	wlan_dp_rx_aggr_dis_req(dp_link->dp_intf, id, disable);
 }
+
+#ifdef WLAN_FEATURE_TSF_UPLINK_DELAY
+void
+ucfg_dp_dump_periodic_custom_stats_enable_req(struct wlan_objmgr_vdev *vdev,
+					      bool enable)
+{
+	struct wlan_dp_link *dp_link;
+
+	dp_link = dp_get_vdev_priv_obj(vdev);
+	if (unlikely(!dp_link)) {
+		dp_err("DP link Null, vdev_id: %u enable:%u",
+		       wlan_vdev_get_id(vdev), enable);
+		return;
+	}
+
+	wlan_dp_dump_periodic_custom_stats_enable_req(dp_link, enable);
+}
+
+bool
+ucfg_dp_get_dump_periodic_custom_stats_enable(struct wlan_objmgr_vdev *vdev)
+{
+	struct wlan_dp_link *dp_link;
+
+	dp_link = dp_get_vdev_priv_obj(vdev);
+	if (unlikely(!dp_link)) {
+		dp_err("DP link Null, vdev_id: %u",
+		       wlan_vdev_get_id(vdev));
+		return false;
+	}
+
+	return dp_link->dp_intf->dump_periodic_custom_stats;
+}
+#endif
 
 bool ucfg_dp_ipa_ctrl_debug_supported(struct wlan_objmgr_psoc *psoc)
 {

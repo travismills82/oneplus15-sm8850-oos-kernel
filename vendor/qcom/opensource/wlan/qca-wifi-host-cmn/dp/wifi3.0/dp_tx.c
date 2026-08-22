@@ -75,6 +75,7 @@
 
 /* Added for HAPS usecase*/
 #define TRY_LOCK_TIMEOUT_NS    20000
+#define HP_UPDATE_TIME_LIMIT   1000
 
 #define DP_RETRY_COUNT 7
 #ifdef WLAN_PEER_JITTER
@@ -183,13 +184,15 @@ static void dp_tx_pp_orig_nbuf_free(struct dp_tx_desc_s *tx_desc)
  * @vdev: DP vdev handle
  * @nbuf: skb
  * @tx_desc: SW TX descriptor
+ * @new_nbuf: Newly allocated buffer
  *
  * This function allocates an nbuf from page pool memory, copies the
  * network layer generated TX packet into the page pool nbuf.
  */
-static qdf_nbuf_t
+static QDF_STATUS
 dp_tx_page_pool_handle_nbuf_single(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
-				   struct dp_tx_desc_s *tx_desc)
+				   struct dp_tx_desc_s *tx_desc,
+				   qdf_nbuf_t *new_nbuf)
 {
 	struct dp_soc *soc = vdev->pdev->soc;
 	struct dp_tx_page_pool *tx_pp = soc->tx_pp[vdev->vdev_id];
@@ -198,68 +201,102 @@ dp_tx_page_pool_handle_nbuf_single(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 	qdf_nbuf_t pp_nbuf;
 	qdf_page_t page;
 	uint32_t offset;
-	size_t size;
+	size_t size = qdf_nbuf_get_end_offset(nbuf);
+	bool is_sw_tso;
 
-	if (!dp_tx_is_page_pool_enabled(soc) || !tx_pp ||
-	    !tx_pp->page_pool_init)
-		return nbuf;
+	if (!dp_tx_is_page_pool_enabled(soc))
+		return QDF_STATUS_E_NOSUPPORT;
 
-	if (qdf_nbuf_get_dev_scratch(nbuf) != QDF_NBUF_SW_TSO_DEV_SCRATCH_VAL)
+	if (qdf_unlikely(!tx_pp || !tx_pp->page_pool_init)) {
+		if (!qdf_is_pp_nbuf(nbuf))
+			return QDF_STATUS_E_INVAL;
+
+		/* In cases where TX page pool is enabled in the
+		 * INI and TX page pool is not yet initialized,
+		 * Copy RX page pool buffer into a normal buffer before
+		 * DMA map.
+		 */
+		pp_nbuf = qdf_nbuf_alloc_simple(soc->osdev, size, 0, 0, FALSE);
+		if (qdf_unlikely(!pp_nbuf))
+			return QDF_STATUS_E_NOMEM;
+		goto copy_data;
+	}
+
+	is_sw_tso = (qdf_nbuf_get_dev_scratch(nbuf) ==
+			QDF_NBUF_SW_TSO_DEV_SCRATCH_VAL);
+	if (!is_sw_tso)
 		QDF_NBUF_CB_PADDR(nbuf) = 0;
 
 	if (tx_desc->flags & DP_TX_DESC_FLAG_TDLS_FRAME)
-		return nbuf;
-
-	/* Non linear SKBs are not expected in this path */
-	if (qdf_nbuf_is_nonlinear(nbuf))
-		return nbuf;
+		return QDF_STATUS_E_INVAL;
 
 	qdf_spin_lock_bh(&tx_pp->pp_lock);
 	pp_params = &tx_pp->tx_pool;
-	pp = pp_params->pp;
 
 	/* Skip SW TSO packets */
-	if (qdf_nbuf_get_dev_scratch(nbuf) == QDF_NBUF_SW_TSO_DEV_SCRATCH_VAL) {
+	if (is_sw_tso) {
 		if (qdf_is_pp_nbuf(nbuf))
 			pp_params->alloc_success++;
 		else
 			pp_params->alloc_fail++;
 
 		qdf_spin_unlock_bh(&tx_pp->pp_lock);
-		return nbuf;
+
+		/* Fill original nbuf into new_nbuf for SW TSO case,
+		 * page pool handling is already taken care for
+		 * SW TSO segments.
+		 */
+		*new_nbuf = nbuf;
+		return QDF_STATUS_SUCCESS;
 	}
 
-	if (!pp || qdf_page_pool_empty(pp))
-		goto alloc_fail;
+	/* Non linear SKBs are not expected in this path */
+	if (qdf_nbuf_is_nonlinear(nbuf)) {
+		pp_params->pp_err_nonlinear++;
+		qdf_spin_unlock_bh(&tx_pp->pp_lock);
+		return QDF_STATUS_E_INVAL;
+	}
 
-	size = qdf_nbuf_get_end_offset(nbuf);
+	pp = pp_params->pp;
 
-	pp_nbuf = qdf_nbuf_page_pool_alloc(soc->osdev, size, 0, 0, pp,
-					   &offset);
-	if (!pp_nbuf)
-		goto alloc_fail;
+	if (pp && !qdf_page_pool_empty(pp)) {
+		pp_nbuf = qdf_nbuf_page_pool_alloc(soc->osdev, size, 0, 0, pp,
+						   &offset);
+		if (qdf_likely(pp_nbuf)) {
+			pp_params->alloc_success++;
+			qdf_spin_unlock_bh(&tx_pp->pp_lock);
+			goto copy_data;
+		}
+	}
 
-	pp_params->alloc_success++;
+	/* Fallback to direct allocation */
+	pp_params->alloc_fail++;
+	pp_nbuf = qdf_nbuf_alloc_simple(soc->osdev, size, 0, 0, FALSE);
+	if (qdf_unlikely(!pp_nbuf)) {
+		pp_params->direct_alloc_fail++;
+		qdf_spin_unlock_bh(&tx_pp->pp_lock);
+		return QDF_STATUS_E_NOMEM;
+	}
 	qdf_spin_unlock_bh(&tx_pp->pp_lock);
 
-	/* Copy data in to the pp nbuf */
+copy_data:
+	/* Copy data in to the new nbuf */
 	qdf_mem_copy(pp_nbuf->data, nbuf->data, nbuf->len);
 	qdf_nbuf_set_pktlen(pp_nbuf, nbuf->len);
 	qdf_nbuf_copy_header(pp_nbuf, nbuf);
 
-	page = qdf_virt_to_head_page(pp_nbuf->data);
-	QDF_NBUF_CB_PADDR(pp_nbuf) = qdf_page_pool_get_dma_addr(page) + offset +
-				 qdf_nbuf_headroom(pp_nbuf);
+	if (qdf_is_pp_nbuf(pp_nbuf)) {
+		page = qdf_virt_to_head_page(pp_nbuf->data);
+		QDF_NBUF_CB_PADDR(pp_nbuf) = qdf_page_pool_get_dma_addr(page) +
+					      offset +
+					      qdf_nbuf_headroom(pp_nbuf);
+	}
 
 	tx_desc->nbuf = pp_nbuf;
 	tx_desc->orig_nbuf = nbuf;
+	*new_nbuf = pp_nbuf;
 
-	return pp_nbuf;
-
-alloc_fail:
-	pp_params->alloc_fail++;
-	qdf_spin_unlock_bh(&tx_pp->pp_lock);
-	return nbuf;
+	return QDF_STATUS_SUCCESS;
 }
 
 /**
@@ -274,7 +311,7 @@ dp_tx_release_pp_nbuf(struct dp_tx_desc_s *tx_desc, qdf_nbuf_t nbuf)
 {
 	qdf_nbuf_t orig_nbuf;
 
-	if (!qdf_is_pp_nbuf(nbuf) || !tx_desc->orig_nbuf)
+	if (!tx_desc->orig_nbuf)
 		return nbuf;
 
 	qdf_nbuf_free(nbuf);
@@ -295,11 +332,12 @@ static inline void dp_tx_pp_orig_nbuf_free(struct dp_tx_desc_s *tx_desc)
 {
 }
 
-static inline qdf_nbuf_t
+static inline QDF_STATUS
 dp_tx_page_pool_handle_nbuf_single(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
-				   struct dp_tx_desc_s *tx_desc)
+				   struct dp_tx_desc_s *tx_desc,
+				   qdf_nbuf_t *new_nbuf)
 {
-	return nbuf;
+	return QDF_STATUS_E_NOSUPPORT;
 }
 
 static inline qdf_nbuf_t
@@ -2159,6 +2197,7 @@ QDF_STATUS dp_try_hp_update(struct dp_haps *haps_ctx, bool is_direct_reg_write)
 	uint32_t hp, cached_tp;
 	uint8_t ring_id;
 	struct dp_soc *soc = haps_ctx->soc;
+	qdf_time_t start_time, delta;
 
 	for (ring_id = 0; ring_id < soc->num_tcl_data_rings; ring_id++) {
 		hal_ring_hdl = soc->tcl_data_ring[ring_id].hal_srng;
@@ -2184,10 +2223,21 @@ QDF_STATUS dp_try_hp_update(struct dp_haps *haps_ctx, bool is_direct_reg_write)
 			continue;
 		}
 
-		if (is_direct_reg_write)
+		if (is_direct_reg_write) {
+			start_time = qdf_get_log_timestamp_usecs();
+
 			hal_srng_update_hp_direct(soc->hal_soc, hal_ring_hdl);
-		else
-			dp_tx_ring_access_end(soc, hal_ring_hdl, 0);
+
+			delta = qdf_get_log_timestamp_usecs() - start_time;
+			/* The HP update time is not anticipated to exceed 1ms,
+			 * as the FW can only be in the L1SS state at most.
+			 */
+			if (delta > HP_UPDATE_TIME_LIMIT)
+				dp_err("HAPS: hp update time(%zu) is high for vdev(%u)",
+				       delta, haps_ctx->vdev_id);
+		} else {
+			dp_tx_ring_access_end_wrapper(soc, hal_ring_hdl, 0);
+		}
 
 		hif_rtpm_put(HIF_RTPM_PUT_ASYNC, HIF_RTPM_ID_DP);
 	}
@@ -3601,6 +3651,7 @@ dp_tx_send_msdu_single(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 	struct cdp_tid_tx_stats *tid_stats = NULL;
 	qdf_dma_addr_t paddr;
 	bool enable_eapol_drop_stats = vdev->dp_eapol_stats;
+	qdf_nbuf_t pp_nbuf = NULL;
 
 	/* Setup Tx descriptor for an MSDU, and MSDU extension descriptor */
 	tx_desc = dp_tx_prepare_desc_single(vdev, nbuf, tx_q->desc_pool_id,
@@ -3614,7 +3665,20 @@ dp_tx_send_msdu_single(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 
 	dp_tx_update_tdls_flags(soc, vdev, tx_desc);
 
-	nbuf = dp_tx_page_pool_handle_nbuf_single(vdev, nbuf, tx_desc);
+	status = dp_tx_page_pool_handle_nbuf_single(vdev, nbuf,
+						    tx_desc, &pp_nbuf);
+	if (QDF_IS_STATUS_SUCCESS(status)) {
+		nbuf = pp_nbuf;
+	} else if (qdf_is_pp_nbuf(nbuf) && status == QDF_STATUS_E_NOMEM) {
+		/* When original (input) nbuf is a page pool buffer (RX page
+		 * pool buffer redirected to the TX path by network stack or
+		 * a RX intra-bss forwarded page pool buffer), and if TX
+		 * page pool handling for such buffers has failed, do not
+		 * attempt TX; DMA map/unmap ops currently on such buffers
+		 * is complex and error prone.
+		 */
+		goto release_desc;
+	}
 
 	if (qdf_unlikely(peer_id == DP_INVALID_PEER)) {
 		htt_tcl_metadata = vdev->htt_tcl_metadata;
@@ -4936,7 +5000,7 @@ dp_tx_sw_tso_handler(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 		buff = dp_tx_send_msdu_single(vdev, buff, msdu_info,
 					      HTT_INVALID_PEER, NULL);
 		if (qdf_unlikely(buff)) {
-			dp_err("sw tso: failed to send msdu");
+			dp_err_rl("sw tso: failed to send msdu");
 			qdf_nbuf_free(buff);
 			qdf_nbuf_list_free(next);
 
@@ -6912,14 +6976,7 @@ dp_reset_hwtx_ul_jitter(struct dp_vdev *vdev)
 }
 #endif
 
-/**
- * dp_tx_average_ul_delay() - calculate average ul delay
- * @vdev: vdev handle
- * @opt_dp: ul delay for opt_dp
- * @val: pointer to store average delay
- */
-static inline int
-dp_tx_average_ul_delay(struct dp_vdev *vdev, bool opt_dp, uint32_t *val)
+int dp_tx_average_ul_delay(struct dp_vdev *vdev, uint8_t client, uint32_t *val)
 {
 	uint32_t curr_delay_accum;
 	uint32_t curr_pkts_accum;
@@ -6928,17 +6985,10 @@ dp_tx_average_ul_delay(struct dp_vdev *vdev, bool opt_dp, uint32_t *val)
 	uint32_t *prev_delay_accum;
 	uint32_t *prev_pkts_accum;
 
-	if (opt_dp) {
-		prev_delay_accum =
-			&vdev->prev_delay_stats.prev_delay_accum_opt_dp;
-		prev_pkts_accum =
-			&vdev->prev_delay_stats.prev_pkt_accum_opt_dp;
-	} else {
-		prev_delay_accum =
-			&vdev->prev_delay_stats.prev_delay_accum_bus_bw;
-		prev_pkts_accum =
-			&vdev->prev_delay_stats.prev_pkt_accum_bus_bw;
-	}
+	prev_delay_accum =
+			&vdev->ul_delay_stats[client].prev_delay_accum;
+	prev_pkts_accum =
+			&vdev->ul_delay_stats[client].prev_pkt_accum;
 
 	/* Average uplink delay based on accumulated values on current window*/
 	curr_delay_accum = qdf_atomic_read(&vdev->ul_delay_accum);
@@ -6987,7 +7037,8 @@ dp_tx_report_tx_delay_to_fw(struct dp_vdev *vdev)
 	if (report_interval < vdev->latency_stats.report_interval * 1000)
 		return;
 
-	pkts_accum = dp_tx_average_ul_delay(vdev, false, &avg_delay);
+	pkts_accum = dp_tx_average_ul_delay(vdev, UL_DELAY_CALC_ID_FW,
+					    &avg_delay);
 	if (!pkts_accum)
 		return;
 
@@ -7133,6 +7184,25 @@ QDF_STATUS dp_set_tsf_ul_delay_report(struct cdp_soc_t *soc_hdl,
 
 	qdf_atomic_set(&vdev->tsf_ul_delay_report, enable);
 
+	dp_vdev_unref_delete(soc, vdev, DP_MOD_ID_CDP);
+
+	return QDF_STATUS_SUCCESS;
+}
+
+QDF_STATUS dp_txrx_enable_ul_delay(struct cdp_soc_t *soc_hdl,
+				   uint8_t vdev_id, bool enable)
+{
+	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
+	struct dp_vdev *vdev = dp_vdev_get_ref_by_id(soc, vdev_id,
+						     DP_MOD_ID_CDP);
+
+	if (!vdev) {
+		dp_err_rl("vdev %d does not exist", vdev_id);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	dp_info("vdev: %u enable: %u", vdev_id, enable);
+	dp_enable_ul_delay(vdev, UL_DELAY_CALC_ID_INTERNAL, enable);
 	dp_vdev_unref_delete(soc, vdev, DP_MOD_ID_CDP);
 
 	return QDF_STATUS_SUCCESS;
@@ -7729,7 +7799,7 @@ QDF_STATUS dp_get_uplink_delay(struct cdp_soc_t *soc_hdl, uint8_t vdev_id,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	dp_tx_average_ul_delay(vdev, true, val);
+	dp_tx_average_ul_delay(vdev, UL_DELAY_CALC_ID_TSF, val);
 	dp_tx_print_ul_delay_hist(vdev);
 
 	dp_vdev_unref_delete(soc, vdev, DP_MOD_ID_CDP);
@@ -8582,6 +8652,7 @@ more_data:
 				dp_tx_comp_info_rl("pdev in down state %d",
 						   tx_desc->id);
 				tx_desc->flags |= DP_TX_DESC_FLAG_TX_COMP_ERR;
+				DP_STATS_INC(soc, tx.tx_desc_pdev_down, 1);
 				dp_tx_comp_free_buf(soc, tx_desc, false);
 				dp_tx_desc_release(soc, tx_desc,
 						   tx_desc->pool_id);
@@ -8592,8 +8663,20 @@ more_data:
 				!(tx_desc->flags & DP_TX_DESC_FLAG_QUEUED_TX)) {
 				dp_tx_comp_alert("Txdesc invalid, flgs = %x,id = %d",
 						 tx_desc->flags, tx_desc->id);
+				DP_STATS_INC(soc, tx.tx_desc_unused, 1);
 				qdf_assert_always(0);
 			}
+
+			if (qdf_unlikely(tx_desc->flags &
+			    DP_TX_DESC_FLAG_REAPED)) {
+				dp_tx_comp_alert("Txdesc duplicate entry, flags = %x,id = %d",
+						 tx_desc->flags, tx_desc->id);
+				DP_STATS_INC(soc, tx.tx_desc_duplicate, 1);
+				qdf_assert_always(0);
+				goto next_desc;
+			}
+
+			tx_desc->flags |= DP_TX_DESC_FLAG_REAPED;
 
 			/* Collect hw completion contents */
 			hal_tx_comp_desc_sync_wrapper(tx_comp_hal_desc,

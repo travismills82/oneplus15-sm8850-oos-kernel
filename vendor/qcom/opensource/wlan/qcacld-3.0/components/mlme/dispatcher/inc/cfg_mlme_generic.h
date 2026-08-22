@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1317,7 +1317,7 @@ enum wlan_epcs_frame {
  * enable_reduce_pwr_scan - Enable/Disable reduced power scan mode
  * @Min: 0 Disable
  * @Max: 1 Enable
- * @Default: 0
+ * @Default: 1
  *
  * Related: None
  *
@@ -1328,6 +1328,28 @@ enum wlan_epcs_frame {
 	"enable_reduce_pwr_scan", \
 	1, \
 	"Reduce power scan mode")
+
+/*
+ * <ini>
+ * gEdcaTxopLimit - EDCA TXOP limit in milliseconds
+ * @Min: 4
+ * @Max: 16
+ * @Default: 4
+ *
+ * This ini is used to set the TXOP limit in firmware. The value is
+ * specified in milliseconds.
+ *
+ * Related: None
+ *
+ * Supported Feature: General
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
+#define CFG_EDCA_TXOP_LIMIT \
+CFG_INI_UINT("gEdcaTxopLimit", 4, 16, 4, \
+	     CFG_VALUE_OR_DEFAULT, "TXOP limit in milliseconds")
 
 #define CFG_GENERIC_ALL \
 	CFG(CFG_ENABLE_DEBUG_PACKET_LOG) \
@@ -1375,5 +1397,6 @@ enum wlan_epcs_frame {
 	CFG_T2LM_NEGOTIATION_SUPPORTED \
 	CFG_LINK_RECFG_SUPPORTED \
 	CFG_RELAXED_LPI_CONN_POLICY \
-	CFG(CFG_REDUCE_PWR_SCAN_MODE)
+	CFG(CFG_REDUCE_PWR_SCAN_MODE) \
+	CFG(CFG_EDCA_TXOP_LIMIT)
 #endif /* __CFG_MLME_GENERIC_H */

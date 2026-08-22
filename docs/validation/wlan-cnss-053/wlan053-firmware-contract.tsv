@@ -1,0 +1,9 @@
+contract	037	053_minimal_candidate	evidence	result
+cfg80211_module_firmware	regulatory.db;regulatory.db.p7s	regulatory.db;regulatory.db.p7s	wlan037/firmware-declarations.tsv vs wlan053-minimal/firmware-declarations.tsv	MATCH
+peach_module_firmware	NONE	NONE	qca_cld3_peach_v2 modinfo firmware field	MATCH
+peach_ini_name	WCNSS_qcom_cfg.ini	WCNSS_qcom_cfg.ini	qcacld-3.0/core/hdd/inc/wlan_hdd_misc.h	MATCH
+cnss_firmware_requester	EXACT_STOCK_037	EXACT_STOCK_037	minimal candidate does not replace active cnss2/wlan_firmware_service	UNCHANGED
+peach_firmware_payload	OOS_16.0.9.400_EXTERNAL	OOS_16.0.9.400_EXTERNAL	firmware is not embedded or packaged	UNCHANGED
+peach_board_data	OOS_16.0.9.400_EXTERNAL	OOS_16.0.9.400_EXTERNAL	stock cnss2 QMI BDF provider retained	UNCHANGED
+regulatory_policy	SIGNED_REGDB_REQUIRED	SIGNED_REGDB_REQUIRED	CONFIG_CFG80211_REQUIRE_SIGNED_REGDB=y;CONFIG_CFG80211_USE_KERNEL_REGDB_KEYS=y	MATCH
+new_required_peach_file	NONE	NONE	module metadata and active PEACH 0x110e path audit	PASS

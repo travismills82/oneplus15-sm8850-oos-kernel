@@ -11,6 +11,7 @@
 #include <linux/err.h>
 #include <linux/of.h>
 #include <linux/version.h>
+#include <linux/kallsyms.h>
 #include "cnss_common.h"
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "cnss_prealloc.h"
@@ -45,6 +46,24 @@ MODULE_DESCRIPTION("CNSS prealloc driver");
  * features: memorypool and kmem cache.
  */
 
+#define CNSS_STACK_TRACE_DEPTH 16
+#define CNSS_SYMBOL_NAME_LEN 128
+
+struct cnss_stack_entry {
+	char symbol[CNSS_SYMBOL_NAME_LEN];
+	unsigned long offset;
+	unsigned long size;
+};
+
+struct cnss_alloc_info {
+	void *ptr;
+	struct cnss_stack_entry stack_entries[CNSS_STACK_TRACE_DEPTH];
+	unsigned int nr_entries;
+	unsigned long timestamp;
+	pid_t pid;
+	char comm[TASK_COMM_LEN];
+};
+
 struct cnss_pool {
 	size_t size;
 	int min;
@@ -52,6 +71,8 @@ struct cnss_pool {
 	mempool_t *mp;
 	struct kmem_cache *cache;
 	void **pool_ptrs;
+	/* Keep it always zero if stack trace feature not enabled */
+	struct cnss_alloc_info *alloc_info;
 	int table_capacity;
 };
 
@@ -82,7 +103,6 @@ struct cnss_pool {
 
 /* size, min pool reserve, name, memorypool handler, cache handler*/
 static struct cnss_pool cnss_pools_default[] = {
-	{8 * 1024, 16, "cnss-pool-8k", NULL, NULL, NULL},
 	{16 * 1024, 16, "cnss-pool-16k", NULL, NULL, NULL},
 	{32 * 1024, 22, "cnss-pool-32k", NULL, NULL, NULL},
 	{64 * 1024, 38, "cnss-pool-64k", NULL, NULL, NULL},
@@ -91,7 +111,6 @@ static struct cnss_pool cnss_pools_default[] = {
 };
 
 static struct cnss_pool cnss_pools_adrastea[] = {
-	{8 * 1024, 2, "cnss-pool-8k", NULL, NULL, NULL},
 	{16 * 1024, 10, "cnss-pool-16k", NULL, NULL, NULL},
 	{32 * 1024, 8, "cnss-pool-32k", NULL, NULL, NULL},
 	{64 * 1024, 4, "cnss-pool-64k", NULL, NULL, NULL},
@@ -99,7 +118,6 @@ static struct cnss_pool cnss_pools_adrastea[] = {
 };
 
 static struct cnss_pool cnss_pools_wcn6750[] = {
-	{8 * 1024, 2, "cnss-pool-8k", NULL, NULL, NULL},
 	{16 * 1024, 8, "cnss-pool-16k", NULL, NULL, NULL},
 	{32 * 1024, 11, "cnss-pool-32k", NULL, NULL, NULL},
 	{64 * 1024, 15, "cnss-pool-64k", NULL, NULL, NULL},
@@ -107,12 +125,11 @@ static struct cnss_pool cnss_pools_wcn6750[] = {
 };
 
 static struct cnss_pool cnss_pools_wcn7750[] = {
-	{8 * 1024, 16, "cnss-pool-8k", NULL, NULL},
-	{16 * 1024, 16, "cnss-pool-16k", NULL, NULL},
-	{32 * 1024, 22, "cnss-pool-32k", NULL, NULL},
-	{64 * 1024, 38, "cnss-pool-64k", NULL, NULL},
-	{128 * 1024, 10, "cnss-pool-128k", NULL, NULL},
-	{256 * 1024, 2, "cnss-pool-256k", NULL, NULL},
+	{16 * 1024, 16, "cnss-pool-16k", NULL, NULL, NULL},
+	{32 * 1024, 22, "cnss-pool-32k", NULL, NULL, NULL},
+	{64 * 1024, 38, "cnss-pool-64k", NULL, NULL, NULL},
+	{128 * 1024, 10, "cnss-pool-128k", NULL, NULL, NULL},
+	{256 * 1024, 2, "cnss-pool-256k", NULL, NULL, NULL},
 };
 
 struct cnss_pool *cnss_pools;
@@ -130,8 +147,36 @@ bool mempool_initialization_done;
  */
 static inline size_t cnss_pool_alloc_threshold(void)
 {
-	return cnss_pools[0].size;
+	return WCNSS_PRE_ALLOC_GET_THRESHOLD;
 }
+
+#ifdef CONFIG_CNSS_PREALLOC_DEBUG_LEAK
+static inline void cnss_stack_track_init(struct cnss_pool *cnss_pool)
+{
+	pr_info("Initializing stack track info\n");
+	cnss_pool->alloc_info = kzalloc(cnss_pool->min *
+						sizeof(struct cnss_alloc_info),
+					GFP_KERNEL);
+	if (!cnss_pool->alloc_info)
+		pr_err("cnss_prealloc: failed to create alloc_info for %s\n",
+		       cnss_pool->name);
+}
+
+static inline void cnss_stack_track_deinit(struct cnss_pool *cnss_pool)
+{
+	kfree(cnss_pool->alloc_info);
+	cnss_pool->alloc_info = NULL;
+}
+#else
+static inline void cnss_stack_track_init(struct cnss_pool *cnss_pool)
+{
+	cnss_pool->alloc_info = NULL;
+}
+
+static inline void cnss_stack_track_deinit(struct cnss_pool *cnss_pool)
+{
+}
+#endif
 
 /**
  * cnss_pool_int() - Initialize memory pools.
@@ -182,11 +227,15 @@ static int cnss_pool_init(void)
 			pr_err("cnss_prealloc: failed to create mempool %s of min size %d * %zu\n",
 			       cnss_pools[i].name, cnss_pools[i].min,
 			       cnss_pools[i].size);
+			kfree(cnss_pools[i].pool_ptrs);
+			cnss_pools[i].pool_ptrs = NULL;
 			WARN_ON(1);
 		}
 		pr_info("cnss_prealloc: created mempool %s of min size %d * %zu\n",
 			cnss_pools[i].name, cnss_pools[i].min,
 			cnss_pools[i].size);
+
+		cnss_stack_track_init(&cnss_pools[i]);
 	}
 
 	mempool_initialization_done = true;
@@ -218,6 +267,8 @@ static void cnss_pool_deinit(void)
 		cnss_pools[i].cache = NULL;
 		kfree(cnss_pools[i].pool_ptrs);
 		cnss_pools[i].pool_ptrs = NULL;
+
+		cnss_stack_track_deinit(&cnss_pools[i]);
 	}
 	mempool_initialization_done = false;
 }
@@ -265,27 +316,149 @@ void cnss_deinitialize_prealloc_pool(void)
 }
 EXPORT_SYMBOL(cnss_deinitialize_prealloc_pool);
 
+/**
+ * cnss_record_stack_trace() - Record stack trace for memory allocation
+ * @alloc_info: Pointer to allocation info structure
+ * @mem: Allocated memory pointer
+ */
+static inline
+void cnss_record_stack_trace(struct cnss_alloc_info *alloc_info, void *mem)
+{
+	unsigned long stack_addrs[CNSS_STACK_TRACE_DEPTH];
+	unsigned int nr_entries;
+	int i;
+
+	if (!alloc_info)
+		return;
+
+	alloc_info->ptr = mem;
+	alloc_info->timestamp = jiffies;
+	alloc_info->pid = current->pid;
+	strscpy(alloc_info->comm, current->comm, TASK_COMM_LEN);
+	alloc_info->comm[TASK_COMM_LEN - 1] = '\0';
+
+	/* First get the raw stack addresses */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0))
+	nr_entries = stack_trace_save(stack_addrs, CNSS_STACK_TRACE_DEPTH, 1);
+#else
+	{
+		struct stack_trace trace = {
+			.entries = stack_addrs,
+			.max_entries = CNSS_STACK_TRACE_DEPTH,
+			.skip = 1,
+		};
+		save_stack_trace(&trace);
+		nr_entries = trace.nr_entries;
+	}
+#endif
+
+	alloc_info->nr_entries = nr_entries;
+
+	/* Convert addresses to symbol names with offsets using sprint_symbol */
+	for (i = 0; i < nr_entries; i++) {
+		/* Use sprint_symbol which is exported for modules */
+		int ret = sprint_symbol(alloc_info->stack_entries[i].symbol,
+					stack_addrs[i]);
+		if (ret < 0) {
+			/* Fallback to raw address if symbol lookup fails */
+			snprintf(alloc_info->stack_entries[i].symbol,
+				 CNSS_SYMBOL_NAME_LEN, "0x%lx", stack_addrs[i]);
+			alloc_info->stack_entries[i].offset = 0;
+			alloc_info->stack_entries[i].size = 0;
+		} else {
+			/* sprint_symbol doesn't provide offset/size separately,
+			 * but the symbol string contains the information
+			 */
+			alloc_info->stack_entries[i].offset = 0;
+			alloc_info->stack_entries[i].size = 0;
+		}
+	}
+}
+
+/**
+ * cnss_clear_stack_trace() - Clear stack trace for memory deallocation
+ * @alloc_info: Pointer to allocation info structure
+ */
+static void cnss_clear_stack_trace(struct cnss_alloc_info *alloc_info)
+{
+	if (!alloc_info)
+		return;
+
+	memset(alloc_info, 0, sizeof(*alloc_info));
+}
+
+/**
+ * cnss_print_stack_trace() - Print stack trace for debugging
+ * @alloc_info: Pointer to allocation info structure
+ * @pool_name: Pool name for identification
+ */
+static inline
+void cnss_print_stack_trace(struct cnss_alloc_info *alloc_info,
+			    const char *pool_name)
+{
+	int i;
+	unsigned long delta_jiffies;
+
+	if (!alloc_info || !alloc_info->ptr)
+		return;
+
+	delta_jiffies = jiffies - alloc_info->timestamp;
+	pr_info("cnss_prealloc: Memory leak detected in %s pool\n", pool_name);
+	pr_info("  Pointer: %p, PID: %d, Comm: %s\n",
+		alloc_info->ptr, alloc_info->pid, alloc_info->comm);
+	pr_info("  Allocated %lu jiffies ago (%u ms)\n",
+		delta_jiffies, jiffies_to_msecs(delta_jiffies));
+	pr_info("  Stack trace (%u entries):\n", alloc_info->nr_entries);
+
+	for (i = 0; i < alloc_info->nr_entries; i++)
+		pr_info("    %s\n", alloc_info->stack_entries[i].symbol);
+}
+
 void wcnss_check_pool_lists(void)
 {
 	void **pool;
+	struct cnss_alloc_info *alloc_info;
 	int i;
 	size_t ptr_idx;
 	int count;
+	int active_allocs = 0;
 
 	pr_info("wcnss enter pool check\n");
 
 	for (i = 0; i < cnss_prealloc_pool_size; i++) {
 		pool = cnss_pools[i].pool_ptrs;
+		alloc_info = cnss_pools[i].alloc_info;
 		count = cnss_pools[i].table_capacity;
+		pr_info("Max allocation #%d in %s pool:\n", count,
+			cnss_pools[i].name);
 		for (ptr_idx = 0; ptr_idx < count; ptr_idx++) {
 			if (pool[ptr_idx]) {
 				pr_err("%p not freed in %s pool at index %zu\n",
 					pool[ptr_idx], cnss_pools[i].name,
 					ptr_idx);
-				CNSS_ASSERT(0);
 
+				/* Print stack trace if available */
+				if (alloc_info &&
+				    alloc_info[ptr_idx].ptr == pool[ptr_idx]) {
+					active_allocs++;
+					pr_info("Active allocation #%d in %s pool:\n",
+						active_allocs,
+						cnss_pools[i].name);
+					cnss_print_stack_trace(
+						&alloc_info[ptr_idx],
+						cnss_pools[i].name);
+				}
+
+				CNSS_ASSERT(0);
 			}
 		}
+	}
+
+	if (active_allocs) {
+		pr_info("cnss_prealloc: Total active allocations: %d\n",
+			active_allocs);
+		/* Assert independent of perf or debug build */
+		BUG();
 	}
 }
 EXPORT_SYMBOL(wcnss_check_pool_lists);
@@ -293,19 +466,26 @@ EXPORT_SYMBOL(wcnss_check_pool_lists);
 static int wcnss_find_pool_table_slot(int pool, void *mem)
 {
 	void **pool_table;
+	struct cnss_alloc_info *alloc_info;
 	size_t ptr_idx;
 	int new_capacity;
 
 	pool_table = cnss_pools[pool].pool_ptrs;
+	alloc_info = cnss_pools[pool].alloc_info;
+
 	for (ptr_idx = 0; ptr_idx < cnss_pools[pool].table_capacity; ptr_idx++) {
 		if (!pool_table[ptr_idx]) {
 			pool_table[ptr_idx] = mem;
-			return 0;
+			/* Record stack trace for this allocation */
+			if (alloc_info) {
+				cnss_record_stack_trace(&alloc_info[ptr_idx],
+							mem);
+			}
+			return ptr_idx;
 		}
 	}
 
 	new_capacity = cnss_pools[pool].table_capacity + 1;
-
 
 	cnss_pools[pool].pool_ptrs = krealloc(cnss_pools[pool].pool_ptrs,
 					      new_capacity * sizeof(void *),
@@ -318,23 +498,49 @@ static int wcnss_find_pool_table_slot(int pool, void *mem)
 	}
 
 	cnss_pools[pool].pool_ptrs[ptr_idx] = mem;
+
+	if (alloc_info) {
+		cnss_pools[pool].alloc_info = krealloc(
+				cnss_pools[pool].alloc_info,
+				new_capacity * sizeof(struct cnss_alloc_info),
+				GFP_ATOMIC);
+		if (cnss_pools[pool].alloc_info) {
+			/* Initialize the new alloc_info slot */
+			memset(&cnss_pools[pool].alloc_info[ptr_idx], 0,
+			       sizeof(struct cnss_alloc_info));
+			/* Record stack trace for this allocation */
+			cnss_record_stack_trace(
+				&cnss_pools[pool].alloc_info[ptr_idx],
+				mem);
+		} else {
+			pr_info("Failed to increase alloc_info size for %s\n",
+				cnss_pools[pool].name);
+		}
+	}
+
 	cnss_pools[pool].table_capacity += 1;
 
 	pr_debug("%s pool is full, increasing table size to %d\n",
 		 cnss_pools[pool].name, cnss_pools[pool].table_capacity);
 
-	return 0;
+	return ptr_idx;
 }
 
 static int wcnss_free_pool_table_slot(struct cnss_pool mempool, void *mem)
 {
 	void **pool_table;
+	struct cnss_alloc_info *alloc_info;
 	size_t ptr_idx;
 
 	pool_table = mempool.pool_ptrs;
+	alloc_info = mempool.alloc_info;
+
 	for (ptr_idx = 0; ptr_idx < mempool.table_capacity; ptr_idx++) {
 		if (pool_table[ptr_idx] == mem) {
 			pool_table[ptr_idx] = NULL;
+			/* Clear stack trace for this deallocation */
+			if (alloc_info)
+				cnss_clear_stack_trace(&alloc_info[ptr_idx]);
 			return ptr_idx;
 		}
 	}
@@ -371,7 +577,7 @@ void *wcnss_prealloc_get(size_t size)
 	else
 		gfp_mask |= GFP_KERNEL;
 
-	if (size >= cnss_pool_alloc_threshold()) {
+	if (size > cnss_pool_alloc_threshold()) {
 
 		for (i = 0; i < cnss_prealloc_pool_size; i++) {
 			if (cnss_pools[i].size >= size && cnss_pools[i].mp) {
@@ -398,7 +604,7 @@ void *wcnss_prealloc_get(size_t size)
 		mem = NULL;
 	}
 
-	if (!mem && size >= cnss_pool_alloc_threshold()) {
+	if (!mem && size > cnss_pool_alloc_threshold()) {
 		pr_err("cnss_prealloc: not available for size %zu, flag %x\n",
 		       size, gfp_mask);
 	}
@@ -565,4 +771,3 @@ static void __exit cnss_prealloc_exit(void)
 
 module_init(cnss_prealloc_init);
 module_exit(cnss_prealloc_exit);
-

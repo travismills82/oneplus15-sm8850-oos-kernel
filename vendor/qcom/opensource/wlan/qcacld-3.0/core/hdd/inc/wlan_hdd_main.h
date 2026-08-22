@@ -318,6 +318,7 @@ enum hdd_adapter_flags {
  * @SOFTAP_INIT_DONE: Software Access Point (SAP) is initialized
  * @VENDOR_ACS_RESPONSE_PENDING: Waiting for event for vendor acs
  * @SOFTAP_ADD_INTF_LINK: add_intf_link is set for multi link SAP
+ * @SOFTAP_LINK_REMOVAL_IN_PROGRESS: mlo sap link remove flag
  * @WLAN_LINK_FLAG_BITS_MAX: Max bit size of this enum
  */
 enum hdd_link_flags {
@@ -326,6 +327,7 @@ enum hdd_link_flags {
 	SOFTAP_INIT_DONE,
 	VENDOR_ACS_RESPONSE_PENDING,
 	SOFTAP_ADD_INTF_LINK,
+	SOFTAP_LINK_REMOVAL_IN_PROGRESS,
 	WLAN_LINK_FLAG_BITS_MAX,
 };
 
@@ -1450,6 +1452,7 @@ enum hdd_wlm_latency_level {
  *                    fetched
  * @wfd_mode: WFD mode for P2P interface
  * @enable_active_apf_mode: Enable active APF mode flag
+ * @dhcp_config_setsuspend: Enable when DHCP in progress and get setsuspend cmd
  */
 struct hdd_adapter {
 	uint32_t magic;
@@ -1653,10 +1656,11 @@ struct hdd_adapter {
 	struct get_station_client_info sta_client_info[GET_STA_MAX_HOST_CLIENT];
 	bool wlm_ll_conn_flag;
 	struct wlan_hdd_link_info *discon_link_info;
-#ifdef FEATURE_WLAN_SUPPORT_P2P_R2
+#if defined(FEATURE_WLAN_SUPPORT_P2P_R2) || defined(FEATURE_WLAN_SUPPORT_PCC)
 	uint8_t wfd_mode;
 #endif
 	bool enable_active_apf_mode;
+	bool dhcp_config_setsuspend;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(link_info) (&(link_info)->session.station)
@@ -5860,7 +5864,8 @@ hdd_get_link_info_by_ieee_link_id(struct hdd_adapter *adapter,
 
 QDF_STATUS
 hdd_adapter_update_links_on_link_switch(struct wlan_hdd_link_info *cur_link_info,
-					struct wlan_hdd_link_info *new_link_info);
+					struct wlan_hdd_link_info *new_link_info,
+					bool is_roam);
 #else
 static inline struct wlan_hdd_link_info *
 hdd_get_link_info_by_ieee_link_id(struct hdd_adapter *adapter,
@@ -5871,7 +5876,8 @@ hdd_get_link_info_by_ieee_link_id(struct hdd_adapter *adapter,
 
 static inline QDF_STATUS
 hdd_adapter_update_links_on_link_switch(struct wlan_hdd_link_info *cur_link_info,
-					struct wlan_hdd_link_info *new_link_info)
+					struct wlan_hdd_link_info *new_link_info,
+					bool is_roam)
 {
 	return QDF_STATUS_SUCCESS;
 }

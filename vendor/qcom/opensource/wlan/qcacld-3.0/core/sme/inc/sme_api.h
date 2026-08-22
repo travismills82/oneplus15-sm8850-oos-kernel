@@ -1066,6 +1066,15 @@ QDF_STATUS sme_hide_ssid(mac_handle_t mac_handle, uint8_t sessionId,
 void sme_set_listen_interval(mac_handle_t mac_handle, uint8_t vdev_id);
 
 /**
+ * sme_set_eht_data_extra_ltf_tx() - Set the Extra EHT LTF param
+ * @vdev_id: vdev identifier
+ * @val: Extra EHT LTF value
+ *
+ * Return: None
+ */
+void sme_set_eht_data_extra_ltf_tx(mac_handle_t mac_handle, uint8_t vdev_id,
+				   uint8_t val);
+/**
  * sme_update_roam_scan_n_probes() - Update no.of roam scan probes
  * @mac_handle: The handle returned by mac_open
  * @vdev_id: vdev identifier
@@ -3922,7 +3931,7 @@ void sme_set_nss_capability(mac_handle_t mac_handle, uint8_t vdev_id,
 			    uint8_t nss, enum QDF_OPMODE op_mode);
 
 /**
- * enum sme_eht_tx_bfee_cap_type - EHT TX Beamformee capability type
+ * enum sme_eht_cap_type - EHT capability type
  * @EHT_TX_BFEE_ENABLE: TX beamformee enable
  * @EHT_TX_BFEE_SS_80MHZ: TX beamformee for 80 MHz
  * @EHT_TX_BFEE_SS_160MHZ: TX beamformee for 160 MHz
@@ -3931,8 +3940,9 @@ void sme_set_nss_capability(mac_handle_t mac_handle, uint8_t vdev_id,
  * ratelimit
  * @EHT_TX_TRIG_SU_BFORMING_FEEDBACK: Triggered SU Beamforming Feedback
  * @EHT_RX_EXTRA_ETH_LTF： RX support for extra EHT-LTFs
+ * @EHT_RTWT_SUPPORT: RTWT feature support
  */
-enum sme_eht_tx_bfee_cap_type {
+enum sme_eht_cap_type {
 	EHT_TX_BFEE_ENABLE = 1,
 	EHT_TX_BFEE_SS_80MHZ = 2,
 	EHT_TX_BFEE_SS_160MHZ = 3,
@@ -3940,6 +3950,7 @@ enum sme_eht_tx_bfee_cap_type {
 	EHT_TX_BFEE_SOUNDING_FEEDBACK_RATELIMIT = 5,
 	EHT_TX_TRIG_SU_BFORMING_FEEDBACK = 6,
 	EHT_RX_EXTRA_ETH_LTF = 7,
+	EHT_RTWT_SUPPORT = 8,
 };
 
 #ifdef WLAN_FEATURE_11BE
@@ -4023,7 +4034,7 @@ void sme_activate_mlo_links(mac_handle_t mac_handle, uint8_t session_id,
  * Return: 0 on success otherwise error code
  */
 int sme_update_eht_caps(mac_handle_t mac_handle, uint8_t session_id,
-			uint8_t cfg_val, enum sme_eht_tx_bfee_cap_type cap_type,
+			uint8_t cfg_val, enum sme_eht_cap_type cap_type,
 			enum QDF_OPMODE op_mode);
 /**
  * sme_send_vdev_pause_for_bcn_period() - Send vdev pause indication to FW
@@ -4036,6 +4047,19 @@ int sme_update_eht_caps(mac_handle_t mac_handle, uint8_t session_id,
 int sme_send_vdev_pause_for_bcn_period(mac_handle_t mac_handle,
 				       uint8_t session_id,
 				       uint8_t cfg_val);
+
+/**
+ * sme_send_ext_mld_cap_wfatest_cmd() - Send Extended MLD capability support
+ * config to FW via wfa test command
+ *
+ * @mac_handle: Opaque handle to the global MAC context
+ * @vdev_id: vdev id
+ * @value: Extended MLD capability support
+ *
+ * Return: None
+ */
+void sme_send_ext_mld_cap_wfatest_cmd(mac_handle_t mac_handle, uint8_t vdev_id,
+				      uint8_t value);
 
 #else
 static inline void sme_set_eht_testbed_def(mac_handle_t mac_handle,
@@ -4068,7 +4092,7 @@ void sme_set_mlo_max_simultaneous_links(mac_handle_t mac_handle,
 
 static inline
 int sme_update_eht_caps(mac_handle_t mac_handle, uint8_t session_id,
-			uint8_t cfg_val, enum sme_eht_tx_bfee_cap_type cap_type,
+			uint8_t cfg_val, enum sme_eht_cap_type cap_type,
 			enum QDF_OPMODE op_mode)
 {
 	return 0;
@@ -4089,6 +4113,11 @@ void sme_activate_mlo_links(mac_handle_t mac_handle, uint8_t session_id,
 			    enum mlo_link_force_reason force_reason)
 {
 }
+
+static inline
+void sme_send_ext_mld_cap_wfatest_cmd(mac_handle_t mac_handle, uint8_t vdev_id,
+				      uint8_t value)
+{}
 #endif
 
 /**

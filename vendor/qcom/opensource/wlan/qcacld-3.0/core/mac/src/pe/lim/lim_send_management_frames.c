@@ -181,6 +181,7 @@ QDF_STATUS lim_send_probe_req_mgmt_frame(struct mac_context *mac_ctx,
 	bool is_band_2g;
 	uint16_t mlo_ie_len = 0;
 	tSirMacAddr bcast_mac = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	enum rateid min_rid;
 
 	if (!pesession)
 		return QDF_STATUS_E_NULL_VALUE;
@@ -304,7 +305,7 @@ QDF_STATUS lim_send_probe_req_mgmt_frame(struct mac_context *mac_ctx,
 		is_vht_enabled = true;
 	}
 	populate_dot11f_ext_cap(mac_ctx, is_vht_enabled, &pr->ExtCap,
-				pesession);
+				pesession->vdev_id);
 
 	if (IS_DOT11_MODE_HE(dot11mode)) {
 		lim_update_session_he_capable(mac_ctx, pesession);
@@ -361,10 +362,11 @@ QDF_STATUS lim_send_probe_req_mgmt_frame(struct mac_context *mac_ctx,
 	/* Add qcn_ie only if qcn ie is not present in additional_ie */
 	if (!qcn_ie)
 		populate_dot11f_qcn_ie(mac_ctx, pesession, &pr->qcn_ie,
-				       QCN_IE_ATTR_ID_ALL);
+				       QCN_IE_ATTR_ID_ALL, MGMT_PROBE_REQ);
 	else
 		populate_dot11f_qcn_ie(mac_ctx, pesession, &pr->qcn_ie,
-				       QCN_IE_ATTR_ID_VHT_MCS11);
+				       QCN_IE_ATTR_ID_VHT_MCS11,
+				       MGMT_PROBE_REQ);
 
 	/*
 	 * Extcap IE now support variable length, merge Extcap IE from addn_ie
@@ -475,12 +477,14 @@ QDF_STATUS lim_send_probe_req_mgmt_frame(struct mac_context *mac_ctx,
 	    (QDF_P2P_CLIENT_MODE == pesession->opmode))
 		txflag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
 
+	min_rid = lim_get_min_session_txrate(pesession, NULL);
+
 	qdf_status =
 		wma_tx_frame(mac_ctx, packet,
 			   (uint16_t) sizeof(tSirMacMgmtHdr) + payload,
 			   TXRX_FRM_802_11_MGMT, ANI_TXDIR_TODS, 7,
 			   lim_tx_complete, frame, txflag, vdev_id,
-			   0, RATEID_DEFAULT, 0);
+			   0, min_rid, 0);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		pe_err("could not send Probe Request frame!");
 		/* Pkt will be freed up by the callback */
@@ -811,7 +815,7 @@ lim_send_probe_rsp_mgmt_frame(struct mac_context *mac_ctx,
 	}
 
 	populate_dot11f_ext_cap(mac_ctx, is_vht_enabled, &frm->ExtCap,
-		pe_session);
+				pe_session->vdev_id);
 
 	if (pe_session->pLimStartBssReq) {
 		populate_dot11f_wpa(mac_ctx,
@@ -907,7 +911,7 @@ lim_send_probe_rsp_mgmt_frame(struct mac_context *mac_ctx,
 		 * the bits for TWT are unique to STA and AP and cannot be
 		 * intersected.
 		 */
-		populate_dot11f_twt_extended_caps(mac_ctx, pe_session,
+		populate_dot11f_twt_extended_caps(mac_ctx, pe_session->vdev_id,
 						  &frm->ExtCap);
 	}
 
@@ -2354,10 +2358,10 @@ lim_send_assoc_rsp_mgmt_frame(struct mac_context *mac_ctx,
 			is_vht = true;
 		}
 		populate_dot11f_ext_cap(mac_ctx, is_vht, &frm.ExtCap,
-			pe_session);
+					pe_session->vdev_id);
 
 		populate_dot11f_qcn_ie(mac_ctx, pe_session, &frm.qcn_ie,
-				       QCN_IE_ATTR_ID_ALL);
+				       QCN_IE_ATTR_ID_ALL, MGMT_ASSOC_RESP);
 
 		if (lim_is_sta_he_capable(sta) &&
 		    lim_is_session_he_capable(pe_session)) {
@@ -2488,7 +2492,7 @@ lim_send_assoc_rsp_mgmt_frame(struct mac_context *mac_ctx,
 		 * the bits for TWT are unique to STA and AP and cannot be
 		 * intersected.
 		 */
-		populate_dot11f_twt_extended_caps(mac_ctx, pe_session,
+		populate_dot11f_twt_extended_caps(mac_ctx, pe_session->vdev_id,
 						  &frm.ExtCap);
 	}
 
@@ -2963,6 +2967,10 @@ static void wlan_send_tx_complete_event(struct mac_context *mac, qdf_nbuf_t buf,
 				return;
 
 			algo = *(uint16_t *)frm_body;
+
+			if (mac_hdr->i_fc[1] & IEEE80211_FC1_WEP)
+				algo = eSIR_SHARED_KEY;
+
 			seq = *(uint16_t *)(frm_body + SAE_AUTH_SEQ_NUM_OFFSET);
 			status =
 			*(uint16_t *)(frm_body + SAE_AUTH_STATUS_CODE_OFFSET);
@@ -3140,6 +3148,23 @@ lim_strip_rsno_ie(struct mac_context *mac_ctx, uint8_t *add_ie,
 		lim_strip_ie(mac_ctx, add_ie, add_ie_len, WLAN_ELEMID_VENDOR,
 			     ONE_BYTE, RSNO_OUI_SELECTION, RSNO_OUI_SIZE,
 			     NULL, 0);
+}
+
+static void
+lim_override_extcap_struct(struct mac_context *mac_ctx,
+			   tDot11fIEExtCap *bcn_ext_cap)
+{
+	struct s_ext_cap *p_ext_cap =
+		(struct s_ext_cap *)bcn_ext_cap->bytes;
+
+	/*
+	 * The AP and STA caps would be intersected in
+	 * assoc request. Therefore, override the STA-
+	 * only caps in the beacon ext caps, inorder to
+	 * retain the STA's original caps.
+	 */
+	p_ext_cap->multi_bssid = 1;
+	p_ext_cap->twt_requestor_support = 1;
 }
 
 /**
@@ -3404,11 +3429,12 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 		vht_enabled = true;
 	}
 	if (pe_session->is_ext_caps_present)
-		populate_dot11f_ext_cap(mac_ctx, vht_enabled,
-				&frm->ExtCap, pe_session);
+		populate_dot11f_ext_cap(mac_ctx, vht_enabled, &frm->ExtCap,
+					pe_session->vdev_id);
 
 	populate_dot11f_qcn_ie(mac_ctx, pe_session,
-			       &frm->qcn_ie, QCN_IE_ATTR_ID_ALL);
+			       &frm->qcn_ie, QCN_IE_ATTR_ID_ALL,
+			       MGMT_ASSOC_REQ);
 
 	populate_dot11f_bss_max_idle(mac_ctx, pe_session,
 				     &frm->bss_max_idle_period);
@@ -3516,6 +3542,7 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 							bcn_ie, bcn_ie_len);
 			lim_update_extcap_struct(mac_ctx, p_ext_cap,
 							&bcn_ext_cap);
+			lim_override_extcap_struct(mac_ctx, &bcn_ext_cap);
 			lim_merge_extcap_struct(&frm->ExtCap, &bcn_ext_cap,
 							false);
 		}
@@ -3528,7 +3555,7 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 		 * the bits for TWT are unique to STA and AP and cannot be
 		 * intersected.
 		 */
-		populate_dot11f_twt_extended_caps(mac_ctx, pe_session,
+		populate_dot11f_twt_extended_caps(mac_ctx, vdev_id,
 						  &frm->ExtCap);
 	} else {
 		wlan_cm_set_assoc_btm_cap(pe_session->vdev, false);
@@ -3596,9 +3623,9 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 		}
 		/*fill rsnx opaque*/
 		frm->RSNXEOpaque.present = 1;
-		frm->RSNXEOpaque.num_data = rsnx_ie[1];
-		qdf_mem_copy(frm->RSNXEOpaque.data, rsnx_ie + 2, /* EID, len */
-			     rsnx_ie[1]);
+		frm->RSNXEOpaque.num_data = rsnx_ie[TAG_LEN_POS];
+		qdf_mem_copy(frm->RSNXEOpaque.data, rsnx_ie + MIN_IE_LEN,
+			     rsnx_ie[TAG_LEN_POS]);
 
 	}
 
@@ -3620,9 +3647,11 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 		}
 		/*fill mscs opaque*/
 		frm->MSCSEXTOpaque.present = 1;
-		frm->MSCSEXTOpaque.num_data = mscs_ext_ie[1];
-		qdf_mem_copy(frm->MSCSEXTOpaque.data, mscs_ext_ie + 2,
-			     mscs_ext_ie[1]);
+		frm->MSCSEXTOpaque.num_data =
+			mscs_ext_ie[TAG_LEN_POS] - MSCS_OUI_SIZE;
+		qdf_mem_copy(frm->MSCSEXTOpaque.data,
+			     mscs_ext_ie + MIN_IE_LEN + MSCS_OUI_SIZE,
+			     mscs_ext_ie[TAG_LEN_POS] - MSCS_OUI_SIZE);
 	}
 
 	/*
@@ -4606,10 +4635,10 @@ alloc_packet:
 		qdf_mem_free(mlo_ie_buf);
 	}
 
-	pe_nofl_info("Auth TX: vdev %d seq %d seq num %d status %d WEP %d to " QDF_MAC_ADDR_FMT,
-		     vdev_id, auth_frame->authTransactionSeqNumber,
-		     mac_ctx->mgmtSeqNum, auth_frame->authStatusCode,
-		     mac_hdr->fc.wep, QDF_MAC_ADDR_REF(mac_hdr->da));
+	pe_nofl_rl_info("Auth TX: vdev %d seq %d seq num %d status %d WEP %d to " QDF_MAC_ADDR_FMT,
+			vdev_id, auth_frame->authTransactionSeqNumber,
+			mac_ctx->mgmtSeqNum, auth_frame->authStatusCode,
+			mac_hdr->fc.wep, QDF_MAC_ADDR_REF(mac_hdr->da));
 
 	if ((session->ftPEContext.pFTPreAuthReq) &&
 	    (!wlan_reg_is_24ghz_ch_freq(
@@ -5492,11 +5521,10 @@ lim_send_deauth_mgmt_frame(struct mac_context *mac,
 			pe_err("Failed to send De-Authentication (%X)!",
 				qdf_status);
 
-			/* Call lim_process_deauth_ack_timeout which will send
+			/* Call lim_send_deauth_cnf which will send
 			 * DeauthCnf for this frame
 			 */
-			lim_process_deauth_ack_timeout(mac,
-						       pe_session->peSessionId);
+			lim_send_deauth_cnf(mac, pe_session->vdev_id);
 			return;
 		}
 
@@ -6540,7 +6568,7 @@ returnAfterError:
 /**
  * lim_beacon_report_response_event() - Send Beacon Report Response log
  * event
- * @token: Dialog token
+ * @token: Measurement token
  * @num_rpt: Number of Report element
  * @band: Tx packet band info
  * @vdev_id: vdev id
@@ -6583,9 +6611,9 @@ lim_beacon_report_response_event(uint8_t token, uint8_t num_rpt,
 #endif
 
 #define ACTION_CODE_POS		 1
-#define DIALOG_POS		 2
 #define ACTION_HDR_LEN		 3
 #define MIN_MEASUREMENT_TAG_LEN	 3
+#define MEASUREMENT_TOKEN_POS	 2
 #define MEASUREMENT_RPT_TYPE_POS 4
 
 static QDF_STATUS
@@ -6603,7 +6631,9 @@ lim_mgmt_radio_measure_report_tx_complete(void *context, qdf_nbuf_t buf,
 	uint16_t rem_len = 0;
 	uint8_t *frm;
 	const uint8_t *pos, *end, *ie;
-	uint8_t dialog_token;
+	uint8_t measurement_token = 0;
+	struct mac_context *mac_ctx;
+	struct wlan_objmgr_vdev *vdev;
 
 	if (!buf) {
 		pe_err("Invalid nbuf buffer");
@@ -6615,6 +6645,31 @@ lim_mgmt_radio_measure_report_tx_complete(void *context, qdf_nbuf_t buf,
 		status = QDF_STATUS_E_FAILURE;
 		goto out;
 	}
+
+	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
+	if (!mac_ctx) {
+		pe_err("Invalid mac_ctx");
+		status = QDF_STATUS_E_FAILURE;
+		goto out;
+	}
+
+	mgmt_params = params;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc,
+						    mgmt_params->vdev_id,
+						    WLAN_LEGACY_MAC_ID);
+	if (!vdev) {
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_MAC_ID);
+		status = QDF_STATUS_E_FAILURE;
+		goto out;
+	}
+
+	if (mlo_is_mld_sta(vdev))
+		band = wlan_convert_freq_to_diag_band(mgmt_params->chanfreq);
+	else
+		band = WLAN_INVALID_BAND;
+
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_MAC_ID);
 
 	if (tx_status == WMI_MGMT_TX_COMP_TYPE_COMPLETE_OK)
 		qdf_tx_complete = QDF_TX_RX_STATUS_OK;
@@ -6637,9 +6692,6 @@ lim_mgmt_radio_measure_report_tx_complete(void *context, qdf_nbuf_t buf,
 		goto out;
 	}
 
-	mgmt_params = params;
-	band = mgmt_params->band;
-
 	//frm pointing to the fixed parameters
 	frm = frame_ptr + ff_offset;
 	rem_len -= ff_offset;
@@ -6649,8 +6701,6 @@ lim_mgmt_radio_measure_report_tx_complete(void *context, qdf_nbuf_t buf,
 		pe_debug("Not a beacon report frame type:%d", *frm);
 		goto out;
 	}
-
-	dialog_token = frm[DIALOG_POS];
 
 	pos = frm + ACTION_HDR_LEN;
 	rem_len -= ACTION_HDR_LEN;
@@ -6667,17 +6717,20 @@ lim_mgmt_radio_measure_report_tx_complete(void *context, qdf_nbuf_t buf,
 			pos = ie + ie[TAG_LEN_POS] + MIN_IE_LEN;
 			continue;
 		}
-		if (ie[MEASUREMENT_RPT_TYPE_POS] == SIR_MAC_RRM_BEACON_TYPE)
+		if (ie[MEASUREMENT_RPT_TYPE_POS] == SIR_MAC_RRM_BEACON_TYPE) {
 			++num_measurements;
+			measurement_token = ie[MEASUREMENT_TOKEN_POS];
+		}
 		pos = ie + ie[TAG_LEN_POS] + MIN_IE_LEN;
 	}
 
-	pe_debug("vdev_id %d dialog_token %d num_measuremt %d",
-		 mgmt_params->vdev_id, dialog_token, num_measurements);
+	pe_debug("vdev_id %d measurement_token %d num_measuremt %d",
+		 mgmt_params->vdev_id, measurement_token, num_measurements);
 
-	lim_beacon_report_response_event(dialog_token, num_measurements, band,
-					 mgmt_params->vdev_id, qdf_tx_complete);
 
+	lim_beacon_report_response_event(measurement_token, num_measurements,
+					 band, mgmt_params->vdev_id,
+					 qdf_tx_complete);
 out:
 	qdf_nbuf_free(buf);
 
@@ -6838,11 +6891,12 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 			nStatus);
 	}
 
-	pe_nofl_rl_info("TX: type:%d seq_no:%d dialog_token:%d no. of APs:%d is_last_rpt:%d num_report:%d peer:"QDF_MAC_ADDR_FMT,
+	pe_nofl_rl_info("TX: type:%d seq_no:%d token:%d no. of APs:%d is_last_rpt:%d num_report:%d peer:"QDF_MAC_ADDR_FMT,
 			frm->MeasurementReport[0].type,
 			(pMacHdr->seqControl.seqNumHi << HIGH_SEQ_NUM_OFFSET |
 			pMacHdr->seqControl.seqNumLo),
-			dialog_token, frm->num_MeasurementReport,
+			frm->MeasurementReport[0].token,
+			frm->num_MeasurementReport,
 			is_last_report, num_report, QDF_MAC_ADDR_REF(peer));
 
 	if (!wlan_reg_is_24ghz_ch_freq(pe_session->curr_op_freq) ||
@@ -8812,6 +8866,7 @@ static void lim_tx_mgmt_frame(struct mac_context *mac_ctx, uint8_t vdev_id,
 				if (WLAN_REG_IS_24GHZ_CH_FREQ(channel_freq)) {
 					attr.ie_data = util_scan_entry_ie_data(scan_entry);
 					attr.ie_length = util_scan_entry_ie_len(scan_entry);
+					attr.mac_addr = scan_entry->bssid.bytes;
 					if (wlan_action_oui_search(mac_ctx->psoc, &attr,
 								   ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ)) {
 						pe_debug("Send pre-auth with 6Mbps on freq %d",

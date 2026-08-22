@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -87,6 +87,23 @@ enum sr_status_of_roamed_ap {
 	SR_THRESHOLD_NOT_IN_RANGE,
 };
 #endif
+
+/**
+ * lim_remove_invalid_partner_links() - remove invalid partner links
+ * @session_entry: pe session
+ *
+ * Return: void
+ */
+void lim_remove_invalid_partner_links(struct pe_session *session_entry);
+
+/**
+ * lim_clear_ml_partner_info() - clear partner link info
+ * @session_entry: pe session
+ * @idx: index of partner link info to be cleared
+ *
+ * Return: void
+ */
+void lim_clear_ml_partner_info(struct pe_session *session_entry, int8_t idx);
 
 /**
  * lim_post_msg_api() - post normal priority PE message
@@ -546,7 +563,7 @@ QDF_STATUS lim_handle_frame_genby_mbssid(uint8_t *frame, uint32_t frame_len,
 void lim_process_sme_addts_rsp_timeout(struct mac_context *mac, uint32_t param);
 QDF_STATUS lim_update_ext_cap_ie(struct mac_context *mac_ctx, uint8_t *ie_data,
 				 uint8_t *local_ie_buf, uint16_t *local_ie_len,
-				 struct pe_session *session);
+				 uint8_t vdev_id);
 
 /**
  * lim_handle_sap_beacon(): Handle the beacon received from scan module for SAP
@@ -690,28 +707,6 @@ lim_fill_pe_session(struct mac_context *mac_ctx,
 		    struct bss_description *bss_desc,
 		    enum wlan_phymode phy_mode,
 		    enum wlan_status_code *req_fail_status_code);
-
-/**
- * lim_update_omn_ie_ch_width() - update omn_ie_ch_width in struct
- * assoc_channel_info while processing bcn/probe resp/assoc resp/re-assoc resp
- * @vdev: VDEV object manager
- * @ch_width: ch_width present in OMN IE
- *
- * Return: none
- */
-void lim_update_omn_ie_ch_width(struct wlan_objmgr_vdev *vdev,
-				enum phy_ch_width ch_width);
-
-/**
- * lim_update_bcn_op_ch_width() - update beacon channel width in struct
- * assoc_channel_info while processing bcn/probe resp
- * @vdev: VDEV object manager
- * @ch_width: ch_width present in beacon eht/he/vht op IE and ht info IE
- *
- * Return: none
- */
-void lim_update_bcn_op_ch_width(struct wlan_objmgr_vdev *vdev,
-				enum phy_ch_width ch_width);
 
 /**
  * lim_is_he_dynamic_smps_enabled() - Check if Dynamic SMPS enabled in HE caps
@@ -1107,6 +1102,57 @@ QDF_STATUS lim_ll_sap_notify_chan_switch_started(struct wlan_objmgr_vdev *vdev)
 	return QDF_STATUS_E_NOSUPPORT;
 }
 #endif
+
+/**
+ * lim_cfg_dsmps_for_iot_ap() - Configure dynamic SMPS for IOT AP
+ * @mac_ctx: mac context
+ * @session: pe session
+ * @bss_desc: bss descriptor
+ * @is_roaming: is roaming
+ *
+ * Configure DSMPS based on allowlist and denylist.
+ *
+ * Configuration Priority:
+ * - If allowlist is configured (non-empty), use allowlist logic
+ * - If allowlist is not configured (empty), use denylist logic
+ *
+ * Allowlist Solution:
+ * ==================
+ * Initial Connection:
+ *   1. AP not in allowlist:
+ *      - Send VDEV param 0x0 to disable DSMPS
+ *
+ *   2. AP in allowlist AND in vendor RSSI OUI list:
+ *      - Send VDEV param DSMPS_EN | DSMPS_BASE_ON_RSSI_EN to enable DSMPS with
+ *      - RSSI-based control
+ *
+ *   3. AP in allowlist AND NOT in vendor RSSI OUI list:
+ *      - Send VDEV param DSMPS_EN to enable DSMPS without RSSI-based control
+ *
+ * Roaming:
+ *   - Always send VDEV param 0x0 to disable DSMPS after roaming
+ *     (regardless of AP's presence in allowlist or RSSI OUI list)
+ *
+ * Denylist Solution:
+ * ==================
+ * Initial Connection or Roaming:
+ *   1. AP in denylist:
+ *      - Send VDEV param 0x0 to disable DSMPS
+ *
+ *   2. AP not in denylist AND in vendor RSSI OUI list:
+ *      - Send VDEV param DSMPS_EN | DSMPS_BASE_ON_RSSI_EN to enable DSMPS with
+ *      - RSSI-based control
+ *
+ *   3. AP not in denylist AND NOT in vendor RSSI OUI list:
+ *      - Send VDEV param DSMPS_EN to enable DSMPS without RSSI-based control
+ *
+ * Return: None
+ */
+void
+lim_cfg_dsmps_for_iot_ap(struct mac_context *mac_ctx,
+			 struct pe_session *session,
+			 struct bss_description *bss_desc,
+			 bool is_roaming);
 
 /**
  * lim_set_amsdu_for_2g_oui() - Set amsdu for 2 GHz IOT AP

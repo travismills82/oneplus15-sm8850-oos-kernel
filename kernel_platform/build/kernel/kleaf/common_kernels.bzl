@@ -89,6 +89,7 @@ def common_kernel(
         system_dlkm_extra_archive_files = None,
         clang_autofdo_profile = None,
         generated_headers_for_module = None,
+        module_signing_key = None,
         system_trusted_key = None):
     """Macro for an Android Common Kernel.
 
@@ -165,6 +166,7 @@ def common_kernel(
         system_dlkm_extra_archive_files: [system_dlkm_image.internal_extra_archive_files](#system_dlkm_image-internal_extra_archive_files)
         clang_autofdo_profile: See [kernel_build.clang_autofdo_profile](kernel.md#kernel_build-clang_autofdo_profile)
         generated_headers_for_module: See [kernel_build.generated_headers_for_module](kernel.md#kernel_build-generated_headers_for_module)
+        module_signing_key: See [kernel_build.module_signing_key](kernel.md#kernel_build-module_signing_key)
         system_trusted_key: See [kernel_build.system_trusted_key](kernel.md#kernel_build-system_trusted_key)
     """
     json_target_config = dict(
@@ -240,13 +242,19 @@ def common_kernel(
         outs = outs,
         arch = arch,
         implicit_outs = [
-            # Kernel build time module signing utility and keys
-            # Only available during GKI builds
+            # Kernel build time module signing utility and public certificate.
+            # Only available during GKI builds.
             # Device fragments need to add: '# CONFIG_MODULE_SIG_ALL is not set'
             "scripts/sign-file",
-            "certs/signing_key.pem",
             "certs/signing_key.x509",
-        ],
+        ] + (
+            # The default Kbuild path generates this private key below certs/.
+            # A declared module_signing_key is instead restored at the output
+            # root under its own basename. Do not declare a nonexistent
+            # certs/signing_key.pem output in that case, and do not export the
+            # externally supplied private key as a Bazel build artifact.
+            ["certs/signing_key.pem"] if module_signing_key == None else []
+        ),
         build_config = Label("//build/kernel/kleaf:gki_build_config_fragment"),
         makefile = makefile,
         check_defconfig = check_defconfig,
@@ -275,6 +283,7 @@ def common_kernel(
         kcflags = kcflags,
         clang_autofdo_profile = clang_autofdo_profile,
         generated_headers_for_module = generated_headers_for_module,
+        module_signing_key = module_signing_key,
         system_trusted_key = system_trusted_key,
     )
 

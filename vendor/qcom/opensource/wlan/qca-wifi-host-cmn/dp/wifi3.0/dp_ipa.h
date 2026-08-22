@@ -415,6 +415,9 @@ QDF_STATUS dp_ipa_set_perf_level(int client, uint32_t max_supported_bw_mbps,
 QDF_STATUS dp_ipa_rx_super_rule_setup(struct cdp_soc_t *soc_hdl,
 				      void *flt_params);
 
+void dp_ipa_print_opt_dp_log(struct cdp_soc_t *soc_hdl,
+			     bool is_opt_dp_flt_active,
+			     void *flt_params);
 /**
  * dp_ipa_tx_super_rule_setup() - TX super rule setup
  * @soc_hdl: handle to the soc
@@ -443,6 +446,15 @@ bool dp_ipa_get_opt_dp_ctrl_refill_cap(struct cdp_soc_t *soc_hdl);
 
 int dp_ipa_pcie_link_up(struct cdp_soc_t *soc_hdl);
 void dp_ipa_pcie_link_down(struct cdp_soc_t *soc_hdl);
+
+/**
+ * dp_ipa_dump_ring_hp_tp() - dump hp-tp of IPA and error rings
+ * @soc_hdl: handle to the soc
+ *
+ * Return:
+ */
+void dp_ipa_dump_ring_hp_tp(struct cdp_soc_t *soc_hdl);
+
 #ifdef IPA_OPT_WIFI_DP_CTRL
 /**
  * dp_ipa_wdi_opt_dpath_ctrl_notify_flt_install() - send tx super rule filter
@@ -656,7 +668,7 @@ dp_ipa_ast_notify_cb(qdf_ipa_wdi_conn_in_params_t *pipe_in,
 #ifdef CONFIG_BORON
 static inline void dp_ipa_opt_dp_ixo_remap(uint8_t *ix0_map)
 {
-	ix0_map[0] = REO_REMAP_SW1;
+	ix0_map[0] = REO_REMAP_SW0;
 	ix0_map[1] = REO_REMAP_SW1;
 	ix0_map[2] = REO_REMAP_SW2;
 	ix0_map[3] = REO_REMAP_SW3;

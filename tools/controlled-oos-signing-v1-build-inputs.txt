@@ -1,0 +1,13 @@
+# Paths whose committed content defines the controlled-v1 kernel release
+# source identity. Paths are relative to the repository root.
+#
+# Keep packaging-only tools and documentation out of this list: changing those
+# must not change UTS_RELEASE or module vermagic. Keep source-ID/signing guard
+# tools in the list because they control the Kleaf stamping contract.
+kernel_platform
+vendor
+tools/compute-controlled-oos-source-id.sh
+tools/build-controlled-oos-signing-v1.sh
+tools/verify-controlled-oos-signing-v1.py
+tools/controlled-oos-signing-v1-build-inputs.txt
+tools/controlled-oos-signing-v1-external-inputs.tsv

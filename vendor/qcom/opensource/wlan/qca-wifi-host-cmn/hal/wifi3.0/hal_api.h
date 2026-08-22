@@ -1302,6 +1302,7 @@ void *hal_srng_setup_idx(void *hal_soc, int ring_type, int ring_num,
 
 /* Remapping ids of REO rings */
 #define REO_REMAP_TCL 0
+#define REO_REMAP_SW0 0
 #define REO_REMAP_SW1 1
 #define REO_REMAP_SW2 2
 #define REO_REMAP_SW3 3
@@ -1389,6 +1390,16 @@ void hal_reo_read_write_ctrl_ix(hal_soc_handle_t hal_soc_hdl, bool read,
  */
 void hal_srng_dst_set_hp_paddr_confirm(struct hal_srng *sring,
 				       uint64_t paddr);
+
+/**
+ * hal_srng_dst_get_hp_paddr() - Get physical address of dest SRNG head
+ * @sring: sring pointer
+ * @headp: pointer to store hp paddr
+ *
+ * Return: None
+ */
+void hal_srng_dst_get_hp_paddr(struct hal_srng *sring,
+			       uint64_t *headp);
 
 /**
  * hal_srng_dst_init_hp() - Initialize head pointer with cached head pointer

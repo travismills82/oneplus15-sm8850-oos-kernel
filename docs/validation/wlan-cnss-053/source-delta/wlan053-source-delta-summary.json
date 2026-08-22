@@ -1,0 +1,30 @@
+{
+  "changed_paths": 844,
+  "classification_counts": {
+    "BUG FIX": 278,
+    "BUILD ONLY": 132,
+    "CNSS": 22,
+    "DATA PATH": 76,
+    "DEVICE-SPECIFIC \u2014 DROP": 61,
+    "FIRMWARE INTERFACE": 212,
+    "MLO/WIFI7": 19,
+    "POWER/PM": 12,
+    "REGULATORY": 14,
+    "ROAMING": 11,
+    "SECURITY FIX": 7
+  },
+  "classification_scope": "source-area heuristic; not per-fix provenance",
+  "decision_counts": {
+    "DROP \u2014 SHIPPING CANOE DTBO RETAINED": 61,
+    "DROP \u2014 USERSPACE TEST UTILITY": 9,
+    "IMPORT": 770,
+    "LOCAL BUILD GLUE ADAPTED": 4
+  },
+  "new": "d447f713d6403f707a2910383495f4ada98cfa4d",
+  "old": "5ab2a689ff87d7d28c511f1762cf41c1b90d965a",
+  "status_counts": {
+    "A": 306,
+    "M": 536,
+    "R": 2
+  }
+}

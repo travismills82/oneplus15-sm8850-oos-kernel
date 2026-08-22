@@ -4308,12 +4308,6 @@ static inline bool dp_is_subtype_data(uint16_t frame_ctrl)
 	return false;
 }
 
-#ifdef WLAN_HAPS_ENBALE
-void dp_haps_handle_ind(ol_osif_vdev_handle osif_vdev, haps_state new_state,
-			qdf_ktime_t time_rcvd, bool is_one_shot,
-			bool is_direct_reg_write);
-#endif
-
 #ifdef WDI_EVENT_ENABLE
 /**
  * dp_h2t_cfg_stats_msg_send(): function to construct HTT message to pass to FW
@@ -5131,6 +5125,35 @@ static inline uint32_t dp_history_get_next_index(qdf_atomic_t *curr_idx,
  * Return: None
  */
 void dp_rx_skip_tlvs(struct dp_soc *soc, qdf_nbuf_t nbuf, uint32_t l3_padding);
+
+#ifdef IPA_OPT_WIFI_DP
+/**
+ * __dp_ipa_rx_print_opt_dp_pkt() - Print the packet if it matches a filter
+ * @soc: DP soc
+ * @nbuf: packet
+ * @rx_path_tag: TAG indicating which RX path the packet arrived.
+ *
+ * Return: None
+ */
+void __dp_ipa_rx_print_opt_dp_pkt(struct dp_soc *soc, qdf_nbuf_t nbuf,
+				  enum dp_rx_path_tag rx_path_tag);
+
+static inline
+void dp_ipa_rx_print_opt_dp_pkt(struct dp_soc *soc, qdf_nbuf_t nbuf,
+				enum dp_rx_path_tag rx_path_tag)
+{
+	if (qdf_likely(!soc->is_opt_dp_filter_active))
+		return;
+
+	__dp_ipa_rx_print_opt_dp_pkt(soc, nbuf, rx_path_tag);
+}
+#else
+static inline
+void dp_ipa_rx_print_opt_dp_pkt(struct dp_soc *soc, qdf_nbuf_t nbuf,
+				enum dp_rx_path_tag rx_path_tag)
+{
+}
+#endif
 
 #ifndef FEATURE_WDS
 static inline void
@@ -6808,4 +6831,21 @@ dp_mlo_latency_req(struct dp_soc *soc, uint8_t vdev_id,
 {
 }
 #endif /* WLAN_FEATURE_TSF_UPLINK_DELAY */
+
+#ifdef WLAN_FEATURE_DP_EVENT_HISTORY
+void dp_srng_record_timer_entry(struct dp_soc *dp_soc, uint8_t hist_group_id);
+
+void dp_srng_record_timer_exit(struct dp_soc *dp_soc, uint8_t hist_group_id);
+#else
+
+static inline void dp_srng_record_timer_entry(struct dp_soc *dp_soc,
+					      uint8_t hist_group_id)
+{
+}
+
+static inline void dp_srng_record_timer_exit(struct dp_soc *dp_soc,
+					     uint8_t hist_group_id)
+{
+}
+#endif
 #endif /* #ifndef _DP_INTERNAL_H_ */

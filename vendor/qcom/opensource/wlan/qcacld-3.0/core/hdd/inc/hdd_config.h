@@ -1412,25 +1412,6 @@ enum host_log_level {
 
 /*
  * <ini>
- * exclude_selftx_from_cca_busy_time - Exclude self tx time from cca busy time
- * @Default: false
- *
- * This ini is used to exclude self tx time from cca busy time.
- *
- * false: Don't exclude self tx time from cca busy time.
- * true: Deduct tx time from cca busy time.
- *
- * Usage: External
- *
- * </ini>
- */
-#define CFG_EXCLUDE_SELFTX_FROM_CCA_BUSY_TIME CFG_INI_BOOL( \
-	"exclude_selftx_from_cca_busy_time", \
-	false, \
-	"This ini is used to exclude self tx time from CCA busy time")
-
-/*
- * <ini>
  * gEnableSmemMailbox - enable shared memory mailbox
  * @Min: 0
  * @Max: 1
@@ -1723,6 +1704,29 @@ enum host_log_level {
 #define CFG_TX_POWERBOOST_ALL
 #endif
 
+/*
+ * <ini>
+ * gForceSAP20Mhz_cc_id - Force SAP to 20MHz bandwidth for country Indonesia
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to force the SAP to operate in 20MHz bandwidth for
+ * country Indonesia regardless of other configurations.
+ *
+ * Related: None
+ *
+ * Supported Feature: SAP
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
+#define CFG_FORCE_SAP_20MHZ_CC_ID_ENABLE CFG_INI_BOOL( \
+			"gForceSAP20Mhz_cc_id", \
+			0, \
+			"Force SAP to 20MHz bandwidth")
+
 #define CFG_HDD_ALL \
 	CFG_DYNAMIC_MAC_ADDR_UPDATE_SUPPORTED_ALL \
 	CFG_ENABLE_PACKET_LOG_ALL \
@@ -1762,7 +1766,6 @@ enum host_log_level {
 	SAR_SAFETY_FEATURE_ALL \
 	CFG_GET_WIFI_FEATURES_ALL \
 	CFG_CPU_CXPC_THRESHOLD_ALL \
-	CFG(CFG_EXCLUDE_SELFTX_FROM_CCA_BUSY_TIME) \
 	CFG_LINK_STATE_CACHE_EXPIRY_ALL \
 	CFG(CFG_ENABLE_SMEM_MAILBOX) \
 	CFG(CFG_SAP_STA_NDP_CONCURRENCY) \
@@ -1777,5 +1780,6 @@ enum host_log_level {
 	CFG_MAX_CHIPSET_LOG_SIZE_ENABLE_ALL \
 	CFG(CFG_CHIPSET_STATS_PUSH_RBS_DELAY_VAL_MS) \
 	CFG(CFG_CHIPSET_STATS_PUSH_RBS_DELAY_INTERVAL) \
-	CFG_TX_POWERBOOST_ALL
+	CFG_TX_POWERBOOST_ALL \
+	CFG(CFG_FORCE_SAP_20MHZ_CC_ID_ENABLE)
 #endif

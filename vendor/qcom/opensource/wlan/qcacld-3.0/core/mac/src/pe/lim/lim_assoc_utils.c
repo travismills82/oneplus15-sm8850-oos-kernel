@@ -1654,11 +1654,7 @@ QDF_STATUS lim_populate_peer_rate_set(struct mac_context *mac,
 		pe_err("more than SIR_MAC_MAX_NUMBER_OF_RATES rates");
 		return QDF_STATUS_E_FAILURE;
 	}
-	if ((pe_session->dot11mode == MLME_DOT11_MODE_11G) ||
-		(pe_session->dot11mode == MLME_DOT11_MODE_11A) ||
-		(pe_session->dot11mode == MLME_DOT11_MODE_11AC) ||
-		(pe_session->dot11mode == MLME_DOT11_MODE_11N) ||
-		(pe_session->dot11mode == MLME_DOT11_MODE_11AX)) {
+	if (pe_session->dot11mode != MLME_DOT11_MODE_11B) {
 		if (pe_session->extRateSet.numRates <=
 		    SIR_MAC_MAX_NUMBER_OF_RATES) {
 			qdf_mem_copy((uint8_t *) tempRateSet2.rate,
@@ -1732,7 +1728,7 @@ QDF_STATUS lim_populate_peer_rate_set(struct mac_context *mac,
 				   pRates->llbRates[bRateIndex - 1])) {
 				pe_debug("Duplicate 11b rate: %d",
 					 tempRateSet.rate[min]);
-			} else {
+			} else if (!pe_session->is_oui_auth_assoc_6mbps_2ghz_enable) {
 				pRates->llbRates[bRateIndex++] =
 						tempRateSet.rate[min];
 			}
@@ -2352,6 +2348,11 @@ lim_add_sta(struct mac_context *mac_ctx,
 	add_sta_params->updateSta = update_entry;
 
 	add_sta_params->status = QDF_STATUS_SUCCESS;
+
+	add_sta_params->peer_cck_rx_support_5ghz =
+				sta_ds->peer_cck_rx_support_5ghz;
+	add_sta_params->peer_cck_tx_support_5ghz =
+				sta_ds->peer_cck_tx_support_5ghz;
 
 	/* Update VHT/HT Capability */
 	if (LIM_IS_AP_ROLE(session_entry)) {
@@ -3727,6 +3728,8 @@ lim_limit_bw_for_iot_ap(struct mac_context *mac_ctx,
 
 	vendor_ap_search_attr.ie_data = (uint8_t *)&bss_desc->ieFields[0];
 	vendor_ap_search_attr.ie_length = ie_len;
+	vendor_ap_search_attr.mac_addr = &bss_desc->bssId[0];
+
 
 	if (wlan_action_oui_search(mac_ctx->psoc,
 				   &vendor_ap_search_attr,
@@ -3799,10 +3802,40 @@ lim_sta_update_max_channel_width(struct pe_session *pe_session,
 	}
 }
 
+void
+lim_update_add_sta_cck_5g_support(struct mac_context *mac_ctx,
+				  tAddStaParams *add_sta,
+				  tpSirAssocRsp assoc_rsp,
+				  struct pe_session *session_entry)
+{
+	bool cck_5g_rx = false, cck_5g_tx = false;
+
+	if (!session_entry->qcn_ie_present_in_beacon ||
+	    !wlan_get_rx_tx_cck_5g_support_for_mode(mac_ctx->psoc, QDF_STA_MODE,
+						    &cck_5g_rx, &cck_5g_tx) ||
+	    !assoc_rsp->qcn_ie.present ||
+	    !assoc_rsp->qcn_ie.target_cck_support_attr.present) {
+		return;
+	}
+
+	pe_debug("Self 5 GHz CCK: self: TX %d RX %d, peer : Tx %d Rx %d",
+		 cck_5g_tx, cck_5g_rx,
+		 assoc_rsp->qcn_ie.target_cck_support_attr.target_cck_tx_supp_5g,
+		 assoc_rsp->qcn_ie.target_cck_support_attr.target_cck_rx_supp_5g);
+
+	if (assoc_rsp->qcn_ie.target_cck_support_attr.target_cck_rx_supp_5g &&
+	    cck_5g_tx)
+		add_sta->peer_cck_rx_support_5ghz = 1;
+
+	if (assoc_rsp->qcn_ie.target_cck_support_attr.target_cck_tx_supp_5g &&
+	    cck_5g_rx)
+		add_sta->peer_cck_tx_support_5ghz = 1;
+}
+
 QDF_STATUS lim_sta_send_add_bss(struct mac_context *mac, tpSirAssocRsp pAssocRsp,
-				   tpSchBeaconStruct pBeaconStruct,
-				   struct bss_description *bssDescription,
-				   uint8_t updateEntry, struct pe_session *pe_session)
+				tpSchBeaconStruct pBeaconStruct,
+				struct bss_description *bssDescription,
+				uint8_t updateEntry, struct pe_session *pe_session)
 {
 	struct bss_params *pAddBssParams = NULL;
 	QDF_STATUS retCode;
@@ -4257,6 +4290,9 @@ QDF_STATUS lim_sta_send_add_bss(struct mac_context *mac, tpSirAssocRsp pAssocRsp
 	lim_sta_update_max_channel_width(pe_session, pAssocRsp, pAddBssParams);
 
 	lim_set_sta_ctx_twt(&pAddBssParams->staContext, pe_session);
+
+	lim_update_add_sta_cck_5g_support(mac, sta_context,
+					  pAssocRsp, pe_session);
 
 	if (lim_is_fils_connection(pe_session))
 		pAddBssParams->no_ptk_4_way = true;
@@ -4995,3 +5031,16 @@ tpDphHashNode lim_get_sta_ds(struct mac_context *mac_ctx,
 	}
 	return sta_ds;
 }
+
+#if (defined(CONNECTIVITY_DIAG_EVENT) && \
+	defined(WLAN_FEATURE_ROAM_OFFLOAD))
+void lim_clear_log_instance_id(struct pe_session *session)
+{
+	if (!session) {
+		pe_err("NULL session");
+		return;
+	}
+
+	mlme_reset_log_instance_id(session->vdev);
+}
+#endif

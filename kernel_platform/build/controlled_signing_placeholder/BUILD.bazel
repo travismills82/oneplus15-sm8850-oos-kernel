@@ -1,0 +1,10 @@
+package(default_visibility = ["//visibility:public"])
+
+# This repository is only a fail-closed placeholder.  The real signing key is
+# intentionally outside source control and must be provided with:
+# --override_module=oneplus15_signing=/path/to/signing-v1
+genrule(
+    name = "module_key",
+    outs = ["module-signing-v1.pem"],
+    cmd = "echo 'controlled-v1 signing repository is required; pass --override_module=oneplus15_signing=/path/to/signing-v1' >&2; exit 1",
+)

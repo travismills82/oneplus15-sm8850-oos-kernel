@@ -1597,16 +1597,43 @@ void cm_fill_ml_partner_info(struct wlan_cm_connect_req *req,
 }
 #endif
 
+#ifdef WLAN_FEATURE_11BE_MLO
+static inline
+bool cm_mlo_links_match(struct scan_cache_entry *scan_entry,
+			struct scan_cache_entry *cand_entry)
+{
+	/* Treat ML-capable vs non-ML-capable as distinct entries */
+	if (!!scan_entry->ie_list.multi_link_bv !=
+	    !!cand_entry->ie_list.multi_link_bv)
+		return false;
+
+	/* When ML IE is present, also compare number of links */
+	if (scan_entry->ie_list.multi_link_bv) {
+		if (scan_entry->ml_info.num_links !=
+		    cand_entry->ml_info.num_links)
+			return false;
+	}
+
+	return true;
+}
+#else
+static inline
+bool cm_mlo_links_match(struct scan_cache_entry *scan_entry,
+			struct scan_cache_entry *cand_entry)
+{
+	return true;
+}
+#endif
+
 bool cm_find_bss_from_candidate_list(qdf_list_t *candidate_list,
-				     struct qdf_mac_addr *bssid,
+				     struct scan_cache_entry *scan_entry,
 				     struct scan_cache_node **entry_found)
 {
-	struct scan_cache_node *scan_entry;
+	struct scan_cache_node *cand_node;
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
-	struct qdf_mac_addr *bssid2;
+	struct scan_cache_entry *cand_entry;
 
-	if (qdf_is_macaddr_zero(bssid) ||
-	    qdf_is_macaddr_broadcast(bssid))
+	if (!candidate_list || !scan_entry)
 		return false;
 
 	if (qdf_list_peek_front(candidate_list, &cur_node) !=
@@ -1618,17 +1645,28 @@ bool cm_find_bss_from_candidate_list(qdf_list_t *candidate_list,
 	while (cur_node) {
 		qdf_list_peek_next(candidate_list, cur_node, &next_node);
 
-		scan_entry = qdf_container_of(cur_node, struct scan_cache_node,
-					      node);
-		bssid2 = &scan_entry->entry->bssid;
-		if (qdf_is_macaddr_zero(bssid2))
+		cand_node = qdf_container_of(cur_node, struct scan_cache_node,
+					     node);
+		cand_entry = cand_node->entry;
+		if (!cand_entry)
 			goto next;
 
-		if (qdf_is_macaddr_equal(bssid, bssid2)) {
-			if (entry_found)
-				*entry_found = scan_entry;
-			return true;
-		}
+		/* Compare BSSID */
+		if (!qdf_is_macaddr_equal(&scan_entry->bssid,
+					  &cand_entry->bssid))
+			goto next;
+
+		/* Compare phymode */
+		if (scan_entry->phy_mode != cand_entry->phy_mode)
+			goto next;
+
+		if (!cm_mlo_links_match(scan_entry, cand_entry))
+			goto next;
+
+		if (entry_found)
+			*entry_found = cand_node;
+		return true;
+
 next:
 		cur_node = next_node;
 		next_node = NULL;
@@ -1820,6 +1858,51 @@ bool cm_get_active_disconnect_req(struct wlan_objmgr_vdev *vdev,
 			req->req.bssid = cm_req->discon_req.req.bssid;
 			req->req.is_no_disassoc_disconnect =
 				cm_req->discon_req.req.is_no_disassoc_disconnect;
+			status = true;
+			cm_req_lock_release(cm_ctx);
+			return status;
+		}
+
+		cur_node = next_node;
+		next_node = NULL;
+	}
+	cm_req_lock_release(cm_ctx);
+
+	return status;
+}
+
+bool cm_get_ho_disconnect_pending(struct wlan_objmgr_vdev *vdev)
+{
+	struct cnx_mgr *cm_ctx;
+	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
+	struct cm_req *cm_req = NULL;
+	bool status = false;
+	uint32_t cm_id_prefix;
+
+	if (vdev->vdev_mlme.vdev_opmode != QDF_STA_MODE)
+		return false;
+
+	cm_ctx = cm_get_cm_ctx(vdev);
+	if (!cm_ctx)
+		return status;
+
+	cm_req_lock_acquire(cm_ctx);
+	qdf_list_peek_front(&cm_ctx->req_list, &cur_node);
+	while (cur_node) {
+		qdf_list_peek_next(&cm_ctx->req_list, cur_node, &next_node);
+
+		cm_req = qdf_container_of(cur_node, struct cm_req, node);
+		cm_id_prefix = CM_ID_GET_PREFIX((cm_req->cm_id));
+
+		if (cm_id_prefix == DISCONNECT_REQ_PREFIX &&
+		    cm_req->cm_id != cm_ctx->active_cm_id &&
+		    cm_req->discon_req.req.source ==
+				CM_MLO_ROAM_INTERNAL_DISCONNECT &&
+		    cm_req->discon_req.req.reason_code ==
+				REASON_FW_TRIGGERED_ROAM_FAILURE) {
+			mlme_debug(CM_PREFIX_FMT " ho disconnect pending",
+				   CM_PREFIX_REF(wlan_vdev_get_id(vdev),
+						 cm_req->cm_id));
 			status = true;
 			cm_req_lock_release(cm_ctx);
 			return status;

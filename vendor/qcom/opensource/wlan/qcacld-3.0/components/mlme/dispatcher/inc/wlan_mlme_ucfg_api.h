@@ -1047,6 +1047,20 @@ bool ucfg_mlme_is_chain_mask_supported(struct wlan_objmgr_psoc *psoc)
 	return wlan_mlme_is_chain_mask_supported(psoc);
 }
 
+static inline
+QDF_STATUS ucfg_mlme_set_chain_mask(struct wlan_objmgr_psoc *psoc,
+				    uint8_t tx_mask, uint8_t rx_mask)
+{
+	return wlan_mlme_set_chain_mask(psoc, tx_mask, rx_mask);
+}
+
+static inline
+QDF_STATUS ucfg_mlme_get_chain_mask(struct wlan_objmgr_psoc *psoc,
+				    uint8_t *tx_mask, uint8_t *rx_mask)
+{
+	return wlan_mlme_get_chain_mask(psoc, tx_mask, rx_mask);
+}
+
 /*
  * ucfg_mlme_get_sta_keep_alive_period() - Get the sta keep alive period
  * @psoc: pointer to psoc object
@@ -5874,5 +5888,16 @@ static inline
 QDF_STATUS ucfg_mlme_stop_miracast_opt(struct wlan_objmgr_psoc *psoc)
 {
 	return wlan_mlme_stop_miracast_opt(psoc);
+}
+
+/**
+ * ucfg_mlme_update_mcc_cck_support() - Update MCC CCK support
+ * @psoc: psoc
+ * Return: QDF_STATUS
+ */
+static inline QDF_STATUS
+ucfg_mlme_update_mcc_cck_support(struct wlan_objmgr_psoc *psoc)
+{
+	return wlan_mlme_update_mcc_cck_support(psoc);
 }
 #endif /* _WLAN_MLME_UCFG_API_H_ */

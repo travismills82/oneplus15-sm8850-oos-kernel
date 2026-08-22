@@ -130,7 +130,7 @@ wlan_clear_ml_vdev_sae_auth_logs(struct wlan_objmgr_psoc *psoc,
 		}
 
 		logging_debug("vdev:%d clear sae auth logs cache",
-			      link_vdev_id);
+			       link_vdev_id);
 		qdf_mem_zero(mlme_priv->auth_log, sizeof(mlme_priv->auth_log));
 	}
 }
@@ -208,11 +208,11 @@ QDF_STATUS wlan_print_cached_sae_auth_logs(struct wlan_objmgr_psoc *psoc,
 	 * that bssid
 	 */
 	for (i = 0; i < MAX_ROAM_CANDIDATE_AP; i++) {
-		if (!mlme_priv->auth_log[i][0].diag_cmn.ktime_us)
+		if (!mlme_priv->auth_log[i][0].pkt_info.diag_cmn.ktime_us)
 			continue;
 
 		if (qdf_is_macaddr_equal(bssid,
-					 (struct qdf_mac_addr *)mlme_priv->auth_log[i][0].diag_cmn.bssid))
+					 (struct qdf_mac_addr *)mlme_priv->auth_log[i][0].pkt_info.diag_cmn.bssid))
 			break;
 	}
 
@@ -227,12 +227,12 @@ QDF_STATUS wlan_print_cached_sae_auth_logs(struct wlan_objmgr_psoc *psoc,
 	}
 
 	for (j = 0; j < WLAN_ROAM_MAX_CACHED_AUTH_FRAMES; j++) {
-		if (!mlme_priv->auth_log[i][j].diag_cmn.ktime_us)
+		if (!mlme_priv->auth_log[i][j].pkt_info.diag_cmn.ktime_us)
 			continue;
 
-		WLAN_HOST_DIAG_EVENT_REPORT(&mlme_priv->auth_log[i][j],
+		WLAN_HOST_DIAG_EVENT_REPORT(&mlme_priv->auth_log[i][j].pkt_info,
 					    EVENT_WLAN_MGMT);
-		qdf_mem_zero(&mlme_priv->auth_log[i][j],
+		qdf_mem_zero(&mlme_priv->auth_log[i][j].pkt_info,
 			     sizeof(struct wlan_diag_packet_info));
 	}
 
@@ -265,7 +265,7 @@ bool wlan_is_log_record_present_for_bssid(struct wlan_objmgr_psoc *psoc,
 	}
 
 	for (i = 0; i < MAX_ROAM_CANDIDATE_AP; i++) {
-		pkt_info = &mlme_priv->auth_log[i][0];
+		pkt_info = &mlme_priv->auth_log[i][0].pkt_info;
 		if (!pkt_info->diag_cmn.ktime_us)
 			continue;
 
@@ -276,6 +276,9 @@ bool wlan_is_log_record_present_for_bssid(struct wlan_objmgr_psoc *psoc,
 		}
 	}
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
+
+	logging_debug("vdev_id:%d log_record_not_found for bssid:" QDF_MAC_ADDR_FMT,
+		      vdev_id, QDF_MAC_ADDR_REF(bssid->bytes));
 
 	return false;
 }
@@ -358,6 +361,9 @@ wlan_add_sae_log_record_to_available_slot(struct wlan_objmgr_psoc *psoc,
 						     (struct qdf_mac_addr *)pkt_info->diag_cmn.bssid,
 						     vdev_id);
 
+	logging_debug("Add Log record:" QDF_MAC_ADDR_FMT,
+		      QDF_MAC_ADDR_REF(pkt_info->diag_cmn.bssid));
+
 	mlme_priv = wlan_vdev_mlme_get_ext_hdl(vdev);
 	if (!mlme_priv) {
 		logging_err_rl("vdev:%d legacy private object is NULL",
@@ -367,32 +373,32 @@ wlan_add_sae_log_record_to_available_slot(struct wlan_objmgr_psoc *psoc,
 
 	for (i = 0; i < MAX_ROAM_CANDIDATE_AP; i++) {
 		if (is_entry_exist &&
-		    mlme_priv->auth_log[i][0].diag_cmn.ktime_us &&
+		    mlme_priv->auth_log[i][0].pkt_info.diag_cmn.ktime_us &&
 		    qdf_is_macaddr_equal((struct qdf_mac_addr *)pkt_info->diag_cmn.bssid,
-					 (struct qdf_mac_addr *)mlme_priv->auth_log[i][0].diag_cmn.bssid)) {
+					 (struct qdf_mac_addr *)mlme_priv->auth_log[i][0].pkt_info.diag_cmn.bssid)) {
 			/*
 			 * Frames for given bssid already exists store the new
 			 * frame in corresponding array in empty slot
 			 */
 			for (j = 0; j < WLAN_ROAM_MAX_CACHED_AUTH_FRAMES; j++) {
-				if (mlme_priv->auth_log[i][j].diag_cmn.ktime_us)
+				if (mlme_priv->auth_log[i][j].pkt_info.diag_cmn.ktime_us)
 					continue;
 
 				logging_debug("vdev:%d added at [i][j]:[%d][%d]",
 					      vdev_id, i, j);
-				mlme_priv->auth_log[i][j] = *pkt_info;
+				mlme_priv->auth_log[i][j].pkt_info = *pkt_info;
 				break;
 			}
 
 		} else if (!is_entry_exist &&
-			   !mlme_priv->auth_log[i][0].diag_cmn.ktime_us) {
+			   !mlme_priv->auth_log[i][0].pkt_info.diag_cmn.ktime_us) {
 			/*
 			 * For given record, there is no existing bssid
 			 * so add the entry at first available slot
 			 */
 			logging_debug("vdev:%d added entry at [i][j]:[%d][%d]",
 				      vdev_id, i, 0);
-			mlme_priv->auth_log[i][0] = *pkt_info;
+			mlme_priv->auth_log[i][0].pkt_info = *pkt_info;
 			break;
 		}
 	}
@@ -1080,6 +1086,11 @@ wlan_connectivity_mgmt_event(struct wlan_objmgr_psoc *psoc,
 	cache_sae_frame_cap =
 		wlan_psoc_nif_fw_ext2_cap_get(psoc,
 					      WLAN_ROAM_STATS_FRAME_INFO_PER_CANDIDATE);
+
+	logging_debug("cache_cap:%d is_initial_connection:%d tag:%d algo:%d",
+		      cache_sae_frame_cap, is_initial_connection, tag,
+		      auth_algo);
+
 	if (!is_initial_connection &&
 	    (tag == WLAN_AUTH_REQ || tag == WLAN_AUTH_RESP) &&
 	    auth_algo == WLAN_SAE_AUTH_ALGO_NUMBER && cache_sae_frame_cap) {
@@ -1206,17 +1217,18 @@ void wlan_connectivity_disconnect_event(struct wlan_objmgr_vdev *vdev,
 		return;
 	}
 
-	if (!peer_mac) {
-		logging_err("vdev:%d peer mac not found",
-			    wlan_vdev_get_id(vdev));
-		return;
-	}
-
 	if (qdf_is_macaddr_zero((struct qdf_mac_addr *)peer_mac)) {
 		logging_debug("vdev:%d reason:%d , bssid is zero",
 			      wlan_vdev_get_id(vdev), reason);
 		return;
 	}
+
+	/*
+	 * Skipping BEACON_MISSED disconnect event
+	 * since it has already been reported to userspace by the LIM layer
+	 */
+	if (reason == REASON_BEACON_MISSED)
+		return;
 
 	qdf_mem_copy(wlan_diag_event.diag_cmn.bssid,
 		     peer_mac, QDF_MAC_ADDR_SIZE);

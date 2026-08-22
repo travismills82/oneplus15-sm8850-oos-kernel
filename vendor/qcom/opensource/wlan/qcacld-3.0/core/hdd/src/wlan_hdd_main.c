@@ -3214,6 +3214,7 @@ int hdd_update_tgt_cfg(hdd_handle_t hdd_handle, struct wma_tgt_cfg *cfg)
 	hdd_update_wiphy_eht_cap(hdd_ctx);
 	ucfg_mlme_update_tgt_mlo_cap(hdd_ctx->psoc);
 	ucfg_mlme_update_dual_sap_sta_support(hdd_ctx->psoc);
+	ucfg_mlme_update_mcc_cck_support(hdd_ctx->psoc);
 
 	for (band = NSS_CHAINS_BAND_2GHZ; band < NSS_CHAINS_BAND_MAX; band++) {
 		sme_modify_nss_chains_tgt_cfg(hdd_ctx->mac_handle,
@@ -4570,7 +4571,7 @@ static void hdd_check_for_objmgr_peer_leaks(struct wlan_objmgr_psoc *psoc)
 			int ref_id;
 			int32_t refs;
 
-			ref_id_dbg = vdev->vdev_objmgr.ref_id_dbg;
+			ref_id_dbg = peer->peer_objmgr.ref_id_dbg;
 			wlan_objmgr_for_each_refs(ref_id_dbg, ref_id, refs)
 				wlan_objmgr_peer_release_ref(peer, ref_id);
 		}
@@ -5529,7 +5530,6 @@ int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 
 		hdd_skip_acs_scan_timer_init(hdd_ctx);
 
-		hdd_set_hif_init_phase(hif_ctx, false);
 		hdd_hif_set_enable_detection(hif_ctx, true);
 
 		wlan_hdd_start_connectivity_logging(hdd_ctx);
@@ -6377,7 +6377,8 @@ hdd_is_dynamic_set_mac_addr_supported(struct hdd_context *hdd_ctx)
 #if defined(WLAN_FEATURE_11BE_MLO) && defined(WLAN_HDD_MULTI_VDEV_SINGLE_NDEV)
 QDF_STATUS
 hdd_adapter_update_links_on_link_switch(struct wlan_hdd_link_info *cur_link_info,
-					struct wlan_hdd_link_info *new_link_info)
+					struct wlan_hdd_link_info *new_link_info,
+					bool is_roam)
 {
 	unsigned long link_flags;
 	struct wlan_objmgr_vdev *vdev;
@@ -6385,6 +6386,7 @@ hdd_adapter_update_links_on_link_switch(struct wlan_hdd_link_info *cur_link_info
 	uint8_t cur_old_pos, cur_new_pos;
 	struct vdev_osif_priv *vdev_priv;
 	struct hdd_adapter *adapter = cur_link_info->adapter;
+	struct hdd_station_ctx *sta_ctx;
 
 	/* Update the new position of current and new link info
 	 * in the link info array.
@@ -6420,6 +6422,11 @@ hdd_adapter_update_links_on_link_switch(struct wlan_hdd_link_info *cur_link_info
 	/* Update VDEV-OSIF priv pointer to new link info */
 	vdev_priv = wlan_vdev_get_ospriv(new_link_info->vdev);
 	vdev_priv->legacy_osif_priv = new_link_info;
+
+	if (is_roam) {
+		sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(cur_link_info);
+		sta_ctx->conn_info.ieee_link_id = WLAN_INVALID_LINK_ID;
+	}
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -6495,7 +6502,8 @@ hdd_link_switch_vdev_mac_addr_update(int32_t ieee_old_link_id,
 	}
 
 	status = hdd_adapter_update_links_on_link_switch(cur_link_info,
-							 new_link_info);
+							 new_link_info,
+							 false);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to update adapter link info");
 		goto release_ref;
@@ -6560,7 +6568,8 @@ QDF_STATUS hdd_roam_vdev_mac_addr_update(struct wlan_objmgr_vdev *vdev,
 		QDF_MAC_ADDR_REF(new_self_mac->bytes));
 
 	status = hdd_adapter_update_links_on_link_switch(cur_link_info,
-							 new_link_info);
+							 new_link_info,
+							 true);
 	if (QDF_IS_STATUS_ERROR(status))
 		hdd_err("Failed to update adapter link info, status %d",
 			status);
@@ -6618,7 +6627,8 @@ QDF_STATUS hdd_link_recfg_mac_addr_update(struct wlan_objmgr_vdev *vdev,
 		  QDF_MAC_ADDR_REF(new_self_mac->bytes));
 
 	status = hdd_adapter_update_links_on_link_switch(cur_link_info,
-							 new_link_info);
+							 new_link_info,
+							 false);
 	if (QDF_IS_STATUS_ERROR(status))
 		hdd_err("Failed to update adapter link info, status %d",
 			status);
@@ -7954,6 +7964,8 @@ int hdd_vdev_destroy(struct wlan_hdd_link_info *link_info)
 	hdd_vdev_deinit_components(vdev);
 	hdd_mlo_t2lm_unregister_callback(vdev);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_ID);
+
+	qdf_flush_work(&link_info->ch_chng_info.chan_change_notify_work);
 
 	hdd_reset_vdev_info(link_info);
 	osif_cm_osif_priv_deinit(vdev);
@@ -10058,10 +10070,6 @@ static void __hdd_close_adapter(struct hdd_context *hdd_ctx,
 			hdd_cleanup_conn_info(link_info);
 	}
 
-	hdd_adapter_for_each_link_info(adapter, link_info)
-		qdf_flush_work(
-			&link_info->ch_chng_info.chan_change_notify_work);
-
 	qdf_list_destroy(&adapter->blocked_scan_request_q);
 	qdf_mutex_destroy(&adapter->blocked_scan_request_q_lock);
 	policy_mgr_clear_concurrency_mode(hdd_ctx->psoc, adapter->device_mode);
@@ -10512,8 +10520,10 @@ static void hdd_stop_station_adapter(struct hdd_adapter *adapter)
 	hdd_adapter_for_each_active_link_info(adapter, link_info) {
 		vdev = hdd_objmgr_get_vdev_by_user(link_info,
 						   WLAN_INIT_DEINIT_ID);
-		if (!vdev)
+		if (!vdev) {
+			qdf_flush_work(&link_info->ch_chng_info.chan_change_notify_work);
 			continue;
+		}
 
 		if (mode == QDF_NDI_MODE)
 			hdd_stop_and_cleanup_ndi(link_info);
@@ -14059,6 +14069,7 @@ static void hdd_display_stats_help(void)
 	HDD_DUMP_STAT_HELP(CDP_NAPI_STATS);
 	HDD_DUMP_STAT_HELP(CDP_DP_NAPI_STATS);
 	HDD_DUMP_STAT_HELP(CDP_DP_RX_THREAD_STATS);
+	HDD_DUMP_STAT_HELP(CDP_DP_HAPS_STATS);
 }
 
 int hdd_wlan_dump_stats(struct hdd_adapter *adapter, int stats_id)
@@ -14092,6 +14103,9 @@ int hdd_wlan_dump_stats(struct hdd_adapter *adapter, int stats_id)
 	case CDP_DISCONNECT_STATS:
 		sme_display_disconnect_stats(hdd_ctx->mac_handle,
 					     adapter->deflink->vdev_id);
+		break;
+	case CDP_DP_HAPS_STATS:
+		ucfg_dp_haps_dump_stats(hdd_ctx->psoc);
 		break;
 	default:
 		status = cdp_display_stats(cds_get_context(QDF_MODULE_ID_SOC),
@@ -14129,6 +14143,9 @@ int hdd_wlan_clear_stats(struct hdd_adapter *adapter, int stats_id)
 		break;
 	case CDP_NAPI_STATS:
 		hdd_clear_napi_stats();
+		break;
+	case CDP_DP_HAPS_STATS:
+		ucfg_dp_haps_clear_stats(adapter->hdd_ctx->psoc);
 		break;
 	default:
 		status = cdp_clear_stats(cds_get_context(QDF_MODULE_ID_SOC),
@@ -16019,9 +16036,6 @@ static void hdd_cfg_params_init(struct hdd_context *hdd_ctx)
 
 	hdd_get_wifi_features_cfg_update(config, psoc);
 	hdd_init_cpu_cxpc_threshold_cfg(config, psoc);
-
-	config->exclude_selftx_from_cca_busy =
-			cfg_get(psoc, CFG_EXCLUDE_SELFTX_FROM_CCA_BUSY_TIME);
 	hdd_init_link_state_cfg(config, psoc);
 	config->sub_20_ch_width = cfg_get(psoc, CFG_SUB_20_CHANNEL_WIDTH);
 }
@@ -18083,9 +18097,8 @@ static void hdd_v2_flow_pool_map(int vdev_id)
 		return;
 	}
 
-	if (wlan_vdev_mlme_is_mlo_link_switch_in_progress(vdev) ||
-	    policy_mgr_is_set_link_in_progress(wlan_vdev_get_psoc(vdev))) {
-		hdd_info_rl("Link switch/set_link is ongoing, do not invoke flow pool map");
+	if (wlan_vdev_mlme_is_mlo_link_switch_in_progress(vdev)) {
+		hdd_info_rl("Link switch is ongoing, do not invoke flow pool map");
 		goto release_ref;
 	}
 
@@ -18129,9 +18142,8 @@ static void hdd_v2_flow_pool_unmap(int vdev_id)
 		return;
 	}
 
-	if (wlan_vdev_mlme_is_mlo_link_switch_in_progress(vdev) ||
-	    policy_mgr_is_set_link_in_progress(wlan_vdev_get_psoc(vdev))) {
-		hdd_info("vdev:%d Link switch/set_link is ongoing do not invoke flow pool unmap",
+	if (wlan_vdev_mlme_is_mlo_link_switch_in_progress(vdev)) {
+		hdd_info("vdev:%d Link switch is ongoing do not invoke flow pool unmap",
 			 vdev_id);
 		goto release_ref;
 	}

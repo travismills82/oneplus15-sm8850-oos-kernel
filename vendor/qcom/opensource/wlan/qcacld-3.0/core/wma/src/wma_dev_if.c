@@ -3300,6 +3300,17 @@ wma_get_keep_sta_alive_method(struct wlan_objmgr_psoc *psoc, uint32_t *method)
 	}
 }
 
+static bool wma_is_apf_mode_allowed(struct vdev_mlme_obj *vdev_mlme,
+				    struct wlan_objmgr_vdev *vdev,
+				    tp_wma_handle wma_handle)
+{
+	if (vdev_mlme->mgmt.generic.type == WMI_VDEV_TYPE_STA &&
+	    ucfg_pmo_is_apf_enabled(wma_handle->psoc) &&
+	    wlan_vdev_mlme_get_opmode(vdev) == QDF_STA_MODE)
+		return true;
+	return false;
+}
+
 QDF_STATUS wma_post_vdev_create_setup(struct wlan_objmgr_vdev *vdev)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -3314,7 +3325,7 @@ QDF_STATUS wma_post_vdev_create_setup(struct wlan_objmgr_vdev *vdev)
 	uint32_t sta_keep_alive;
 	enum wmi_host_active_apf_mode uc_mode, mcbc_mode;
 	uint32_t offload_bitmap;
-	uint32_t apf_mode;
+	bool is_apf_allowed;
 
 	if (!mac)
 		return QDF_STATUS_E_FAILURE;
@@ -3391,8 +3402,8 @@ QDF_STATUS wma_post_vdev_create_setup(struct wlan_objmgr_vdev *vdev)
 		wma_err("Failed to get value for WNI_CFG_ENABLE_MCC_ADAPTIVE_SCHED, leaving unchanged");
 	}
 
-	if (vdev_mlme->mgmt.generic.type == WMI_VDEV_TYPE_STA &&
-	    ucfg_pmo_is_apf_enabled(wma_handle->psoc) &&
+	is_apf_allowed = wma_is_apf_mode_allowed(vdev_mlme, vdev, wma_handle);
+	if (is_apf_allowed &&
 	    !ucfg_pmo_is_configure_apf_per_screen_state(wma_handle->psoc)) {
 		uc_mode = wma_get_fw_active_apf_mode(
 					wma_handle->active_uc_apf_mode);
@@ -3407,8 +3418,7 @@ QDF_STATUS wma_post_vdev_create_setup(struct wlan_objmgr_vdev *vdev)
 			wma_err("Failed to configure active APF mode");
 	}
 
-	if (vdev_mlme->mgmt.generic.type == WMI_VDEV_TYPE_STA &&
-	    ucfg_pmo_is_apf_enabled(wma_handle->psoc) &&
+	if (is_apf_allowed &&
 	    wmi_service_enabled(wma_handle->wmi_handle,
 				wmi_service_apf_data_offload_support_enabled)) {
 		offload_bitmap = ucfg_pmo_get_apfv6_offload_bitmap(
@@ -3419,18 +3429,6 @@ QDF_STATUS wma_post_vdev_create_setup(struct wlan_objmgr_vdev *vdev)
 							offload_bitmap);
 		if (QDF_IS_STATUS_ERROR(ret))
 			wma_err("Failed to configure APF supported offload bitmap");
-	}
-
-	if (vdev_mlme->mgmt.generic.type == WMI_VDEV_TYPE_STA &&
-	    ucfg_pmo_is_apf_enabled(wma_handle->psoc) &&
-	    ucfg_pmo_is_apf_mode_enabled(wma_handle->psoc)) {
-		apf_mode = ucfg_pmo_get_apf_mode(wma_handle->psoc);
-		ret = wmi_unified_set_apf_mode_bitmap_cmd(
-							wma_handle->wmi_handle,
-							vdev_id,
-							apf_mode);
-		if (QDF_IS_STATUS_ERROR(ret))
-			wma_err("Failed to configure APF mode bitmap");
 	}
 
 	if (vdev_mlme->mgmt.generic.type == WMI_VDEV_TYPE_STA &&
@@ -4455,13 +4453,14 @@ void wma_remove_req(tp_wma_handle wma, uint8_t vdev_id,
 	qdf_mem_free(req_msg);
 }
 
-#define MAX_VDEV_SET_BSS_PARAMS 5
+#define MAX_VDEV_SET_BSS_PARAMS 6
 /* params being sent:
  * 1.wmi_vdev_param_beacon_interval
  * 2.wmi_vdev_param_dtim_period
  * 3.wmi_vdev_param_tx_pwrlimit
  * 4.wmi_vdev_param_slot_time
  * 5.wmi_vdev_param_protection_mode
+ * 6.wmi_vdev_param_su_txop_burst_limit_us
  */
 
 /**
@@ -4488,9 +4487,24 @@ wma_vdev_set_bss_params(tp_wma_handle wma, int vdev_id,
 	uint8_t index = 0;
 	enum ieee80211_protmode prot_mode;
 	uint32_t keep_alive_period, keep_alive_method;
+	uint32_t edca_txop_duration_us;
 	QDF_STATUS ret;
+	struct mac_context *mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
+	struct wlan_objmgr_vdev *vdev;
 
 	ret = QDF_STATUS_E_FAILURE;
+
+	if (!mac_ctx) {
+		wma_err("Failed to get mac_ctx");
+		goto error;
+	}
+
+	vdev = intr[vdev_id].vdev;
+	if (!vdev) {
+		wma_err("vdev is NULL for vdev_id: %d", vdev_id);
+		goto error;
+	}
+
 	/* Beacon Interval setting */
 	ret = mlme_check_index_setparam(setparam,
 					wmi_vdev_param_beacon_interval,
@@ -4558,6 +4572,24 @@ wma_vdev_set_bss_params(tp_wma_handle wma, int vdev_id,
 		wma_debug("failed to send wmi_vdev_param_protection_mode to fw");
 		goto error;
 	}
+
+	/* Send su_txop_burst_limit_us parameter for STA mode on 5GHz */
+	if (intr[vdev_id].type == WMI_VDEV_TYPE_STA &&
+	    WLAN_REG_IS_5GHZ_CH_FREQ(vdev->vdev_mlme.bss_chan->ch_freq)) {
+		edca_txop_duration_us =
+		    wlan_mlme_get_edca_txop_duration_ms(mac_ctx->psoc) * 1024;
+
+		ret = mlme_check_index_setparam(
+					setparam,
+					wmi_vdev_param_su_txop_burst_limit_us,
+					edca_txop_duration_us, index++,
+					MAX_VDEV_SET_BSS_PARAMS);
+		if (QDF_IS_STATUS_ERROR(ret)) {
+			wma_debug("failed to set wmi_vdev_param_su_txop_burst_limit_us");
+			goto error;
+		}
+	}
+
 	ret = wma_send_multi_pdev_vdev_set_params(MLME_VDEV_SETPARAM,
 						  vdev_id, setparam, index);
 	if (QDF_IS_STATUS_ERROR(ret)) {
@@ -4674,6 +4706,52 @@ QDF_STATUS wma_pre_vdev_start_setup(uint8_t vdev_id,
 	return status;
 }
 
+/**
+ * wma_vdev_set_cck_param - set vdev CCK param
+ * @wma: wma handle
+ * @vdev_id: vdev id
+ *
+ * Return: NA
+ */
+static
+void wma_vdev_set_cck_param(tp_wma_handle wma, uint8_t vdev_id)
+{
+	struct wlan_objmgr_psoc *psoc;
+	struct wma_txrx_node *intr;
+	struct wlan_mlme_psoc_ext_obj *mlme_psoc_obj = NULL;
+	enum QDF_OPMODE op_mode;
+	enum cck_mode_index cck_idx;
+	uint32_t cck_support = 0;
+
+	intr = &wma->interfaces[vdev_id];
+	if (!intr || !intr->vdev) {
+		wma_err("Invalid interface or vdev");
+		return;
+	}
+
+	psoc = wma->psoc;
+
+	mlme_psoc_obj = mlme_get_psoc_ext_obj(psoc);
+	if (!mlme_psoc_obj) {
+		wma_err("Failed to get MLME Obj");
+		return;
+	}
+
+	op_mode = wlan_vdev_mlme_get_opmode(intr->vdev);
+
+	cck_idx = wlan_get_mode_index_from_mode(op_mode);
+	if (cck_idx >= MAX_CCK_IDX) {
+		wma_err("invalid index %d", cck_idx);
+		return;
+	}
+	cck_support = QDF_GET_BITS(
+				mlme_psoc_obj->cfg.rates.cck_rx_tx_support_mode,
+				cck_idx * NUM_CCK_BITS,
+				NUM_CCK_BITS);
+	wma_vdev_set_param(wma->wmi_handle, vdev_id, wmi_vdev_param_cck_support,
+			    cck_support);
+}
+
 QDF_STATUS wma_post_vdev_start_setup(uint8_t vdev_id)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -4730,6 +4808,7 @@ QDF_STATUS wma_post_vdev_start_setup(uint8_t vdev_id)
 
 	wma_vdev_set_he_bss_params(wma, vdev_id,
 				   &mlme_obj->proto.he_ops_info);
+
 #if defined(WLAN_FEATURE_11BE)
 	wma_vdev_set_eht_bss_params(wma, vdev_id,
 				    &mlme_obj->proto.eht_ops_info);
@@ -6596,7 +6675,7 @@ static void wma_wait_tx_complete(tp_wma_handle wma,
 				    CDP_TX_PENDING, &val))
 		return;
 	while (val.cdp_pdev_param_tx_pending && max_wait_iterations) {
-		wma_warn("Waiting for outstanding packet to drain");
+		wma_debug("Waiting for outstanding packet to drain");
 		qdf_wait_for_event_completion(&wma->tx_queue_empty_event,
 				      WMA_TX_Q_RECHECK_TIMER_WAIT);
 		if (cdp_txrx_get_pdev_param(
@@ -6630,6 +6709,11 @@ void wma_delete_bss(tp_wma_handle wma, uint8_t vdev_id)
 	status = wlan_vdev_get_bss_peer_mac(iface->vdev, &bssid);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wma_err("vdev id %d : failed to get bssid", vdev_id);
+		if (cm_get_ho_disconnect_pending(iface->vdev)) {
+			wma_err("handle by ho fail");
+			wma_delete_bss_ho_fail(wma, vdev_id);
+			return;
+		}
 		goto out;
 	}
 
@@ -7097,7 +7181,7 @@ static QDF_STATUS wma_vdev_mgmt_perband_tx_rate(struct dev_set_param *info)
  * 4.wmi_vdev_param_mcc_broadcast_probe_enable
  * 5.wmi_vdev_param_rts_threshold
  * 6.wmi_vdev_param_fragmentation_threshold
- * 7.wmi_vdev_param_tx_stbc
+ * 7.wmi_vdev_param_tx_stbc or wmi_vdev_param_autorate_misc_cfg
  * 8.wmi_vdev_param_mgmt_tx_rate
  * 9.wmi_vdev_param_per_band_mgmt_tx_rate
  * 10.wmi_vdev_param_set_eht_mu_mode
@@ -7133,6 +7217,11 @@ QDF_STATUS wma_vdev_create_set_param(struct wlan_objmgr_vdev *vdev)
 	bool disable_twt_info_frame;
 	bool is_twt_disabled_on_scan;
 	enum QDF_OPMODE opmode;
+	tp_wma_handle wma;
+
+	wma = cds_get_context(QDF_MODULE_ID_WMA);
+	if (!wma)
+		return QDF_STATUS_E_FAILURE;
 
 	if (!mac)
 		return QDF_STATUS_E_FAILURE;
@@ -7210,15 +7299,39 @@ QDF_STATUS wma_vdev_create_set_param(struct wlan_objmgr_vdev *vdev)
 		wma_err("Fail to get val for frag threshold, leave unchanged");
 	}
 
+	/*
+	 * Use wmi_vdev_param_autorate_misc_cfg for 11be firmware as
+	 * wmi_vdev_param_tx_stbc is deprecated.
+	 */
 	ht_cap_info = &mac->mlme_cfg->ht_caps.ht_cap_info;
-	status = mlme_check_index_setparam(setparam,
-					   wmi_vdev_param_tx_stbc,
-					   ht_cap_info->tx_stbc, index++,
-					   MAX_VDEV_CREATE_PARAMS);
-	if (QDF_IS_STATUS_ERROR(status)) {
-		wma_debug("failed to set wmi_vdev_param_tx_stbc");
-		goto error;
+	if (IS_FEATURE_11BE_SUPPORTED_BY_FW) {
+		uint32_t set_val;
+
+		set_val = mac->he_sgi_ltf_cfg_bit_mask;
+		/* Set STBC disable bit to the opposite of tx_stbc */
+		WMI_SET_BITS(set_val, AUTO_RATE_STBC_DIS_BIT,
+			     AUTO_RATE_STBC_DIS_NUM_BITS, !ht_cap_info->tx_stbc);
+		mac->he_sgi_ltf_cfg_bit_mask = set_val;
+		status = mlme_check_index_setparam(setparam,
+						   wmi_vdev_param_autorate_misc_cfg,
+						   set_val, index++,
+						   MAX_VDEV_CREATE_PARAMS);
+
+		if (QDF_IS_STATUS_ERROR(status)) {
+			wma_debug("failed to set wmi_vdev_param_autorate_misc_cfg");
+			goto error;
+		}
+	} else {
+		status = mlme_check_index_setparam(setparam,
+						   wmi_vdev_param_tx_stbc,
+						   ht_cap_info->tx_stbc, index++,
+						   MAX_VDEV_CREATE_PARAMS);
+		if (QDF_IS_STATUS_ERROR(status)) {
+			wma_debug("failed to set wmi_vdev_param_tx_stbc");
+			goto error;
+		}
 	}
+
 	if (!wma_vdev_mgmt_tx_rate(&ext_val)) {
 		status = mlme_check_index_setparam(setparam, ext_val.param_id,
 						   ext_val.param_value, index++,
@@ -7414,6 +7527,7 @@ QDF_STATUS wma_vdev_create_set_param(struct wlan_objmgr_vdev *vdev)
 		goto error;
 	}
 
+
 	status = wma_send_multi_pdev_vdev_set_params(MLME_VDEV_SETPARAM,
 						     vdev_id, setparam, index);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -7421,6 +7535,8 @@ QDF_STATUS wma_vdev_create_set_param(struct wlan_objmgr_vdev *vdev)
 		status = QDF_STATUS_E_FAILURE;
 		goto error;
 	}
+
+	wma_vdev_set_cck_param(wma, vdev_id);
 error:
 	return status;
 }
@@ -7442,6 +7558,16 @@ static inline bool wma_tx_is_chainmask_valid(int value,
 			return true;
 	}
 	return false;
+}
+
+uint8_t wma_get_txrx_default_chain_mask(struct wlan_objmgr_psoc *psoc)
+{
+	struct target_psoc_info *tgt_hdl;
+
+	tgt_hdl = wlan_psoc_get_tgt_if_handle(psoc);
+	if (!tgt_hdl)
+		return CFG_TGT_DEFAULT_TX_CHAIN_MASK;
+	return WMA_MAX_RF_CHAINS(target_if_get_num_rf_chains(tgt_hdl));
 }
 
 QDF_STATUS

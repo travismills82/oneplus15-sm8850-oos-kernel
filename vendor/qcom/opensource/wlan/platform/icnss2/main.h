@@ -52,6 +52,16 @@
 #define ICNSS_RAMDUMP_MAGIC		0x574C414E
 #define ICNSS_RAMDUMP_VERSION		0
 #define MSI_USERS                       2
+/* Consecutive SOC wake request failures to trigger recovery */
+#define ICNSS_SOC_WAKE_RECOVERY_COUNT 5
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0))
+#define from_timer timer_container_of
+#endif
+
+#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+extern bool idle_shutdown;
+#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 
 extern uint64_t dynamic_feature_mask;
 
@@ -130,6 +140,7 @@ enum icnss_driver_event_type {
 	ICNSS_DRIVER_EVENT_WLFW_TWT_CFG_IND,
 	ICNSS_DRIVER_EVENT_QDSS_TRACE_REQ_DATA,
 	ICNSS_DRIVER_EVENT_SUBSYS_RESTART_LEVEL,
+	ICNSS_DRIVER_EVENT_XO_TRIM_IND,
 	ICNSS_DRIVER_EVENT_MAX,
 };
 
@@ -290,6 +301,7 @@ struct icnss_stats {
 	struct {
 		u32 posted;
 		u32 processed;
+		u32 recovery_count;
 	} soc_wake_events[ICNSS_SOC_WAKE_EVENT_MAX];
 
 	struct {
@@ -540,6 +552,18 @@ static const char * const icnss_gpio_name_str[] = {
 	[QMI_WLFW_GPIO_INVALID_V01] = "INVALID",
 };
 
+/**
+ * struct icnss_xo_trim_config - Configuration for crystal oscillator (XO) trim
+ * @xo_calib_reg: register for XO calibration
+ * @wcal_pbs: regulator to trigger PBS sequence
+ * @trim_val: trim value for XO
+ */
+struct icnss_xo_trim_config {
+	struct nvmem_cell *xo_calib_reg;
+	struct regulator *wcal_pbs;
+	u8 trim_val;
+};
+
 struct icnss_priv {
 	uint32_t magic;
 	struct platform_device *pdev;
@@ -701,6 +725,16 @@ struct icnss_priv {
 	u32 rf_subtype;
 	u8 is_slate_rfa;
 	struct completion slate_boot_complete;
+	#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+	//Add for wifi switch monitor
+	unsigned long loadBdfState;
+	unsigned long loadRegdbState;
+	unsigned long pcieBusState;
+	unsigned long pcieEnumState;
+	unsigned long pcieLinkDown;
+	unsigned long pcieL1Fail;
+	const char *bdf_name, *region_name;
+	#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 #ifdef SLATE_MODULE_ENABLED
 	struct seb_notif_info *seb_handle;
 	struct notifier_block seb_nb;
@@ -728,7 +762,36 @@ struct icnss_priv {
 	u64 fw_caps;
 	u32 ddr_type;
 	u32 gpio_config_arr[GPIO_TYPE_MAX_V01][WLFW_GPIO_PARAMS_MAX_V01];
+	uint32_t soc_wake_req_fail;
+	struct icnss_xo_trim_config xo_trim_conf;
+	struct nvmem_cell *wcn_ktb_info_reg;
+	u8 *wcn_ktb_info_buf;
 };
+
+#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
+//Add for wifi switch monitor
+enum cnss_load_state {
+	CNSS_LOAD_BDF_FAIL = 1,
+	CNSS_LOAD_BDF_SUCCESS,
+	CNSS_LOAD_REGDB_FAIL,
+	CNSS_LOAD_REGDB_SUCCESS,
+	CNSS_PROBE_FAIL,
+	CNSS_PROBE_SUCCESS,
+	CNSS_PCIEBUS_FAIL,
+	CNSS_PCIE_ENUM_FAIL,
+	CNSS_PCIE_LINK_DOWN,
+	CNSS_PCIE_L1_FAIL,
+};
+#define CNSS_ERROR_SIZE 64
+#define MAX_CNSS_ERROE_LIST_LENGTH 10
+#define CNSS_STRUCT_ITEM_LENGTH 80
+#define MAX_BUFFER_SIZE (CNSS_STRUCT_ITEM_LENGTH)*(MAX_CNSS_ERROE_LIST_LENGTH)
+struct cel_list {
+    u64 time_s;
+    char message[CNSS_ERROR_SIZE];
+    struct cel_list *next;
+};
+#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 
 struct icnss_reg_info {
 	uint32_t mem_type;
@@ -760,6 +823,7 @@ int icnss_aop_pdc_reconfig(struct icnss_priv *priv);
 void icnss_power_misc_params_init(struct icnss_priv *priv);
 void icnss_recovery_timeout_hdlr(struct timer_list *t);
 void icnss_wpss_ssr_timeout_hdlr(struct timer_list *t);
+void icnss_xo_trim_deinit(struct icnss_priv *priv);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
 static inline int icnss_timer_delete(struct timer_list *timer)

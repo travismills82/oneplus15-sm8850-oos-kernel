@@ -9,7 +9,9 @@
 
 #include <linux/cma.h>
 #include <linux/iommu.h>
+#if IS_ENABLED(CONFIG_QCOM_IOMMU_UTIL)
 #include <linux/qcom-iommu-util.h>
+#endif
 #include <linux/mhi.h>
 #if IS_ENABLED(CONFIG_MHI_BUS_MISC)
 #include <linux/mhi_misc.h>
@@ -190,6 +192,50 @@ struct cnss_pci_data {
 	atomic_t id_mismatch_cnt;
 };
 
+/**
+ * struct rddm_table_info - rddm table info
+ * @base_address - Start offset of the file
+ * @actual_phys_address - phys addr offset of file
+ * @size - size of file
+ * @description - file description
+ * @file_name - name of file
+ */
+struct rddm_table_info {
+	u64 base_address;
+	u64 actual_phys_address;
+	u64 size;
+	char description[20];
+	char file_name[20];
+};
+
+#define MAX_RDDM_TABLE_SIZE (12)
+
+/**
+ * struct rddm_header - rddm header
+ * @version - header ver
+ * @header_size - size of header
+ * @rddm_table_info - array of rddm table info
+ */
+struct rddm_header {
+	u32 version;
+	u32 header_size;
+	struct rddm_table_info table_info[MAX_RDDM_TABLE_SIZE];
+};
+
+/**
+ * struct file_info - keeping track of file info while traversing the rddm
+ * table header
+ * @file_offset - current file offset
+ * @seg_idx - mhi buf seg array index
+ * @rem_seg_len - remaining length of the segment containing current file
+ */
+struct file_info {
+	u8 *file_offset;
+	u32 file_size;
+	u32 seg_idx;
+	u32 rem_seg_len;
+};
+
 static inline void cnss_set_pci_priv(struct pci_dev *pci_dev, void *data)
 {
 	pci_set_drvdata(pci_dev, data);
@@ -345,5 +391,7 @@ int cnss_pci_get_user_msi_assignment(struct cnss_pci_data *pci_priv,
 				     u32 *base_vector);
 void cnss_register_iommu_fault_handler_irq(struct cnss_pci_data *pci_priv);
 void cnss_pci_start_xdump_timer(struct cnss_pci_data *pci_priv);
+int cnss_pci_get_msi_address(struct cnss_pci_data *pci_priv, u32 *msi_addr_low,
+			     u32 *msi_addr_high);
 void cnss_pci_notify_mhi_error(struct cnss_pci_data *pci_priv);
 #endif /* _CNSS_PCI_H */

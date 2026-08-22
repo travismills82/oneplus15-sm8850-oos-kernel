@@ -736,21 +736,6 @@ static qdf_notif_block cds_hang_event_notifier = {
 };
 
 /**
- * cds_set_exclude_selftx_from_cca_busy_time() - Set exclude self tx time
- * from cca busy time bool in cds config
- * @exclude_selftx_from_cca_busy: Bool to be stored in cds config
- * @cds_cfg: Pointer to cds config
- *
- * Return: None
- */
-static void
-cds_set_exclude_selftx_from_cca_busy_time(bool exclude_selftx_from_cca_busy,
-					  struct cds_config_info *cds_cfg)
-{
-	cds_cfg->exclude_selftx_from_cca_busy = exclude_selftx_from_cca_busy;
-}
-
-/**
  * cds_open() - open the CDS Module
  *
  * cds_open() function opens the CDS Scheduler
@@ -866,9 +851,6 @@ QDF_STATUS cds_open(struct wlan_objmgr_psoc *psoc)
 		goto err_htc_close;
 	}
 
-	cds_set_exclude_selftx_from_cca_busy_time(
-				hdd_ctx->config->exclude_selftx_from_cca_busy,
-				cds_cfg);
 	/*Open the WMA module */
 	status = wma_open(psoc, hdd_update_tgt_cfg, cds_cfg,
 			  hdd_ctx->target_type);
@@ -1426,6 +1408,9 @@ QDF_STATUS cds_post_disable(void)
 	 * - Disable HIF Interrupts.
 	 * - Clean up CE tasklets.
 	 */
+
+	cds_debug("suspend dp fisa");
+	ucfg_dp_fisa_suspend(gp_cds_context->dp_soc, OL_TXRX_PDEV_ID);
 
 	cds_debug("send deinit sequence to firmware");
 	if (cds_should_suspend_target())
@@ -2992,6 +2977,7 @@ cds_dp_get_vdev_stats(uint8_t vdev_id, struct cds_vdev_dp_stats *stats)
 		stats->tx_retries_mpdu = vdev_stats->tx.retries_mpdu;
 		stats->tx_mpdu_success_with_retries =
 			vdev_stats->tx.mpdu_success_with_retries;
+		stats->tx_dropped = vdev_stats->tx_i.dropped.dropped_pkt.num;
 		ret = true;
 	}
 

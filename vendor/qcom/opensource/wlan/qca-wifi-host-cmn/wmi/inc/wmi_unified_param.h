@@ -1639,6 +1639,8 @@ struct peer_assoc_ml_partner_links {
  * @peer_dms_capable: is peer DMS capable
  * @reserved: spare bits
  * @t2lm_params: TID-to-link mapping params
+ * @peer_cck_rx_support_5ghz: Peer CCK RX support
+ * @peer_cck_tx_support_5ghz: Peer CCK TX support
  */
 struct peer_assoc_params {
 	uint32_t vdev_id;
@@ -1732,6 +1734,8 @@ struct peer_assoc_params {
 #ifdef WLAN_FEATURE_11BE
 	struct wmi_host_tid_to_link_map_params t2lm_params;
 #endif
+	uint8_t peer_cck_rx_support_5ghz : 1,
+		peer_cck_tx_support_5ghz: 1;
 };
 
 /**
@@ -3311,6 +3315,8 @@ struct set_fwtest_params {
  * @WFA_FILS_DISCV_FRAMES: FD frames TX enable disable config
  * @WFA_IGNORE_H2E_RSNXE: configure driver/firmware to ignore H2E_RSNXE in case
  *                        of 6g connection
+ * @WFA_CONFIG_OFDMA: configure driver/firmware to force HE trigger to EHT STA
+ * @WFA_CONFIG_ML: configure driver/firmware with Multi-link params
  */
 enum wfa_test_cmds {
 	WFA_CONFIG_RXNE,
@@ -3319,6 +3325,8 @@ enum wfa_test_cmds {
 	WFA_CONFIG_SA_QUERY,
 	WFA_FILS_DISCV_FRAMES,
 	WFA_IGNORE_H2E_RSNXE,
+	WFA_CONFIG_OFDMA,
+	WFA_CONFIG_ML
 };
 
 /**
@@ -5696,7 +5704,7 @@ typedef enum {
 #ifdef FEATURE_WLAN_TX_POWERBOOST
 	wmi_pdev_power_boost_eventid,
 #endif
-
+	wmi_cfr_capture_filter_resp_eventid,
 	wmi_events_max,
 } wmi_conv_event_id;
 
@@ -6096,6 +6104,8 @@ typedef enum {
 		   PDEV_PARAM_DSTALL_CONSECUTIVE_TX_NO_ACK_THRESHOLD),
 	PDEV_PARAM(pdev_param_mgmt_srng_reap_event_threshold,
 		   PDEV_PARAM_MGMT_SRNG_REAP_EVENT_THRESHOLD),
+	PDEV_PARAM(pdev_param_adaptive_early_rx_extra_sleep_slop,
+		   PDEV_PARAM_ADAPTIVE_EARLY_RX_EXTRA_SLEEP_SLOP),
 	pdev_param_max,
 } wmi_conv_pdev_params_id;
 
@@ -6445,6 +6455,11 @@ typedef enum {
 	VDEV_PARAM(vdev_param_disable_scan_start_twt,
 		   VDEV_PARAM_DISABLE_SCAN_START_TWT),
 	VDEV_PARAM(vdev_param_twt_resp_disable, VDEV_PARAM_TWT_RESP_DISABLE),
+	VDEV_PARAM(vdev_param_cck_support, VDEV_PARAM_CCK_SUPPORT),
+	VDEV_PARAM(vdev_param_dsmps_control, VDEV_PARAM_DSMPS_CONTROL),
+	VDEV_PARAM(vdev_param_su_txop_burst_limit_us,
+		   VDEV_PARAM_SU_TXOP_BURST_LIMIT_US),
+
 	vdev_param_max,
 } wmi_conv_vdev_param_id;
 
@@ -6891,12 +6906,23 @@ typedef enum {
 	wmi_service_per_vdev_twt_resp_disable_support,
 	wmi_service_vendor_oui_action_v2,
 	wmi_service_ndp_dfs_channel_support,
+	wmi_service_tx_power_limit,
 #ifdef FEATURE_WLAN_SUPPORT_P2P_R2
 	wmi_service_wfd_r2,
+#endif
+#ifdef FEATURE_WLAN_SUPPORT_PCC
+	wmi_service_pcc_mode,
 #endif
 #if defined(FEATURE_WLAN_TDLS) && defined(WLAN_FEATURE_TDLS_NSS_4_4)
 	wmi_service_tdls_nss_confirm_support,
 #endif
+#ifdef WLAN_FEATURE_MLO_SAP_LINK_REMOVAL
+	wmi_service_mlo_sap_link_removal_support,
+#endif
+	wmi_service_cck_rx_support_5g,
+	wmi_service_cck_tx_support_5g,
+	wmi_service_cfr_unassoc_rx_capture_support,
+	wmi_service_cfr_assoc_tx_capture_support,
 	wmi_services_max,
 } wmi_conv_service_ids;
 #define WMI_SERVICE_UNAVAILABLE 0xFFFF
@@ -7301,6 +7327,7 @@ struct target_feature_set {
  * @apfv6_offload_disabled: APFv6 offload disabled bitmap
  * @is_action_oui_v2_enabled: Is action oui v2 enabled
  * @enable_bcn_rssi_history_report: Enable beacon rssi history report
+ * @haps_feature_flags: HAPS flags setting for power save config
  */
 typedef struct {
 	uint32_t num_vdevs;
@@ -7453,6 +7480,7 @@ typedef struct {
 	uint32_t apfv6_offload_disabled;
 	bool is_action_oui_v2_enabled;
 	bool enable_bcn_rssi_history_report;
+	uint32_t haps_feature_flags;
 } target_resource_config;
 
 /**
@@ -10132,6 +10160,7 @@ struct peer_vlan_config_param {
  * @mcs_rate:
  * @gi_type:
  * @agc_gain_tbl_index:
+ * @seq_num: seq number
  */
 typedef struct {
 	uint32_t capture_method;
@@ -10157,6 +10186,7 @@ typedef struct {
 	uint32_t mcs_rate;
 	uint32_t gi_type;
 	uint8_t agc_gain_tbl_index[WMI_HOST_MAX_CHAINS];
+	uint32_t seq_num;
 } wmi_cfr_peer_tx_event_param;
 
 /**

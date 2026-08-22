@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -44,10 +45,10 @@
 #define LIM_AUTH_RETRY_TIMER_MS   60
 
 /*
- * SAE auth timer of 5secs. This is required for duration of entire SAE
+ * SAE auth timer of 3secs. This is required for duration of entire SAE
  * authentication.
  */
-#define LIM_AUTH_SAE_TIMER_MS 5000
+#define LIM_AUTH_SAE_TIMER_MS 3000
 #define LIM_CHANNEL_VACATE_TIMER_MS 5000
 
 /*
@@ -245,7 +246,7 @@ uint32_t lim_create_timers(struct mac_context *mac)
 	cfgValue = 1000;
 	cfgValue = SYS_MS_TO_TICKS(cfgValue);
 	if (tx_timer_create(mac, &mac->lim.lim_timers.gLimDeauthAckTimer,
-			    "DISASSOC ACK TIMEOUT",
+			    "DEAUTH ACK TIMEOUT",
 			    lim_process_deauth_ack_timeout,
 			    WLAN_INVALID_VDEV_ID,
 			    cfgValue, 0, TX_NO_ACTIVATE) != TX_SUCCESS) {

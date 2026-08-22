@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -40,6 +40,7 @@
 #include "wlan_tdls_api.h"
 #include "wlan_mlo_mgr_link_switch.h"
 #include "wlan_ll_sap_api.h"
+#include <wlan_cfr_ucfg_api.h>
 
 QDF_STATUS if_mgr_connect_start(struct wlan_objmgr_vdev *vdev,
 				struct if_mgr_event_data *event_data)
@@ -112,6 +113,7 @@ QDF_STATUS if_mgr_connect_start(struct wlan_objmgr_vdev *vdev,
 	if (!ucfg_nan_is_sta_nan_ndi_4_port_allowed(psoc))
 		ucfg_nan_check_and_disable_unsupported_ndi(psoc,
 							   false);
+	ucfg_cfr_send_stop(vdev, 0);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -265,6 +267,8 @@ QDF_STATUS if_mgr_disconnect_complete(struct wlan_objmgr_vdev *vdev,
 	     wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_CLIENT_MODE) &&
 	     !wlan_mlme_is_aux_emlsr_support(psoc))
 		wlan_handle_emlsr_sta_concurrency(psoc, false, true);
+
+	policy_mgr_update_flow_pool_unmap(psoc, vdev);
 
 	status = if_mgr_enable_roaming_after_p2p_disconnect(pdev, vdev,
 							    RSO_CONNECT_START);

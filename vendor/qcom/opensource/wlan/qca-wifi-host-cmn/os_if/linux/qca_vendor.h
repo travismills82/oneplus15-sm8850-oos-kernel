@@ -44,7 +44,8 @@
  * This document describes all of the attributes used in the vendor command
  * QCA_NL80211_VENDOR_SUBCMD_SET_WIFI_CONFIGURATION to configure the number of
  * spatial streams (NSS) and the number of chains used for transmitting (TX) and
- * receiving (RX) the data.
+ * receiving (RX) the data and define corresponding attributes to enable/disable
+ * TX power limit.
  *
  * Global NSS configuration - Applies to all bands (2.4 GHz and 5/6 GHz)
  * The following attributes are used to dynamically configure the number of
@@ -121,18 +122,28 @@
  *
  * Global chain-mask configuration - Applies to 2.4 GHz or 5/6 GHz band
  * The following band specific attributes are used to dynamically configure the
- * global chain masks (e.g. chain0 / chain1 / ...) to be used for transitting the
- * data in the 2.4 GHz or 5/6 GHz band. These attributes can be used independently.
- * This configuration is allowed when driver is active.
- * The firmware will intersect chain configurations using & operator:
- * - Global chain-mask configuration and
- * - Global chain configuration and
- * - Per band chain configuration
+ * global chain masks (e.g., 0x1 for Chain 0, 0x2 for Chain 1, 0x4 for Chain 2)
+ * to be used for transmitting the data in the 2.4 GHz or 5/6 GHz band.
  *
- * @QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_2GHZ: Bitmask of chains to be used for
- * transmitting the data in the 2.4 GHz band.
- * @QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_5GHZ: Bitmask of chains to be used for
- * transmitting the data in the 5/6 GHz band.
+ * These attributes can be used independently.
+ * This configuration is allowed when the driver is active.
+ * The driver/firmware will intersect (AND operation) the newly configured
+ * global TX chain mask with other chain configurations (e.g., the global
+ * chain-mask configuration, global chain configuration, and per band chain
+ * configuration) to determine the final active chain mask.
+ *
+ * If the intersection of these configurations results in no available chains,
+ * the driver/firmware will reject the configuration attempt.
+ *
+ * To effectively clear or reset the chain mask configuration, user-space
+ * can set the attribute to a bitmask representing all available chains
+ * (i.e., 0xFF or 255), allowing the driver to apply the default chain mask
+ * configuration.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_2GHZ: Bitmask of chains to be used
+ * for transmitting the data in the 2.4 GHz band.
+ * @QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_5GHZ: Bitmask of chains to be used
+ * for transmitting the data in the 5/6 GHz band.
  *
  * The following scenarios capture how the driver process the configuration when
  * different TX/RX NSS and chain config attributes are used in the command.
@@ -165,6 +176,10 @@
  * Case 8: Case 5 + Case 7 - Per band TX,RX NSS and chains are configured.
  *
  * Case 9: Case 2 + Case 8 - Per band TX,RX NSS and chains are configured.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CONFIG_TX_POWER_LIMIT_ENABLE: Enables firmware to
+ * apply TX power limits from Board Data File (BDF) across all bands and
+ * interfaces when set.
  */
 
 /**
@@ -5378,6 +5393,9 @@ enum qca_wlan_vendor_attr_nd_offload {
  *	P2P Connection Compatibility mode in which GO allows connection
  *	with both P2P R1 and R2 clients.
  *
+ * @QCA_WLAN_VENDOR_FEATURE_SUPPORT_TX_POWER_LIMIT: Flag indicates that the
+ *	driver supports enabling TX power limit from the userspace.
+ *
  * @NUM_QCA_WLAN_VENDOR_FEATURES: Number of assigned feature bits
  */
 enum qca_wlan_vendor_features {
@@ -5410,8 +5428,9 @@ enum qca_wlan_vendor_features {
 	QCA_WLAN_VENDOR_FEATURE_NAN_USD_OFFLOAD = 26,
 	QCA_WLAN_VENDOR_FEATURE_P2P_V2 = 28,
 	QCA_WLAN_VENDOR_FEATURE_PCC_MODE = 29,
+	QCA_WLAN_VENDOR_FEATURE_SUPPORT_TX_POWER_LIMIT = 30,
 #ifdef OPLUS_FEATURE_WIFI_VENDOR_FT
-	OPLUS_WLAN_VENDOR_FEATURE_VENDOR_FT = 30,
+	OPLUS_WLAN_VENDOR_FEATURE_VENDOR_FT = 40,
 #endif /* OPLUS_FEATURE_WIFI_VENDOR_FT */
 	NUM_QCA_WLAN_VENDOR_FEATURES /* keep last */
 };
@@ -6141,9 +6160,9 @@ enum qca_wlan_vendor_attr_config {
 	 * Modes are defined by enum qca_wlan_vendor_opm_mode.
 	 *
 	 * This attribute shall be configured along with
-	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_ITO and
-	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_SPEC_WAKE_INTERVAL attributes
-	 * when its value is set to %QCA_WLAN_VENDOR_OPM_MODE_USER_DEFINED.
+	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LEVEL and
+	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LATENCY_TOLERANCE attributes
+	 * when its value is set to %QCA_WLAN_VENDOR_OPM_MODE_LATENCY_BASED.
 	 */
 	QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT = 71,
 
@@ -6726,15 +6745,51 @@ enum qca_wlan_vendor_attr_config {
 	 */
 	QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_EMLSR_LINKS = 132,
 
-	/* 8-bit unsigned value. The tx chain mask to be configured dynamically
+	/* 8-bit unsigned value
+	 *
+	 * This setting determines the intensity of the power-saving mode.
+	 * The level ranges from 1 to 5, where:
+	 *         1 represents the most aggressive (maximum power saving), and
+	 *         5 represents the least aggressive (minimal power saving).
+	 *
+	 * This attribute shall be configured along with
+	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LATENCY_TOLERANCE and
+	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT
+	 * to %QCA_WLAN_VENDOR_OPM_MODE_LATENCY_BASED mode.
+	 */
+	QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LEVEL = 133,
+
+	/* 16-bit unsigned value to configure latency tolerance value in
+	 * milliseconds.
+	 *
+	 * This attribute configures latency tolerance value for
+	 * STA and P2P Client mode. This is used by the firmware to achieve
+	 * optimal power consumption within latency constraints.
+	 *
+	 * This attribute shall be configured along with
+	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LEVEL and
+	 * %QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT
+	 * to %QCA_WLAN_VENDOR_OPM_MODE_LATENCY_BASED mode.
+	 */
+	QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LATENCY_TOLERANCE = 134,
+
+	/* 8-bit unsigned value to control transmit tx power limit. When
+	 * this flag attribute is present, firmware shall apply the vendor
+	 * configured TX power limit that is stored in the Board Data File
+	 * (BDF) for all bands and all the interfaces.
+	 * 1 - Enable, 0 - Disable.
+	 */
+	QCA_WLAN_VENDOR_ATTR_CONFIG_TX_POWER_LIMIT_ENABLE = 135,
+
+	/* 8-bit unsigned value. The TX chain mask to be configured dynamically
 	 * for transmitting the data in the 2.4 GHz band.
 	 */
-	QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_2GHZ = 136,
+	QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_2GHZ = 137,
 
-	/* 8-bit unsigned value. The tx chain mask to be configured dynamically
+	/* 8-bit unsigned value. The TX chain mask to be configured dynamically
 	 * for transmitting the data in the 5/6 GHz band.
 	 */
-	QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_5GHZ = 137,
+	QCA_WLAN_VENDOR_ATTR_CONFIG_TX_CHAIN_MASK_5GHZ = 138,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_CONFIG_AFTER_LAST,
@@ -11248,6 +11303,23 @@ enum qca_wlan_vendor_attr_wifi_test_config {
 	 */
 	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_BTM_REQ_RESP = 79,
 
+	/* 8-bit unsigned value to configure Restricted TWT feature support
+	 * within the EHT capabilities element of the Association Request frame.
+	 *
+	 * This attribute is used to configure the testbed device.
+	 * 1-enable, 0-disable.
+	 */
+	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_EHT_RTWT_SUPPORT = 80,
+
+	/* 8-bit unsigned value to configure BTM MLD Recommendation For Multiple
+	 * APs Support within the Extended MLD capability of Multi-link element
+	 * in the Association Request frame.
+	 *
+	 * This attribute is used to configure the testbed device.
+	 * 1-enable, 0-disable.
+	 */
+	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_EHT_BTM_RECOMM_MULTI_AP_SUPPORT = 81,
+
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_AFTER_LAST,
 	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_MAX =
@@ -12372,13 +12444,99 @@ enum qca_wlan_vendor_cfr_capture_type {
 };
 
 /**
+ * enum qca_wlan_vendor_cfr_ltf_type - CSI/LTF type for CFR events.
+ *
+ * @QCA_WLAN_VENDOR_CFR_LTF_TYPE_HT: CSI from HT-LTF (IEEE 802.11n)
+ * @QCA_WLAN_VENDOR_CFR_LTF_TYPE_VHT: CSI from VHT-LTF (IEEE 802.11ac)
+ * @QCA_WLAN_VENDOR_CFR_LTF_TYPE_HE: CSI from HE-LTF (IEEE 802.11ax)
+ * @QCA_WLAN_VENDOR_CFR_LTF_TYPE_EHT: CSI from EHT-LTF (IEEE 802.11be)
+ */
+enum qca_wlan_vendor_cfr_ltf_type {
+	QCA_WLAN_VENDOR_CFR_LTF_TYPE_HT = 0,
+	QCA_WLAN_VENDOR_CFR_LTF_TYPE_VHT = 1,
+	QCA_WLAN_VENDOR_CFR_LTF_TYPE_HE = 2,
+	QCA_WLAN_VENDOR_CFR_LTF_TYPE_EHT = 3,
+};
+
+/**
+ * enum qca_wlan_vendor_chip_id - WLAN Chip identifier code.
+ */
+enum qca_wlan_vendor_chip_id {
+	QCA_WLAN_VENDOR_CHIP_ID_WCN3680B = 0,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN3910 = 1,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN3950 = 2,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN3988 = 3,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN3991 = 4,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN3998 = 5,
+	QCA_WLAN_VENDOR_CHIP_ID_QCA639x = 6,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN685x = 7,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN6750 = 8,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN785x = 9,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN7750 = 10,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN7950 = 11,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN7880 = 12,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN7881 = 13,
+	QCA_WLAN_VENDOR_CHIP_ID_WCN8850 = 14,
+};
+
+/**
+ * qca_wlan_vendor_cfr_stop_reason - Reason codes for CFR stop indication used
+ * by attribute QCA_WLAN_VENDOR_ATTR_PEER_CFR_STOP_REASON.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_UNSPEC: Unspecified or unknown reason.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_COMPLETED: CFR collection completed
+ * successfully as planned.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_USER_ABORTED: CFR collection stopped
+ * explicitly upon userspace abort/stop request.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_PEER_UNAVAILABLE: Peer disconnected or
+ * unavailable.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_CONCURRENCY: Stopped to accommodate a
+ * higher-priority concurrency operation.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_ROAMING: Stopped due to roaming activity.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_FW_ERROR: Stopped because of a firmware or
+ * internal error.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_CHANNEL_SWITCHED: Channel changed (CSA).
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_LINK_SWITCHED: Stopped due to MLO link
+ * switch.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_LINK_RECONFIG: Stopped due to MLO link
+ * reconfiguration.
+ *
+ * @QCA_WLAN_VENDOR_CFR_STOP_REASON_RECOVERY: Stopped as part of driver
+ * recovery, restart, or assert handling.
+ *
+ */
+enum qca_wlan_vendor_cfr_stop_reason {
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_UNSPEC = 0,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_COMPLETED = 1,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_USER_ABORTED = 2,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_PEER_UNAVAILABLE = 3,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_CONCURRENCY = 4,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_ROAMING = 5,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_FW_ERROR = 6,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_CHANNEL_SWITCHED = 7,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_LINK_SWITCHED = 8,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_LINK_RECONFIG = 9,
+	QCA_WLAN_VENDOR_CFR_STOP_REASON_RECOVERY = 10,
+};
+
+/**
  * enum qca_wlan_vendor_peer_cfr_capture_attr - Used by the vendor command
  * QCA_NL80211_VENDOR_SUBCMD_PEER_CFR_CAPTURE_CFG to configure peer
  * Channel Frequency Response capture parameters and enable periodic CFR
  * capture.
  *
  * @QCA_WLAN_VENDOR_ATTR_CFR_PEER_MAC_ADDR: Optional (6-byte MAC address)
- * MAC address of peer. This is for CFR version 1 only.
+ * MAC address of peer. This is for CFR version 1 and in peer CFR event for
+ * version 3.
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE: Required (flag)
  * Enable peer CFR Capture. This attribute is mandatory to
@@ -12387,24 +12545,26 @@ enum qca_wlan_vendor_cfr_capture_type {
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_BANDWIDTH: Optional (u8)
  * BW of measurement, attribute uses the values in enum nl80211_chan_width
- * Supported values: 20, 40, 80, 80+80, 160.
+ * Supported bandwidth: 20, 40, 80, 80+80, 160, 320.
  * Note that all targets may not support all bandwidths.
- * This attribute is mandatory for version 1 if attribute
+ * This attribute is mandatory for version 1 and version 3 if attribute
  * QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE is used.
+ * This attribute is also applicable for peer CFR event with CFR data format
+ * version 3
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_PERIODICITY: Optional (u32)
  * Periodicity of CFR measurement in msec.
  * Periodicity should be a multiple of Base timer.
- * Current Base timer value supported is 10 msecs (default).
+ * Current Base timer value supported is 10 milliseconds (default).
  * 0 for one shot capture.
- * This attribute is mandatory for version 1 if attribute
- * QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE is used.
+ * This attribute is mandatory for version 1 and optional for version 3 if
+ * attribute QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE is used.
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_METHOD: Optional (u8)
  * Method used to capture Channel Frequency Response.
  * Attribute uses the values defined in enum qca_wlan_vendor_cfr_method.
- * This attribute is mandatory for version 1 if attribute
- * QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE is used.
+ * This attribute is mandatory for version 1 and optional for version 3 if
+ * attribute QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE is used.
  *
  * @QCA_WLAN_VENDOR_ATTR_PERIODIC_CFR_CAPTURE_ENABLE: Optional (flag)
  * Enable periodic CFR capture.
@@ -12412,9 +12572,9 @@ enum qca_wlan_vendor_cfr_capture_type {
  * If this attribute is not present, periodic CFR capture is disabled.
  *
  * @QCA_WLAN_VENDOR_ATTR_CFR_VERSION: Optional (u8)
- * Value is 1 or 2 since there are two versions of CFR capture. Two versions
- * can't be enabled at same time. This attribute is mandatory if target
- * support both versions and use one of them.
+ * Value is 1, 2, or 3 since there are three versions of CFR capture.
+ * Only one version can be enabled at a time. This attribute is mandatory
+ * if the target supports multiple versions and uses one of the versions.
  *
  * @QCA_WLAN_VENDOR_ATTR_CFR_ENABLE_GROUP_BITMAP: Optional (u32)
  * This attribute is mandatory for version 2 if
@@ -12469,9 +12629,9 @@ enum qca_wlan_vendor_cfr_capture_type {
  * any value between 0 and 15. This is for CFR version 2 only.
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TA: Optional (6-byte MAC address)
- * Transmitter address which is used to filter packets, this MAC address takes
+ * Transmitter address which is used to filter frames, this MAC address takes
  * effect with QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TA_MASK.
- * This is for CFR version 2 only.
+ * This is for CFR version 2 and version 3.
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_RA: Optional (6-byte MAC address)
  * Receiver address which is used to filter packets, this MAC address takes
@@ -12480,16 +12640,17 @@ enum qca_wlan_vendor_cfr_capture_type {
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TA_MASK: Optional (6-byte MAC address)
  * Mask of transmitter address which is used to filter packets.
- * This is for CFR version 2 only.
+ * This is for CFR version 2 and version 3.
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_RA_MASK: Optional (6-byte MAC address)
  * Mask of receiver address which is used to filter packets.
  * This is for CFR version 2 only.
  *
  * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NSS: Optional (u32)
- * Indicates packets with a specific NSS will be filtered for CFR capture.
- * This is for CFR version 2 only. This is a bitmask. Bits 7:0, CFR capture will
- * be done for packets matching the NSS specified within this bitmask.
+ * Indicates frames with a specific NSS will be filtered for CFR capture.
+ * This is for CFR version 2 and version 3. This is a bitmask. Bits 7:0 request
+ * CFR capture to be done for frames matching the NSS specified within this
+ * bitmask.
  * Bits 31:8 Reserved for future use. Bits 7:0 map to NSS:
  *     bit 0 : NSS 1
  *     bit 1 : NSS 2
@@ -12547,6 +12708,109 @@ enum qca_wlan_vendor_cfr_capture_type {
  * asynchronous event when the driver is configured to send CFR data using NL
  * events with %QCA_WLAN_VENDOR_CFR_DATA_NETLINK_EVENTS
  *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_PAD: Attribute used for padding for 64-bit
+ * alignment.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREQ: Optional (u32)
+ * Frequency (in MHz) used for CFR capture.
+ * Applicable only for CFR version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_FRAME_TYPE: Optional (u8)
+ * IEEE 802.11 WLAN frame type configuration.
+ * Applicable only for CFR version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_FRAME_SUBTYPE: Optional (u8)
+ * IEEE 802.11 WLAN frame subtype configuration.
+ * Applicable only for CFR version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_REPORT_INTERVAL: Optional (u32)
+ * Interval (in milliseconds) at which CSI reports are generated
+ * and delivered to the user.
+ * Applicable only for CFR version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_FORMAT_OUI: Optional (u8 array, 3 or
+ * 5 bytes) Organizationally Unique Identifier (OUI) for the CFR data format.
+ * The OUI is assigned by IEEE and uniquely identifies the vendor or
+ * organization.
+ * Applicable only for CFR version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_FORMAT_VERSION: Optional (u8)
+ * Version of the CFR data format associated with the specified OUI.
+ * If not set, version 1 is used by default.
+ * OUI and version together define the vendor-specific format to interpret CFR
+ * data.
+ * Applicable only for CFR version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_TIMESTAMP_US: Optional (u64)
+ * Timestamp (in microseconds) indicating when the packet was received,
+ * based on the receiver's internal clock. This value represents the local
+ * timing reference for the captured frame.
+ * Applicable for peer CFR event and CFR data format version 3 only.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INFO: Optional (nested)
+ * Nested attribute containing one or more antenna entries. Each entry is a
+ * nested attribute that includes:
+ *	%QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INDEX,
+ *	%QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_RSSI,
+ *	%QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_AGC,
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INDEX: Optional (u8)
+ * Index of the receiving antenna corresponding to each entry.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_RSSI: Optional (s8)
+ * RSSI value (in dBm) measured on the antenna specified by
+ * %QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INDEX.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_AGC: Optional (u8)
+ * AGC (Automatic Gain Control) value in dB for the antenna
+ * specified by %QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INDEX.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_IS_LAST_REPORT: Optional (flag)
+ * Indicates that this event is the last entry in the current CSI reporting
+ * period. This flag is used when %QCA_WLAN_VENDOR_ATTR_PEER_CFR_REPORT_INTERVAL
+ * is configured to help the receiver determine the end of a CSI report batch.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_FRAME_SEQUENCE_NUMBER: Optional (u16)
+ * Sequence number of the IEEE 802.11 frame (without the fragment number) that
+ * triggered the CSI capture.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_CHIP_ID: Optional (u16)
+ * Vendor-specific chip identifier of the reporting device. Values are defined
+ * in enum qca_wlan_vendor_chip_id.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TSF: Optional (u64)
+ * TSF (Timing Synchronization Function) timestamp in microseconds.
+ * This value is derived at the receiver of the frame by aligning with
+ * the TSF provided by the AP through periodic Beacon or Probe Response frames.
+ * Applicable for peer CFR events using CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_CFO: Optional (s16)
+ * Carrier Frequency Offset (in 0.01 ppm) indicating frequency drift between the
+ * transmitter and receiver for the captured frame.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_CSI_LTF_TYPE: Optional (u8)
+ * CSI LTF type for the CFR event. Values are defined by
+ * enum qca_wlan_vendor_cfr_ltf_type.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_CSI_NUM_SPATIAL_STREAMS: Optional (u8)
+ * Number of spatial streams used to capture the CFR data.
+ * Applicable for peer CFR event with CFR data format version 3.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_CFR_STOP_REASON: Optional (u32)
+ * This attribute signifies that CFR collection for a peer has been stopped
+ * and provides the corresponding reason code. The reason codes are defined
+ * in enum qca_wlan_vendor_cfr_stop_reason.
+ * Applicable for peer CFR events when CFR data format version is 3.
+ *
  */
 enum qca_wlan_vendor_peer_cfr_capture_attr {
 	QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_INVALID = 0,
@@ -12578,6 +12842,26 @@ enum qca_wlan_vendor_peer_cfr_capture_attr {
 	QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_TRANSPORT_MODE = 26,
 	QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_RECEIVER_PID = 27,
 	QCA_WLAN_VENDOR_ATTR_PEER_CFR_RESP_DATA = 28,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_PAD = 29,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREQ = 30,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_FRAME_TYPE = 31,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_FRAME_SUBTYPE = 32,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_REPORT_INTERVAL = 33,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_FORMAT_OUI = 34,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_FORMAT_VERSION = 35,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_TIMESTAMP_US = 36,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INFO = 37,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_INDEX = 38,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_RSSI = 39,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_RX_ANTENNA_AGC = 40,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_IS_LAST_REPORT = 41,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_FRAME_SEQUENCE_NUMBER = 42,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_CHIP_ID = 43,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TSF = 44,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_CFO = 45,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_CSI_LTF_TYPE = 46,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_NUM_SPATIAL_STREAMS = 47,
+	QCA_WLAN_VENDOR_ATTR_PEER_CFR_STOP_REASON = 48,
 
 	/* Keep last */
 	QCA_WLAN_VENDOR_ATTR_PEER_CFR_AFTER_LAST,
@@ -14771,6 +15055,14 @@ enum qca_wlan_vendor_attr_feature_config_data {
  * APs which meet the enable criteria and disable DSMPS for all other APs after
  * the configuration.
  *
+ * Interaction with
+ * %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI:
+ * If %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI is also
+ * configured and the connected AP matches the adaptive action’s
+ * %QCA_WLAN_VENDOR_ATTR_FEATURE_CONFIG_DATA_LIST, the adaptive logic may
+ * disable DSMPS when the AP RSSI is below the firmware-provided threshold, even
+ * if this static action would otherwise enable DSMPS for that AP.
+ *
  * @QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_DISABLE_DSMPS - Disable dynamic SMPS
  * only when contents advertised by the AP in its Beacon and Probe Response
  * frames matches at least one of the configuration data entry from the array of
@@ -14785,10 +15077,48 @@ enum qca_wlan_vendor_attr_feature_config_data {
  * data entries with this action the driver will disable the DSMPS only for
  * the APs which meet the disable criteria and enable DSMPS for all other APs
  * after the configuration.
+ *
+ * Interaction with
+ * %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI:
+ * If an AP is present in the
+ * %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_DISABLE_DSMPS list, DSMPS remains
+ * disabled for that AP regardless of any
+ * %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI or RSSI
+ * changes.
+ *
+ * @QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI - Enable
+ * Dynamic Spatial Multiplexing Power Save (DSMPS) adaptively based on AP RSSI.
+ * This action enables DSMPS only when the Access Point (AP) signal strength
+ * (RSSI) exceeds a predefined threshold after a connection is established. The
+ * driver activates or deactivates DSMPS dynamically during the association,
+ * based on whether the AP’s RSSI is above or below the threshold. The RSSI
+ * threshold is determined by the default configuration set by the firmware.
+ * DSMPS is activated or deactivated only if the information advertised in the
+ * AP’s Beacon and Probe Response frames matches at least one entry from the
+ * configuration data list specified in
+ * %QCA_WLAN_VENDOR_ATTR_FEATURE_CONFIG_DATA_LIST. The DSMPS state is
+ * continuously evaluated during the association. If the AP's RSSI crosses the
+ * threshold (either above or below), the driver will enable or disable DSMPS
+ * accordingly, as long as the AP matches the configuration data list.
+ *
+ * Interaction with other actions:
+ * - %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI can co-exist
+ *   with %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ENABLE_DSMPS and
+ *   %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_DISABLE_DSMPS.
+ * - When AP matches with the configuration data of the both
+ *   %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ENABLE_DSMPS and
+ *   %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI, DSMPS can be
+ *   disabled due to signal strength being below the RSSI threshold even if the
+ *   AP matches the enable list.
+ * - The %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI action
+ *   takes effect only for APs not matching with the configuration data of
+ *   %QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_DISABLE_DSMPS. For APs in the
+ *   disable list, DSMPS remains disabled regardless of RSSI.
  */
 enum qca_wlan_vendor_feature_config_action {
 	QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ENABLE_DSMPS = 0,
 	QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_DISABLE_DSMPS = 1,
+	QCA_WLAN_VENDOR_FEATURE_CONFIG_ACTION_ADAPTIVE_DSMPS_BY_RSSI = 2,
 };
 
 /**
@@ -18557,12 +18887,17 @@ enum qca_wlan_vendor_attr_tdls_state {
  * 	to configure power save inactivity timeout and speculative wake up
  * 	interval through %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_ITO and
  * 	%QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_SPEC_WAKE_INTERVAL attributes.
+ * @QCA_WLAN_VENDOR_OPM_MODE_LATENCY_BASED: Enable optimized power-save mode
+ *      based on interface level latency tolerance value which is configured
+ *      through %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LATENCY_TOLERANCE and
+ *      %QCA_WLAN_VENDOR_ATTR_CONFIG_OPM_LEVEL.
  */
 
 enum qca_wlan_vendor_opm_mode {
 	QCA_WLAN_VENDOR_OPM_MODE_DISABLE = 0,
 	QCA_WLAN_VENDOR_OPM_MODE_ENABLE = 1,
 	QCA_WLAN_VENDOR_OPM_MODE_USER_DEFINED = 2,
+	QCA_WLAN_VENDOR_OPM_MODE_LATENCY_BASED = 3,
 };
 
 /* enum qca_wlan_audio_transport_switch_type - Represents the possible transport

@@ -183,10 +183,11 @@ QDF_STATUS wma_update_channel_list(WMA_HANDLE handle,
 		wma_handle->saved_chan.ch_freq_list[i] =
 					chan_list->chanParam[i].freq;
 
-		if (chan_list->chanParam[i].dfsSet) {
-			chan_p->is_chan_passive = 1;
+		if (chan_list->chanParam[i].dfsSet)
 			chan_p->dfs_set = 1;
-		}
+
+		if (chan_list->chanParam[i].is_passive)
+			chan_p->is_chan_passive = 1;
 
 		if (chan_list->chanParam[i].nan_disabled)
 			chan_p->nan_disabled = 1;
@@ -299,6 +300,7 @@ cm_handle_auth_offload(struct auth_offload_event *auth_event)
 	wlan_cm_set_sae_auth_ta(mac_ctx->pdev,
 				auth_event->vdev_id,
 				auth_event->ta);
+	wlan_set_log_instance_id(mac_ctx->pdev, auth_event->vdev_id);
 
 	wlan_cm_store_mlo_roam_peer_address(mac_ctx->pdev, auth_event);
 
