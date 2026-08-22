@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Analysis/build-input boundary for the controlled-v1 GKI Image contract.
+# This is intentionally not a blanket repository or vendor exclusion. The
+# KernelBuild aquery for //common:kernel_aarch64 must additionally be checked
+# by verify-controlled-v1-kernel-contract.py.
+kernel_platform/common
+kernel_platform/build
+kernel_platform/external
+kernel_platform/soc-repo/BUILD.bazel
+kernel_platform/soc-repo/bazel.WORKSPACE
+kernel_platform/soc-repo/device.bazelrc
+kernel_platform/soc-repo/kleaf-scripts/android_build.bzl
+kernel_platform/soc-repo/kleaf-scripts/modules_register.bzl
+kernel_platform/soc-repo/kleaf-scripts/targets/canoe.bzl
