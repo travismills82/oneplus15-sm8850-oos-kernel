@@ -85,3 +85,65 @@ The experiment must preserve:
 No device write is authorized by this audit. A future candidate may proceed
 only after static closure and firmware checks pass and the hardened TWRP
 helper passes a dry run with a verified TEST3 restore image.
+
+## Imported .053 closure and delivery decision
+
+The source import updates the four interdependent kernel component trees
+`fw-api`, `platform`, `qca-wifi-host-cmn`, and `qcacld-3.0` to the official
+`.053` snapshot. It deliberately does not import product DTS changes or
+userspace `sigma-dut` source. Local Kleaf selectors and Canoe target lists are
+adapted without introducing 15T/Pad targets or a new active chipset variant.
+
+All reviewed `.053` Canoe platform and Peach targets build. A full runtime
+replacement of CNSS plus Peach also passes the import/CRC/protected-signing
+contract, but its module payload exceeds the fixed vendor-DLKM capacity: the
+stock ext4 filesystem has 104 free 4 KiB blocks, while the full replacement
+grows the module payload by about 558 KiB. That image is rejected and must not
+be flashed; the partition is not resized.
+
+The accepted static candidate therefore follows the task's stock-provider
+preference and replaces only:
+
+- `cfg80211`;
+- `mac80211`; and
+- active `qca_cld3_peach_v2`.
+
+Active CNSS, WLAN firmware service, and all 27 IPA/GSI/RMNET/data modules stay
+byte-identical to OxygenOS 16.0.9.400. Dormant `qca_cld3_kiwi_v2`, dormant
+`qca_cld3_wcn7750`, and `wonder` retain their stock payloads and are re-signed
+only because the protected-provider signing closure requires it. They are not
+new runtime variants.
+
+The minimal contract has 436 vendor modules, zero unresolved imports, zero CRC
+mismatches, zero changed exported symbols, zero signature failures, and zero
+vermagic failures. It contains 54 verified imports from the new WLAN consumers
+to exact-stock cellular providers. Final-image validation confirms that the
+other 430 vendor modules, including the complete cellular closure, are exact
+stock.
+
+## Firmware and regulatory contract
+
+The minimal candidate keeps the active stock CNSS firmware requester and
+firmware service. Module metadata adds no Peach firmware declaration; the only
+declared firmware remains cfg80211's `regulatory.db` and
+`regulatory.db.p7s`. `WCNSS_qcom_cfg.ini`, BDF/calibration, AMSS/Data, PHY/AUX,
+and regulatory payloads remain external OxygenOS files. No firmware from the
+15T snapshot is packaged or substituted.
+
+`CONFIG_CFG80211_REQUIRE_SIGNED_REGDB=y` and
+`CONFIG_CFG80211_USE_KERNEL_REGDB_KEYS=y` remain enabled. The experiment makes
+no SAR, DFS, country-code, 6 GHz, thermal, or transmit-power policy override.
+The detailed result is in `wlan053-firmware-contract.tsv`.
+
+## Boot and system-DLKM isolation boundary
+
+The `.053` source import intentionally produces a new controlled-v1 source
+identity and kernel release. Its modules cannot be mixed with the frozen TEST3
+Image merely because the exported CRC set remains compatible. Consequently,
+the candidate must ship a matching new `boot.img` and `system_dlkm.img`, while
+preserving the system load contract at 46 entries with `wwan.ko` present and
+zero stale or missing entries. `vendor_boot` and VBMeta remain stock and are
+not part of the candidate.
+
+Static validation is not physical validation. No partition has been written
+by this experiment, and the `.053` status remains physical-test pending.
