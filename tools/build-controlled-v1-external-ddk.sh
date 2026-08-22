@@ -127,10 +127,9 @@ tools/bazel build "${bazel_args[@]}" \
 rm -rf -- "$out_dir/modules"
 mkdir -p "$out_dir/modules"
 for module in btpower bt_fm_swr btfm_slim_codec; do
-    mapfile -t matches < <(find "$repo_root/kernel_platform/bazel-bin/vendor/qcom/opensource/bt-kernel" \
-        -type f -name "${module}.ko" -print)
-    [[ ${#matches[@]} -eq 1 ]] || die "expected one ${module}.ko output, found ${#matches[@]}"
-    cp -a -- "${matches[0]}" "$out_dir/modules/${module}.ko"
+    target_output="$repo_root/kernel_platform/bazel-bin/vendor/qcom/opensource/bt-kernel/canoe_perf_${module}/${module}.ko"
+    [[ -f "$target_output" ]] || die "missing canonical signed target output: $target_output"
+    cp -a -- "$target_output" "$out_dir/modules/${module}.ko"
     [[ $(modinfo -F vermagic "$out_dir/modules/${module}.ko") == "$release "* ]] ||
         die "${module}.ko does not inherit the qualified kernel release"
 done
