@@ -135,7 +135,7 @@ for module in btpower bt_fm_swr btfm_slim_codec; do
     target_output="$repo_root/kernel_platform/bazel-bin/vendor/qcom/opensource/bt-kernel/canoe_perf_${module}/${module}.ko"
     [[ -f "$target_output" ]] || die "missing canonical signed target output: $target_output"
     cp -a -- "$target_output" "$out_dir/modules/${module}.ko"
-    "$sign_file" sha256 "$signing_repo/module-signing-v1.pem" \
+    "$sign_file" sha1 "$signing_repo/module-signing-v1.pem" \
         "$signing_repo/module-signing-v1.x509" "$out_dir/modules/${module}.ko"
     [[ $(modinfo -F vermagic "$out_dir/modules/${module}.ko") == "$release "* ]] ||
         die "${module}.ko does not inherit the qualified kernel release"
