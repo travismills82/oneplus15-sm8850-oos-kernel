@@ -343,6 +343,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="treat retained external consumers of new signed providers as fatal",
     )
+    parser.add_argument(
+        "--allow-import-contract-change",
+        action="append",
+        default=[],
+        metavar="MODULE",
+        help=(
+            "allow an explicitly reviewed source replacement to change its import set; "
+            "all resulting imports must still resolve with matching CRCs"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -373,11 +383,19 @@ def main() -> int:
 
     replacement_rows = []
     contract_failures = 0
+    allowed_import_changes = set(args.allow_import_contract_change)
+    unknown_allowed = allowed_import_changes - set(replacements)
+    if unknown_allowed:
+        raise ValueError(
+            "allowed import-contract module is not a replacement: "
+            + ", ".join(sorted(unknown_allowed))
+        )
     for name, replacement in sorted(replacements.items()):
         original = stock[name]
         imports_match = replacement.imports == original.imports
         exports_match = replacement.exports == original.exports
-        if not imports_match or not exports_match:
+        import_change_allowed = name in allowed_import_changes
+        if (not imports_match and not import_change_allowed) or not exports_match:
             contract_failures += 1
         replacement_rows.append(
             [
@@ -389,6 +407,7 @@ def main() -> int:
                 original.path.stat().st_size,
                 replacement.path.stat().st_size,
                 "MATCH" if imports_match else "MISMATCH",
+                "YES" if import_change_allowed else "NO",
                 "MATCH" if exports_match else "MISMATCH",
             ]
         )
@@ -403,6 +422,7 @@ def main() -> int:
             "stock_bytes",
             "replacement_bytes",
             "imports",
+            "import_change_explicitly_allowed",
             "exports",
         ],
         replacement_rows,
@@ -537,6 +557,7 @@ def main() -> int:
         "retained_external_modules": len(external),
         "external_signed_provider_edges": len(external_rows),
         "replacement_contract_failures": contract_failures,
+        "allowed_import_contract_changes": sorted(allowed_import_changes),
         "unresolved_imports": unresolved,
         "crc_mismatches": crc_mismatches,
         "result": "PASS"
