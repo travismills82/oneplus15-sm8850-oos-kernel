@@ -1,0 +1,53 @@
+{
+  "schema_version": 2,
+  "name": "controlled-v1-wlan053-kernel-contract",
+  "qualified_branch": "feature/controlled-v1-wlan053",
+  "qualified_branch_head": "e7444f14cbbd587e528fab386ad886ee474138c6",
+  "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+  "release_stamp_source_id": "6744a3f6bcf4226e37fa04475bd83a84fd3c3701",
+  "release_stamp_source_date_epoch": 1787354529,
+  "kernel_action_source_id": "09a1b3e0167351cd7ae21d66cd4be8a300534e9f",
+  "kernel_build_target": "//common:kernel_aarch64",
+  "canoe_base_kernel_target": "//soc-repo:canoe_perf_base_kernel",
+  "artifacts": {
+    "config_sha256": "b53d48b303059adb49a8dbe457145a4b7523a77fae621ea8d9e7b0b727e1615b",
+    "canoe_config_sha256": "b5d038e4e03dde1664b036b2d7f2d6319d8089ce5f6987010a968fcefd1c7925",
+    "module_symvers_sha256": "de57709f3de38afb3e266481da09433687979ffb88ee607bda93ac4732dd7e0b",
+    "system_map_sha256": "4f8ef4feb7c71abc18def8db341701e05b1ff7c0e8c8b50de7da48ef100f011a",
+    "modules_builtin_sha256": "f0caaac04ccb3a60cf2c99036ac755e1df535cbf50004621286ea1aa90890760",
+    "vmlinux_sha256": "b544a89858647d3257a0b50a7c03e5feefcf85399fc2bfc5ff7904544dedcb14",
+    "image_sha256": "9295e2a8bd06fdb002750b8adb99e37c0e1e2f6c440cbccfa90a2095fee6356b"
+  },
+  "signing": {
+    "generation": "controlled-v1",
+    "project_certificate_der_sha256": "04093d5e0b816927dc1e4fcdbd4ec754df6e69960918aa2eaa69bea6878f6faf",
+    "stock_certificate_der_sha256": "f28dbcc60085b21a3cff1342482897fa640b468847473147834f26c4feb2df43",
+    "trusted_bundle_sha256": "c1c17586a8bbd564a39b297d39a267b02ab4a266c0deaf81d536d026e68188a7"
+  },
+  "subsystems": {
+    "system_dlkm": {
+      "generation": "controlled-v1-wlan053",
+      "source_id": "6744a3f6bcf4226e37fa04475bd83a84fd3c3701"
+    },
+    "wlan": {
+      "generation": "AU_TECHPACK_WLAN.LA.2.0.R3.00.00.00.000.053",
+      "source_id": "6744a3f6bcf4226e37fa04475bd83a84fd3c3701"
+    },
+    "bluetooth_vendor": {
+      "generation": "AU_TECHPACK_BTFM.LA.2.0.R1.00.00.00.000.046",
+      "source_id": "8906fd47be43616ee8ed532ae571ecbe30dced49"
+    },
+    "cellular": {
+      "generation": "stock OOS 16.0.9.400(EX01)",
+      "source_id": "stock"
+    },
+    "nfc_vendor": {
+      "generation": "stock OOS 16.0.9.400(EX01)",
+      "source_id": "stock"
+    },
+    "other_ddk": {
+      "generation": "controlled-v1-wlan053 retained set",
+      "source_id": "e7444f14cbbd587e528fab386ad886ee474138c6"
+    }
+  }
+}
