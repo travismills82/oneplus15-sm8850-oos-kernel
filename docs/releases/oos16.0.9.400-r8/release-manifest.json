@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "release_id": "oos16.0.9.400-r8",
+  "release_title": "OnePlus 15 CPH2747 OxygenOS 16.0.9.400 r8",
+  "physically_tested_source_head": "36f40a44d700422969dc7debb6519c0f9ab977d0",
+  "release_commit": "TAG_TARGET",
+  "release_commit_ref": "oos16.0.9.400-r8^{commit}",
+  "device": {
+    "model": "OnePlus 15 CPH2747",
+    "platform": "Canoe / SM8850",
+    "firmware": "OxygenOS 16.0.9.400(EX01)"
+  },
+  "kernel": {
+    "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+    "config_sha256": "b53d48b303059adb49a8dbe457145a4b7523a77fae621ea8d9e7b0b727e1615b",
+    "module_symvers_sha256": "de57709f3de38afb3e266481da09433687979ffb88ee607bda93ac4732dd7e0b"
+  },
+  "payloads": {
+    "boot.img": {
+      "sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+      "size": 100663296
+    },
+    "system_dlkm.img": {
+      "sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef",
+      "size": 45658112
+    },
+    "vendor_dlkm.img": {
+      "sha256": "dccb47a3ba4055b3d385d80d6fda3875bc544488e1ed2cbd9951cd0662f56b26",
+      "size": 143986688
+    }
+  },
+  "release_zip": {
+    "filename": "OnePlus15-CPH2747-OOS16.0.9.400-r8-TWRP.zip",
+    "sha256": "a603e6af54325c86e20182ad0d24e91c7d5743697a1c51a6ec4bdcf7424bd8ed",
+    "size": 290322142,
+    "package_release_tag": "controlled-v1-g6744-wlan053-bt046-nfc102-cellular102-audio059-graphics057-camera073-platform086",
+    "physically_installed": true
+  },
+  "twrp_helper_sha256": "84b035710c305be859aac72827489850b7d215ee372ab3341be849e051bfab50",
+  "write_scope": [
+    "vendor_dlkm",
+    "system_dlkm",
+    "boot"
+  ],
+  "write_order": [
+    "vendor_dlkm",
+    "system_dlkm",
+    "boot"
+  ],
+  "not_modified": [
+    "vendor_boot",
+    "VBMeta",
+    "system_dlkm_oki",
+    "slot metadata"
+  ],
+  "subsystems": {
+    "wlan": ".053",
+    "bluetooth_vendor": ".046",
+    "nfc_vendor": ".102",
+    "rmnet_core": ".102",
+    "ipa_gsi": ".102",
+    "audio": ".059 selective GPR",
+    "graphics": ".057 selective secure guard",
+    "camera": ".073 selective RER",
+    "platform": ".099.086 selective CoreSight ETR guard"
+  },
+  "signing_generation": "controlled-v1",
+  "runtime_source_changes_in_release_commit": 0,
+  "kernel_input_guard": "PASS"
+}

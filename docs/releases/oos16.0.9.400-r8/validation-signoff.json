@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "release_id": "oos16.0.9.400-r8",
+  "overall_pre_release_status": "PASS",
+  "physically_tested_source_head": "36f40a44d700422969dc7debb6519c0f9ab977d0",
+  "release_zip_sha256": "a603e6af54325c86e20182ad0d24e91c7d5743697a1c51a6ec4bdcf7424bd8ed",
+  "exact_payload_hashes": "PASS",
+  "single_zip_twrp_installation": "PASS",
+  "post_write_partition_readback": "PASS",
+  "android_boot": "PASS",
+  "kernel_release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+  "subsystems": {
+    "wlan_6ghz_wpa3": "PASS",
+    "cellular_rmnet_ipv4_ipv6_routes_ip_dns": "PASS",
+    "wifi_cellular_handoff": "PASS",
+    "audio": "PASS",
+    "camera": "PASS",
+    "bluetooth_off_on_zero_crashes": "PASS",
+    "nfc_off_on": "PASS",
+    "google_wallet_hce": "PASS",
+    "ese1": "PASS",
+    "graphics_ui": "PASS",
+    "usb": "PASS",
+    "coresight_normal_runtime": "PASS"
+  },
+  "handoff_transient_packet_loss": {
+    "observed": true,
+    "packets_lost": 1,
+    "stabilized_ip_test": "5/5 PASS",
+    "stabilized_dns_test": "5/5 PASS",
+    "classification": "NON_BLOCKING_TRANSIENT"
+  },
+  "module_load_contract": {
+    "result": "PASS",
+    "entries": 46,
+    "wwan_ko_entry": 21
+  },
+  "module_contract_scan": "PASS",
+  "kernel_fault_scan": "PASS",
+  "physical_zip_installation": "PASS",
+  "embedded_payload_hashes": "PASS",
+  "readback_validation": "PASS",
+  "release_approval": "APPROVED"
+}

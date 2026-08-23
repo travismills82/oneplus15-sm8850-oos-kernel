@@ -1,0 +1,69 @@
+name: Controlled stack release validation
+
+on:
+  pull_request:
+    paths:
+      - "docs/releases/**"
+      - "docs/controlled-stack-release-process.md"
+      - "tools/*controlled-stack-release*.py"
+      - ".github/workflows/controlled-stack-release-validate.yml"
+  push:
+    paths:
+      - "docs/releases/**"
+      - "docs/controlled-stack-release-process.md"
+      - "tools/*controlled-stack-release*.py"
+      - ".github/workflows/controlled-stack-release-validate.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate all committed release records
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for manifest in docs/releases/*/release-manifest.json; do
+            [ -f "$manifest" ] || continue
+            found=1
+            release_dir="$(dirname "$manifest")"
+            python3 tools/verify-controlled-stack-release.py \
+              --manifest "$manifest" \
+              --signoff "$release_dir/validation-signoff.json" \
+              --allow-symbolic-release-commit
+          done
+          [ "$found" -eq 1 ]
+
+  published-assets:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Download published assets
+        run: gh release download "$RELEASE_TAG" --dir release-assets
+      - name: Verify published release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t zips < <(find release-assets -maxdepth 1 -type f -name '*-TWRP.zip' -print)
+          [ "${#zips[@]}" -eq 1 ]
+          commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          python3 tools/verify-controlled-stack-release.py \
+            --manifest release-assets/release-manifest.json \
+            --signoff release-assets/validation-signoff.json \
+            --zip "${zips[0]}" \
+            --sha256sums release-assets/SHA256SUMS \
+            --release-commit "$commit" \
+            --repo .
