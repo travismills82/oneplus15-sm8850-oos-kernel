@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "name": "controlled-v1-audio059-graphics057-camera073-rer",
+  "qualification": "NORMAL_RUNTIME_PHYSICALLY_VALIDATED_RER_TRIGGER_NOT_OBSERVED",
+  "tested_source": {
+    "branch": "experiment/camera-073-audit",
+    "commit": "e1d4b2b61c6c8f4fb8e3afe9bb9d187c83bc7fbf"
+  },
+  "canonical_branch": "feature/controlled-v1-audio059-graphics057-camera073-rer",
+  "kernel_contract": {
+    "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+    "source_id": "6744a3f6bcf4226e37fa04475bd83a84fd3c3701",
+    "config_sha256": "b53d48b303059adb49a8dbe457145a4b7523a77fae621ea8d9e7b0b727e1615b",
+    "module_symvers_sha256": "de57709f3de38afb3e266481da09433687979ffb88ee607bda93ac4732dd7e0b",
+    "image_sha256": "9295e2a8bd06fdb002750b8adb99e37c0e1e2f6c440cbccfa90a2095fee6356b",
+    "vmlinux_sha256": "b544a89858647d3257a0b50a7c03e5feefcf85399fc2bfc5ff7904544dedcb14",
+    "boot_sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+    "system_dlkm_sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef"
+  },
+  "vendor_dlkm_sha256": "8623653732b1f23a8250badc23bb0d99b25b812b5e8afc4ddcb9875154662531",
+  "signing": {
+    "generation": "controlled-v1",
+    "certificate_sha256": "04093d5e0b816927dc1e4fcdbd4ec754df6e69960918aa2eaa69bea6878f6faf"
+  },
+  "subsystems": {
+    "wlan": ".053-physically-qualified",
+    "bluetooth_vendor": ".046-core-qualified",
+    "nfc_vendor": ".102-core-qualified",
+    "rmnet_core": ".102-physically-qualified",
+    "ipa_gsi": ".102-normal-runtime-physically-qualified",
+    "audio": ".059-selective-gpr-physically-qualified",
+    "graphics": ".057-selective-secure-guard-physically-qualified",
+    "display": ".071-retained-.097-deferred",
+    "camera": ".061-plus-.073-selective-rer-snapshot"
+  },
+  "camera_delivery": {
+    "source_upgrades": [
+      "camera.ko"
+    ],
+    "stock_source_controlled_resigns": [
+      "camera_extension.ko"
+    ],
+    "camera_sha256": "604210dc629630cc322fbd7ecd57e793d9391e9cb55f2ff61382ce3671d04e2c",
+    "camera_extension_sha256": "0919eabcfe15346b96186bd42abb23f7213353e82667d7e9970d4cee8930ac6e"
+  },
+  "physical_qualification": {
+    "rear_primary": "PASS",
+    "rear_ultrawide": "PASS",
+    "rear_telephoto": "PASS",
+    "front_camera": "PASS",
+    "autofocus": "PASS",
+    "flash": "PASS",
+    "video_1080p30": "PASS",
+    "video_audio": "PASS",
+    "open_close": "25/25",
+    "deep_idle": "10/10",
+    "clean_boots": "3/3",
+    "retained_subsystems": "PASS",
+    "rer_command_path": "NOT_OBSERVED",
+    "hostile_race_injection": "NOT_PERFORMED"
+  },
+  "physical_report": "docs/validation/camera-modernization/physical-validation-2026-08-23.md"
+}

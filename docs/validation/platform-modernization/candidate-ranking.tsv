@@ -1,0 +1,9 @@
+rank	candidate	value	runtime_reachability	closure	risk	decision
+1	CoreSight ETR active-buffer UAF guard	explicit memory-lifetime hardening	module loaded; privileged SYSFS tracing path available in driver	coresight-tmc.ko only	LOW	SELECTED
+2	DCVS memlat repeated-value unlock	prevents sysfs deadlock	module loaded; GEAS consumes provider	memlat.ko only because GEAS is already controlled-signed	LOW	FUTURE
+3	memory_dump_v2 NULL guard	prevents null dereference in crash-dump provider	module loaded; CNSS2 consumer	must isolate one guard from VMID/CMA generation	MEDIUM	FUTURE AUDIT
+4	Geni UART RX buffer guards	DMA and teardown reliability	module loaded	likely msm_geni_serial.ko series	MEDIUM	FUTURE AUDIT
+5	Gunyah vCPU lifetime series	explicit UAF and free/access race fixes	Gunyah providers loaded	multi-commit hypervisor provider closure	HIGH	DEFER
+6	QPACE ZRAM reliability series	allocation/reclaim and completion fixes	active swap provider	zram plus Oplus ownership boundary	HIGH	DEFER
+7	USB DWC3 safety series	notifier/refcount/power fixes	dwc3_msm loaded	USB/tether/audio/display/charging closure	HIGH	DEFER
+8	UFS bounds/power series	memory guard and resume reliability	boot storage active	storage/ICE/crypto/Oplus closure	HIGH	DEFER

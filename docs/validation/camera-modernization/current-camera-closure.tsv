@@ -1,0 +1,14 @@
+module	partition	loaded	load policy	source path	build target	hardware/runtime role	baseline SHA256	generation/action
+camera.ko	vendor_dlkm	yes	modules.load	vendor/qcom/opensource/camera-kernel	//vendor/qcom/opensource/camera-kernel:canoe_perf_camera	monolithic Qualcomm camera controller, ISP, sensor, flash, memory and sync stack	22f121df24eb0cfe6a437266a9ed46f6bbc7c2754a151d0955d1156ae509df6b	.061 / bounded source replacement candidate
+camera_extension.ko	vendor_dlkm	yes	modules.load	vendor/oplus/kernel/camera	//vendor/oplus/kernel/camera:canoe_perf_camera_extension	Oplus sensor, OIS, EEPROM, monitor and camera extension consumer	3974d9a865ef57f3bfebf402b0ddf46f6ea163c9f4201f240037230194581534	stock source / rebuild or controlled re-sign only if protected closure requires it
+leds-qcom-flash.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/leds/flash	//soc-repo:canoe_perf/drivers/leds/flash/leds-qcom-flash	PMIC flash provider	retained	qualified provider
+synx-driver.ko	vendor_dlkm	yes	dependency	vendor/qcom/opensource/synx-kernel	//vendor/qcom/opensource/synx-kernel:canoe_perf_modules	camera synchronization provider	retained	qualified provider
+msm-mmrm.ko	vendor_dlkm	yes	dependency	vendor/qcom/opensource/mmrm-driver	//vendor/qcom/opensource/mmrm-driver:canoe_perf_mmrm_driver	multimedia resource manager	retained	qualified provider
+smmu_proxy_dlkm.ko	vendor_dlkm	yes	dependency	vendor/qcom/opensource/securemsm-kernel	//vendor/qcom/opensource/securemsm-kernel:canoe_perf_smmu_proxy_dlkm	secure SMMU proxy	retained	qualified provider
+msm_hw_fence.ko	vendor_dlkm	yes	transitive dependency	kernel_platform/soc-repo/drivers/soc/qcom/hw_fence	Canoe DDK target	hardware fence provider for camera synchronization	retained	qualified provider
+mem_buf_dev.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/soc/qcom/mem_buf	Canoe DDK target	camera memory sharing provider	retained	qualified provider
+crm-v2.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/soc/qcom/crm-v2	Canoe DDK target	camera request manager provider	retained	qualified provider
+qcom_va_minidump.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/soc/qcom	Canoe DDK target	camera minidump registration	retained	qualified provider
+smcinvoke_dlkm.ko	vendor_dlkm	yes	dependency	vendor/qcom/opensource/securemsm-kernel	//vendor/qcom/opensource/securemsm-kernel:canoe_perf_smcinvoke_dlkm	secure invocation provider	retained	qualified provider
+qcom_iommu_util.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/iommu	Canoe DDK target	camera IOMMU utility provider	retained	qualified provider
+oplus_bsp_dft_kernel_fb.ko	vendor_dlkm	yes	dependency	vendor/oplus/kernel/dft/bazel	//vendor/oplus/kernel/dft/bazel:oplus_bsp_dft_kernel_fb	Oplus fault-reporting provider	retained	qualified provider

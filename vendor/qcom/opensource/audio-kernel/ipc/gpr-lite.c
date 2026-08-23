@@ -591,6 +591,7 @@ static void gpr_remove(struct rpmsg_device *rpdev)
 	struct device *dev = &rpdev->dev;
 
 	wakeup_source_unregister(gpr_priv->wsource);
+	cancel_work_sync(&gpr_priv->notifier_reg_work);
 	snd_event_client_deregister(&rpdev->dev);
 	dev_info(dev, "%s: deregistering via subsys_notif_register for domain_id(%d)",
 		__func__, gpr_priv->dest_domain_id );

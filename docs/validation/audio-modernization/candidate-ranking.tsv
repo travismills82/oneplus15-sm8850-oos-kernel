@@ -1,0 +1,7 @@
+rank	module_or_closure	runtime_value	dependency_risk	firmware_userspace_risk	decision	reason
+1	gpr_dlkm	4	2	1	SELECT	Active transport teardown cancels pending notifier work; public ABI, DT, firmware, and HAL contracts are unchanged
+2	swr_ctrl_dlkm	4	5	2	DEFER	Useful wake-IRQ and underflow handling changes, but this is a central provider for codecs, BT, and haptics
+3	lpass_cdc_tx_macro_dlkm	3	4	2	DEFER	Real capture reference-counting behavior, but it changes a central microphone provider
+4	wcd939x_dlkm	2	4	2	DEFER	Active codec but changes are mainly ECID diagnostics and failed-probe cleanup
+5	oplus_audio_tfa98xx_v6	2	3	5	DEFER	Alternate firmware/DT selection is not required by the current CPH2747 TFA986x contract
+6	WSA885x and machine/DAI additions	1	5	5	NOT_APPLICABLE	Foreign hardware and board configuration, not the authoritative Canoe path

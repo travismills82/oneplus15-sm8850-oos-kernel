@@ -27,6 +27,7 @@ Usage:
       --avbtool <path-to-avbtool> \
       --validation-dir <validator-output> \
       --out-dir <new-empty-output-directory> \
+      [--strip-unneeded-resign <module-name>] \
       --replacement <source-module.ko> [--replacement <source-module.ko> ...]
 
 The validator output must PASS with the exact source modules supplied here.
@@ -134,6 +135,7 @@ avbtool=
 validation_dir=
 out_dir=
 declare -a replacements=()
+declare -a strip_unneeded_resign=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -145,6 +147,7 @@ while [[ $# -gt 0 ]]; do
         --avbtool) avbtool=${2:-}; shift 2 ;;
         --validation-dir) validation_dir=${2:-}; shift 2 ;;
         --out-dir) out_dir=${2:-}; shift 2 ;;
+        --strip-unneeded-resign) strip_unneeded_resign+=("${2:-}"); shift 2 ;;
         --replacement) replacements+=("${2:-}"); shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; die "unknown argument: $1" ;;
@@ -248,6 +251,8 @@ PY
 
 strip_tool=$(command -v llvm-objcopy || true)
 [[ -n "$strip_tool" && -x "$strip_tool" ]] || die "llvm-objcopy is required"
+strip_unneeded_tool=$(command -v llvm-strip || true)
+[[ -n "$strip_unneeded_tool" && -x "$strip_unneeded_tool" ]] || die "llvm-strip is required"
 
 python3 - "$kernel_build_dir/certs/signing_key.x509" "$kernel_build_dir/vmlinux" <<'PY'
 from pathlib import Path
@@ -462,6 +467,16 @@ for module in "${source_modules[@]}"; do
     "$strip_tool" --strip-debug "$target"
 done
 
+for module in "${strip_unneeded_resign[@]}"; do
+    [[ ${closure_action[$module]:-} == RE_SIGN_STOCK ]] || {
+        die "unneeded-symbol stripping is allowed only for reviewed RE_SIGN_STOCK modules: $module"
+    }
+    target=${stage_path_by_name[$module]}
+    has_signature "$target" && die "cannot strip already signed module: $module"
+    "$strip_unneeded_tool" --strip-unneeded --wildcard \
+        --keep-symbol='__ksymtab_*' "$target"
+done
+
 for module in "${closure_modules[@]}"; do
     target=${stage_path_by_name[$module]}
     if has_signature "$target"; then
@@ -523,6 +538,15 @@ for module in "${closure_modules[@]}"; do
     staged=${stage_path_by_name[$module]}
     relative=${staged#"$out_dir/staging"}
     debugfs -w -R "rm $relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
+done
+
+# Remove the complete replacement closure before writing any member back.
+# This matters on the nearly full production image: replacing files one by one
+# can transiently exhaust free blocks before a later sparse module releases
+# its old extents, yielding a short file even when the final closure fits.
+for module in "${closure_modules[@]}"; do
+    staged=${stage_path_by_name[$module]}
+    relative=${staged#"$out_dir/staging"}
     debugfs -w -R "write $staged $relative" "$out_dir/vendor_dlkm.img" >/dev/null 2>&1
     restore_image_metadata "$out_dir/vendor_dlkm.img" "$relative" \
         "${image_mode_by_module[$module]}" \
@@ -543,6 +567,25 @@ restore_image_metadata "$out_dir/vendor_dlkm.img" "$modules_dep_relative" \
 # trailing integrity data before computing a new footer from the modified ext4
 # payload.  The candidate is private output, never the verified stock image.
 truncate -s "${avb_field[original_image_size]}" "$out_dir/vendor_dlkm.img"
+
+# debugfs updates allocation bitmaps while replacing files, but on a nearly
+# full filesystem it can leave the cached free-block counters stale.  Repair
+# only the private candidate payload, then require a read-only clean check.
+# The AVB hashtree is generated after this step so it covers the repaired ext4
+# metadata rather than the pre-repair bytes.
+if e2fsck -fy "$out_dir/vendor_dlkm.img" > "$out_dir/e2fsck-repair.txt" 2>&1; then
+    e2fsck_repair_status=0
+else
+    e2fsck_repair_status=$?
+fi
+((e2fsck_repair_status <= 1)) || {
+    sed -n '1,240p' "$out_dir/e2fsck-repair.txt" >&2
+    die "candidate vendor_dlkm filesystem repair failed"
+}
+e2fsck -fn "$out_dir/vendor_dlkm.img" > "$out_dir/e2fsck-pre-avb.txt" 2>&1 || {
+    sed -n '1,240p' "$out_dir/e2fsck-pre-avb.txt" >&2
+    die "candidate vendor_dlkm filesystem remains inconsistent after repair"
+}
 avb_args=(
     add_hashtree_footer
     --image "$out_dir/vendor_dlkm.img"
@@ -652,6 +695,8 @@ modules_dep_retained_system_edges=$(awk -F '\t' 'NR > 1 && $4 == "RETAINED" { co
     printf 'modules_dep_reconciliation=matching_system_dlkm_and_vmlinux_builtin_boundary\n'
     printf 'modules_dep_pruned_builtin_edges=%s\n' "$modules_dep_pruned_builtin_edges"
     printf 'modules_dep_retained_system_edges=%s\n' "$modules_dep_retained_system_edges"
+    printf 'ext4_metadata_repair=e2fsck_fail_closed_before_avb\n'
+    printf 'strip_unneeded_resign_modules=%s\n' "${strip_unneeded_resign[*]:-none}"
     printf 'kernel_signing_certificate_der_sha256=%s\n' "$kernel_signing_certificate_der_sha256"
     printf 'kernel_signing_certificate_subject=%s\n' "$kernel_signing_subject"
     printf 'kernel_signing_certificate_present_in_vmlinux=yes\n'
@@ -664,7 +709,8 @@ modules_dep_retained_system_edges=$(awk -F '\t' 'NR > 1 && $4 == "RETAINED" { co
 (
     cd "$out_dir"
     sha256sum vendor_dlkm.img manifest.txt staging-files.txt staging-SHA256SUMS \
-        vendor-system-dependency-reconciliation.tsv e2fsck.txt
+        vendor-system-dependency-reconciliation.tsv e2fsck-repair.txt \
+        e2fsck-pre-avb.txt e2fsck.txt
 ) > "$out_dir/SHA256SUMS"
 
 printf 'STAGED MATCHED WLAN VENDOR-DLKM CANDIDATE\n'

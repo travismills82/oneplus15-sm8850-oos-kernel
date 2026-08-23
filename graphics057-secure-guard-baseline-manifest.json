@@ -1,0 +1,27 @@
+{
+  "kernel_contract": {
+    "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k"
+  },
+  "name": "controlled-v1-audio059-graphics057-secure-guard",
+  "payloads": {
+    "boot_sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+    "system_dlkm_sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef",
+    "vendor_dlkm_sha256": "a41a96de52a6f18fe956ad928b6c3b3f8fa58ff4f3b90c2b65df0d49b538dce0"
+  },
+  "physical_qualification": {
+    "date": "2026-08-23",
+    "result": "PASS_NORMAL_RUNTIME_SECURE_UNLOCK_FAILURE_NOT_OBSERVED",
+    "tested_source_head": "a2d512ad779b082749ca10879b7b6d71aca145b6"
+  },
+  "signing": {
+    "generation": "controlled-v1"
+  },
+  "subsystems": {
+    "audio": ".059 selective GPR qualified",
+    "bluetooth_vendor": ".046 core-qualified",
+    "cellular": ".102 core qualified",
+    "graphics": ".057 selective secure-guard qualified",
+    "nfc_vendor": ".102 core-qualified",
+    "wlan": ".053 qualified"
+  }
+}

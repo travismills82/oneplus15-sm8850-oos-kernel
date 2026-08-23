@@ -1,0 +1,8 @@
+rank	candidate	runtime_value	dependency_risk	firmware_userspace_risk	decision	reason
+1	OFP duplicate backlight-notifier removal	2	4	3	DEFER	Runtime change is Canoe-reachable but snapshot lacks defect provenance; notifier sequencing spans retained .071 interface and Oplus HAL/AOD/FOD behavior
+2	DCP-HFI SSR/recovery and timeout generation	4	5	5	DEFER	Reliability value is coupled to new HFI core, firmware protocol, msm_drm objects, DT and shared fence providers
+3	SDE timing/VRR/CESTA and panel-capability updates	3	5	5	DEFER	Central display behavior and proprietary HWC/panel contract change; no matched CPH2747 .097 userspace or firmware
+4	hardware-fence SSR/power/virtio changes	4	5	4	DEFER	Shared provider for display, graphics, camera, video and synx; structural ABI and SSR closure is broad
+5	AA601 panel update	1	1	1	NO VALUE	All three active AA601 panel files are unchanged between .071 and .097
+6	PLZ110 Fairlady panel and board overlays	1	5	5	NOT APPLICABLE	Foreign panel/board wiring replaces rather than updates the CPH2747 Infiniti overlay
+7	AP-UIR DPMS guard removal	1	4	3	REJECT	Removes a panel-command safety gate with no Canoe defect evidence

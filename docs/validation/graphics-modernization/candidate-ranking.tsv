@@ -1,0 +1,7 @@
+rank	candidate	runtime_value	dependency_risk	userspace_firmware_risk	decision	reason
+1	kgsl_free_secure_page secure-guard unlock handling	5	2	1	SELECT	Bounded Canoe-reachable ownership fix; no public/internal cross-module ABI, DT, HFI, firmware, or userspace change
+2	power-stat locking and PMQoS active-state handling	3	4	2	DEFER	Touches central power state/locking and internal structures without an isolated defect provenance
+3	Gen8.2 GMU AB, mitigation and register programming	4	5	5	DEFER	Active hardware path but coupled to GMU HFI, firmware capability and changed Canoe DT/power tables
+4	hybrid KGSL allocation and reclaim migration	3	5	3	NO VALUE	Retained Canoe config disables the new feature and enabling it would be a broad behavioral change
+5	KGSL devcoredump snapshot delivery	2	3	2	NO VALUE	Retained Canoe config disables it and existing Oplus minidump contract remains active
+6	new GPU IDs, x1p42100/canoep/Alor and build namespace changes	1	1	5	NOT APPLICABLE	Foreign-device or build-only content not used by CPH2747
