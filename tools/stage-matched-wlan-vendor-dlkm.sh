@@ -274,6 +274,12 @@ kernel_signing_subject=$(openssl x509 -inform DER \
 [[ -n "$kernel_signing_subject" ]] || {
     die "could not derive the module-signing certificate common name"
 }
+kernel_signing_serial=$(openssl x509 -inform DER \
+    -in "$kernel_build_dir/certs/signing_key.x509" -noout -serial |
+    sed -n 's/^serial=//p' | tr '[:lower:]' '[:upper:]')
+[[ "$kernel_signing_serial" =~ ^[0-9A-F]+$ ]] || {
+    die "could not derive the module-signing certificate serial"
+}
 signing_key_public=$(openssl pkey -in "$signing_key" -pubout 2>/dev/null |
     openssl pkey -pubin -outform DER 2>/dev/null | sha256sum | awk '{print $1}') || {
     die "could not read the declared controlled signing key"
@@ -458,7 +464,19 @@ done
 
 for module in "${closure_modules[@]}"; do
     target=${stage_path_by_name[$module]}
-    has_signature "$target" && die "refusing to append a second signature to $target"
+    if has_signature "$target"; then
+        # A later provider migration can rediscover a consumer that an earlier,
+        # physically validated closure already signed with this exact project
+        # certificate. Preserve that binary byte-for-byte instead of appending
+        # a second signature or needlessly regenerating the existing one.
+        existing_sig_key=$(modinfo -F sig_key "$target" | tr -d ':' | tr '[:lower:]' '[:upper:]')
+        [[ "$(modinfo -F signer "$target")" == "$kernel_signing_subject" &&
+           "$(modinfo -F sig_id "$target")" == "PKCS#7" &&
+           "$existing_sig_key" == "$kernel_signing_serial" ]] || {
+            die "existing signature for $module is not the selected controlled signing identity"
+        }
+        continue
+    fi
     "$kernel_build_dir/scripts/sign-file" sha1 \
         "$signing_key" \
         "$kernel_build_dir/certs/signing_key.x509" \
