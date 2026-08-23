@@ -14,4 +14,4 @@ and the exact vendor-DLKM SHA-256 is
 | Graphics | `.038` | `.057` secure-guard unlock handling only | Memory-ownership hardening on secure guard-page teardown; broad `.057` GMU/DT/firmware changes rejected | PASS | PASS normal runtime; unlock-failure branch not observed | QUALIFIED |
 | Display | `.071` | `.097` | Active AA601 panel files unchanged; remaining DCP-HFI/DRM/fence generation needs matched firmware/HAL and PLZ110 DT is foreign | NONE | NOT TESTED | DEFERRED |
 | Camera | `.061` | `.073` RER snapshot only | Userspace-shared RER flash command race/bounds hardening; broad `.073` camera, firmware, HAL and foreign DT generation rejected | PASS | PASS normal runtime; RER command path not observed | QUALIFIED |
-| Platform | `.099.064` | `.099.086` selective only | Audit in progress | NOT STARTED | NOT TESTED | AUDITING |
+| Platform | `.099.064` | `.099.086` CoreSight ETR guard only | Active SYSFS ETR buffer lifetime hardening; broad platform, scheduler, storage, VM, IPC, power, and foreign-device changes rejected | PASS | NOT TESTED | READY FOR PHYSICAL TEST |
