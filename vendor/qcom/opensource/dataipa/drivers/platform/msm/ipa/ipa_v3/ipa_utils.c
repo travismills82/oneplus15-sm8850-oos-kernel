@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <net/ip.h>
@@ -45,6 +45,11 @@
 #define IPA_V5_0_CLK_RATE_SVS (240 * 1000 * 1000UL)
 #define IPA_V5_0_CLK_RATE_NOMINAL (500 * 1000 * 1000UL)
 #define IPA_V5_0_CLK_RATE_TURBO (600 * 1000 * 1000UL)
+
+#define IPA_V5_2_IOT_CLK_RATE_SVS2 (75 * 1000 * 1000UL)
+#define IPA_V5_2_IOT_CLK_RATE_SVS (240 * 1000 * 1000UL)
+#define IPA_V5_2_IOT_CLK_RATE_NOMINAL (500 * 1000 * 1000UL)
+#define IPA_V5_2_IOT_CLK_RATE_TURBO (600 * 1000 * 1000UL)
 
 #define IPA_V5_5_CLK_RATE_SVS2 (75 * 1000 * 1000UL)
 #define IPA_V5_5_CLK_RATE_SVS (240 * 1000 * 1000UL)
@@ -5685,7 +5690,7 @@ static const struct ipa_ep_configuration ipa3_ep_mapping
 	[IPA_5_5][IPA_CLIENT_APPS_WAN_LOW_LAT_PROD] = {
 			true, IPA_v5_5_GROUP_URLLC,
 			false,
-			IPA_DPS_HPS_SEQ_TYPE_DMA_ONLY,
+			IPA_DPS_HPS_SEQ_TYPE_2ND_PKT_PROCESS_PASS_NO_DEC_UCP,
 			QMB_MASTER_SELECT_DDR,
 			{ 4, 9, 8, 16, IPA_EE_AP, GSI_SMART_PRE_FETCH, 3	},
 			IPA_TX_INSTANCE_NA },
@@ -10677,6 +10682,11 @@ int ipa3_controller_static_bind(struct ipa3_controller *ctrl,
 		ctrl->ipa_clk_rate_nominal = IPA_V5_5_CLK_RATE_NOMINAL;
 		ctrl->ipa_clk_rate_svs = IPA_V5_5_CLK_RATE_SVS;
 		ctrl->ipa_clk_rate_svs2 = IPA_V5_5_CLK_RATE_SVS2;
+	} else if (hw_type >= IPA_HW_v5_2 && ipa3_ctx->ipa_config_is_iot) {
+		ctrl->ipa_clk_rate_turbo = IPA_V5_2_IOT_CLK_RATE_TURBO;
+		ctrl->ipa_clk_rate_nominal = IPA_V5_2_IOT_CLK_RATE_NOMINAL;
+		ctrl->ipa_clk_rate_svs = IPA_V5_2_IOT_CLK_RATE_SVS;
+		ctrl->ipa_clk_rate_svs2 = IPA_V5_2_IOT_CLK_RATE_SVS2;
 	} else if (hw_type >= IPA_HW_v5_0) {
 		ctrl->ipa_clk_rate_turbo = IPA_V5_0_CLK_RATE_TURBO;
 		ctrl->ipa_clk_rate_nominal = IPA_V5_0_CLK_RATE_NOMINAL;
@@ -11032,9 +11042,6 @@ static void ipa3_tag_free_skb(void *user1, int user2)
 }
 
 #define REQUIRED_TAG_PROCESS_DESCRIPTORS 4
-#define MAX_RETRY_ALLOC 10
-#define ALLOC_MIN_SLEEP_RX 100000
-#define ALLOC_MAX_SLEEP_RX 200000
 
 /* ipa3_tag_process() - Initiates a tag process. Incorporates the input
  * descriptors
@@ -11069,6 +11076,7 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 	int req_num_tag_desc = REQUIRED_TAG_PROCESS_DESCRIPTORS;
 	struct ipa_mem_buffer cmd;
 	u32 offset = 0;
+	uint8_t retry_count = 0;
 
 	memset(&cmd, 0, sizeof(struct ipa_mem_buffer));
 	/**
@@ -11095,7 +11103,13 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 	}
 	sys = ipa3_ctx->ep[ep_idx].sys;
 
-	tag_desc = kzalloc(sizeof(*tag_desc) * IPA_TAG_MAX_DESC, GFP_KERNEL);
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		tag_desc = kzalloc(sizeof(*tag_desc) * IPA_TAG_MAX_DESC, GFP_KERNEL);
+		if (tag_desc)
+			break;
+		else
+			usleep_range(ALLOC_MIN_SLEEP_RX, ALLOC_MAX_SLEEP_RX);
+	}
 	if (!tag_desc) {
 		IPAERR("failed to allocate memory\n");
 		return -ENOMEM;
@@ -11136,7 +11150,7 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 			&reg_write_coal_close, false);
 		if (!cmd_pyld) {
 			IPAERR("failed to construct coal close IC\n");
-			res = -ENOMEM;
+			res = -EINVAL;
 			goto fail_free_tag_desc;
 		}
 		ipa3_init_imm_cmd_desc(&tag_desc[desc_idx], cmd_pyld);
@@ -11147,8 +11161,14 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 	if (ipa3_ctx->ulso_wa) {
 		/* dummary regsiter read IC with HPS clear*/
 		cmd.size = 4;
-		cmd.base = dma_alloc_coherent(ipa3_ctx->pdev, cmd.size,
-			&cmd.phys_base, GFP_KERNEL);
+		for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+			cmd.base = dma_alloc_coherent(ipa3_ctx->pdev, cmd.size,
+				&cmd.phys_base, GFP_KERNEL);
+			if (cmd.base)
+				break;
+			else
+				usleep_range(ALLOC_MIN_SLEEP_RX, ALLOC_MAX_SLEEP_RX);
+		}
 		if (cmd.base == NULL) {
 			res = -ENOMEM;
 			goto fail_free_desc;
@@ -11164,7 +11184,7 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 			&dummy_reg_read, false);
 		if (!cmd_pyld) {
 			IPAERR("failed to construct DUMMY READ IC\n");
-			res = -ENOMEM;
+			res = -EINVAL;
 			goto fail_free_desc;
 		}
 		ipa3_init_imm_cmd_desc(&tag_desc[desc_idx], cmd_pyld);
@@ -11196,7 +11216,7 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 		IPA_IMM_CMD_IP_PACKET_INIT, &pktinit_cmd, false);
 	if (!cmd_pyld) {
 		IPAERR("failed to construct ip_packet_init imm cmd\n");
-		res = -ENOMEM;
+		res = -EINVAL;
 		goto fail_free_desc;
 	}
 	ipa3_init_imm_cmd_desc(&tag_desc[desc_idx], cmd_pyld);
@@ -11210,7 +11230,7 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 		IPA_IMM_CMD_IP_PACKET_TAG_STATUS, &status, false);
 	if (!cmd_pyld) {
 		IPAERR("failed to construct ip_packet_tag_status imm cmd\n");
-		res = -ENOMEM;
+		res = -EINVAL;
 		goto fail_free_desc;
 	}
 	ipa3_init_imm_cmd_desc(&tag_desc[desc_idx], cmd_pyld);
@@ -11218,7 +11238,13 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 	tag_desc[desc_idx].user1 = cmd_pyld;
 	++desc_idx;
 
-	comp = kzalloc(sizeof(*comp), GFP_KERNEL);
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		comp = kzalloc(sizeof(*comp), GFP_KERNEL);
+		if (comp)
+			break;
+		else
+			usleep_range(ALLOC_MIN_SLEEP_RX, ALLOC_MAX_SLEEP_RX);
+	}
 	if (!comp) {
 		IPAERR("no mem\n");
 		res = -ENOMEM;
@@ -11230,7 +11256,13 @@ int ipa3_tag_process(struct ipa3_desc desc[],
 	atomic_set(&comp->cnt, 2);
 
 	/* dummy packet to send to IPA. packet payload is a completion object */
-	dummy_skb = alloc_skb(sizeof(comp), GFP_KERNEL);
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		dummy_skb = alloc_skb(sizeof(comp), GFP_KERNEL);
+		if (dummy_skb)
+			break;
+		else
+			usleep_range(ALLOC_MIN_SLEEP_RX, ALLOC_MAX_SLEEP_RX);
+	}
 	if (!dummy_skb) {
 		IPAERR("failed to allocate memory\n");
 		res = -ENOMEM;
@@ -12744,9 +12776,9 @@ static int _ipa_suspend_resume_pipe(enum ipa_client_type client, bool suspend)
 
 	if (IPA_CLIENT_IS_APPS_PROD(client) ||
 		(client == IPA_CLIENT_APPS_WAN_CONS &&
-		 IPA_CLIENT_IS_MAPPED(IPA_CLIENT_APPS_WAN_COAL_CONS, wan_coal_ep_idx)) ||
+		 IPA_CLIENT_IS_MAPPED_VALID(IPA_CLIENT_APPS_WAN_COAL_CONS, wan_coal_ep_idx)) ||
 		(client == IPA_CLIENT_APPS_LAN_CONS &&
-		 IPA_CLIENT_IS_MAPPED(IPA_CLIENT_APPS_LAN_COAL_CONS, lan_coal_ep_idx)))
+		 IPA_CLIENT_IS_MAPPED_VALID(IPA_CLIENT_APPS_LAN_COAL_CONS, lan_coal_ep_idx)))
 		return 0;
 
 	if (suspend) {
