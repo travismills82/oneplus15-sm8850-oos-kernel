@@ -111,9 +111,20 @@ def main() -> int:
         ["llvm-objdump", "-dr", "--disassemble-symbols=tmc_etr_get_sysfs_buffer", str(args.replacement)],
         text=True,
     )
-    pattern = re.compile(r"R_AARCH64_CALL26\s+coresight_get_mode")
-    if len(pattern.findall(old_disassembly)) != 1 or len(pattern.findall(new_disassembly)) != 2:
-        raise SystemExit("CoreSight ETR machine-code guard call count is not 1 -> 2")
+    # coresight_get_mode() is inlined by the final DDK link.  Its emitted mode
+    # load is therefore the stable proof point: the qualified implementation
+    # has one access in this function, while the guarded implementation has a
+    # second access followed by a CS_MODE_SYSFS (1) comparison and branch.
+    mode_load = re.compile(r"ldr\s+x(\d+),\s*\[x\d+,\s*#0x3c8\]")
+    if len(mode_load.findall(old_disassembly)) != 1 or len(mode_load.findall(new_disassembly)) != 2:
+        raise SystemExit("CoreSight ETR inlined mode-load count is not 1 -> 2")
+    sysfs_guard = re.compile(
+        r"ldr\s+x(\d+),\s*\[x\d+,\s*#0x3c8\].{0,180}?"
+        r"cmp\s+w\1,\s*#0x1.{0,120}?b\.ne",
+        re.DOTALL,
+    )
+    if len(sysfs_guard.findall(new_disassembly)) != 1:
+        raise SystemExit("CoreSight ETR CS_MODE_SYSFS machine-code guard is absent")
 
     signer = module_field(candidate["coresight_tmc"], "signer")
     sig_id = module_field(candidate["coresight_tmc"], "sig_id")
