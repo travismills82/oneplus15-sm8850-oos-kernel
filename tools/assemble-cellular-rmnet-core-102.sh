@@ -27,6 +27,7 @@ signing_key=
 system_archive=
 system_load_contract=
 shared_type_contract=
+source_delta="$repo_root/docs/validation/cellular-migration/rmnet-core-102-source-delta.md"
 avbtool=
 out_dir=
 
@@ -57,7 +58,8 @@ for command in jq llvm-objdump modinfo openssl python3 sha256sum; do
     command -v "$command" >/dev/null || die "required command not found: $command"
 done
 for path in "$baseline_image" "$replacement" "$module_symvers" "$signing_key" \
-            "$system_archive" "$system_load_contract" "$shared_type_contract" "$avbtool"; do
+            "$system_archive" "$system_load_contract" "$shared_type_contract" \
+            "$source_delta" "$avbtool"; do
     [[ -f "$path" ]] || die "missing file: $path"
 done
 for path in "$baseline_stage" "$system_modules" "$vendor_boot_modules" "$kernel_build_dir"; do
@@ -132,6 +134,7 @@ cp "$stage_out/vendor-system-dependency-reconciliation.tsv" \
     "$out_dir/vendor-system-dependency-reconciliation.tsv"
 cp "$system_load_contract" "$out_dir/system-dlkm-load-contract.tsv"
 cp "$shared_type_contract" "$out_dir/rmnet-shared-type-contract.tsv"
+cp "$source_delta" "$out_dir/rmnet-core-source-delta.md"
 
 stock_core=$(python3 - "$baseline_stage/lib/modules" <<'PY'
 import pathlib, subprocess, sys
@@ -375,6 +378,7 @@ candidate_sha=$(sha256 "$out_dir/vendor_dlkm.img")
         rmnet-provider-migration-closure.tsv rmnet-core-import-crc.tsv \
         rmnet-core-export-contract.tsv rmnet-core-consumers.tsv \
         rmnet-shared-type-contract.tsv signature-report.tsv e2fsck.txt
+    sha256sum rmnet-core-source-delta.md
     sha256sum rmnet-core-priority-binary-proof.txt \
         rmnet-core-priority-old.disassembly.txt \
         rmnet-core-priority-new.disassembly.txt

@@ -16,7 +16,7 @@ Physical status: `NOT FLASHED`
 - Candidate vendor-DLKM:
   `out/cellular-rmnet-core-102-candidate/vendor_dlkm.img`
 - Candidate SHA-256:
-  `50f32b958778b9e046198bf17c0f1520ace89ff7629f8f3cf6f753d1cd58043e`
+  `48f5b095204abe8f992bf1292159f9527058d4019b796cdf7a9e6bb119d3a99f`
 
 No boot, system-DLKM, vendor_boot, VBMeta, slot, or device state was modified.
 
