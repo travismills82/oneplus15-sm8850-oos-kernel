@@ -16,6 +16,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to verify, or leave blank for metadata only
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -42,15 +47,16 @@ jobs:
           [ "$found" -eq 1 ]
 
   published-assets:
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.release_tag }}
+          fetch-depth: 2
       - name: Download published assets
         run: gh release download "$RELEASE_TAG" --dir release-assets
       - name: Verify published release identity
