@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "name": "controlled-v1-wlan053-bt046-nfc102-cellular102-core",
+  "qualification": "CORE_PHYSICALLY_VALIDATED_WITH_OPEN_COVERAGE",
+  "tested_source": {
+    "branch": "experiment/cellular-ipa-gsi-102",
+    "commit": "88a12eaea66082a69dd42acd737b0ec5b99bd349"
+  },
+  "canonical_branch": "feature/controlled-v1-wlan053-bt046-nfc102-cellular102-core",
+  "kernel_contract": {
+    "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+    "boot_sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+    "system_dlkm_sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef"
+  },
+  "vendor_dlkm_sha256": "538622b7d5ff73ab092619cdfab31099ffa3e0638b9051329bf950a04a5260a2",
+  "subsystems": {
+    "wlan": ".053",
+    "bluetooth_vendor": ".046-core-qualified",
+    "nfc_vendor": ".102-core-qualified",
+    "rmnet_core": ".102",
+    "ipa_gsi": ".102",
+    "remaining_cellular": "stock OOS 16.0.9.400",
+    "signing": "controlled-v1"
+  },
+  "controlled_cellular_modules": [
+    "rmnet_sch.ko",
+    "rmnet_core.ko",
+    "gsim.ko",
+    "ipam.ko",
+    "ipanetm.ko",
+    "rmnet_ctl.ko"
+  ],
+  "physical_qualification": {
+    "normal_cellular": "PASS",
+    "usb_tether": "PASS",
+    "hotspot_start_stop": "PASS",
+    "hotspot_client": "NOT_TESTED_EQUIPMENT_UNAVAILABLE",
+    "ssr_fix_path": "NOT_OBSERVED",
+    "firmware_already_loaded_path": "NOT_OBSERVED",
+    "gsi_status_enabled_runtime": "LINKED_ONLY",
+    "long_run_pdn_recovery": "OBSERVATION_ONLY"
+  },
+  "physical_report": "docs/validation/cellular-migration/ipa-gsi-102-physical-validation-2026-08-23.md"
+}
