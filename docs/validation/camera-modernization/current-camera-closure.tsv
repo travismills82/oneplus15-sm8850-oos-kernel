@@ -12,4 +12,3 @@ qcom_va_minidump.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/
 smcinvoke_dlkm.ko	vendor_dlkm	yes	dependency	vendor/qcom/opensource/securemsm-kernel	//vendor/qcom/opensource/securemsm-kernel:canoe_perf_smcinvoke_dlkm	secure invocation provider	retained	qualified provider
 qcom_iommu_util.ko	vendor_dlkm	yes	dependency	kernel_platform/soc-repo/drivers/iommu	Canoe DDK target	camera IOMMU utility provider	retained	qualified provider
 oplus_bsp_dft_kernel_fb.ko	vendor_dlkm	yes	dependency	vendor/oplus/kernel/dft/bazel	//vendor/oplus/kernel/dft/bazel:oplus_bsp_dft_kernel_fb	Oplus fault-reporting provider	retained	qualified provider
-

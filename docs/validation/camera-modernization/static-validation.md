@@ -84,4 +84,3 @@ cameras, still capture, flash, video, camera switching, focus/zoom, open/close
 stress, recording audio, suspend/resume, and reboots. The hostile RER race must
 not be injected; if the command path is not naturally observed, report normal
 compatibility separately from hardening-path coverage.
-

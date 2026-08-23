@@ -61,4 +61,3 @@ Source object identities:
 
 Those changes have a broad kernel/firmware/HAL/device-tree closure and are
 deferred.
-

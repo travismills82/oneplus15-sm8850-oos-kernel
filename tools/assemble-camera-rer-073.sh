@@ -221,4 +221,3 @@ printf 'CONTROLLED CAMERA .073 RER STATIC CANDIDATE PASS\n'
 printf 'image=%s\n' "$out_dir/vendor_dlkm.img"
 printf 'sha256=%s\n' "$(sha256 "$out_dir/vendor_dlkm.img")"
 printf 'physical_flash=NOT_PERFORMED\n'
-
