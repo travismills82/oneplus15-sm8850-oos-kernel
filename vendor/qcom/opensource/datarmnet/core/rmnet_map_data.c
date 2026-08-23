@@ -523,7 +523,15 @@ static void rmnet_map_v5_check_priority(struct sk_buff *skb,
 			priv->stats.aps_prio++;
 			hdr->aps_prio = 1;
 		}
-	}
+	} else if (*(rmnet_ll_get_ipa_ready_status()) != RMNET_LL_PIPE_SUCCESS) {
+        /* Even if LL pipe is not present at ipa we set the priority bit for Q6 to prioritize the packet over regular pipe*/
+        if (RMNET_APS_LLB(skb->priority)) {
+            pr_err("%s(%d) skb: %p priority bit set\n", __func__, __LINE__, skb);
+            priv->stats.ul_prio++;
+            hdr->priority = 1;
+        }
+    }
+
 }
 
 void rmnet_map_v5_checksum_uplink_packet(struct sk_buff *skb,
