@@ -1,0 +1,6 @@
+rank	candidate	runtime value	firmware/HAL/DT impact	closure	risk	decision
+1	camera RER command snapshot	userspace-shared command TOCTOU and fixed-array bounds hardening	none; unchanged UAPI and CPH2747 DT	camera.ko plus only consumers required by protected-signing analysis	medium	SELECTED
+2	isolated request/sync cleanup fixes	potential lifetime and error-path reliability	generation crosses request manager, Synx and proprietary HAL contracts	broad provider/consumer closure	high	DEFER
+3	IFE/CSID/VFE .073 generation	new hardware support and broad ISP fixes	requires matched hardware tables, firmware, HAL and foreign-device DT	complete camera stack	critical	REJECT
+4	Fairlady/other-product sensor and CSIPHY definitions	foreign hardware enablement	incompatible with authoritative CPH2747 sensor/board contract	foreign DT plus sensor stack	critical	NOT APPLICABLE
+
