@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "name": "controlled-v1-wlan053-bt046-nfc102-cellular102-audio059-gpr",
+  "qualification": "NORMAL_RUNTIME_PHYSICALLY_VALIDATED_TEARDOWN_PATH_NOT_OBSERVED",
+  "tested_source": {
+    "branch": "experiment/audio-059-gpr-teardown",
+    "commit": "a310804ef75d48723e37a8ae515e4ea557b7dd59"
+  },
+  "canonical_branch": "feature/controlled-v1-wlan053-bt046-nfc102-cellular102-audio059-gpr",
+  "kernel_contract": {
+    "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+    "boot_sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+    "system_dlkm_sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef"
+  },
+  "vendor_dlkm_sha256": "bb005e764ccfc3af7eec9a73f291a85a44d966478b73ee480617003ae44b079b",
+  "subsystems": {
+    "wlan": ".053",
+    "bluetooth_vendor": ".046-core-qualified",
+    "nfc_vendor": ".102-core-qualified",
+    "rmnet_core": ".102",
+    "ipa_gsi": ".102",
+    "remaining_cellular": "stock OOS 16.0.9.400",
+    "audio": ".059-selective-gpr-teardown",
+    "signing": "controlled-v1"
+  },
+  "audio_delivery": {
+    "source_upgrades": [
+      "gpr_dlkm.ko"
+    ],
+    "stock_source_controlled_resigns": 22,
+    "gpr_dlkm_sha256": "e15643897eaae82a6bc01d9661182a7f2aa3e89d30145219116e2613e49756c0"
+  },
+  "physical_qualification": {
+    "ringtone_speaker": "PASS",
+    "builtin_mic_capture": "PASS",
+    "recording_playback": "PASS",
+    "clean_boots": "3/3",
+    "deep_idle": "5/5",
+    "call_audio": "NOT_TESTED",
+    "bluetooth_audio": "NOT_TESTED_EQUIPMENT_UNAVAILABLE",
+    "usb_c_audio": "NOT_TESTED_EQUIPMENT_UNAVAILABLE",
+    "gpr_teardown_path": "NOT_OBSERVED"
+  },
+  "physical_report": "docs/validation/audio-modernization/physical-validation-2026-08-23.md"
+}

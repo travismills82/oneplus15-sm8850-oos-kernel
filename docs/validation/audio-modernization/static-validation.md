@@ -61,7 +61,9 @@ Final validation:
 - system_dlkm: unchanged
 - vendor_boot: unchanged
 - VBMeta: unchanged
-- physical qualification: not performed
+- physical qualification: PASS for normal-runtime compatibility on 2026-08-23;
+  `gpr_remove()` teardown path not observed
 
-Graphics remains order-gated until this Audio candidate is either physically
-qualified and frozen or explicitly rejected/deferred.
+The exact tested payload is frozen by
+`physical-validation-2026-08-23.md`. Graphics is no longer order-gated by the
+Audio candidate.
