@@ -62,11 +62,37 @@ Static result on 2026-08-23:
 - system_dlkm hashtree verification: PASS
 - vendor_dlkm hashtree and ext4 verification: PASS
 - hardened-helper pin and negative rejection tests: PASS
-- live TWRP ZIP dry run: PENDING — device not enumerated on USB
-- live TWRP ZIP installation: PENDING — required before release publication
+- live TWRP ZIP dry run: PASS — full ZIP entrypoint; no partitions modified
+- live TWRP ZIP installation: PASS — normal `twrp install` path
+- full verified backups: PASS
+- post-write partition read-back: PASS
+- post-install Android boot and core runtime contract: PASS
 
-This package is therefore a validated development artifact, not a published
-release.
+This package satisfies the TWRP flashability gates. It remains a development
+artifact because no release was requested or published.
+
+## Live TWRP proof
+
+The exact ZIP above was tested on 2026-08-23 with TWRP
+`3.7.1_16-OnePlus_15` on CPH2747 slot `_b`.
+
+- user 0 decryption and writable durable backup guard: PASS
+- device, slot, and no-snapshot guards: PASS
+- one-ZIP dry run: PASS
+- one-ZIP install through `twrp install`: PASS
+- backup directory:
+  `/sdcard/TWRP/kernel-flash-backups/controlled-stack-b-20260823-180400`
+- backup source/read-back equality: PASS for all three partitions
+- installer write order: `vendor_dlkm`, `system_dlkm`, `boot` last
+- active-slot metadata change: none
+- vendor_boot/VBMeta/system_dlkm_oki writes: none
+- post-install boot: PASS
+- post-install kernel: `6.12.23-android16-5-o-g6744a3f6bcf4-4k`
+- post-install payload read-back: exact physical hashes
+- system load contract: 46 entries; `wwan.ko` entry 21
+- WLAN: 6135 MHz WPA3 and IP/DNS PASS
+- cellular: Visible LTE HOME/IN_SERVICE; dual-stack RMNET PASS
+- module contract error scan: PASS
 
 ## Build and validation entrypoints
 
