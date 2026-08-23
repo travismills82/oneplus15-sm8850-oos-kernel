@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "name": "controlled-v1-audio059-graphics057-camera073-platform099086-coresight",
+  "qualification": "NORMAL_RUNTIME_PHYSICALLY_VALIDATED_ETR_TRIGGER_NOT_OBSERVED",
+  "tested_source": {
+    "branch": "experiment/platform-099086-audit",
+    "commit": "871e53d405b156df2584300fc3b80be5b0fc32bb"
+  },
+  "canonical_branch": "feature/controlled-v1-audio059-graphics057-camera073-platform086-coresight",
+  "kernel_contract": {
+    "release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+    "source_id": "6744a3f6bcf4226e37fa04475bd83a84fd3c3701",
+    "config_sha256": "b53d48b303059adb49a8dbe457145a4b7523a77fae621ea8d9e7b0b727e1615b",
+    "module_symvers_sha256": "de57709f3de38afb3e266481da09433687979ffb88ee607bda93ac4732dd7e0b",
+    "image_sha256": "9295e2a8bd06fdb002750b8adb99e37c0e1e2f6c440cbccfa90a2095fee6356b",
+    "vmlinux_sha256": "b544a89858647d3257a0b50a7c03e5feefcf85399fc2bfc5ff7904544dedcb14",
+    "boot_sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+    "system_dlkm_sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef"
+  },
+  "vendor_dlkm_sha256": "dccb47a3ba4055b3d385d80d6fda3875bc544488e1ed2cbd9951cd0662f56b26",
+  "signing": {
+    "generation": "controlled-v1",
+    "certificate_sha256": "04093d5e0b816927dc1e4fcdbd4ec754df6e69960918aa2eaa69bea6878f6faf"
+  },
+  "subsystems": {
+    "wlan": ".053-physically-qualified",
+    "bluetooth_vendor": ".046-core-qualified",
+    "nfc_vendor": ".102-core-qualified",
+    "rmnet_core": ".102-physically-qualified",
+    "ipa_gsi": ".102-normal-runtime-physically-qualified",
+    "audio": ".059-selective-gpr-physically-qualified",
+    "graphics": ".057-selective-secure-guard-physically-qualified",
+    "display": ".071-retained-.097-deferred",
+    "camera": ".061-plus-.073-selective-rer-snapshot-physically-qualified",
+    "platform": ".099.064-plus-.099.086-selective-coresight-etr-guard"
+  },
+  "platform_delivery": {
+    "source_upgrades": [
+      "coresight-tmc.ko"
+    ],
+    "selected_source_commit": "db1b06b53dcf37388f95105123ba36a854724d34",
+    "coresight_tmc_sha256": "27129ab30432761f65dff183b60268e63fbd7dab6390ce54c530adc737d5a0d3"
+  },
+  "physical_qualification": {
+    "clean_boots": "2/2",
+    "deep_idle": "5/5",
+    "camera": "PASS",
+    "audio": "PASS_USER_CONFIRMED",
+    "graphics_ui": "PASS",
+    "wlan": "PASS",
+    "cellular": "PASS",
+    "bluetooth": "PASS",
+    "nfc_wallet_ese": "PASS",
+    "usb": "PASS",
+    "etr_buffer_resize_trigger": "NOT_OBSERVED",
+    "fault_injection": "NOT_PERFORMED"
+  },
+  "physical_report": "docs/validation/platform-modernization/physical-validation-2026-08-23.md"
+}
