@@ -1,0 +1,141 @@
+#!/sbin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Recovery installer front end for an exact, physically qualified controlled
+# stack. The pinned helper performs all device, slot, snapshot, filesystem,
+# backup, write-order, and read-back validation.
+
+set -u
+set -o pipefail
+
+[ "$#" -ge 3 ] || exit 1
+
+OUTFD="$2"
+ZIPFILE="$3"
+RELEASE_TAG='@RELEASE_TAG@'
+BOOT_BYTES='@BOOT_BYTES@'
+BOOT_SHA256='@BOOT_SHA256@'
+SYSTEM_DLKM_BYTES='@SYSTEM_DLKM_BYTES@'
+SYSTEM_DLKM_SHA256='@SYSTEM_DLKM_SHA256@'
+VENDOR_DLKM_BYTES='@VENDOR_DLKM_BYTES@'
+VENDOR_DLKM_SHA256='@VENDOR_DLKM_SHA256@'
+HELPER_SHA256='@HELPER_SHA256@'
+MODE="${CONTROLLED_STACK_INSTALLER_MODE:---flash}"
+WORKDIR="/tmp/controlled-stack-${RELEASE_TAG}-$$"
+
+ui_print() {
+    if [ -n "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
+        printf 'ui_print %s\nui_print\n' "$*" > "/proc/self/fd/$OUTFD"
+    else
+        printf '%s\n' "$*"
+    fi
+}
+
+cleanup() {
+    rm -rf "$WORKDIR"
+}
+
+abort_install() {
+    ui_print "ERROR: $*"
+    exit 1
+}
+
+hash_file() {
+    sha256sum "$1" | awk '{print $1}'
+}
+
+size_file() {
+    wc -c < "$1" | tr -d '[:space:]'
+}
+
+verify_file() {
+    label="$1"
+    path="$2"
+    expected_bytes="$3"
+    expected_hash="$4"
+    actual_bytes="$(size_file "$path")" || abort_install "could not size $label"
+    actual_hash="$(hash_file "$path")" || abort_install "could not hash $label"
+    [ "$actual_bytes" = "$expected_bytes" ] ||
+        abort_install "$label byte count does not match the release contract"
+    [ "$actual_hash" = "$expected_hash" ] ||
+        abort_install "$label SHA-256 does not match the release contract"
+}
+
+unmount_if_selected() {
+    block_link="$1"
+    resolved="$(readlink -f "$block_link" 2>/dev/null || true)"
+    [ -n "$resolved" ] || return 0
+    while :; do
+        mountpoint="$(awk -v block="$resolved" '$1 == block {print $2; exit}' /proc/mounts)"
+        [ -n "$mountpoint" ] || break
+        ui_print "Unmounting $mountpoint before validation."
+        umount "$mountpoint" || abort_install "could not unmount $mountpoint"
+    done
+}
+
+trap cleanup 0 1 2 15
+
+case "$MODE" in
+    --flash|--dry-run) ;;
+    *) abort_install "invalid installer mode: $MODE" ;;
+esac
+
+[ -r "$ZIPFILE" ] || abort_install "installer archive is not readable: $ZIPFILE"
+for tool in awk chmod getprop mkdir readlink rm sha256sum tr umount unzip wc; do
+    command -v "$tool" >/dev/null 2>&1 ||
+        abort_install "required recovery tool is unavailable: $tool"
+done
+
+mkdir -p "$WORKDIR/tools" || abort_install "could not create $WORKDIR"
+for member in \
+    boot.img \
+    system_dlkm.img \
+    vendor_dlkm.img \
+    tools/twrp-flash-controlled-stack; do
+    unzip -p "$ZIPFILE" "$member" > "$WORKDIR/$member" ||
+        abort_install "could not extract $member"
+    [ -s "$WORKDIR/$member" ] || abort_install "extracted $member is empty"
+done
+
+HELPER="$WORKDIR/tools/twrp-flash-controlled-stack"
+chmod 0755 "$HELPER" || abort_install "could not make the controlled helper executable"
+
+verify_file boot.img "$WORKDIR/boot.img" "$BOOT_BYTES" "$BOOT_SHA256"
+verify_file system_dlkm.img "$WORKDIR/system_dlkm.img" \
+    "$SYSTEM_DLKM_BYTES" "$SYSTEM_DLKM_SHA256"
+verify_file vendor_dlkm.img "$WORKDIR/vendor_dlkm.img" \
+    "$VENDOR_DLKM_BYTES" "$VENDOR_DLKM_SHA256"
+[ "$(hash_file "$HELPER")" = "$HELPER_SHA256" ] ||
+    abort_install "embedded controlled-stack helper is not the reviewed version"
+
+slot="$(getprop ro.boot.slot_suffix 2>/dev/null || true)"
+case "$slot" in
+    _a|_b) ;;
+    *) abort_install "invalid current slot suffix: ${slot:-unset}" ;;
+esac
+unmount_if_selected "/dev/block/mapper/vendor_dlkm${slot}"
+unmount_if_selected "/dev/block/mapper/system_dlkm${slot}"
+
+ui_print "$RELEASE_TAG"
+ui_print 'Verified exact boot, system_dlkm, and vendor_dlkm payload hashes.'
+ui_print 'vendor_boot and VBMeta are intentionally unchanged and absent.'
+if [ "$MODE" = --dry-run ]; then
+    ui_print 'Installer validation mode: dry run; no partitions will be written.'
+fi
+
+HELPER_LOG="$WORKDIR/helper.log"
+if ! "$HELPER" "$MODE" \
+    --vendor-dlkm "$WORKDIR/vendor_dlkm.img" \
+    --system-dlkm "$WORKDIR/system_dlkm.img" \
+    --boot "$WORKDIR/boot.img" > "$HELPER_LOG" 2>&1; then
+    while IFS= read -r line; do ui_print "$line"; done < "$HELPER_LOG"
+    abort_install 'controlled-stack helper rejected or failed the transaction'
+fi
+while IFS= read -r line; do ui_print "$line"; done < "$HELPER_LOG"
+
+if [ "$MODE" = --dry-run ]; then
+    ui_print 'DRY RUN PASSED — ZIP EXTRACTED AND NO PARTITIONS MODIFIED.'
+else
+    ui_print 'INSTALL PASSED — ALL SELECTED PARTITIONS READ-BACK VERIFIED.'
+fi
+exit 0

@@ -33,9 +33,26 @@ if [[ ${1:-} == --profile && ${2:-} == controlled-v1-wlan053-bt046 ]]; then
     exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/package-controlled-v1-bt046.py" "$@"
 fi
 
+if [[ ${1:-} == --profile && ${2:-} == controlled-v1-modernized-twrp ]]; then
+    shift 2
+    exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/build-controlled-stack-twrp-zip.py" "$@"
+fi
+
 usage() {
     cat <<'EOF'
 Usage:
+  tools/package-controlled-oos-stack.sh --profile controlled-v1-modernized-twrp \
+      --boot <exact-physically-qualified-boot.img> \
+      --system-dlkm <exact-physically-qualified-system_dlkm.img> \
+      --vendor-dlkm <exact-physically-qualified-vendor_dlkm.img> \
+      --baseline-manifest <physical-baseline-manifest.json> \
+      --physical-report <physical-validation.md> \
+      --helper-source <hardened-twrp-flash-controlled-stack> \
+      --helper-repo <twrp-device-tree-repository> \
+      --out-dir out/controlled-v1-modernized-twrp
+
+or:
+
   tools/package-controlled-oos-stack.sh --profile controlled-v1-wlan053-bt046 \
       --baseline-package <physically-qualified-controlled-v1-wlan053-package> \
       --baseline-vendor-stage <qualified-wlan053-vendor-staging-tree> \
