@@ -1,0 +1,9 @@
+type	old_size	new_size	old_member_layout	new_member_layout	cross_boundary_consumers	result
+ipa_tx_meta	24	24	pkt_init_dst_ep=0;valid=1;remote=2;padding=3-7;dma=8;dma_valid=16	pkt_init_dst_ep=0;valid=1;remote=2;pkt_ex_init_valid=3;padding=4-7;dma=8;dma_valid=16	no shipped external ipa_tx_dp/ipa_bridge_tx_dp importer	SEMANTICS_CHANGED_CLOSURE_CONTAINED
+ipa3_context	changed	changed	old internal context and stats	adds gsi_status and SSR allocation counters	ipanetm imports ipa3_ctx pointer	CHANGED_CONSUMER_REBUILT
+ipa3_stats	changed	changed	no SSR allocation counters	adds atomic/non-atomic SSR allocation counters	contained in ipa3_context/ipam; ipanetm rebuilt	CHANGED_CLOSURE_CONTAINED
+gsi public structures	identical	identical	all pre-existing fields and enum values	all pre-existing fields and enum values	ipam only	IDENTICAL
+gsi_status_enabled API	absent	bool(void)	no export	new GPL export	ipam only	ADDED_CLOSURE_CONTAINED
+IPA public headers other than ipa_tx_meta	identical	identical	old object hashes	identical object hashes	WLAN/RMNET/USB consumers	IDENTICAL
+IPA exported callbacks/function tables	identical	identical	pre-existing signatures	pre-existing signatures	WLAN/RMNET consumers	IDENTICAL
+IPA QMAP metadata definitions	identical	identical	pre-existing enum/flag values	pre-existing enum/flag values	RMNET consumers	IDENTICAL

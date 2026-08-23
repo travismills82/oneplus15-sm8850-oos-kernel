@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/clk.h>
@@ -4878,6 +4878,8 @@ static int ipa3_q6_clean_q6_flt_tbls(enum ipa_ip_type ip,
 	struct ipahal_reg_valmask valmask;
 	struct ipahal_imm_cmd_register_write reg_write_coal_close;
 	int coal_ep = IPA_EP_NOT_ALLOCATED;
+	gfp_t mem_flag;
+	uint8_t retry_count = 0;
 
 	IPADBG("Entry\n");
 
@@ -4895,14 +4897,30 @@ static int ipa3_q6_clean_q6_flt_tbls(enum ipa_ip_type ip,
 		return retval;
 	}
 
-	/* Up to filtering pipes we have filtering tables + 1 for coal close */
-	desc = kcalloc(ipa3_ctx->ep_flt_num + 1, sizeof(struct ipa3_desc),
-		GFP_ATOMIC);
+	if (in_atomic()) {
+		mem_flag = GFP_ATOMIC;
+		ipa3_ctx->stats.ssr_mem_alloc_atomic++;
+	} else {
+		mem_flag = GFP_KERNEL;
+		ipa3_ctx->stats.ssr_mem_alloc_non_atomic++;
+	}
+
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		/* Up to filtering pipes we have filtering tables + 1 for coal close */
+		desc = kcalloc(ipa3_ctx->ep_flt_num + 1, sizeof(struct ipa3_desc),
+			mem_flag);
+		if (desc)
+			break;
+	}
 	if (!desc)
 		return -ENOMEM;
 
-	cmd_pyld = kcalloc(ipa3_ctx->ep_flt_num + 1,
-		sizeof(struct ipahal_imm_cmd_pyld *), GFP_ATOMIC);
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		cmd_pyld = kcalloc(ipa3_ctx->ep_flt_num + 1,
+			sizeof(struct ipahal_imm_cmd_pyld *), mem_flag);
+		if (cmd_pyld)
+			break;
+	}
 	if (!cmd_pyld) {
 		retval = -ENOMEM;
 		goto free_desc;
@@ -4927,7 +4945,7 @@ static int ipa3_q6_clean_q6_flt_tbls(enum ipa_ip_type ip,
 	}
 
 	retval = ipahal_flt_generate_empty_img(1, lcl_hdr_sz, lcl_hdr_sz,
-		0, &mem, true);
+		0, &mem, (mem_flag == GFP_ATOMIC) ? true : false);
 	if (retval) {
 		IPAERR("failed to generate flt single tbl empty img\n");
 		goto free_cmd_pyld;
@@ -4955,7 +4973,7 @@ static int ipa3_q6_clean_q6_flt_tbls(enum ipa_ip_type ip,
 			&reg_write_coal_close, false);
 		if (!cmd_pyld[num_cmds]) {
 			IPAERR("failed to construct coal close IC\n");
-			retval = -ENOMEM;
+			retval = -EINVAL;
 			goto free_empty_img;
 		}
 		ipa3_init_imm_cmd_desc(&desc[num_cmds], cmd_pyld[num_cmds]);
@@ -4998,7 +5016,7 @@ static int ipa3_q6_clean_q6_flt_tbls(enum ipa_ip_type ip,
 				IPA_IMM_CMD_DMA_SHARED_MEM, &cmd, false);
 			if (!cmd_pyld[num_cmds]) {
 				IPAERR("fail construct dma_shared_mem cmd\n");
-				retval = -ENOMEM;
+				retval = -EINVAL;
 				goto free_empty_img;
 			}
 			ipa3_init_imm_cmd_desc(&desc[num_cmds],
@@ -5043,6 +5061,8 @@ static int ipa3_q6_clean_q6_rt_tbls(enum ipa_ip_type ip,
 	struct ipahal_reg_valmask valmask;
 	struct ipahal_imm_cmd_register_write reg_write_coal_close;
 	int i;
+	gfp_t mem_flag;
+	uint8_t retry_count = 0;
 
 	IPADBG("Entry\n");
 
@@ -5082,21 +5102,37 @@ static int ipa3_q6_clean_q6_rt_tbls(enum ipa_ip_type ip,
 		}
 	}
 
+	if (in_atomic()) {
+		mem_flag = GFP_ATOMIC;
+		ipa3_ctx->stats.ssr_mem_alloc_atomic++;
+	} else {
+		mem_flag = GFP_KERNEL;
+		ipa3_ctx->stats.ssr_mem_alloc_non_atomic++;
+	}
+
 	retval = ipahal_rt_generate_empty_img(
 		modem_rt_index_hi - modem_rt_index_lo + 1,
-		lcl_hdr_sz, lcl_hdr_sz, &mem, true);
+		lcl_hdr_sz, lcl_hdr_sz, &mem, (mem_flag == GFP_ATOMIC) ? true : false);
 	if (retval) {
 		IPAERR("fail generate empty rt img\n");
 		return -ENOMEM;
 	}
 
-	desc = kcalloc(2, sizeof(struct ipa3_desc), GFP_ATOMIC);
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		desc = kcalloc(2, sizeof(struct ipa3_desc), mem_flag);
+		if (desc)
+			break;
+	}
 	if (!desc) {
 		retval = -ENOMEM;
 		goto free_empty_img;
 	}
 
-	cmd_pyld = kcalloc(2, sizeof(struct ipahal_imm_cmd_pyld *), GFP_ATOMIC);
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		cmd_pyld = kcalloc(2, sizeof(struct ipahal_imm_cmd_pyld *), mem_flag);
+		if (cmd_pyld)
+			break;
+	}
 	if (!cmd_pyld) {
 		retval = -ENOMEM;
 		goto free_desc;
@@ -5125,7 +5161,7 @@ static int ipa3_q6_clean_q6_rt_tbls(enum ipa_ip_type ip,
 			&reg_write_coal_close, false);
 		if (!cmd_pyld[num_cmds]) {
 			IPAERR("failed to construct coal close IC\n");
-			retval = -ENOMEM;
+			retval = -EINVAL;
 			goto free_cmd_pyld;
 		}
 		ipa3_init_imm_cmd_desc(&desc[num_cmds], cmd_pyld[num_cmds]);
@@ -5144,7 +5180,7 @@ static int ipa3_q6_clean_q6_rt_tbls(enum ipa_ip_type ip,
 			IPA_IMM_CMD_DMA_SHARED_MEM, &cmd, false);
 	if (!cmd_pyld[num_cmds]) {
 		IPAERR("failed to construct dma_shared_mem imm cmd\n");
-		retval = -ENOMEM;
+		retval = -EINVAL;
 		goto free_cmd_pyld;
 	}
 	ipa3_init_imm_cmd_desc(&desc[num_cmds], cmd_pyld[num_cmds]);
@@ -5328,9 +5364,23 @@ static int ipa3_q6_set_ex_path_to_apps(void)
 	struct ipahal_reg_valmask valmask;
 	struct ipahal_imm_cmd_register_write reg_write_coal_close;
 	int i;
+	gfp_t mem_flag;
+	uint8_t retry_count = 0;
 
-	desc = kcalloc(ipa3_ctx->ipa_num_pipes + 1, sizeof(struct ipa3_desc),
-			GFP_ATOMIC);
+	if (in_atomic()) {
+		mem_flag = GFP_ATOMIC;
+		ipa3_ctx->stats.ssr_mem_alloc_atomic++;
+	} else {
+		mem_flag = GFP_KERNEL;
+		ipa3_ctx->stats.ssr_mem_alloc_non_atomic++;
+	}
+
+	for (retry_count = 0; retry_count < MAX_RETRY_ALLOC; retry_count++) {
+		desc = kcalloc(ipa3_ctx->ipa_num_pipes + 1, sizeof(struct ipa3_desc),
+			mem_flag);
+		if (desc)
+			break;
+	}
 	if (!desc)
 		return -ENOMEM;
 
@@ -5358,7 +5408,7 @@ static int ipa3_q6_set_ex_path_to_apps(void)
 		if (!cmd_pyld) {
 			IPAERR("failed to construct coal close IC\n");
 			ipa_assert();
-			return -ENOMEM;
+			return -EINVAL;
 		}
 		ipa3_init_imm_cmd_desc(&desc[num_descs], cmd_pyld);
 		desc[num_descs].callback = ipa3_destroy_imm;
@@ -5396,7 +5446,7 @@ static int ipa3_q6_set_ex_path_to_apps(void)
 			if (!cmd_pyld) {
 				IPAERR("fail construct register_write cmd\n");
 				ipa_assert();
-				return -ENOMEM;
+				return -EINVAL;
 			}
 
 			ipa3_init_imm_cmd_desc(&desc[num_descs], cmd_pyld);
@@ -8165,7 +8215,7 @@ static int ipa3_post_init(const struct ipa3_plat_drv_res *resource_p,
 	/* GSI 2.2 requires to allocate all EE GSI channel
 	 * during device bootup.
 	 */
-	if (gsi_props.ver == GSI_VER_2_2) {
+	if (gsi_props.ver == GSI_VER_2_2 && !ipa3_ctx->gsi_status) {
 		result = ipa3_alloc_gsi_channel();
 		if (result) {
 			IPAERR("Failed to alloc the GSI channels\n");
@@ -8541,46 +8591,53 @@ static void ipa3_load_ipa_fw(struct work_struct *work)
 		return;
 	}
 
-	if (ipa3_ctx->ipa3_hw_mode != IPA_HW_MODE_EMULATION &&
-	    ((ipa3_ctx->platform_type != IPA_PLAT_TYPE_MDM) ||
-	    (ipa3_ctx->ipa_hw_type >= IPA_HW_v3_5))) {
-		/* some targets sharing same lunch option but
-		 * using different signing images, adding support to
-		 * load specific FW image to based on dt entry.
-		 */
+	ipa3_ctx->gsi_status = gsi_status_enabled();
+
+	if (!ipa3_ctx->gsi_status) {
+		if (ipa3_ctx->ipa3_hw_mode != IPA_HW_MODE_EMULATION &&
+			((ipa3_ctx->platform_type != IPA_PLAT_TYPE_MDM) ||
+			(ipa3_ctx->ipa_hw_type >= IPA_HW_v3_5))) {
+			/* some targets sharing same lunch option but
+			 * using different signing images, adding support to
+			 * load specific FW image to based on dt entry.
+			 */
 #if IS_ENABLED(CONFIG_QCOM_MDT_LOADER)
-		if (ipa3_ctx->gsi_fw_file_name)
-			result = ipa3_mdt_load_ipa_fws(
-						ipa3_ctx->gsi_fw_file_name);
-		else
-			result = ipa3_mdt_load_ipa_fws(IPA_SUBSYSTEM_NAME);
+			if (ipa3_ctx->gsi_fw_file_name)
+				result = ipa3_mdt_load_ipa_fws(
+							ipa3_ctx->gsi_fw_file_name);
+			else
+				result = ipa3_mdt_load_ipa_fws(IPA_SUBSYSTEM_NAME);
 #else /* IS_ENABLED(CONFIG_QCOM_MDT_LOADER) */
-		if (ipa3_ctx->gsi_fw_file_name)
-			result = ipa3_pil_load_ipa_fws(
-						ipa3_ctx->gsi_fw_file_name);
-		else
-			result = ipa3_pil_load_ipa_fws(IPA_SUBSYSTEM_NAME);
+			if (ipa3_ctx->gsi_fw_file_name)
+				result = ipa3_pil_load_ipa_fws(
+							ipa3_ctx->gsi_fw_file_name);
+			else
+				result = ipa3_pil_load_ipa_fws(IPA_SUBSYSTEM_NAME);
 #endif /* IS_ENABLED(CONFIG_QCOM_MDT_LOADER) */
+		} else {
+			result = ipa3_manual_load_ipa_fws();
+		}
+
+		if (result) {
+			ipa3_ctx->ipa_pil_load++;
+			IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
+			IPADBG("IPA firmware loading deferred to a work queue\n");
+			queue_delayed_work(ipa3_ctx->transport_power_mgmt_wq,
+				&ipa3_fw_load_failure_handle,
+				msecs_to_jiffies(DELAY_BEFORE_FW_LOAD));
+			return;
+		}
+		mutex_lock(&ipa3_ctx->fw_load_data.lock);
+		ipa3_ctx->fw_load_data.state = IPA_FW_LOAD_STATE_LOADED;
+		mutex_unlock(&ipa3_ctx->fw_load_data.lock);
+		pr_info("IPA FW loaded successfully\n");
 	} else {
-		result = ipa3_manual_load_ipa_fws();
+		pr_info("IPA FW is already loaded\n");
+		/*uC is already loaded. Marking this as after SSR boot to avoid loading uc again*/
+		ipa3_ctx->uc_ctx.uc_loaded = true;
 	}
 
-
-	if (result) {
-
-		ipa3_ctx->ipa_pil_load++;
-		IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
-		IPADBG("IPA firmware loading deffered to a work queue\n");
-		queue_delayed_work(ipa3_ctx->transport_power_mgmt_wq,
-			&ipa3_fw_load_failure_handle,
-			msecs_to_jiffies(DELAY_BEFORE_FW_LOAD));
-		return;
-	}
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
-	mutex_lock(&ipa3_ctx->fw_load_data.lock);
-	ipa3_ctx->fw_load_data.state = IPA_FW_LOAD_STATE_LOADED;
-	mutex_unlock(&ipa3_ctx->fw_load_data.lock);
-	pr_info("IPA FW loaded successfully\n");
 
 	result = ipa3_post_init(&ipa3_res, ipa3_ctx->cdev.dev);
 	if (result) {
@@ -8893,6 +8950,7 @@ static int ipa_alloc_pkt_init_ex(void)
 	struct ipahal_imm_cmd_ip_packet_init_ex cmd = {0};
 	struct ipahal_imm_cmd_ip_packet_init_ex cmd_mask = {0};
 	int result = 0;
+	enum ipa_client_type client;
 
 	cmd_pyld = ipahal_construct_imm_cmd(IPA_IMM_CMD_IP_PACKET_INIT_EX,
 		&cmd, false);
@@ -8933,6 +8991,16 @@ static int ipa_alloc_pkt_init_ex(void)
 	for (cmd.rt_pipe_dest_idx = 0;
 		cmd.rt_pipe_dest_idx < ipa3_ctx->ipa_num_pipes;
 		cmd.rt_pipe_dest_idx++) {
+		client = ipa3_get_client_by_pipe(cmd.rt_pipe_dest_idx);
+		if(ipa3_ctx->ipa_hw_type >= IPA_HW_v5_5 &&
+			client == IPA_CLIENT_APPS_WAN_LOW_LAT_PROD) {
+			cmd.dpl_disable = true;
+			cmd_mask.dpl_disable = true;
+		} else {
+			cmd.dpl_disable = false;
+			cmd_mask.dpl_disable = false;
+		}
+
 		result = ipahal_modify_imm_cmd(IPA_IMM_CMD_IP_PACKET_INIT_EX,
 			cmd_pyld->data, &cmd, &cmd_mask);
 		if (unlikely(result != 0)) {
@@ -12073,7 +12141,7 @@ static void ipa3_deepsleep_suspend(void)
 	ipa3_ctx->deepsleep = true;
 	/*Disabling the LAN NAPI*/
 	ipa3_disable_napi_lan_rx();
-	/*NOt allow uC related operations until uC load again*/
+	/*Not allow uC related operations until uC load again*/
 	ipa3_ctx->uc_ctx.uc_loaded = false;
 	/*Disconnecting LAN PROD/LAN CONS/CMD PROD apps pipes*/
 	ipa3_teardown_apps_pipes();

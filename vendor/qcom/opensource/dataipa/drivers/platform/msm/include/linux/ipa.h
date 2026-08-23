@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _IPA_H_
@@ -760,6 +760,7 @@ struct ipa_tx_meta {
 	u8 pkt_init_dst_ep;
 	bool pkt_init_dst_ep_valid;
 	bool pkt_init_dst_ep_remote;
+	bool pkt_ex_init_valid;
 	dma_addr_t dma_address;
 	bool dma_address_valid;
 };

@@ -55,8 +55,8 @@
       "source_id": "stock"
     },
     "nfc_vendor": {
-      "generation": "stock OOS 16.0.9.400(EX01)",
-      "source_id": "stock"
+      "generation": "AU_LINUX_ANDROID_LA.VENDOR.16.2.0.R1.11.00.00.1277.102",
+      "source_id": "d447f713d6403f707a2910383495f4ada98cfa4d"
     },
     "other_ddk": {
       "generation": "controlled-v1-wlan053 retained set",

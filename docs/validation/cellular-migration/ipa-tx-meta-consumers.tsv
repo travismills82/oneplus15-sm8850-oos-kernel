@@ -1,0 +1,11 @@
+consumer	partition/source	passes_or_embeds_type	old_size	new_size	old_layout	new_layout	shipped_binary_import	closure_action	result
+ipam:ipa_tx_dp	vendor_dlkm/ipam	defines and dereferences	24	24	bytes 0,1,2; padding 3-7; dma_address 8; valid 16	bytes 0,1,2; pkt_ex_init_valid 3; padding 4-7; dma_address 8; valid 16	provider	SOURCE_UPGRADE	PASS
+ipam:rmnet_ctl_ipa	vendor_dlkm/ipam	constructs and passes	24	24	field absent	sets pkt_ex_init_valid and existing fields before ipa_tx_dp	internal	SOURCE_UPGRADE	PASS
+ipam:ipa_gsb	vendor_dlkm/ipam	passes pointer through ipa_bridge_tx_dp	24	24	existing member offsets	old member offsets unchanged	internal	SOURCE_UPGRADE	PASS
+ipam:ipa_clients	vendor_dlkm/ipam	passes NULL or locally initialized metadata	24	24	existing member offsets	old member offsets unchanged	internal	SOURCE_UPGRADE	PASS
+qca_cld3_peach_v2	vendor_dlkm/header-visible only	no ELF import of ipa_tx_dp or ipa_bridge_tx_dp	24	24	not crossed	not crossed	no	RETAIN_EXACT	PASS
+qca_cld3_kiwi_v2	vendor_dlkm/dormant	no ELF import of ipa_tx_dp or ipa_bridge_tx_dp	24	24	not crossed	not crossed	no	RETAIN_EXACT_DORMANT	PASS
+qca_cld3_wcn7750	vendor_dlkm/dormant	no ELF import of ipa_tx_dp or ipa_bridge_tx_dp	24	24	not crossed	not crossed	no	RETAIN_EXACT_DORMANT	PASS
+vendor_boot inventory	vendor_boot	no consumer found	24	24	not crossed	not crossed	no	RETAIN_EXACT	PASS
+system_dlkm inventory	system_dlkm	no consumer found	24	24	not crossed	not crossed	no	RETAIN_EXACT	PASS
+IPA unit-test targets	not shipped	test-only calls	24	24	existing member offsets	old member offsets unchanged	not packaged	NOT_APPLICABLE	PASS

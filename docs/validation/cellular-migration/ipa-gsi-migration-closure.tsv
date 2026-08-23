@@ -1,0 +1,9 @@
+module	old_new_source	reason_included	provider_role	consumer_role	source_changed	rebuild_only	shared_types	contract_result
+gsim	.078 -> .102	new GSI lifecycle behavior and gsi_status_enabled export	GSI foundation	provider to ipam	yes	no	GSI public interfaces	PASS
+ipam	.078 -> .102	consumes new GSI status API and contains IPA lifecycle/data-path fixes	IPA core	consumer of gsim and stock QMI/USB/SSR providers	yes	no	ipa_tx_meta;ipa3_context	PASS
+ipanetm	.078 source retained	expects changed ipa3_ctx CRC from ipam	WWAN-facing IPA wrapper	consumer of ipam	no	REBUILT_FOR_PROVIDER_CONTRACT	ipa3_context pointer boundary	PASS
+rmnet_ctl	exact stock payload	protected consumer of controlled ipam exports	RMNET control	consumer of ipam	no	RE_SIGN_EXACT_STOCK_FOR_PROTECTED_CONTRACT	public IPA callback API	PASS
+qca_cld3_peach_v2	controlled WLAN053 unchanged	28 IPA imports remain CRC-compatible	WLAN consumer	consumer of ipam	no	ALREADY_CONTROLLED_RETAIN	public IPA WDI API	PASS
+qca_cld3_kiwi_v2	controlled dormant unchanged	27 IPA imports remain CRC-compatible	dormant WLAN consumer	consumer of ipam	no	ALREADY_CONTROLLED_RETAIN	public IPA WDI API	PASS_DORMANT
+qca_cld3_wcn7750	controlled dormant unchanged	27 IPA imports remain CRC-compatible	dormant WLAN consumer	consumer of ipam	no	ALREADY_CONTROLLED_RETAIN	public IPA WDI API	PASS_DORMANT
+rmnet_core	controlled .102 unchanged	6 IPA imports remain CRC-compatible	RMNET provider	consumer of ipam	no	ALREADY_CONTROLLED_RETAIN	public IPA low-latency callbacks	PASS

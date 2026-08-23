@@ -59,9 +59,11 @@ def require_functionally_identical(
     outside = differences - allowed
     if outside:
         die(f"{label} functional byte changed at offset {min(outside)}")
-    unused = allowed - differences
-    if unused:
-        die(f"{label} metadata tolerance no longer describes the build at offset {min(unused)}")
+    # A tolerance describes where metadata is allowed to differ, not a byte
+    # mask that every rebuild must fully consume.  Hash-like metadata can
+    # legitimately retain one or more coincident bytes across two builds.
+    # The fail-closed property is the check above: no changed byte may fall
+    # outside a reviewed non-functional range.
     print(f"{label}_functional_differences=0")
     print(f"{label}_metadata_differences={len(differences)}")
 

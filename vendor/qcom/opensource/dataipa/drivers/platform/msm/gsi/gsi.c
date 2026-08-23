@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/of.h>
@@ -1513,6 +1513,9 @@ int gsi_register_device(struct gsi_per_props *props, unsigned long *dev_hdl)
 		return -GSI_STATUS_UNSUPPORTED_OP;
 	}
 
+	gsihal_destroy();
+	gsi_unmap_base();
+
 	spin_lock_init(&gsi_ctx->slock);
 	gsi_ctx->per = *props;
 	if (props->intr == GSI_INTR_IRQ) {
@@ -1888,8 +1891,6 @@ int gsi_deregister_device(unsigned long dev_hdl, bool force)
 #endif
 
 	devm_free_irq(gsi_ctx->dev, gsi_ctx->per.irq, gsi_ctx);
-	gsihal_destroy();
-	gsi_unmap_base();
 	gsi_ctx->per_registered = false;
 	return GSI_STATUS_SUCCESS;
 }
@@ -3192,6 +3193,22 @@ int gsi_write_channel_scratch2_reg(unsigned long chan_hdl,
 	return GSI_STATUS_SUCCESS;
 }
 EXPORT_SYMBOL(gsi_write_channel_scratch2_reg);
+
+/**
+ * gsi_status_enabled() - Query GSI Status
+ *
+ * Returns:	true if ENABLED, false on DISABLED
+ *
+ */
+bool gsi_status_enabled(void)
+{
+	struct gsihal_reg_gsi_status gsi_status;
+
+	gsihal_read_reg_n_fields(GSI_EE_n_GSI_STATUS,
+		gsi_ctx->per.ee, &gsi_status);
+	return gsi_status.enabled;
+}
+EXPORT_SYMBOL_GPL(gsi_status_enabled);
 
 static void __gsi_read_channel_scratch(unsigned long chan_hdl,
 		union __packed gsi_channel_scratch * val)

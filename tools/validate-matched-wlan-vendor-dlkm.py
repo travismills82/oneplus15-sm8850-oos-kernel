@@ -353,6 +353,16 @@ def parse_args() -> argparse.Namespace:
             "all resulting imports must still resolve with matching CRCs"
         ),
     )
+    parser.add_argument(
+        "--allow-export-contract-change",
+        action="append",
+        default=[],
+        metavar="MODULE",
+        help=(
+            "allow an explicitly reviewed source replacement to change its export set "
+            "or CRCs; every retained consumer import is still resolved and CRC-checked"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -384,7 +394,8 @@ def main() -> int:
     replacement_rows = []
     contract_failures = 0
     allowed_import_changes = set(args.allow_import_contract_change)
-    unknown_allowed = allowed_import_changes - set(replacements)
+    allowed_export_changes = set(args.allow_export_contract_change)
+    unknown_allowed = (allowed_import_changes | allowed_export_changes) - set(replacements)
     if unknown_allowed:
         raise ValueError(
             "allowed import-contract module is not a replacement: "
@@ -395,7 +406,9 @@ def main() -> int:
         imports_match = replacement.imports == original.imports
         exports_match = replacement.exports == original.exports
         import_change_allowed = name in allowed_import_changes
-        if (not imports_match and not import_change_allowed) or not exports_match:
+        export_change_allowed = name in allowed_export_changes
+        if ((not imports_match and not import_change_allowed) or
+                (not exports_match and not export_change_allowed)):
             contract_failures += 1
         replacement_rows.append(
             [
@@ -409,6 +422,7 @@ def main() -> int:
                 "MATCH" if imports_match else "MISMATCH",
                 "YES" if import_change_allowed else "NO",
                 "MATCH" if exports_match else "MISMATCH",
+                "YES" if export_change_allowed else "NO",
             ]
         )
     write_tsv(
@@ -424,6 +438,7 @@ def main() -> int:
             "imports",
             "import_change_explicitly_allowed",
             "exports",
+            "export_change_explicitly_allowed",
         ],
         replacement_rows,
     )
@@ -558,6 +573,7 @@ def main() -> int:
         "external_signed_provider_edges": len(external_rows),
         "replacement_contract_failures": contract_failures,
         "allowed_import_contract_changes": sorted(allowed_import_changes),
+        "allowed_export_contract_changes": sorted(allowed_export_changes),
         "unresolved_imports": unresolved,
         "crc_mismatches": crc_mismatches,
         "result": "PASS"
