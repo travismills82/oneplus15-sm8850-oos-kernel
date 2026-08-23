@@ -1,0 +1,9 @@
+module	old_new_source	reason_included	provider_role	consumer_role	source_changed	rebuild_only	shared_types	contract_result
+rmnet_core	.097 -> .102	contains isolated priority behavior	RMNET provider	consumer of stock IPA/QMI/rmnet_ctl/rmnet_mem	yes	no	RMNET public headers unchanged	PASS
+rmnet_aps	stock .097 unchanged	protected consumer of controlled rmnet_core	none	imports protected rmnet_core exports	no	RE_SIGN_ONLY	RMNET public headers unchanged	PASS
+rmnet_offload	stock .097 unchanged	protected consumer of controlled rmnet_core	none	imports protected rmnet_core exports	no	RE_SIGN_ONLY	RMNET public headers unchanged	PASS
+rmnet_perf	stock .097 unchanged	protected consumer of controlled rmnet_core	none	imports protected rmnet_core exports	no	RE_SIGN_ONLY	RMNET public headers unchanged	PASS
+rmnet_perf_tether	stock .097 unchanged	protected consumer of controlled rmnet_core	none	imports protected rmnet_core exports	no	RE_SIGN_ONLY	RMNET public headers unchanged	PASS
+rmnet_shs	stock .097 unchanged	protected consumer of controlled rmnet_core	none	imports protected rmnet_core exports	no	RE_SIGN_ONLY	RMNET public headers unchanged	PASS
+rmnet_wlan	stock .097 unchanged	protected consumer of controlled rmnet_core	none	imports protected rmnet_core exports	no	RE_SIGN_ONLY	RMNET public headers unchanged	PASS
+rmnet_sch	Batch-01 controlled unchanged	already physically validated baseline	leaf	not a rmnet_core consumer	no	no	none	PASS_RETAINED
