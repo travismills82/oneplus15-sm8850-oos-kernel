@@ -1,0 +1,16 @@
+path	classification	qualified_blob	reconciled_blob	runtime_input?	allowed_difference?	reason
+.github/workflows/controlled-stack-release-validate.yml	RELEASE_CI_ONLY	-	068e0ecb309c9be9e406c36ab91e74da4e907365	no	yes	Validates committed release records and published assets; does not produce kernel or DLKM payloads.
+README.md	DOCUMENTATION_ONLY	e46282dadb7b0d76ce7a08918f32ef70a6ec5c17	0fe7f9186a93f63bb04f1536aad9249f6a6018d5	no	yes	Repository documentation organization only.
+docs/README.md	DOCUMENTATION_ONLY	-	e260c93d827f862eb2b8b08ce934b84093dbc560	no	yes	Documentation index only.
+docs/controlled-stack-release-process.md	RELEASE_DOCUMENTATION	-	85750d5aaa2c7bb540648aec4d921c1ba136a69d	no	yes	Fail-closed release workflow documentation; does not build payloads.
+docs/releases/oos16.0.9.400-r8/release-manifest.json	HISTORICAL_RELEASE_METADATA	-	e3f2974d24c6fd8709b958081ea6739bf37ca30f	no	yes	Immutable r8 release identity and tested payload metadata.
+docs/releases/oos16.0.9.400-r8/release-notes.md	HISTORICAL_RELEASE_METADATA	-	e7837706977c9e30669d727b308dd99f68ec088c	no	yes	Historical r8 release notes only.
+docs/releases/oos16.0.9.400-r8/validation-signoff.json	HISTORICAL_RELEASE_METADATA	-	b797b0512c52154306b4dbe690e9a8cbf5382ec9	no	yes	Historical r8 physical-validation signoff only.
+security/cve-audit-2026.md	DOCUMENTATION_MOVE	e2ebb80a283de905a1ceea708cfcded3c179c9ff	-	no	yes	Moved without content change to docs/security.
+docs/security/cve-audit-2026.md	DOCUMENTATION_MOVE	-	e2ebb80a283de905a1ceea708cfcded3c179c9ff	no	yes	Moved without content change from repository root.
+graphics057-secure-guard-baseline-manifest.json	DOCUMENTATION_MOVE	2538f6f57840489fa6732bd128bb3d249e9ac212	-	no	yes	Moved without content change to graphics validation documentation.
+docs/validation/graphics-modernization/graphics057-secure-guard-baseline-manifest.json	DOCUMENTATION_MOVE	-	2538f6f57840489fa6732bd128bb3d249e9ac212	no	yes	Moved without content change from repository root.
+tools/finalize-controlled-stack-release-manifest.py	RELEASE_VERIFICATION_TOOL	-	afa71bd1963b23cf24c1bcd912e87f4b5f0305f6	no	yes	Finalizes release metadata only; does not build or mutate kernel/DLKM payloads.
+tools/verify-controlled-stack-release.py	RELEASE_VERIFICATION_TOOL	-	f8616fcdc51d4ed9771a813b5e4d7ebdbd5427df	no	yes	Read-only release metadata, ZIP, payload-hash, and release-commit verifier.
+docs/validation/ack-modernization/main-ack-6.12.24-reconciliation.md	RECONCILIATION_EVIDENCE	-	6466bc24890773415c7b91700aa7cd16ba01aa6d	no	yes	Records commit classification, qualified payload identity, and future main semantics.
+docs/validation/ack-modernization/main-ack-6.12.24-reconciliation.tsv	RECONCILIATION_EVIDENCE	-	SELF	no	yes	This path-level equivalence record; its committed blob is verified after staging.

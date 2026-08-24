@@ -5946,10 +5946,19 @@ static void css_killed_ref_fn(struct percpu_ref *ref)
  */
 static void kill_css(struct cgroup_subsys_state *css)
 {
+	void (*css_killed)(struct cgroup_subsys_state *css);
+
 	lockdep_assert_held(&cgroup_mutex);
 
 	if (css->flags & CSS_DYING)
 		return;
+
+	/*
+	 * Call css_killed(), if defined, before setting the CSS_DYING flag
+	 */
+	css_killed = cgroup_subsys_css_killed(css->ss);
+	if (css_killed)
+		css_killed(css);
 
 	css->flags |= CSS_DYING;
 

@@ -1,0 +1,19 @@
+ACK 6.12.24 CONFIG DELTA
+
+baseline_sha256=b53d48b303059adb49a8dbe457145a4b7523a77fae621ea8d9e7b0b727e1615b
+candidate_sha256=f5c32552d9d4a07985123b00bc1d671df2c3fbed08686261b8e2eb11169cf798
+setting_changes=0
+new_settings=0
+removed_settings=0
+review=PASS
+
+--- qualified-6.12.23/.config
++++ candidate-6.12.24/.config
+@@ -1,6 +1,6 @@
+ #
+ # Automatically generated file; DO NOT EDIT.
+-# Linux/arm64 6.12.23 Kernel Configuration
++# Linux/arm64 6.12.24 Kernel Configuration
+ #
+ CONFIG_CC_VERSION_TEXT="Android (12833971, +pgo, +bolt, +lto, +mlgo, based on r536225) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project b3a530ec6537146650e42be89f1089e9a3588460)"
+ CONFIG_GCC_VERSION=0

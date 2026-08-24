@@ -803,6 +803,20 @@ struct cgroup_subsys {
 	ANDROID_BACKPORT_RESERVE(1);
 };
 
+/*
+ * Keep the frozen cgroup_subsys layout and ABI description while using the
+ * first Android backport reserve for the 6.12.24 ->css_killed() callback.
+ */
+#define CGROUP_SUBSYS_CSS_KILLED(_fn) \
+	.__kabi_reserved_backport1 = (unsigned long)(_fn)
+
+static inline void (*cgroup_subsys_css_killed(const struct cgroup_subsys *ss))
+			(struct cgroup_subsys_state *css)
+{
+	return (void (*)(struct cgroup_subsys_state *))
+		(unsigned long)ss->__kabi_reserved_backport1;
+}
+
 extern struct percpu_rw_semaphore cgroup_threadgroup_rwsem;
 
 struct cgroup_of_peak {
