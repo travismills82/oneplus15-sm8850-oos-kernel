@@ -5,6 +5,19 @@ three-way update from the OxygenOS 16.0.8.300 OnePlus OSS release to the
 OxygenOS 16.0.9.400 release. This is not a replacement of the customized
 tree with a new OnePlus snapshot.
 
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `kernel_platform/` | Android Common Kernel, OnePlus kernel modules, device tree, and build definitions. |
+| `vendor/` | Vendor-side source and build inputs retained by the kernel project. |
+| `tools/` | Repository-owned audit, assembly, validation, and release tooling. |
+| `docs/` | Project documentation, security audits, release records, and validation evidence. |
+| `.github/workflows/` | GitHub Actions validation workflows. |
+| `oneplus_15.xml` | Pinned source manifest used to reproduce the full checkout. |
+
+See [`docs/README.md`](docs/README.md) for the documentation index. Kernel-native documentation under the source tree remains in its upstream locations and is not relocated into the project documentation folder.
+
 ## Source provenance
 
 | Source | Previous 16.0.8.300 baseline | Current 16.0.9.400 baseline |
@@ -99,7 +112,7 @@ The r7 payload retains r6 coverage and adds 52 source-verified Linux
 shared-frag handling, IPv6 MLD packet lifetime, 16 NTFS3 bounds/lifetime
 fixes, three EROFS decompression/unmount lifetime fixes, 27 Bluetooth fixes,
 and three NFC LLCP UAF fixes. The complete applicability and provenance audit
-is in [`security/cve-audit-2026.md`](security/cve-audit-2026.md).
+is in [`docs/security/cve-audit-2026.md`](docs/security/cve-audit-2026.md).
 
 The ABI-safe system-DLKM reduction work also builds Bluetooth core/QCA HCI,
 RFKILL, power sequencing, RFCOMM, HIDP, NFC core, TLS, and RTL8150 into Image.
