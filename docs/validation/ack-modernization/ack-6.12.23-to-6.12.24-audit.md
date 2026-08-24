@@ -32,10 +32,10 @@ The per-commit disposition is recorded in
 
 | Disposition | Count |
 |---|---:|
-| APPLY | 375 |
+| APPLY | 374 |
 | ALREADY PRESENT | 17 |
 | ANDROID/QUALCOMM OVERRIDE | 1 |
-| CONFLICT - MANUAL REVIEW | 1 |
+| CONFLICT - MANUAL REVIEW | 2 |
 | NOT APPLICABLE | 0 |
 
 All architecture- or device-dormant stable changes remain in the source
@@ -98,6 +98,23 @@ The resolution follows the official later ACK layout exactly:
 The field exists only when both `CONFIG_PROVE_LOCKING` and `CONFIG_MODULES`
 are enabled. The generated Canoe configuration and ABI/KMI reports remain the
 authoritative acceptance gates for this resolution.
+
+### `struct cgroup_subsys` stable callback
+
+The first strict ABI comparison exposed a second Android integration issue
+that did not create a textual merge conflict. Stable commit
+`cdb6e724e7c5713d13c5ad3340e9d71c3dd8c9fb` adds the `css_killed` callback
+directly after `css_reset`. On the frozen Canoe KMI that expanded
+`struct cgroup_subsys` from 256 to 264 bytes and propagated CRC changes across
+3,748 symbols.
+
+The qualified 6.12.23 ACK layout already reserves one pointer-sized planned
+backport slot at the end of this structure. The callback therefore consumes
+that slot with `ANDROID_BACKPORT_USE(1, ...)`. This preserves the frozen
+layout and stable type identity while retaining the complete 6.12.24 callback
+behavior in cgroup core and cpuset. No loader check, CRC, or vermagic rule is
+disabled. The post-resolution ABI and module-CRC comparisons are recorded in
+the static validation report.
 
 ## Resulting source identity
 

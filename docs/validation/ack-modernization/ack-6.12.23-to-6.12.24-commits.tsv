@@ -5,7 +5,7 @@ sequence	upstream_commit	disposition	category	subject
 004	2dbd1b166034ab4bff100130a1a49309c6b31e48	APPLY	SCHEDULER	cgroup/cpuset: Revert "Allow suppression of sched domain rebuild in update_cpumasks_hier()"
 005	6b145f8b22011743b563965df0e090789b413bb8	APPLY	SCHEDULER	cgroup/cpuset: Enforce at most one rebuild_sched_domains_locked() call per operation
 006	1b06f00edaaa08ee23dba7972b24ede337c3a3cf	APPLY	SCHEDULER	cgroup/cpuset: Further optimize code if CONFIG_CPUSETS_V1 not set
-007	cdb6e724e7c5713d13c5ad3340e9d71c3dd8c9fb	APPLY	SCHEDULER	cgroup/cpuset: Fix race between newly created partition and dying one
+007	cdb6e724e7c5713d13c5ad3340e9d71c3dd8c9fb	CONFLICT - MANUAL REVIEW	SCHEDULER	cgroup/cpuset: Fix race between newly created partition and dying one
 008	179ef2f8109e3a8cde6cf02afa730d54bee92cd7	APPLY	DRIVER/CORE	gpiolib: of: Fix the choice for Ingenic NAND quirk
 009	206d0df7b6a52daa6a9dcb326b243bbce389344c	ANDROID/QUALCOMM OVERRIDE	DRIVER/CORE	selftests/futex: futex_waitv wouldblock test should fail
 010	cb8372e54fdb91f1123f01b566d0797cd585a3d1	APPLY	DRIVER/CORE	ublk: refactor recovery configuration flag helpers

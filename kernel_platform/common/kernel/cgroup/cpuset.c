@@ -3642,7 +3642,7 @@ struct cgroup_subsys cpuset_cgrp_subsys = {
 	.css_alloc	= cpuset_css_alloc,
 	.css_online	= cpuset_css_online,
 	.css_offline	= cpuset_css_offline,
-	.css_killed	= cpuset_css_killed,
+	CGROUP_SUBSYS_CSS_KILLED(cpuset_css_killed),
 	.css_free	= cpuset_css_free,
 	.can_attach	= cpuset_can_attach,
 	.cancel_attach	= cpuset_cancel_attach,
