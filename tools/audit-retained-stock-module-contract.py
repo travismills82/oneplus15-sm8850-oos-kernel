@@ -70,7 +70,7 @@ def split_module_assignment(value: str, label: str) -> tuple[str, str]:
     partition, module = value.split(":", 1)
     if not partition or not module:
         die(f"{label} must be PARTITION:MODULE: {value}")
-    return partition, module.removesuffix(".ko")
+    return partition, module.removesuffix(".ko").replace("-", "_")
 
 
 def sanitize(value: object) -> str:
@@ -109,7 +109,10 @@ def parse_load_list(path: Path) -> set[str]:
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        entries.add(Path(line).name.removesuffix(".ko"))
+        # Kbuild canonicalizes '-' to '_' in the ELF module name while
+        # modules.load commonly retains the filename spelling. Compare the
+        # canonical names so loaded modules are not misclassified as dormant.
+        entries.add(Path(line).name.removesuffix(".ko").replace("-", "_"))
     return entries
 
 

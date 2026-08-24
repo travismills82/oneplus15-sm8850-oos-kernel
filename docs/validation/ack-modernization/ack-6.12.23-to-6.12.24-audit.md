@@ -109,18 +109,26 @@ directly after `css_reset`. On the frozen Canoe KMI that expanded
 3,748 symbols.
 
 The qualified 6.12.23 ACK layout already reserves one pointer-sized planned
-backport slot at the end of this structure. The callback therefore consumes
-that slot with `ANDROID_BACKPORT_USE(1, ...)`. This preserves the frozen
-layout and stable type identity while retaining the complete 6.12.24 callback
-behavior in cgroup core and cpuset. No loader check, CRC, or vermagic rule is
-disabled. The post-resolution ABI and module-CRC comparisons are recorded in
-the static validation report.
+backport slot at the end of this structure. A first `ANDROID_BACKPORT_USE()`
+adaptation preserved size and symbol CRCs, but libabigail correctly reported
+that the visible field changed from a reserved `u64` to a union-backed
+callback. That form was rejected.
+
+The accepted adaptation keeps `ANDROID_BACKPORT_RESERVE(1)` in the structure
+exactly as frozen. A typed helper stores and retrieves the callback through
+that pointer-sized slot, and cgroup core performs the call through the typed
+function pointer. The struct's size, offsets, field name, and ABI description
+therefore remain unchanged while the complete 6.12.24 cpuset teardown behavior
+is retained. No loader check, CRC, or vermagic rule is disabled. The
+post-resolution ABI and module-CRC comparisons are recorded in the static
+validation report.
 
 ## Resulting source identity
 
-The applied series naturally changes the kernel build-input identity to
-`8a900869534afba5344736e65ad68a032046999d`. The controlled workspace-status
-contract therefore supplies suffix `-g8a900869534a`; the Makefile reports
+The applied series and reviewed Android KMI adaptation naturally change the
+kernel build-input identity to
+`a7f2fd6d686f38d448e8a276efe1aea7c2b9013f`. The controlled workspace-status
+contract therefore supplies suffix `-ga7f2fd6d686f`; the Makefile reports
 `SUBLEVEL = 24`. No UTS release or module vermagic text is patched after the
 build.
 
