@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "status": "PHYSICAL_PASS_FROZEN",
+  "qualification_date": "2026-08-24",
+  "device": {
+    "model": "OnePlus 15 CPH2747",
+    "codename": "canoe",
+    "soc": "SM8850",
+    "firmware": "OxygenOS 16.0.9.400(EX01)",
+    "tested_slot": "_b"
+  },
+  "source": {
+    "canonical_branch": "feature/controlled-v1-ack-6.12.24",
+    "experiment_branch": "experiment/ack-6.12.24",
+    "physically_tested_source_head": "89f374eac402785d3d9d95292594695109c4d8b2",
+    "physical_validation_commit": "4a46daeae8b3dfca0654d35910d94f0f995a03e6",
+    "kernel_build_input_source_id": "a7f2fd6d686f38d448e8a276efe1aea7c2b9013f"
+  },
+  "kernel_contract": {
+    "release": "6.12.24-android16-5-o-ga7f2fd6d686f-4k",
+    "config_sha256": "f5c32552d9d4a07985123b00bc1d671df2c3fbed08686261b8e2eb11169cf798",
+    "module_symvers_sha256": "de57709f3de38afb3e266481da09433687979ffb88ee607bda93ac4732dd7e0b",
+    "system_map_sha256": "b41b27ecddc5284bc9a3c1cd1acc6e66fece36951ed3cbed0185381368132aec",
+    "image_sha256": "a1afb9a98619248f76df14b17d68d9d1c0364f9dbb3b91b06556f07802b7c754",
+    "vmlinux_sha256": "df85b598921cebe21dfee9b49789ff81855d65cb85c33d241eef06f67592a806",
+    "abi": "PASS_EMPTY",
+    "kmi": "PASS",
+    "signing_generation": "controlled-v1",
+    "signing_certificate_sha256": "04093d5e0b816927dc1e4fcdbd4ec754df6e69960918aa2eaa69bea6878f6faf",
+    "trusted_bundle_sha256": "c1c17586a8bbd564a39b297d39a267b02ab4a266c0deaf81d536d026e68188a7"
+  },
+  "payloads": {
+    "boot": {
+      "sha256": "3ceb46491d029586af1a6dc494b5baf4ddb973ad0c065c0960e4ed307d9d40b9",
+      "physical_readback": "PASS"
+    },
+    "system_dlkm": {
+      "sha256": "1739941b5bda37b52657a06340411c93fa6fff2a32ee1cfe5d32c28902d8846a",
+      "size_bytes": 45658112,
+      "physical_readback": "PASS_EXACT_LENGTH"
+    },
+    "vendor_dlkm": {
+      "sha256": "dccb47a3ba4055b3d385d80d6fda3875bc544488e1ed2cbd9951cd0662f56b26",
+      "changed": false,
+      "physical_identity": "PASS"
+    },
+    "vendor_boot": {
+      "sha256": "5fe60f58ebe3f935acb3ec41585fa16977804cc0c2efd4e84c44a645a1eb7162",
+      "changed": false
+    },
+    "vbmeta_b": {
+      "sha256": "270792710e9c480cf31e023f0c711c9063a7263324ec2c616ec4cf36bd346ad2",
+      "changed": false
+    }
+  },
+  "module_contract": {
+    "total_modules_checked": 961,
+    "active_modules_checked": 946,
+    "dormant_modules": 15,
+    "imports_checked": 52508,
+    "unresolved_imports": 0,
+    "crc_mismatches": 0,
+    "vermagic_failures": 0,
+    "signature_failures": 0,
+    "protected_export_failures": 0,
+    "structural_abi_failures": 0,
+    "system_modules_load_entries": 46,
+    "wwan_load_entry": 21,
+    "runtime_error_scan": "PASS"
+  },
+  "physical_validation": {
+    "clean_boots": "2/2 PASS",
+    "wlan_6ghz_wpa3": "PASS",
+    "wifi_reload": "PASS",
+    "cellular_home_dual_stack_ip_dns": "PASS",
+    "bluetooth_toggle": "PASS",
+    "nfc_wallet_hce_ese1": "PASS",
+    "audio_ringtone": "PASS_USER_CONFIRMED",
+    "camera_open_capture": "PASS",
+    "graphics_ui": "PASS",
+    "usb_adb": "PASS",
+    "deep_idle_resume": "PASS",
+    "handoff_transient_packet_loss": {
+      "observed": true,
+      "packets_lost_per_initial_probe": 1,
+      "stabilized_ip_test": "5/5 PASS",
+      "stabilized_dns_test": "5/5 PASS",
+      "classification": "NON_BLOCKING_TRANSIENT_BASELINE_BEHAVIOR"
+    }
+  },
+  "rollback": {
+    "kernel_release": "6.12.23-android16-5-o-g6744a3f6bcf4-4k",
+    "boot_sha256": "84a85b9a40adc7bdb178bf86e2da74e9bac3feaf7bd502c7d29b1df27dea55ab",
+    "system_dlkm_sha256": "de77afb66f47f3430f1a5bcc8a79297792141652f8a256e17b4c715f49222cef",
+    "vendor_dlkm_sha256": "dccb47a3ba4055b3d385d80d6fda3875bc544488e1ed2cbd9951cd0662f56b26"
+  },
+  "next_ack_subversion": "6.12.25",
+  "next_ack_allowed_after_remote_freeze_verification": true
+}
