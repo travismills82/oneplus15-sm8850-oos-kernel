@@ -232,9 +232,15 @@ write_file(
     visibility = ["//visibility:private"],
 )
 
+# The firmware-native ACK r53 common tree is upstream Android Common Kernel
+# source and does not produce OnePlus' optional vmlinux_oki artifact.  The
+# surrounding OnePlus Kleaf constants still advertise that output, so omit it
+# for this stock-source control build without changing any kernel input.
+_OOS1610500_R53_GKI_OUTS = [out for out in DEFAULT_GKI_OUTS if out != "vmlinux_oki"]
+
 common_kernel(
     name = "kernel_aarch64",
-    outs = DEFAULT_GKI_OUTS,
+    outs = _OOS1610500_R53_GKI_OUTS,
     abi_definition_stg = "gki/aarch64/abi.stg",
     additional_kmi_symbol_lists = [":aarch64_additional_kmi_symbol_lists"],
     arch = "arm64",
