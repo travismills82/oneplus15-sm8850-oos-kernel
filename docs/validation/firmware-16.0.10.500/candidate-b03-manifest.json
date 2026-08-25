@@ -1,0 +1,86 @@
+{
+  "schema": "controlled-v1-firmware-compat-candidate-v1",
+  "candidate": "B03",
+  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "base": {
+    "qualified_branch": "feature/oos1610500-custom-r53-b02-qualified",
+    "qualified_head": "635709f3b14eaef8778abfbe92b8fbec3ed7e02e",
+    "boot_sha256": "dd63f38c658bf81b259f41f5ade970a12e8742bf1e427ed866c532e5f308cb07"
+  },
+  "source": {
+    "branch": "experiment/oos1610500-custom-r53-b03",
+    "runtime_source_head": "c3b68584dbb4638abe27a69b7f421826625d4a53",
+    "kernel_release": "6.12.23-android16-5-o-gc3b68584dbb4-4k",
+    "cumulative_qualified_changes": [
+      "B01 Binder transaction target lifetime pinning",
+      "B02 BPF per-CPU map copy bounds hardening"
+    ],
+    "new_change": "Eventpoll file and RCU lifetime hardening series",
+    "controlled_source_commits": [
+      "047ce9b3fc181542ffbd9c2292e8902a0b5b17e6",
+      "5b4c2b4675c7d6f457984d12ede9bace6ca7337a"
+    ],
+    "runtime_paths_changed_from_b02": [
+      "kernel_platform/common/fs/eventpoll.c"
+    ]
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "path": "out/oos1610500-custom-r53-b03-final/boot.img",
+      "sha256": "0b065aa6fc5c524107ecdf10ffefb41b464be86bfb9b8673b8fb649f5541dfc0"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "kernel_artifacts": {
+    "Image_sha256": "8ba5dbb28e2688ed7a518358f14b10316d358b2e00001c28ef29f23e7ee8902a",
+    "config_sha256": "d1462645149bbd78acf72356d7a971c68c9a385b250a90384f2309c8597699f9",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27",
+    "System_map_sha256": "38b5f8934ee3efdc221c24542f7c93ae9c39f4909f9904e5d91c456a348b6ff4",
+    "vmlinux_sha256": "be39b2001d6c74c3f5468a619487f39bb18d58ea2d52cf1fdda5ce6951a47a4e"
+  },
+  "static_contract": {
+    "build": "PASS",
+    "abi": "PASS_EMPTY",
+    "kmi": "PASS",
+    "fbe_storage_runtime_delta": 0,
+    "semantic_config_delta": 0,
+    "exported_crc_delta": 0,
+    "modules_checked": 1020,
+    "compatible_active": 984,
+    "dormant": 36,
+    "import_crc_edges_matched": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "structural_provider_failures": 0,
+    "unexpected_runtime_groups": 0,
+    "unexpected_dlkm_changes": 0,
+    "system_modules_load_entries": 82,
+    "wwan_position": 28,
+    "boot_header_identity": "PASS",
+    "boot_non_kernel_tail_identity": "PASS",
+    "embedded_kernel_identity": "PASS",
+    "outer_avb_verification": "PASS"
+  },
+  "physical": {
+    "status": "NOT_TESTED",
+    "flash_authorized_by_this_manifest": false,
+    "rollback_boot_sha256": "dd63f38c658bf81b259f41f5ade970a12e8742bf1e427ed866c532e5f308cb07",
+    "plan": "docs/validation/firmware-16.0.10.500/candidate-b03-physical-test-plan.md"
+  }
+}
