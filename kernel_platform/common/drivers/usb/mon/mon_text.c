@@ -129,7 +129,7 @@ static void mon_text_read_data(struct mon_reader_text *rp,
  */
 
 static inline char mon_text_get_setup(struct mon_event_text *ep,
-    struct urb *urb, char ev_type, struct mon_bus_priv *mbus)
+    struct urb *urb, char ev_type, struct mon_bus *mbus)
 {
 
 	if (ep->xfertype != USB_ENDPOINT_XFER_CONTROL || ev_type != 'S')
@@ -143,7 +143,7 @@ static inline char mon_text_get_setup(struct mon_event_text *ep,
 }
 
 static inline char mon_text_get_data(struct mon_event_text *ep, struct urb *urb,
-    int len, char ev_type, struct mon_bus_priv *mbus)
+    int len, char ev_type, struct mon_bus *mbus)
 {
 	void *src;
 
@@ -302,7 +302,7 @@ static void mon_text_error(void *data, struct urb *urb, int error)
  * Fetch next event from the circular buffer.
  */
 static struct mon_event_text *mon_text_fetch(struct mon_reader_text *rp,
-    struct mon_bus_priv *mbus)
+    struct mon_bus *mbus)
 {
 	struct list_head *p;
 	unsigned long flags;
@@ -323,7 +323,7 @@ static struct mon_event_text *mon_text_fetch(struct mon_reader_text *rp,
  */
 static int mon_text_open(struct inode *inode, struct file *file)
 {
-	struct mon_bus_priv *mbus;
+	struct mon_bus *mbus;
 	struct mon_reader_text *rp;
 	int rc;
 
@@ -480,7 +480,7 @@ static ssize_t mon_text_read_u(struct file *file, char __user *buf,
 static struct mon_event_text *mon_text_read_wait(struct mon_reader_text *rp,
     struct file *file)
 {
-	struct mon_bus_priv *mbus = rp->r.m_bus;
+	struct mon_bus *mbus = rp->r.m_bus;
 	DECLARE_WAITQUEUE(waita, current);
 	struct mon_event_text *ep;
 
@@ -642,7 +642,7 @@ static void mon_text_read_data(struct mon_reader_text *rp,
 static int mon_text_release(struct inode *inode, struct file *file)
 {
 	struct mon_reader_text *rp = file->private_data;
-	struct mon_bus_priv *mbus;
+	struct mon_bus *mbus;
 	/* unsigned long flags; */
 	struct list_head *p;
 	struct mon_event_text *ep;
@@ -696,7 +696,7 @@ static const struct file_operations mon_fops_text_u = {
 	.release =	mon_text_release,
 };
 
-int mon_text_add(struct mon_bus_priv *mbus, const struct usb_bus *ubus)
+int mon_text_add(struct mon_bus *mbus, const struct usb_bus *ubus)
 {
 	enum { NAMESZ = 12 };
 	char name[NAMESZ];
@@ -722,7 +722,7 @@ int mon_text_add(struct mon_bus_priv *mbus, const struct usb_bus *ubus)
 	return 1;
 }
 
-void mon_text_del(struct mon_bus_priv *mbus)
+void mon_text_del(struct mon_bus *mbus)
 {
 	debugfs_remove(mbus->dent_u);
 	debugfs_remove(mbus->dent_t);

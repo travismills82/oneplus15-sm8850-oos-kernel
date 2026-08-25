@@ -1230,13 +1230,12 @@ static int hi556_check_hwcfg(struct device *dev)
 	ret = fwnode_property_read_u32(fwnode, "clock-frequency", &mclk);
 	if (ret) {
 		dev_err(dev, "can't get clock frequency");
-		goto check_hwcfg_error;
+		return ret;
 	}
 
 	if (mclk != HI556_MCLK) {
 		dev_err(dev, "external clock %d is not supported", mclk);
-		ret = -EINVAL;
-		goto check_hwcfg_error;
+		return -EINVAL;
 	}
 
 	if (bus_cfg.bus.mipi_csi2.num_data_lanes != 2) {

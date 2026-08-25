@@ -242,7 +242,7 @@ u8 eir_create_per_adv_data(struct hci_dev *hdev, u8 instance, u8 *ptr)
 	return ad_len;
 }
 
-u8 eir_create_adv_data(struct hci_dev *hdev, u8 instance, u8 *ptr, u8 size)
+u8 eir_create_adv_data(struct hci_dev *hdev, u8 instance, u8 *ptr)
 {
 	struct adv_info *adv = NULL;
 	u8 ad_len = 0, flags = 0;
@@ -283,12 +283,10 @@ u8 eir_create_adv_data(struct hci_dev *hdev, u8 instance, u8 *ptr, u8 size)
 		if (!flags)
 			flags |= mgmt_get_adv_discov_flags(hdev);
 
-		/* Only add the "Flags" if it fits together with the instance
-		 * advertising data; drop it rather than overflow the buffer.
+		/* If flags would still be empty, then there is no need to
+		 * include the "Flags" AD field".
 		 */
-		if (flags &&
-		    (ad_len + eir_precalc_len(1) +
-		     (adv ? adv->adv_data_len : 0) <= size)) {
+		if (flags) {
 			ptr[0] = 0x02;
 			ptr[1] = EIR_FLAGS;
 			ptr[2] = flags;

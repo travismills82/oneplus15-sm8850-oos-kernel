@@ -309,8 +309,7 @@ static bool wx_alloc_mapped_page(struct wx_ring *rx_ring,
 		return true;
 
 	page = page_pool_dev_alloc_pages(rx_ring->page_pool);
-	if (unlikely(!page))
-		return false;
+	WARN_ON(!page);
 	dma = page_pool_get_dma_addr(page);
 
 	bi->page_dma = dma;

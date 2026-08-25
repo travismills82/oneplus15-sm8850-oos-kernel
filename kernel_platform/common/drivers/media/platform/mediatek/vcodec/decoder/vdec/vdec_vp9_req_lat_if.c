@@ -1188,8 +1188,7 @@ err:
 	return ret;
 }
 
-/* clang stack usage explodes if this is inlined */
-static noinline_for_stack
+static
 void vdec_vp9_slice_map_counts_eob_coef(unsigned int i, unsigned int j, unsigned int k,
 					struct vdec_vp9_slice_frame_counts *counts,
 					struct v4l2_vp9_frame_symbol_counts *counts_helper)

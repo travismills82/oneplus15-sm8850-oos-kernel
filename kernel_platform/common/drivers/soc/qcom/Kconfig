@@ -286,15 +286,6 @@ config QCOM_INLINE_CRYPTO_ENGINE
 	tristate
 	select QCOM_SCM
 
-config QCOM_VM_MEMORY_FEATURES_NONGKI
-	bool "NONGKI Memory Features"
-	depends on ARCH_QCOM || COMPILE_TEST
-	help
-	 This enables memory-related features which are not compatible with
-	 GKI. Currently this fixes edge-cases with the memremap_pages() API
-	 which have not been accepted upstream.
-	 If you are not building a QCOM VM, or are unsure, say 'N' here.
-
 config QCOM_PBS
 	tristate "PBS trigger support for Qualcomm Technologies, Inc. PMICS"
 	depends on SPMI

@@ -84,7 +84,6 @@ again:
  * mapped at the @pvmw->pte
  * @pvmw: page_vma_mapped_walk struct, includes a pair pte and pfn range
  * for checking
- * @pte_nr: the number of small pages described by @pvmw->pte.
  *
  * page_vma_mapped_walk() found a place where pfn range is *potentially*
  * mapped. check_pte() has to validate this.
@@ -101,7 +100,7 @@ again:
  * Otherwise, return false.
  *
  */
-static bool check_pte(struct page_vma_mapped_walk *pvmw, unsigned long pte_nr)
+static bool check_pte(struct page_vma_mapped_walk *pvmw)
 {
 	unsigned long pfn;
 	pte_t ptent = ptep_get(pvmw->pte);
@@ -134,11 +133,7 @@ static bool check_pte(struct page_vma_mapped_walk *pvmw, unsigned long pte_nr)
 		pfn = pte_pfn(ptent);
 	}
 
-	if ((pfn + pte_nr - 1) < pvmw->pfn)
-		return false;
-	if (pfn > (pvmw->pfn + pvmw->nr_pages - 1))
-		return false;
-	return true;
+	return (pfn - pvmw->pfn) < pvmw->nr_pages;
 }
 
 /* Returns true if the two ranges overlap.  Careful to not overflow. */
@@ -213,7 +208,7 @@ bool page_vma_mapped_walk(struct page_vma_mapped_walk *pvmw)
 			return false;
 
 		pvmw->ptl = huge_pte_lock(hstate, mm, pvmw->pte);
-		if (!check_pte(pvmw, pages_per_huge_page(hstate)))
+		if (!check_pte(pvmw))
 			return not_found(pvmw);
 		return true;
 	}
@@ -296,7 +291,7 @@ restart:
 			goto next_pte;
 		}
 this_pte:
-		if (check_pte(pvmw, 1))
+		if (check_pte(pvmw))
 			return true;
 next_pte:
 		do {

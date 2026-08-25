@@ -858,13 +858,18 @@ static int cpumf_pmu_event_type(struct perf_event *event)
 static int cpumf_pmu_event_init(struct perf_event *event)
 {
 	unsigned int type = event->attr.type;
-	int err = -ENOENT;
+	int err;
 
 	if (type == PERF_TYPE_HARDWARE || type == PERF_TYPE_RAW)
 		err = __hw_perf_event_init(event, type);
 	else if (event->pmu->type == type)
 		/* Registered as unknown PMU */
 		err = __hw_perf_event_init(event, cpumf_pmu_event_type(event));
+	else
+		return -ENOENT;
+
+	if (unlikely(err) && event->destroy)
+		event->destroy(event);
 
 	return err;
 }
@@ -1814,6 +1819,8 @@ static int cfdiag_event_init(struct perf_event *event)
 	event->destroy = hw_perf_event_destroy;
 
 	err = cfdiag_event_init2(event);
+	if (unlikely(err))
+		event->destroy(event);
 out:
 	return err;
 }

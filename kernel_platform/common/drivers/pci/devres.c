@@ -40,7 +40,7 @@
  * Legacy struct storing addresses to whole mapped BARs.
  */
 struct pcim_iomap_devres {
-	void __iomem *table[PCI_NUM_RESOURCES];
+	void __iomem *table[PCI_STD_NUM_BARS];
 };
 
 /* Used to restore the old INTx state on driver detach. */

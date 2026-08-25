@@ -567,10 +567,8 @@ static int dwc_pcie_register_dev(struct pci_dev *pdev)
 		return PTR_ERR(plat_dev);
 
 	dev_info = kzalloc(sizeof(*dev_info), GFP_KERNEL);
-	if (!dev_info) {
-		platform_device_unregister(plat_dev);
+	if (!dev_info)
 		return -ENOMEM;
-	}
 
 	/* Cache platform device to handle pci device hotplug */
 	dev_info->plat_dev = plat_dev;
@@ -726,15 +724,6 @@ static struct platform_driver dwc_pcie_pmu_driver = {
 	.driver = {.name = "dwc_pcie_pmu",},
 };
 
-static void dwc_pcie_cleanup_devices(void)
-{
-	struct dwc_pcie_dev_info *dev_info, *tmp;
-
-	list_for_each_entry_safe(dev_info, tmp, &dwc_pcie_dev_info_head, dev_node) {
-		dwc_pcie_unregister_dev(dev_info);
-	}
-}
-
 static int __init dwc_pcie_pmu_init(void)
 {
 	struct pci_dev *pdev = NULL;
@@ -747,7 +736,7 @@ static int __init dwc_pcie_pmu_init(void)
 		ret = dwc_pcie_register_dev(pdev);
 		if (ret) {
 			pci_dev_put(pdev);
-			goto err_cleanup;
+			return ret;
 		}
 	}
 
@@ -756,35 +745,35 @@ static int __init dwc_pcie_pmu_init(void)
 				      dwc_pcie_pmu_online_cpu,
 				      dwc_pcie_pmu_offline_cpu);
 	if (ret < 0)
-		goto err_cleanup;
+		return ret;
 
 	dwc_pcie_pmu_hp_state = ret;
 
 	ret = platform_driver_register(&dwc_pcie_pmu_driver);
 	if (ret)
-		goto err_remove_cpuhp;
+		goto platform_driver_register_err;
 
 	ret = bus_register_notifier(&pci_bus_type, &dwc_pcie_pmu_nb);
 	if (ret)
-		goto err_unregister_driver;
+		goto platform_driver_register_err;
 	notify = true;
 
 	return 0;
 
-err_unregister_driver:
-	platform_driver_unregister(&dwc_pcie_pmu_driver);
-err_remove_cpuhp:
+platform_driver_register_err:
 	cpuhp_remove_multi_state(dwc_pcie_pmu_hp_state);
-err_cleanup:
-	dwc_pcie_cleanup_devices();
+
 	return ret;
 }
 
 static void __exit dwc_pcie_pmu_exit(void)
 {
+	struct dwc_pcie_dev_info *dev_info, *tmp;
+
 	if (notify)
 		bus_unregister_notifier(&pci_bus_type, &dwc_pcie_pmu_nb);
-	dwc_pcie_cleanup_devices();
+	list_for_each_entry_safe(dev_info, tmp, &dwc_pcie_dev_info_head, dev_node)
+		dwc_pcie_unregister_dev(dev_info);
 	platform_driver_unregister(&dwc_pcie_pmu_driver);
 	cpuhp_remove_multi_state(dwc_pcie_pmu_hp_state);
 }

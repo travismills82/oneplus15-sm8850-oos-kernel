@@ -675,7 +675,7 @@ static void mon_bin_error(void *data, struct urb *urb, int error)
 
 static int mon_bin_open(struct inode *inode, struct file *file)
 {
-	struct mon_bus_priv *mbus;
+	struct mon_bus *mbus;
 	struct mon_reader_bin *rp;
 	size_t size;
 	int rc;
@@ -781,7 +781,7 @@ static int mon_bin_get_event(struct file *file, struct mon_reader_bin *rp,
 static int mon_bin_release(struct inode *inode, struct file *file)
 {
 	struct mon_reader_bin *rp = file->private_data;
-	struct mon_bus_priv *mbus = rp->r.m_bus;
+	struct mon_bus* mbus = rp->r.m_bus;
 
 	mutex_lock(&mon_lock);
 
@@ -987,7 +987,7 @@ static int mon_bin_queued(struct mon_reader_bin *rp)
 static long mon_bin_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct mon_reader_bin *rp = file->private_data;
-	// struct mon_bus_priv *mbus = rp->r.m_bus;
+	// struct mon_bus* mbus = rp->r.m_bus;
 	int ret = 0;
 	struct mon_bin_hdr *ep;
 	unsigned long flags;
@@ -1359,7 +1359,7 @@ static void mon_free_buff(struct mon_pgmap *map, int npages)
 		free_page((unsigned long) map[n].ptr);
 }
 
-int mon_bin_add(struct mon_bus_priv *mbus, const struct usb_bus *ubus)
+int mon_bin_add(struct mon_bus *mbus, const struct usb_bus *ubus)
 {
 	struct device *dev;
 	unsigned minor = ubus? ubus->busnum: 0;
@@ -1377,7 +1377,7 @@ int mon_bin_add(struct mon_bus_priv *mbus, const struct usb_bus *ubus)
 	return 1;
 }
 
-void mon_bin_del(struct mon_bus_priv *mbus)
+void mon_bin_del(struct mon_bus *mbus)
 {
 	device_destroy(&mon_bin_class, mbus->classdev->devt);
 }

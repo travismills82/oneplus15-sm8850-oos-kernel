@@ -92,20 +92,12 @@ fail_rule(
 
 write_file(
     name = "gki_system_dlkm_modules_arm64",
-    out = "android/gki_system_dlkm_modules_arm64",
+    out = "gki/aarch64/system_dlkm_modules",
     # Do not built kunit modules into system_dlkm
     content = get_gki_modules_list("arm64") + [
         # Ensure new line at the end.
         "",
     ],
-)
-
-# Match stock OxygenOS packaging: keep the GKI module set intact but leave
-# system_dlkm's load list empty so userspace controls device-specific order.
-write_file(
-    name = "oplus_system_dlkm_modules_load",
-    out = "android/oplus_system_dlkm_modules_load",
-    content = [],
 )
 
 write_file(
@@ -121,7 +113,7 @@ write_file(
 
 write_file(
     name = "gki_system_dlkm_modules_x86_64",
-    out = "android/gki_system_dlkm_modules_x86_64",
+    out = "gki/x86_64/system_dlkm_modules",
     # Do not built kunit modules into system_dlkm
     content = get_gki_modules_list("x86_64") + [
         # Ensure new line at the end.
@@ -240,15 +232,9 @@ write_file(
     visibility = ["//visibility:private"],
 )
 
-# The stock CPH2747 OxygenOS 16.0.8.300 GKI commit is an upstream Android
-# Common Kernel release. Unlike the OnePlus-patched common tree, it does not
-# produce the optional vmlinux_oki artifact. Keep the normal GKI output set
-# intact for the other targets and make only the stock-compatible arm64 build
-# omit that non-upstream output.
-_STOCK_GKI_AARCH64_OUTS = [out for out in DEFAULT_GKI_OUTS if out != "vmlinux_oki"]
 common_kernel(
     name = "kernel_aarch64",
-    outs = _STOCK_GKI_AARCH64_OUTS,
+    outs = DEFAULT_GKI_OUTS,
     abi_definition_stg = "gki/aarch64/abi.stg",
     additional_kmi_symbol_lists = [":aarch64_additional_kmi_symbol_lists"],
     arch = "arm64",
@@ -261,8 +247,7 @@ common_kernel(
         ":tests_zip_arm64",
     ],
     gki_boot_img_sizes = _GKI_AARCH64_BOOT_IMAGE_SIZES,
-    gki_system_dlkm_modules = "android/gki_system_dlkm_modules_arm64",
-    system_dlkm_modules_load = ":oplus_system_dlkm_modules_load",
+    gki_system_dlkm_modules = ":gki_system_dlkm_modules_arm64",
     kcflags = COMMON_KCFLAGS,
     kmi_enforced = True,
     kmi_symbol_list = "gki/aarch64/symbols/base",
@@ -271,14 +256,6 @@ common_kernel(
     makefile = ":Makefile",
     module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
     protected_module_names_list = ":gki_aarch64_protected_module_names",
-    # The signing key is intentionally supplied only through the declared
-    # local @oneplus15_signing repository. The checked-in placeholder fails
-    # closed, so a developer cannot silently fall back to Kbuild's generated
-    # signing key.
-    module_signing_key = "@oneplus15_signing//:module_key",
-    # Keep the stock OOS module certificate trusted while also trusting the
-    # controlled-v1 certificate used for all rebuilt/re-signed modules.
-    system_trusted_key = "certs/controlled_oos_signing_v1_trusted.pem",
     system_dlkm_extra_archive_files = [":generate_gki_module_info_arm64"],
     trim_nonlisted_kmi = True,
     visibility = ["//visibility:public"],
@@ -298,7 +275,7 @@ common_kernel(
         ":tests_zip_arm64",
     ],
     gki_boot_img_sizes = _GKI_AARCH64_BOOT_IMAGE_SIZES,
-    gki_system_dlkm_modules = "android/gki_system_dlkm_modules_arm64",
+    gki_system_dlkm_modules = ":gki_system_dlkm_modules_arm64",
     kcflags = COMMON_KCFLAGS,
     # We don't guarantee ABI stability for 16k target
     kmi_enforced = False,
@@ -402,7 +379,7 @@ common_kernel(
         ":tests_zip_x86_64",
     ],
     gki_boot_img_sizes = _GKI_X86_64_BOOT_IMAGE_SIZES,
-    gki_system_dlkm_modules = "android/gki_system_dlkm_modules_x86_64",
+    gki_system_dlkm_modules = ":gki_system_dlkm_modules_x86_64",
     kcflags = COMMON_KCFLAGS,
     make_goals = _GKI_X86_64_MAKE_GOALS,
     makefile = ":Makefile",
@@ -1591,13 +1568,6 @@ pkg_install(
 alias(
     name = "all_headers",
     actual = "all_headers_aarch64",
-    visibility = ["//visibility:public"],
-)
-
-ddk_headers(
-    name = "gpiolib_internal_headers",
-    hdrs = ["drivers/gpio/gpiolib.h"],
-    linux_includes = ["drivers/gpio"],
     visibility = ["//visibility:public"],
 )
 

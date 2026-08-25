@@ -1270,7 +1270,7 @@ int main_loop(void)
 
 	if (cfg_input && cfg_sockopt_types.mptfo) {
 		fd_in = open(cfg_input, O_RDONLY);
-		if (fd_in < 0)
+		if (fd < 0)
 			xerror("can't open %s:%d", cfg_input, errno);
 	}
 
@@ -1293,13 +1293,13 @@ again:
 
 	if (cfg_input && !cfg_sockopt_types.mptfo) {
 		fd_in = open(cfg_input, O_RDONLY);
-		if (fd_in < 0)
+		if (fd < 0)
 			xerror("can't open %s:%d", cfg_input, errno);
 	}
 
 	ret = copyfd_io(fd_in, fd, 1, 0, &winfo);
 	if (ret)
-		goto out;
+		return ret;
 
 	if (cfg_truncate > 0) {
 		shutdown(fd, SHUT_WR);
@@ -1320,10 +1320,7 @@ again:
 		close(fd);
 	}
 
-out:
-	if (cfg_input)
-		close(fd_in);
-	return ret;
+	return 0;
 }
 
 int parse_proto(const char *proto)

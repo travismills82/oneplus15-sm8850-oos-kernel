@@ -3298,73 +3298,6 @@ static int early_mod_check(struct load_info *info, int flags)
 }
 
 /*
- * Keep this list narrow. It exists for stock module-load requests whose
- * implementation is deliberately built into vmlinux, not as a general
- * name-based module-load bypass. The caller invokes this only after the
- * normal signature, ELF, modinfo, vermagic, and blacklist checks.
- */
-static bool module_load_satisfied_by_builtin(const char *name)
-{
-#ifdef CONFIG_USB_MON
-	if (!strcmp(name, "usbmon"))
-		return true;
-#endif
-#ifdef CONFIG_USB_RTL8150
-	if (!strcmp(name, "rtl8150"))
-		return true;
-#endif
-#ifdef CONFIG_TLS
-	if (!strcmp(name, "tls"))
-		return true;
-#endif
-#ifdef CONFIG_NFC
-	if (!strcmp(name, "nfc"))
-		return true;
-#endif
-
-	/*
-	 * OxygenOS 16.0.9.400 loads this exact Bluetooth dependency chain from
-	 * its stock system_dlkm.  Keep each entry behind the configuration that
-	 * places the corresponding implementation in vmlinux, so restoring a
-	 * component to a module also restores normal module loading for it.
-	 */
-#ifdef CONFIG_BT
-	if (!strcmp(name, "bluetooth"))
-		return true;
-#endif
-#ifdef CONFIG_BT_RFCOMM
-	if (!strcmp(name, "rfcomm"))
-		return true;
-#endif
-#ifdef CONFIG_BT_HIDP
-	if (!strcmp(name, "hidp"))
-		return true;
-#endif
-#ifdef CONFIG_RFKILL
-	if (!strcmp(name, "rfkill"))
-		return true;
-#endif
-#ifdef CONFIG_POWER_SEQUENCING
-	if (!strcmp(name, "pwrseq_core"))
-		return true;
-#endif
-#ifdef CONFIG_BT_HCIUART
-	if (!strcmp(name, "hci_uart"))
-		return true;
-#endif
-#ifdef CONFIG_BT_QCA
-	if (!strcmp(name, "btqca"))
-		return true;
-#endif
-#ifdef CONFIG_BT_BCM
-	if (!strcmp(name, "btbcm"))
-		return true;
-#endif
-
-	return false;
-}
-
-/*
  * Allocate and load the module: note that size of section 0 is always
  * zero, and we rely on this for optional sections.
  */
@@ -3404,12 +3337,6 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	err = early_mod_check(info, flags);
 	if (err)
 		goto free_copy;
-
-	if (module_load_satisfied_by_builtin(info->name)) {
-		pr_info_once("module: %s load request satisfied by built-in implementation\n",
-			     info->name);
-		goto builtin_satisfied;
-	}
 
 	/* Figure out module layout, and allocate all the memory. */
 	mod = layout_and_allocate(info, flags);
@@ -3574,9 +3501,6 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	}
 
 	module_deallocate(mod, info);
- builtin_satisfied:
-	free_copy(info, flags);
-	return 0;
  free_copy:
 	/*
 	 * The info->len is always set. We distinguish between

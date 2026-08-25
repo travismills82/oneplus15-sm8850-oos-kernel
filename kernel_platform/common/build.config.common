@@ -7,7 +7,4 @@ echo 'WARNING: Do not source build.config.common. Instead:
 
 . ${ROOT_DIR}/${KERNEL_DIR}/build.config.constants
 
-CLANG_PREBUILT_BIN=prebuilts/clang/host/linux-x86/clang-${CLANG_VERSION}/bin
-BUILDTOOLS_PREBUILT_BIN=build/kernel/build-tools/path/linux-x86
-
 KCFLAGS="${KCFLAGS} -D__ANDROID_COMMON_KERNEL__"

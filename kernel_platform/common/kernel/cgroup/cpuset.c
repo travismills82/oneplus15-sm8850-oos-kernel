@@ -87,19 +87,9 @@ static bool		have_boot_isolcpus;
 static struct list_head remote_children;
 
 /*
- * A flag to force sched domain rebuild at the end of an operation.
- * It can be set in
- *  - update_partition_sd_lb()
- *  - remote_partition_check()
- *  - update_cpumasks_hier()
- *  - cpuset_update_flag()
- *  - cpuset_hotplug_update_tasks()
- *  - cpuset_handle_hotplug()
- *
- * Protected by cpuset_mutex (with cpus_read_lock held) or cpus_write_lock.
- *
- * Note that update_relax_domain_level() in cpuset-v1.c can still call
- * rebuild_sched_domains_locked() directly without using this flag.
+ * A flag to force sched domain rebuild at the end of an operation while
+ * inhibiting it in the intermediate stages when set. Currently it is only
+ * set in hotplug code.
  */
 static bool force_sd_rebuild;
 
@@ -296,12 +286,6 @@ static inline void dec_attach_in_progress(struct cpuset *cs)
 	mutex_unlock(&cpuset_mutex);
 }
 
-static inline bool cpuset_v2(void)
-{
-	return !IS_ENABLED(CONFIG_CPUSETS_V1) ||
-		cgroup_subsys_on_dfl(cpuset_cgrp_subsys);
-}
-
 /*
  * Cgroup v2 behavior is used on the "cpus" and "mems" control files when
  * on default hierarchy or when the cpuset_v2_mode flag is set by mounting
@@ -312,7 +296,7 @@ static inline bool cpuset_v2(void)
  */
 static inline bool is_in_v2_mode(void)
 {
-	return cpuset_v2() ||
+	return cgroup_subsys_on_dfl(cpuset_cgrp_subsys) ||
 	      (cpuset_cgrp_subsys.root->flags & CGRP_ROOT_CPUSET_V2_MODE);
 }
 
@@ -747,7 +731,7 @@ static int generate_sched_domains(cpumask_var_t **domains,
 	int nslot;		/* next empty doms[] struct cpumask slot */
 	struct cgroup_subsys_state *pos_css;
 	bool root_load_balance = is_sched_load_balance(&top_cpuset);
-	bool cgrpv2 = cpuset_v2();
+	bool cgrpv2 = cgroup_subsys_on_dfl(cpuset_cgrp_subsys);
 	int nslot_update;
 
 	doms = NULL;
@@ -1017,7 +1001,6 @@ void rebuild_sched_domains_locked(void)
 
 	lockdep_assert_cpus_held();
 	lockdep_assert_held(&cpuset_mutex);
-	force_sd_rebuild = false;
 
 	/*
 	 * If we have raced with CPU hotplug, return early to avoid
@@ -1205,8 +1188,8 @@ static void update_partition_sd_lb(struct cpuset *cs, int old_prs)
 			clear_bit(CS_SCHED_LOAD_BALANCE, &cs->flags);
 	}
 
-	if (rebuild_domains)
-		cpuset_force_rebuild();
+	if (rebuild_domains && !force_sd_rebuild)
+		rebuild_sched_domains_locked();
 }
 
 /*
@@ -1228,7 +1211,7 @@ static void reset_partition_data(struct cpuset *cs)
 {
 	struct cpuset *parent = parent_cs(cs);
 
-	if (!cpuset_v2())
+	if (!cgroup_subsys_on_dfl(cpuset_cgrp_subsys))
 		return;
 
 	lockdep_assert_held(&callback_lock);
@@ -1416,7 +1399,6 @@ static int remote_partition_enable(struct cpuset *cs, int new_prs,
 	list_add(&cs->remote_sibling, &remote_children);
 	spin_unlock_irq(&callback_lock);
 	update_unbound_workqueue_cpumask(isolcpus_updated);
-	cs->prs_err = 0;
 
 	/*
 	 * Proprogate changes in top_cpuset's effective_cpus down the hierarchy.
@@ -1447,11 +1429,9 @@ static void remote_partition_disable(struct cpuset *cs, struct tmpmasks *tmp)
 	list_del_init(&cs->remote_sibling);
 	isolcpus_updated = partition_xcpus_del(cs->partition_root_state,
 					       NULL, tmp->new_cpus);
-	if (cs->prs_err)
-		cs->partition_root_state = -cs->partition_root_state;
-	else
-		cs->partition_root_state = PRS_MEMBER;
-
+	cs->partition_root_state = -cs->partition_root_state;
+	if (!cs->prs_err)
+		cs->prs_err = PERR_INVCPUS;
 	reset_partition_data(cs);
 	spin_unlock_irq(&callback_lock);
 	update_unbound_workqueue_cpumask(isolcpus_updated);
@@ -1484,10 +1464,8 @@ static void remote_cpus_update(struct cpuset *cs, struct cpumask *newmask,
 
 	WARN_ON_ONCE(!cpumask_subset(cs->effective_xcpus, subpartitions_cpus));
 
-	if (cpumask_empty(newmask)) {
-		cs->prs_err = PERR_CPUSEMPTY;
+	if (cpumask_empty(newmask))
 		goto invalidate;
-	}
 
 	adding   = cpumask_andnot(tmp->addmask, newmask, cs->effective_xcpus);
 	deleting = cpumask_andnot(tmp->delmask, cs->effective_xcpus, newmask);
@@ -1497,15 +1475,10 @@ static void remote_cpus_update(struct cpuset *cs, struct cpumask *newmask,
 	 * not allocated to other partitions and there are effective_cpus
 	 * left in the top cpuset.
 	 */
-	if (adding) {
-		if (!capable(CAP_SYS_ADMIN))
-			cs->prs_err = PERR_ACCESS;
-		else if (cpumask_intersects(tmp->addmask, subpartitions_cpus) ||
-			 cpumask_subset(top_cpuset.effective_cpus, tmp->addmask))
-			cs->prs_err = PERR_NOCPUS;
-		if (cs->prs_err)
-			goto invalidate;
-	}
+	if (adding && (!capable(CAP_SYS_ADMIN) ||
+		       cpumask_intersects(tmp->addmask, subpartitions_cpus) ||
+		       cpumask_subset(top_cpuset.effective_cpus, tmp->addmask)))
+		goto invalidate;
 
 	spin_lock_irq(&callback_lock);
 	if (adding)
@@ -1563,8 +1536,8 @@ static void remote_partition_check(struct cpuset *cs, struct cpumask *newmask,
 			remote_partition_disable(child, tmp);
 			disable_cnt++;
 		}
-	if (disable_cnt)
-		cpuset_force_rebuild();
+	if (disable_cnt && !force_sd_rebuild)
+		rebuild_sched_domains_locked();
 }
 
 /*
@@ -1621,7 +1594,7 @@ static bool prstate_housekeeping_conflict(int prstate, struct cpumask *new_cpus)
  * The partcmd_update command is used by update_cpumasks_hier() with newmask
  * NULL and update_cpumask() with newmask set. The partcmd_invalidate is used
  * by update_cpumask() with NULL newmask. In both cases, the callers won't
- * check for error and so partition_root_state and prs_err will be updated
+ * check for error and so partition_root_state and prs_error will be updated
  * directly.
  */
 static int update_parent_effective_cpumask(struct cpuset *cs, int cmd,
@@ -1699,9 +1672,9 @@ static int update_parent_effective_cpumask(struct cpuset *cs, int cmd,
 		if (nocpu)
 			return PERR_NOCPUS;
 
-		deleting = cpumask_and(tmp->delmask, xcpus, parent->effective_xcpus);
-		if (deleting)
-			subparts_delta++;
+		cpumask_copy(tmp->delmask, xcpus);
+		deleting = true;
+		subparts_delta++;
 		new_prs = (cmd == partcmd_enable) ? PRS_ROOT : PRS_ISOLATED;
 	} else if (cmd == partcmd_disable) {
 		/*
@@ -1974,6 +1947,12 @@ static void compute_partition_effective_cpumask(struct cpuset *cs,
 }
 
 /*
+ * update_cpumasks_hier() flags
+ */
+#define HIER_CHECKALL		0x01	/* Check all cpusets with no skipping */
+#define HIER_NO_SD_REBUILD	0x02	/* Don't rebuild sched domains */
+
+/*
  * update_cpumasks_hier - Update effective cpumasks and tasks in the subtree
  * @cs:  the cpuset to consider
  * @tmp: temp variables for calculating effective_cpus & partition setup
@@ -1987,7 +1966,7 @@ static void compute_partition_effective_cpumask(struct cpuset *cs,
  * Called with cpuset_mutex held
  */
 static void update_cpumasks_hier(struct cpuset *cs, struct tmpmasks *tmp,
-				 bool force)
+				 int flags)
 {
 	struct cpuset *cp;
 	struct cgroup_subsys_state *pos_css;
@@ -2052,12 +2031,12 @@ static void update_cpumasks_hier(struct cpuset *cs, struct tmpmasks *tmp,
 		 * Skip the whole subtree if
 		 * 1) the cpumask remains the same,
 		 * 2) has no partition root state,
-		 * 3) force flag not set, and
+		 * 3) HIER_CHECKALL flag not set, and
 		 * 4) for v2 load balance state same as its parent.
 		 */
-		if (!cp->partition_root_state && !force &&
+		if (!cp->partition_root_state && !(flags & HIER_CHECKALL) &&
 		    cpumask_equal(tmp->new_cpus, cp->effective_cpus) &&
-		    (!cpuset_v2() ||
+		    (!cgroup_subsys_on_dfl(cpuset_cgrp_subsys) ||
 		    (is_sched_load_balance(parent) == is_sched_load_balance(cp)))) {
 			pos_css = css_rightmost_descendant(pos_css);
 			continue;
@@ -2131,7 +2110,8 @@ get_css:
 		 * from parent if current cpuset isn't a valid partition root
 		 * and their load balance states differ.
 		 */
-		if (cpuset_v2() && !is_partition_valid(cp) &&
+		if (cgroup_subsys_on_dfl(cpuset_cgrp_subsys) &&
+		    !is_partition_valid(cp) &&
 		    (is_sched_load_balance(parent) != is_sched_load_balance(cp))) {
 			if (is_sched_load_balance(parent))
 				set_bit(CS_SCHED_LOAD_BALANCE, &cp->flags);
@@ -2147,7 +2127,8 @@ get_css:
 		 */
 		if (!cpumask_empty(cp->cpus_allowed) &&
 		    is_sched_load_balance(cp) &&
-		   (!cpuset_v2() || is_partition_valid(cp)))
+		   (!cgroup_subsys_on_dfl(cpuset_cgrp_subsys) ||
+		    is_partition_valid(cp)))
 			need_rebuild_sched_domains = true;
 
 		rcu_read_lock();
@@ -2155,8 +2136,9 @@ get_css:
 	}
 	rcu_read_unlock();
 
-	if (need_rebuild_sched_domains)
-		cpuset_force_rebuild();
+	if (need_rebuild_sched_domains && !(flags & HIER_NO_SD_REBUILD) &&
+	    !force_sd_rebuild)
+		rebuild_sched_domains_locked();
 }
 
 /**
@@ -2183,7 +2165,9 @@ static void update_sibling_cpumasks(struct cpuset *parent, struct cpuset *cs,
 	 * directly.
 	 *
 	 * The update_cpumasks_hier() function may sleep. So we have to
-	 * release the RCU read lock before calling it.
+	 * release the RCU read lock before calling it. HIER_NO_SD_REBUILD
+	 * flag is used to suppress rebuild of sched domains as the callers
+	 * will take care of that.
 	 */
 	rcu_read_lock();
 	cpuset_for_each_child(sibling, pos_css, parent) {
@@ -2199,7 +2183,7 @@ static void update_sibling_cpumasks(struct cpuset *parent, struct cpuset *cs,
 			continue;
 
 		rcu_read_unlock();
-		update_cpumasks_hier(sibling, tmp, false);
+		update_cpumasks_hier(sibling, tmp, HIER_NO_SD_REBUILD);
 		rcu_read_lock();
 		css_put(&sibling->css);
 	}
@@ -2219,7 +2203,7 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
 	struct tmpmasks tmp;
 	struct cpuset *parent = parent_cs(cs);
 	bool invalidate = false;
-	bool force = false;
+	int hier_flags = 0;
 	int old_prs = cs->partition_root_state;
 
 	/* top_cpuset.cpus_allowed tracks cpu_online_mask; it's read-only */
@@ -2280,11 +2264,12 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
 	 * Check all the descendants in update_cpumasks_hier() if
 	 * effective_xcpus is to be changed.
 	 */
-	force = !cpumask_equal(cs->effective_xcpus, trialcs->effective_xcpus);
+	if (!cpumask_equal(cs->effective_xcpus, trialcs->effective_xcpus))
+		hier_flags = HIER_CHECKALL;
 
 	retval = validate_change(cs, trialcs);
 
-	if ((retval == -EINVAL) && cpuset_v2()) {
+	if ((retval == -EINVAL) && cgroup_subsys_on_dfl(cpuset_cgrp_subsys)) {
 		struct cgroup_subsys_state *css;
 		struct cpuset *cp;
 
@@ -2348,7 +2333,7 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
 	spin_unlock_irq(&callback_lock);
 
 	/* effective_cpus/effective_xcpus will be updated here */
-	update_cpumasks_hier(cs, &tmp, force);
+	update_cpumasks_hier(cs, &tmp, hier_flags);
 
 	/* Update CS_SCHED_LOAD_BALANCE and/or sched_domains, if necessary */
 	if (cs->partition_root_state)
@@ -2373,7 +2358,7 @@ static int update_exclusive_cpumask(struct cpuset *cs, struct cpuset *trialcs,
 	struct tmpmasks tmp;
 	struct cpuset *parent = parent_cs(cs);
 	bool invalidate = false;
-	bool force = false;
+	int hier_flags = 0;
 	int old_prs = cs->partition_root_state;
 
 	if (!*buf) {
@@ -2396,7 +2381,8 @@ static int update_exclusive_cpumask(struct cpuset *cs, struct cpuset *trialcs,
 	 * Check all the descendants in update_cpumasks_hier() if
 	 * effective_xcpus is to be changed.
 	 */
-	force = !cpumask_equal(cs->effective_xcpus, trialcs->effective_xcpus);
+	if (!cpumask_equal(cs->effective_xcpus, trialcs->effective_xcpus))
+		hier_flags = HIER_CHECKALL;
 
 	retval = validate_change(cs, trialcs);
 	if (retval)
@@ -2449,8 +2435,8 @@ static int update_exclusive_cpumask(struct cpuset *cs, struct cpuset *trialcs,
 	 * of the subtree when it is a valid partition root or effective_xcpus
 	 * is updated.
 	 */
-	if (is_partition_valid(cs) || force)
-		update_cpumasks_hier(cs, &tmp, force);
+	if (is_partition_valid(cs) || hier_flags)
+		update_cpumasks_hier(cs, &tmp, hier_flags);
 
 	/* Update CS_SCHED_LOAD_BALANCE and/or sched_domains, if necessary */
 	if (cs->partition_root_state)
@@ -2775,12 +2761,9 @@ int cpuset_update_flag(cpuset_flagbits_t bit, struct cpuset *cs,
 	cs->flags = trialcs->flags;
 	spin_unlock_irq(&callback_lock);
 
-	if (!cpumask_empty(trialcs->cpus_allowed) && balance_flag_changed) {
-		if (cpuset_v2())
-			cpuset_force_rebuild();
-		else
-			rebuild_sched_domains_locked();
-	}
+	if (!cpumask_empty(trialcs->cpus_allowed) && balance_flag_changed &&
+	    !force_sd_rebuild)
+		rebuild_sched_domains_locked();
 
 	if (spread_flag_changed)
 		cpuset1_update_tasks_flags(cs);
@@ -2894,14 +2877,12 @@ out:
 	update_unbound_workqueue_cpumask(new_xcpus_state);
 
 	/* Force update if switching back to member */
-	update_cpumasks_hier(cs, &tmpmask, !new_prs);
+	update_cpumasks_hier(cs, &tmpmask, !new_prs ? HIER_CHECKALL : 0);
 
 	/* Update sched domains and load balance flag */
 	update_partition_sd_lb(cs, old_prs);
 
 	notify_partition_change(cs, old_prs);
-	if (force_sd_rebuild)
-		rebuild_sched_domains_locked();
 	free_cpumasks(NULL, &tmpmask);
 	return 0;
 }
@@ -2962,7 +2943,8 @@ static int cpuset_can_attach(struct cgroup_taskset *tset)
 		 * migration permission derives from hierarchy ownership in
 		 * cgroup_procs_write_permission()).
 		 */
-		if (!cpuset_v2() || (cpus_updated || mems_updated)) {
+		if (!cgroup_subsys_on_dfl(cpuset_cgrp_subsys) ||
+		    (cpus_updated || mems_updated)) {
 			ret = security_task_setscheduler(task);
 			if (ret)
 				goto out_unlock;
@@ -3076,7 +3058,8 @@ static void cpuset_attach(struct cgroup_taskset *tset)
 	 * in effective cpus and mems. In that case, we can optimize out
 	 * by skipping the task iteration and update.
 	 */
-	if (cpuset_v2() && !cpus_updated && !mems_updated) {
+	if (cgroup_subsys_on_dfl(cpuset_cgrp_subsys) &&
+	    !cpus_updated && !mems_updated) {
 		cpuset_attach_nodemask_to = cs->effective_mems;
 		goto out;
 	}
@@ -3170,8 +3153,6 @@ ssize_t cpuset_write_resmask(struct kernfs_open_file *of,
 	}
 
 	free_cpuset(trialcs);
-	if (force_sd_rebuild)
-		rebuild_sched_domains_locked();
 out_unlock:
 	mutex_unlock(&cpuset_mutex);
 	cpus_read_unlock();
@@ -3401,7 +3382,7 @@ cpuset_css_alloc(struct cgroup_subsys_state *parent_css)
 	INIT_LIST_HEAD(&cs->remote_sibling);
 
 	/* Set CS_MEMORY_MIGRATE for default hierarchy */
-	if (cpuset_v2())
+	if (cgroup_subsys_on_dfl(cpuset_cgrp_subsys))
 		__set_bit(CS_MEMORY_MIGRATE, &cs->flags);
 
 	return &cs->css;
@@ -3428,7 +3409,8 @@ static int cpuset_css_online(struct cgroup_subsys_state *css)
 	/*
 	 * For v2, clear CS_SCHED_LOAD_BALANCE if parent is isolated
 	 */
-	if (cpuset_v2() && !is_sched_load_balance(parent))
+	if (cgroup_subsys_on_dfl(cpuset_cgrp_subsys) &&
+	    !is_sched_load_balance(parent))
 		clear_bit(CS_SCHED_LOAD_BALANCE, &cs->flags);
 
 	cpuset_inc();
@@ -3495,7 +3477,11 @@ static void cpuset_css_offline(struct cgroup_subsys_state *css)
 	cpus_read_lock();
 	mutex_lock(&cpuset_mutex);
 
-	if (!cpuset_v2() && is_sched_load_balance(cs))
+	if (is_partition_valid(cs))
+		update_prstate(cs, 0);
+
+	if (!cgroup_subsys_on_dfl(cpuset_cgrp_subsys) &&
+	    is_sched_load_balance(cs))
 		cpuset_update_flag(CS_SCHED_LOAD_BALANCE, cs, 0);
 
 	cpuset_dec();
@@ -3503,22 +3489,6 @@ static void cpuset_css_offline(struct cgroup_subsys_state *css)
 
 	mutex_unlock(&cpuset_mutex);
 	cpus_read_unlock();
-}
-
-static void cpuset_css_killed(struct cgroup_subsys_state *css)
-{
-	struct cpuset *cs = css_cs(css);
-
-	cpus_read_lock();
-	mutex_lock(&cpuset_mutex);
-
-	/* Reset valid partition back to member */
-	if (is_partition_valid(cs))
-		update_prstate(cs, PRS_MEMBER);
-
-	mutex_unlock(&cpuset_mutex);
-	cpus_read_unlock();
-
 }
 
 static void cpuset_css_free(struct cgroup_subsys_state *css)
@@ -3642,7 +3612,6 @@ struct cgroup_subsys cpuset_cgrp_subsys = {
 	.css_alloc	= cpuset_css_alloc,
 	.css_online	= cpuset_css_online,
 	.css_offline	= cpuset_css_offline,
-	CGROUP_SUBSYS_CSS_KILLED(cpuset_css_killed),
 	.css_free	= cpuset_css_free,
 	.can_attach	= cpuset_can_attach,
 	.cancel_attach	= cpuset_cancel_attach,
@@ -3773,7 +3742,6 @@ retry:
 
 	if (remote && cpumask_empty(&new_cpus) &&
 	    partition_is_populated(cs, NULL)) {
-		cs->prs_err = PERR_HOTPLUG;
 		remote_partition_disable(cs, tmp);
 		compute_effective_cpumask(&new_cpus, cs, parent);
 		remote = false;
@@ -3927,9 +3895,11 @@ static void cpuset_handle_hotplug(void)
 		rcu_read_unlock();
 	}
 
-	/* rebuild sched domains if necessary */
-	if (force_sd_rebuild)
+	/* rebuild sched domains if cpus_allowed has changed */
+	if (force_sd_rebuild) {
+		force_sd_rebuild = false;
 		rebuild_sched_domains_cpuslocked();
+	}
 
 	free_cpumasks(NULL, ptmp);
 }

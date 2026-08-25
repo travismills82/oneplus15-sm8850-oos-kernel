@@ -35,7 +35,6 @@
 #include <linux/hid-debug.h>
 #include <linux/hidraw.h>
 #include "usbhid.h"
-#include "hid-pidff.h"
 
 /*
  * Version Information

@@ -411,19 +411,14 @@ static void l2cap_chan_timeout(struct work_struct *work)
 
 	BT_DBG("chan %p state %s", chan, state_to_string(chan->state));
 
-	if (test_bit(FLAG_DEL, &chan->flags)) {
-		l2cap_chan_put(chan);
+	if (!conn)
 		return;
-	}
 
 	mutex_lock(&conn->lock);
 	/* __set_chan_timer() calls l2cap_chan_hold(chan) while scheduling
 	 * this work. No need to call l2cap_chan_hold(chan) here again.
 	 */
 	l2cap_chan_lock(chan);
-
-	if (test_bit(FLAG_DEL, &chan->flags))
-		goto unlock;
 
 	if (chan->state == BT_CONNECTED || chan->state == BT_CONFIG)
 		reason = ECONNREFUSED;
@@ -437,10 +432,10 @@ static void l2cap_chan_timeout(struct work_struct *work)
 
 	chan->ops->close(chan);
 
-unlock:
 	l2cap_chan_unlock(chan);
-	mutex_unlock(&conn->lock);
 	l2cap_chan_put(chan);
+
+	mutex_unlock(&conn->lock);
 }
 
 struct l2cap_chan *l2cap_chan_create(void)
@@ -492,9 +487,6 @@ static void l2cap_chan_destroy(struct kref *kref)
 	write_lock(&chan_list_lock);
 	list_del(&chan->global_l);
 	write_unlock(&chan_list_lock);
-
-	if (chan->conn)
-		l2cap_conn_put(chan->conn);
 
 	kfree(chan);
 }
@@ -598,7 +590,7 @@ void __l2cap_chan_add(struct l2cap_conn *conn, struct l2cap_chan *chan)
 
 	conn->disc_reason = HCI_ERROR_REMOTE_USER_TERM;
 
-	chan->conn = l2cap_conn_get(conn);
+	chan->conn = conn;
 
 	switch (chan->chan_type) {
 	case L2CAP_CHAN_CONN_ORIENTED:
@@ -653,18 +645,22 @@ void l2cap_chan_add(struct l2cap_conn *conn, struct l2cap_chan *chan)
 
 void l2cap_chan_del(struct l2cap_chan *chan, int err)
 {
+	struct l2cap_conn *conn = chan->conn;
+
 	__clear_chan_timer(chan);
 
-	BT_DBG("chan %p, err %d, state %s", chan, err,
+	BT_DBG("chan %p, conn %p, err %d, state %s", chan, conn, err,
 	       state_to_string(chan->state));
 
 	chan->ops->teardown(chan, err);
 
-	if (!test_and_set_bit(FLAG_DEL, &chan->flags)) {
+	if (conn) {
 		/* Delete from channel list */
 		list_del(&chan->list);
 
 		l2cap_chan_put(chan);
+
+		chan->conn = NULL;
 
 		/* Reference was only held for non-fixed channels or
 		 * fixed channels that explicitly requested it using the
@@ -672,7 +668,7 @@ void l2cap_chan_del(struct l2cap_chan *chan, int err)
 		 */
 		if (chan->chan_type != L2CAP_CHAN_FIXED ||
 		    test_bit(FLAG_HOLD_HCI_CONN, &chan->flags))
-			hci_conn_drop(chan->conn->hcon);
+			hci_conn_drop(conn->hcon);
 	}
 
 	if (test_bit(CONF_NOT_COMPLETE, &chan->conf_state))
@@ -1892,7 +1888,7 @@ static void l2cap_monitor_timeout(struct work_struct *work)
 
 	l2cap_chan_lock(chan);
 
-	if (test_bit(FLAG_DEL, &chan->flags)) {
+	if (!chan->conn) {
 		l2cap_chan_unlock(chan);
 		l2cap_chan_put(chan);
 		return;
@@ -1913,7 +1909,7 @@ static void l2cap_retrans_timeout(struct work_struct *work)
 
 	l2cap_chan_lock(chan);
 
-	if (test_bit(FLAG_DEL, &chan->flags)) {
+	if (!chan->conn) {
 		l2cap_chan_unlock(chan);
 		l2cap_chan_put(chan);
 		return;
@@ -2525,7 +2521,7 @@ int l2cap_chan_send(struct l2cap_chan *chan, struct msghdr *msg, size_t len)
 	int err;
 	struct sk_buff_head seg_queue;
 
-	if (test_bit(FLAG_DEL, &chan->flags))
+	if (!chan->conn)
 		return -ENOTCONN;
 
 	/* Connectionless channel */
@@ -3003,24 +2999,13 @@ fail:
 	return NULL;
 }
 
-static inline int l2cap_get_conf_opt(void **ptr, void *end, int *type,
-				     int *olen, unsigned long *val)
+static inline int l2cap_get_conf_opt(void **ptr, int *type, int *olen,
+				     unsigned long *val)
 {
 	struct l2cap_conf_opt *opt = *ptr;
 	int len;
 
-	/* opt->len is attacker-controlled. Validate that the full option
-	 * (header + value) actually fits in the buffer before touching
-	 * opt->val, otherwise the switch below reads past the end of the
-	 * caller's buffer.
-	 */
-	if (end - *ptr < L2CAP_CONF_OPT_SIZE)
-		return -EINVAL;
-
 	len = L2CAP_CONF_OPT_SIZE + opt->len;
-	if (end - *ptr < len)
-		return -EINVAL;
-
 	*ptr += len;
 
 	*type = opt->type;
@@ -3122,16 +3107,12 @@ static void l2cap_ack_timeout(struct work_struct *work)
 
 	l2cap_chan_lock(chan);
 
-	if (test_bit(FLAG_DEL, &chan->flags))
-		goto unlock;
-
 	frames_to_ack = __seq_offset(chan, chan->buffer_seq,
 				     chan->last_acked_seq);
 
 	if (frames_to_ack)
 		l2cap_send_rr_or_rnr(chan, 0);
 
-unlock:
 	l2cap_chan_unlock(chan);
 	l2cap_chan_put(chan);
 }
@@ -3392,7 +3373,6 @@ static int l2cap_parse_conf_req(struct l2cap_chan *chan, void *data, size_t data
 	void *ptr = rsp->data;
 	void *endptr = data + data_size;
 	void *req = chan->conf_req;
-	void *req_end = req + chan->conf_len;
 	int len = chan->conf_len;
 	int type, hint, olen;
 	unsigned long val;
@@ -3406,11 +3386,9 @@ static int l2cap_parse_conf_req(struct l2cap_chan *chan, void *data, size_t data
 	BT_DBG("chan %p", chan);
 
 	while (len >= L2CAP_CONF_OPT_SIZE) {
-		int ret = l2cap_get_conf_opt(&req, req_end, &type, &olen, &val);
-
-		if (ret < 0)
+		len -= l2cap_get_conf_opt(&req, &type, &olen, &val);
+		if (len < 0)
 			break;
-		len -= ret;
 
 		hint  = type & L2CAP_CONF_HINT;
 		type &= L2CAP_CONF_MASK;
@@ -3615,7 +3593,6 @@ static int l2cap_parse_conf_rsp(struct l2cap_chan *chan, void *rsp, int len,
 	struct l2cap_conf_req *req = data;
 	void *ptr = req->data;
 	void *endptr = data + size;
-	void *rsp_end = rsp + len;
 	int type, olen;
 	unsigned long val;
 	struct l2cap_conf_rfc rfc = { .mode = L2CAP_MODE_BASIC };
@@ -3624,11 +3601,9 @@ static int l2cap_parse_conf_rsp(struct l2cap_chan *chan, void *rsp, int len,
 	BT_DBG("chan %p, rsp %p, len %d, req %p", chan, rsp, len, data);
 
 	while (len >= L2CAP_CONF_OPT_SIZE) {
-		int ret = l2cap_get_conf_opt(&rsp, rsp_end, &type, &olen, &val);
-
-		if (ret < 0)
+		len -= l2cap_get_conf_opt(&rsp, &type, &olen, &val);
+		if (len < 0)
 			break;
-		len -= ret;
 
 		switch (type) {
 		case L2CAP_CONF_MTU:
@@ -3879,7 +3854,6 @@ static void l2cap_conf_rfc_get(struct l2cap_chan *chan, void *rsp, int len)
 {
 	int type, olen;
 	unsigned long val;
-	void *rsp_end = rsp + len;
 	/* Use sane default values in case a misbehaving remote device
 	 * did not send an RFC or extended window size option.
 	 */
@@ -3898,11 +3872,9 @@ static void l2cap_conf_rfc_get(struct l2cap_chan *chan, void *rsp, int len)
 		return;
 
 	while (len >= L2CAP_CONF_OPT_SIZE) {
-		int ret = l2cap_get_conf_opt(&rsp, rsp_end, &type, &olen, &val);
-
-		if (ret < 0)
+		len -= l2cap_get_conf_opt(&rsp, &type, &olen, &val);
+		if (len < 0)
 			break;
-		len -= ret;
 
 		switch (type) {
 		case L2CAP_CONF_RFC:
@@ -5168,7 +5140,6 @@ static inline int l2cap_ecred_conn_rsp(struct l2cap_conn *conn,
 	cmd_len -= sizeof(*rsp);
 
 	list_for_each_entry_safe(chan, tmp, &conn->chan_l, list) {
-		struct l2cap_chan *orig;
 		u16 dcid;
 
 		if (chan->ident != cmd->ident ||
@@ -5190,10 +5161,8 @@ static inline int l2cap_ecred_conn_rsp(struct l2cap_conn *conn,
 
 		BT_DBG("dcid[%d] 0x%4.4x", i, dcid);
 
-		orig = __l2cap_get_chan_by_dcid(conn, dcid);
-
 		/* Check if dcid is already in use */
-		if (dcid && orig) {
+		if (dcid && __l2cap_get_chan_by_dcid(conn, dcid)) {
 			/* If a device receives a
 			 * L2CAP_CREDIT_BASED_CONNECTION_RSP packet with an
 			 * already-assigned Destination CID, then both the
@@ -5202,24 +5171,10 @@ static inline int l2cap_ecred_conn_rsp(struct l2cap_conn *conn,
 			 */
 			l2cap_chan_del(chan, ECONNREFUSED);
 			l2cap_chan_unlock(chan);
-
-			/* Check that the dcid channel mode is
-			 * L2CAP_MODE_EXT_FLOWCTL since this procedure is only
-			 * valid for that mode and shouldn't disconnect a dcid
-			 * in other modes.
-			 */
-			if (orig->mode == L2CAP_MODE_EXT_FLOWCTL) {
-				l2cap_chan_lock(orig);
-				/* Disconnect the original channel as it may be
-				 * considered connected since dcid has already
-				 * been assigned; don't call l2cap_chan_close
-				 * directly since that could lead to
-				 * l2cap_chan_del and then removing the channel
-				 * from the list while we're iterating over it.
-				 */
-				__set_chan_timer(orig, 0);
-				l2cap_chan_unlock(orig);
-			}
+			chan = __l2cap_get_chan_by_dcid(conn, dcid);
+			l2cap_chan_lock(chan);
+			l2cap_chan_del(chan, ECONNRESET);
+			l2cap_chan_unlock(chan);
 			continue;
 		}
 
@@ -5363,13 +5318,7 @@ static inline int l2cap_ecred_reconf_rsp(struct l2cap_conn *conn,
 		if (chan->ident != cmd->ident)
 			continue;
 
-		l2cap_chan_hold(chan);
-		l2cap_chan_lock(chan);
-
 		l2cap_chan_del(chan, ECONNRESET);
-
-		l2cap_chan_unlock(chan);
-		l2cap_chan_put(chan);
 	}
 
 	return 0;
@@ -5514,15 +5463,6 @@ static inline void l2cap_sig_send_rej(struct l2cap_conn *conn, u16 ident)
 	l2cap_send_cmd(conn, ident, L2CAP_COMMAND_REJ, sizeof(rej), &rej);
 }
 
-static inline void l2cap_sig_send_mtu_rej(struct l2cap_conn *conn, u8 ident)
-{
-	struct l2cap_cmd_rej_mtu rej;
-
-	rej.reason = cpu_to_le16(L2CAP_REJ_MTU_EXCEEDED);
-	rej.max_mtu = cpu_to_le16(L2CAP_SIG_MTU);
-	l2cap_send_cmd(conn, ident, L2CAP_COMMAND_REJ, sizeof(rej), &rej);
-}
-
 static inline void l2cap_sig_channel(struct l2cap_conn *conn,
 				     struct sk_buff *skb)
 {
@@ -5534,43 +5474,6 @@ static inline void l2cap_sig_channel(struct l2cap_conn *conn,
 
 	if (hcon->type != ACL_LINK)
 		goto drop;
-
-	/*
-	 * Bluetooth Core v5.4, Vol 3, Part A, Section 4: the BR/EDR
-	 * signaling channel has a fixed signaling MTU (MTUsig) whose
-	 * minimum and default is 48 octets.  Section 4.1 says that on
-	 * an MTUExceeded command reject the identifier "shall match
-	 * the first request command in the L2CAP packet" and that
-	 * packets containing only response commands "shall be
-	 * silently discarded".
-	 *
-	 * Linux intentionally deviates from that prescription:
-	 *
-	 *   1. Silently discarding desynchronizes the peer.  The
-	 *      remote stack never learns its responses were dropped,
-	 *      so any state machine waiting on a paired response
-	 *      stalls until its own timer fires.
-	 *
-	 *   2. Locating "the first request command" requires walking
-	 *      command headers past MTUsig, i.e. processing bytes
-	 *      from a packet we have already decided is too large to
-	 *      process.
-	 *
-	 * Reject every over-MTUsig signaling packet with one
-	 * L2CAP_REJ_MTU_EXCEEDED command reject.  The reject's
-	 * reason field is what tells the peer that the whole packet
-	 * was discarded; the identifier value is informational, so
-	 * we use the identifier from the first command header, a
-	 * single fixed-offset byte read.
-	 */
-	if (skb->len > L2CAP_SIG_MTU) {
-		u8 ident = skb->data[1];
-
-		BT_DBG("signaling packet exceeds MTU: %u > %u",
-		       skb->len, L2CAP_SIG_MTU);
-		l2cap_sig_send_mtu_rej(conn, ident);
-		goto drop;
-	}
 
 	while (skb->len >= L2CAP_CMD_HDR_SIZE) {
 		u16 len;
@@ -7195,7 +7098,7 @@ static void l2cap_ecred_reconfigure(struct l2cap_chan *chan)
 	chan->ident = l2cap_get_ident(conn);
 
 	l2cap_send_cmd(conn, chan->ident, L2CAP_ECRED_RECONF_REQ,
-		       struct_size(pdu, scid, 1), pdu);
+		       sizeof(pdu), &pdu);
 }
 
 int l2cap_chan_reconfigure(struct l2cap_chan *chan, __u16 mtu)

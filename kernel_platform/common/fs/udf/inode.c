@@ -810,7 +810,6 @@ static int inode_getblk(struct inode *inode, struct udf_map_rq *map)
 		}
 		map->oflags = UDF_BLK_MAPPED;
 		map->pblk = udf_get_lb_pblock(inode->i_sb, &eloc, offset);
-		ret = 0;
 		goto out_free;
 	}
 

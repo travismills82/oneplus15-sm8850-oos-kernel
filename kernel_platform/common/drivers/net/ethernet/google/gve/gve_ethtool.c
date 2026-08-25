@@ -392,9 +392,7 @@ gve_get_ethtool_stats(struct net_device *netdev,
 				 */
 				data[i++] = 0;
 				data[i++] = 0;
-				data[i++] =
-					(tx->dqo_tx.tail - tx->dqo_tx.head) &
-					tx->mask;
+				data[i++] = tx->dqo_tx.tail - tx->dqo_tx.head;
 			}
 			do {
 				start =

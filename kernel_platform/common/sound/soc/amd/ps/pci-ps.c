@@ -559,7 +559,7 @@ static int snd_acp63_probe(struct pci_dev *pci,
 
 	/* Pink Sardine device check */
 	switch (pci->revision) {
-	case ACP63_PCI_REV:
+	case 0x63:
 		break;
 	default:
 		dev_dbg(&pci->dev, "acp63 pci device not found\n");

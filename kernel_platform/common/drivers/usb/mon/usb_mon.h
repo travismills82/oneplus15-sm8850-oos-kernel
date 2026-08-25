@@ -15,13 +15,7 @@
 
 #define TAG "usbmon"
 
-/*
- * usb_bus::mon_bus is part of the frozen GKI ABI. Keep its public tag
- * opaque; USBMON owns the concrete implementation type below.
- */
-struct mon_bus;
-
-struct mon_bus_priv {
+struct mon_bus {
 	struct list_head bus_link;
 	spinlock_t lock;
 	struct usb_bus *u_bus;
@@ -43,22 +37,12 @@ struct mon_bus_priv {
 	unsigned int cnt_text_lost;
 };
 
-static inline struct mon_bus_priv *mon_bus_to_priv(struct mon_bus *mbus)
-{
-	return (struct mon_bus_priv *)(void *)mbus;
-}
-
-static inline struct mon_bus *mon_bus_from_priv(struct mon_bus_priv *mbus)
-{
-	return (struct mon_bus *)(void *)mbus;
-}
-
 /*
  * An instance of a process which opened a file (but can fork later)
  */
 struct mon_reader {
 	struct list_head r_link;
-	struct mon_bus_priv *m_bus;
+	struct mon_bus *m_bus;
 	void *r_data;		/* Use container_of instead? */
 
 	void (*rnf_submit)(void *data, struct urb *urb);
@@ -66,17 +50,15 @@ struct mon_reader {
 	void (*rnf_complete)(void *data, struct urb *urb, int status);
 };
 
-void mon_reader_add(struct mon_bus_priv *mbus, struct mon_reader *r);
-void mon_reader_del(struct mon_bus_priv *mbus, struct mon_reader *r);
+void mon_reader_add(struct mon_bus *mbus, struct mon_reader *r);
+void mon_reader_del(struct mon_bus *mbus, struct mon_reader *r);
 
-struct mon_bus_priv *mon_bus_lookup(unsigned int num);
+struct mon_bus *mon_bus_lookup(unsigned int num);
 
-int /*bool*/ mon_text_add(struct mon_bus_priv *mbus,
-			  const struct usb_bus *ubus);
-void mon_text_del(struct mon_bus_priv *mbus);
-int /*bool*/ mon_bin_add(struct mon_bus_priv *mbus,
-			 const struct usb_bus *ubus);
-void mon_bin_del(struct mon_bus_priv *mbus);
+int /*bool*/ mon_text_add(struct mon_bus *mbus, const struct usb_bus *ubus);
+void mon_text_del(struct mon_bus *mbus);
+int /*bool*/ mon_bin_add(struct mon_bus *mbus, const struct usb_bus *ubus);
+void mon_bin_del(struct mon_bus *mbus);
 
 int __init mon_text_init(void);
 void mon_text_exit(void);
@@ -89,6 +71,6 @@ extern struct mutex mon_lock;
 
 extern const struct file_operations mon_fops_stat;
 
-extern struct mon_bus_priv mon_bus0;	/* Only for redundant checks */
+extern struct mon_bus mon_bus0;		/* Only for redundant checks */
 
 #endif /* __USB_MON_H */
