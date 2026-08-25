@@ -1,0 +1,7 @@
+RETAINED STOCK MODULE CONTRACT
+kernel_release=6.12.24-android16-5-o-ga7f2fd6d686f-4k
+expected_vermagic=6.12.24-android16-5-o-ga7f2fd6d686f-4k SMP preempt mod_unload modversions aarch64
+compatible=984
+dormant=36
+blocker=0
+result=PASS

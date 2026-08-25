@@ -1,0 +1,142 @@
+symbol	stock_16.0.10.500	failed_controlled_6.12.24	relation	classification	init_user0_relevance	assessment
+CONFIG_BLK_DEV_DM	y	y	IDENTICAL	DEVICE_MAPPER	HIGH	MATCH; not a missing prerequisite
+CONFIG_BLK_INLINE_ENCRYPTION	y	y	IDENTICAL	BLOCK_CRYPTO	HIGH	MATCH; not a missing prerequisite
+CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK	y	y	IDENTICAL	BLOCK_CRYPTO	HIGH	MATCH; not a missing prerequisite
+CONFIG_BT	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_BT_BCM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_BT_HCIUART	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_BT_HIDP	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_BT_QCA	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_BT_RFCOMM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_BCM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_CAN327	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_DEV	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_GW	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_ISOTP	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_J1939	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_RAW	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_SLCAN	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CAN_VCAN	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CC_VERSION_TEXT	"Android (14043575, +pgo, +bolt, +lto, +mlgo, based on r536225) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project b3a530ec6537146650e42be89f1089e9a3588460)"	"Android (12833971, +pgo, +bolt, +lto, +mlgo, based on r536225) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project b3a530ec6537146650e42be89f1089e9a3588460)"	CHANGED	BUILD	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_ALLOW_INSECURE_LEGACY	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_COMPRESSION	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_DEBUG	ABSENT	y	CONTROLLED_ONLY	BUILD	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_DEBUG2	ABSENT	n	CONTROLLED_ONLY	BUILD	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_DEBUG_DUMP_KEYS	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	unrelated CIFS debug option; no init_user0 relevance
+CONFIG_CIFS_DFS_UPCALL	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_POSIX	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_STATS2	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_SWN_UPCALL	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_UPCALL	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CIFS_XATTR	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_CRC_ITU_T	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DEBUG_INFO_COMPRESSED_NONE	n	y	CHANGED	BUILD	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DEBUG_INFO_COMPRESSED_ZSTD	y	n	CHANGED	BUILD	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DEFAULT_BBR	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DEFAULT_CUBIC	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DEFAULT_RENO	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DEFAULT_TCP_CONG	"cubic"	"bbr"	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_DM_CRYPT	y	y	IDENTICAL	DEVICE_MAPPER	HIGH	MATCH; not a missing prerequisite
+CONFIG_DM_DEFAULT_KEY	y	y	IDENTICAL	DEVICE_MAPPER	HIGH	MATCH; not a missing prerequisite
+CONFIG_DNS_RESOLVER	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_ENCRYPTED_KEYS	n	n	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_EXT4_FS	y	y	IDENTICAL	STORAGE	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_F2FS_FS	y	y	IDENTICAL	STORAGE	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_FS_ENCRYPTION	y	y	IDENTICAL	FBE/FSCRYPT	HIGH	MATCH; not a missing prerequisite
+CONFIG_FS_ENCRYPTION_INLINE_CRYPT	y	y	IDENTICAL	FBE/FSCRYPT	HIGH	MATCH; not a missing prerequisite
+CONFIG_GKI_HACKS_FOR_DEBUG_CONFIG	ABSENT	n	CONTROLLED_ONLY	BUILD	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_IKHEADERS	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_ISO9660_FS	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_JOLIET	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_KEYS	y	y	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_KEY_DH_OPERATIONS	n	n	IDENTICAL	OTHER	NONE	no relevant difference
+CONFIG_MACSEC	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_MII	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_MODULE_SIG	y	y	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_MODULE_SIG_ALL	y	y	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_MODULE_SIG_FORCE	n	n	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_MODULE_SIG_KEY	"certs/signing_key.pem"	"module-signing-v1.pem"	CHANGED	KEY_MANAGEMENT	MEDIUM	different trust/signing identity; module contract audited separately
+CONFIG_MQ_IOSCHED_ADIOS	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_MQ_IOSCHED_DEFAULT_ADIOS	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NETFILTER_XT_TARGET_HL	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NETFS_SUPPORT	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NET_SCH_CAKE	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NET_SCH_FQ_PIE	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NET_SCH_PIE	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NFC	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NLS_UCS2_UTILS	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NTFS3_64BIT_CLUSTER	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NTFS3_FS	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NTFS3_FS_POSIX_ACL	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_NTFS3_LZX_XPRESS	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_POWER_SEQUENCING	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_QCOM_VM_MEMORY_FEATURES_NONGKI	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_RFKILL	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SCSI_UFSHCD	y	y	IDENTICAL	STORAGE	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_SCSI_UFS_CRYPTO	y	y	IDENTICAL	STORAGE	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_SECURITY_SELINUX	y	y	IDENTICAL	SECURITY	LOW	no relevant difference
+CONFIG_SMBFS	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_4K_DEVBLK_SIZE	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_CHOICE_DECOMP_BY_MOUNT	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_COMPILE_DECOMP_MULTI	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_COMPILE_DECOMP_MULTI_PERCPU	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_COMPILE_DECOMP_SINGLE	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_DECOMP_MULTI_PERCPU	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_EMBEDDED	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_FILE_CACHE	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_FILE_DIRECT	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE	ABSENT	3	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_LZ4	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_LZO	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_XATTR	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_XZ	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_ZLIB	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SQUASHFS_ZSTD	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SWIOTLB_NONLINEAR	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_SYSTEM_TRUSTED_KEYRING	y	y	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_SYSTEM_TRUSTED_KEYS	""	"controlled_oos_signing_v1_trusted.pem"	CHANGED	KEY_MANAGEMENT	MEDIUM	different trust/signing identity; module contract audited separately
+CONFIG_TCP_CONG_ADVANCED	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_BBR	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_BIC	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_CDG	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_DCTCP	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_HSTCP	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_HTCP	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_HYBLA	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_ILLINOIS	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_LP	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_NV	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_SCALABLE	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_VEGAS	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_VENO	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_WESTWOOD	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TCP_CONG_YEAH	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TLS	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_TRUSTED_KEYS	n	n	IDENTICAL	KEY_MANAGEMENT	MEDIUM	MATCH; not a missing prerequisite
+CONFIG_UDF_FS	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_ACM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_MON	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_AQC111	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_AX88179_178A	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_AX8817X	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_CDCETHER	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_CDC_EEM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_CDC_NCM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_DRIVERS	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_NET_RNDIS_HOST	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_RTL8150	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_RTL8152	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_RTL8153_ECM	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_SERIAL	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_SERIAL_CH341	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_SERIAL_CONSOLE	ABSENT	n	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_SERIAL_CP210X	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_SERIAL_FTDI_SIO	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_SERIAL_PL2303	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_USB_USBNET	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_VLAN_8021Q	m	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_WQ_POWER_EFFICIENT_DEFAULT	n	y	CHANGED	OTHER	NONE	difference recorded; no direct init_user0 causality established
+CONFIG_ZISOFS	ABSENT	y	CONTROLLED_ONLY	OTHER	NONE	difference recorded; no direct init_user0 causality established

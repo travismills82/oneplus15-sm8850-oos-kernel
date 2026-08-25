@@ -1,0 +1,73 @@
+{
+  "schema": "controlled-v1-firmware-compat-candidate-v1",
+  "candidate": "A",
+  "status": "PHYSICAL_PASS_FIRMWARE_NATIVE_BASELINE",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "active_slot_at_baseline_capture": "_a",
+  "ack": {
+    "tag": "android16-6.12-2025-06_r53",
+    "commit": "b2a876903b495c444a94b16f50d1463ffe953957",
+    "sublevel": "6.12.23"
+  },
+  "source": {
+    "branch": "experiment/oos1610500-ack-r53-base",
+    "runtime_source_head": "99077ba8e1792b46d341d60f446b79d260f5f639",
+    "kernel_release": "6.12.23-android16-5-o-g99077ba8e179-4k"
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CONTAINER_KERNEL_REPLACED",
+      "path": "out/oos1610500-r53-candidate-a-final/boot.img",
+      "sha256": "30195cbfe97e3cd831b4e84ed575c68cb5d079f18bbed1e6ee84a91a32cdfb70"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "kernel_artifacts": {
+    "Image_sha256": "1696aafbe11880cb63ebd28ec852ee618fa461100ba53201ec7908727064217d",
+    "config_sha256": "d1462645149bbd78acf72356d7a971c68c9a385b250a90384f2309c8597699f9",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27",
+    "System_map_sha256": "b9a7f87a8ee18c43f0e8e04781f604845524b5f9a154357a62d7a65351d2b74b",
+    "vmlinux_sha256": "1f39046fe91740fdb03e71260228506911c00ae4288c6eba67247a77f5b14b0f"
+  },
+  "module_contract": {
+    "modules_checked": 1020,
+    "compatible_active": 984,
+    "dormant": 36,
+    "import_crc_edges_matched": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "system_modules_load_entries": 82,
+    "wwan_position": 28
+  },
+  "physical": {
+    "date": "2026-08-24",
+    "boot_partition_readback": "PASS",
+    "android_boots": "2/2 PASS",
+    "existing_user0_unlock": "PASS",
+    "wifi_6ghz_wpa3": "PASS",
+    "cellular_registration": "PASS",
+    "rmnet_dual_stack": "PASS",
+    "cellular_ip": "5/5 PASS",
+    "cellular_dns": "5/5 PASS",
+    "bluetooth_toggle": "PASS",
+    "nfc_service": "ENABLED",
+    "nfc_toggle": "NOT TESTED - STOCK SHELL SECURITY POLICY",
+    "critical_error_scan": "PASS",
+    "rollback_required": false,
+    "backup_sha256": "b811796df7ce5fa3b6da07fd00b65c2f9d7bbe1c38939f91f2fc48cc12ada46d"
+  }
+}

@@ -1,0 +1,30 @@
+Candidate A versus live OOS 16.0.10.500 /proc/config.gz
+
+CC_VERSION_TEXT:
+  stock:     Android (14043575, +pgo, +bolt, +lto, +mlgo, based on r536225) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project b3a530ec6537146650e42be89f1089e9a3588460)
+  candidate: Android (12833971, +pgo, +bolt, +lto, +mlgo, based on r536225) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project b3a530ec6537146650e42be89f1089e9a3588460)
+  assessment: compiler revision is identical; build-number text differs
+
+SYSTEM_TRUSTED_KEYS:
+  stock:     ""
+  candidate: "certs/oos16_0_10_500_stock_gki_module_signing.pem"
+  assessment: required explicit trust for the exact stock signed system_dlkm modules under CONFIG_MODULE_SIG_PROTECT=y
+
+All other semantic configuration values are identical.
+
+FBE/storage values verified identical:
+  CONFIG_BLK_INLINE_ENCRYPTION=y
+  CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK=y
+  CONFIG_DM_CRYPT=y
+  CONFIG_DM_DEFAULT_KEY=y
+  CONFIG_FS_ENCRYPTION=y
+  CONFIG_FS_ENCRYPTION_INLINE_CRYPT=y
+  CONFIG_KEYS=y
+  CONFIG_SCSI_UFS_CRYPTO=y
+  CONFIG_F2FS_FS=y
+  CONFIG_EXT4_FS=y
+  CONFIG_SECURITY_SELINUX=y
+
+The release-specific F2FS/ext4 encryption toggles named in the investigation
+request are not independent symbols in this 6.12 configuration; both
+filesystems consume the shared CONFIG_FS_ENCRYPTION contract.
