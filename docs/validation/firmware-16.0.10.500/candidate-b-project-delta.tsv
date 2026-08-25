@@ -17,7 +17,7 @@ Additional CIFS NTFS3 SquashFS ISO9660 and UDF filesystems	27c1811ba54c; c5f5df7
 IKHEADERS built-in conversion	b4f82466b51e	BUILT-IN CONVERSION	Moves kheaders from retained stock module to Image	yes	yes	stock load policy and protected-module handling affected	no	yes	no	no	no	DEFER_CURRENT_SYSTEM_DLKM
 Binder transaction lifetime pinning	5c4058a84655; ACK 1ac5be05b285 and 2df1e89cb5aa; upstream 114a116aaa5f and f223d27a546c	GENERIC KERNEL SECURITY FIX	Pins Binder target thread while target proc is used during transaction teardown	yes	no	no public export or module-provider change	no	no	no	no	yes	PHYSICALLY_QUALIFIED_INCLUDED_IN_BASELINE
 Eventpoll lifetime UAF series	047ce9b3fc18; 5b4c2b4675	GENERIC KERNEL SECURITY FIX	Defers epoll release beyond RCU readers	yes	no	no module-provider change	core fs/event interface but no encryption path	no	no	no	likely	B03
-BPF per-CPU map copy bounds fix	13fd1f13482d	GENERIC KERNEL SECURITY FIX	Prevents out-of-bounds read during per-CPU map copy	yes	no	no module-provider change	no	no	no	no	yes	B02
+BPF per-CPU map copy bounds fix	13fd1f13482d	GENERIC KERNEL SECURITY FIX	Prevents out-of-bounds read during per-CPU map copy	yes	no	no module-provider change	no	no	no	no	yes	PHYSICALLY_QUALIFIED_INCLUDED_IN_BASELINE_B02
 AF_UNIX GC and SCC hardening	95c71f768190; 64b70eb984d0	GENERIC KERNEL SECURITY FIX	Hardens garbage collection and MSG_PEEK lifetime handling	yes	no	no module-provider change	no	no	no	no	likely	B06
 Packet fanout lifetime fix	20454b716217	GENERIC KERNEL SECURITY FIX	Fixes AF_PACKET fanout lifetime UAF	yes	no	no module-provider change	no	no	no	no	likely	B07
 IPv6 MLD query lifetime fix	c2bf320216a0	NETWORKING	Fixes MLD query skb lifetime	yes	no	no module-provider change	no	no	no	no	likely	B08

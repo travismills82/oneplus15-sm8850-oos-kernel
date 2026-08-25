@@ -1,7 +1,7 @@
 {
   "schema": "controlled-v1-firmware-compat-candidate-v1",
   "candidate": "B02",
-  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "status": "PHYSICAL_PASS_QUALIFIED",
   "device": "OnePlus 15 CPH2747 / Canoe",
   "firmware": "OxygenOS 16.0.10.500(EX01)",
   "base": {
@@ -68,8 +68,28 @@
     "wwan_position": 28
   },
   "physical": {
-    "status": "NOT_RUN",
+    "status": "PASS",
     "flash_authorized_by_this_manifest": false,
-    "rollback_boot_sha256": "2646a4d773ac6360cf981c4148fd37b128e8f0cd53abd07418a6807641e9d091"
+    "tested_slot": "_a",
+    "boot_write_readback": "PASS",
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "init_user0_failed": "NOT_OBSERVED",
+    "bpf_runtime_compatibility": "PASS",
+    "exact_vulnerable_trigger": "NOT_OBSERVED",
+    "network_policy_cycles": "5/5 PASS",
+    "application_activity_operations": "70/70 PASS",
+    "wifi_cellular_handoffs": "5/5 PASS",
+    "deep_idle_cycles": "5/5 PASS",
+    "wlan_6135_wpa3": "PASS",
+    "cellular_dual_stack": "PASS",
+    "bluetooth_hid": "PASS",
+    "nfc_wallet_hce_ese1": "PASS",
+    "camera_capture": "PASS",
+    "audio_ringtone": "PASS_USER_CONFIRMED_CLEAR",
+    "kernel_framework_error_scan": "PASS",
+    "rollback_required": false,
+    "rollback_boot_sha256": "2646a4d773ac6360cf981c4148fd37b128e8f0cd53abd07418a6807641e9d091",
+    "report": "docs/validation/firmware-16.0.10.500/candidate-b02-physical-validation-2026-08-25.md"
   }
 }
