@@ -1,0 +1,100 @@
+{
+  "schema": "controlled-v1-firmware-compat-candidate-v1",
+  "candidate": "B07",
+  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "base": {
+    "qualified_branch": "feature/oos1610500-custom-r53-b06-qualified",
+    "qualified_head": "67ddf38649ea9b60fe30ec7be2a352620fe8ea2f",
+    "tested_runtime_source_head": "aad7cdfe6542f3fb51d751236bbacde59e2d9b93",
+    "boot_sha256": "31e6fff0b4212916b64614c4ec96c4f88c8f8cd7168e720e5f77c05b1d402825"
+  },
+  "source": {
+    "branch": "experiment/oos1610500-custom-r53-b07",
+    "runtime_source_head": "969639e8ca81ec5048338b4366cf17de28941029",
+    "kernel_release": "6.12.23-android16-5-o-g969639e8ca81-4k",
+    "cumulative_qualified_changes": [
+      "B01 Binder transaction target lifetime pinning",
+      "B02 BPF per-CPU map copy bounds hardening",
+      "B03 eventpoll file and RCU lifetime hardening",
+      "B04 AF_PACKET fanout lifetime hardening",
+      "B05 USB gadget UDC lifetime hardening",
+      "B06 AF_UNIX garbage-collection and SCC hardening"
+    ],
+    "new_change": "IPv6 MLD query skb lifetime hardening",
+    "controlled_source_commit": "c2bf320216a005451191c5c62520f137005f99fa",
+    "ack_commit": "4203806f700bb44ea0b05d484d9d40044b47fb04",
+    "linux_6_12_stable_commit": "b2eb8886200b907fc71806869620609f0f4cacb0",
+    "upstream_commit": "791c91dc7a9dfb2457d5e29b8216a6484b9c4b40",
+    "runtime_paths_changed_from_b06": [
+      "kernel_platform/common/net/ipv6/mcast.c"
+    ]
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "path": "out/oos1610500-custom-r53-b07-final/boot.img",
+      "sha256": "1ef69e85dce34a1aae60d531da327a6ce96ddaeabc097c56f2ee2fb3f486b5c1"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "kernel_artifacts": {
+    "Image_sha256": "717b3615ea0dbfe92a3f8efab974ec549f98d6b2b1874b2afb15bfa350d42f4a",
+    "config_sha256": "d1462645149bbd78acf72356d7a971c68c9a385b250a90384f2309c8597699f9",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27",
+    "System_map_sha256": "d7622b4b4ea3ab9a700df6b90ff30c2da81fc323c7b582c79653f2a1c3f1fec3",
+    "vmlinux_sha256": "05da2f065b251b08587ee7ce6f92c1643c45ccffad96beb0157eb5f224265495"
+  },
+  "reachability": {
+    "ipv6_config": "BUILT_IN",
+    "wlan_multicast_membership": "CONFIRMED_ACTIVE",
+    "cellular_rmnet_multicast_membership": "CONFIRMED_ACTIVE",
+    "exact_mld_query_reallocation_trigger": "NOT_OBSERVED",
+    "live_audit_kernel": "6.12.23-android16-5-o-gaad7cdfe6542-4k"
+  },
+  "static_contract": {
+    "build": "PASS",
+    "abi": "PASS_EMPTY",
+    "kmi": "PASS",
+    "fbe_storage_runtime_delta": 0,
+    "semantic_config_delta": 0,
+    "exported_crc_delta": 0,
+    "modules_checked": 1020,
+    "compatible_active": 984,
+    "dormant": 36,
+    "import_crc_edges_matched": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "structural_provider_failures": 0,
+    "unexpected_runtime_groups": 0,
+    "unexpected_dlkm_changes": 0,
+    "system_modules_load_entries": 82,
+    "wwan_position": 28,
+    "boot_header_identity": "PASS",
+    "boot_non_kernel_tail_identity": "PASS",
+    "embedded_kernel_identity": "PASS",
+    "outer_avb_verification": "PASS"
+  },
+  "physical": {
+    "status": "NOT_TESTED",
+    "flash_authorized_by_this_manifest": false,
+    "rollback_boot_sha256": "31e6fff0b4212916b64614c4ec96c4f88c8f8cd7168e720e5f77c05b1d402825",
+    "plan": "docs/validation/firmware-16.0.10.500/candidate-b07-physical-test-plan.md",
+    "coverage_rule": "NORMAL_RUNTIME_COMPATIBILITY_AND_EXACT_TRIGGER_ARE_SEPARATE",
+    "cybersecurity_claim": "NOT_MADE_PHYSICAL_RESULT_WILL_BE_COMPATIBILITY_ONLY"
+  }
+}
