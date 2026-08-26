@@ -1,7 +1,7 @@
 {
   "schema": "controlled-v1-firmware-compat-candidate-v1",
   "candidate": "B04",
-  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "status": "PHYSICAL_PASS",
   "device": "OnePlus 15 CPH2747 / Canoe",
   "firmware": "OxygenOS 16.0.10.500(EX01)",
   "base": {
@@ -79,9 +79,48 @@
     "outer_avb_verification": "PASS"
   },
   "physical": {
-    "status": "NOT_TESTED",
+    "status": "PASS",
     "flash_authorized_by_this_manifest": false,
+    "qualification_branch": "feature/oos1610500-custom-r53-b04-qualified",
+    "qualification_tag": "oos16.0.10.500-custom-r53-b04-qualified",
+    "tested_slot": "_a",
+    "boot_write_readback": "PASS",
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "init_user0_failed": "NOT_OBSERVED",
+    "af_packet_runtime_compatibility": "PASS",
+    "exact_vulnerable_interleaving": "NOT_OBSERVED",
+    "fanout_harness": {
+      "duration_seconds": 300,
+      "workers": 4,
+      "loops": 2254584,
+      "sockets": 4509168,
+      "binds": 4509168,
+      "fanout_joins": 4509168,
+      "socket_closes": 4509168,
+      "packets_sampled": 894,
+      "expected_eagain": 4508274,
+      "unexpected_errors": 0
+    },
+    "wifi_off_on": "25/25 PASS",
+    "airplane_mode": "10/10 PASS",
+    "wifi_cellular_handoff": "5/5 PASS_AFTER_STABILIZATION",
+    "handoff_transient_packet_loss": "NON_BLOCKING_FIRST_ATTEMPT_ROUTE_STABILIZATION",
+    "wlan_transfer_bytes": 104857600,
+    "wlan_concurrent_ping": "100/100 PASS",
+    "cellular_transfer_bytes": 104857600,
+    "cellular_concurrent_ping": "100/100 PASS",
+    "deep_idle_cycles": "5/5 PASS",
+    "wlan_6135_wpa3": "PASS",
+    "cellular_dual_stack": "PASS",
+    "bluetooth_hid": "PASS",
+    "nfc_wallet_hce_ese1": "PASS",
+    "camera_capture": "PASS",
+    "audio_ringtone": "PASS_USER_CONFIRMED_CLEAR",
+    "kernel_framework_error_scan": "PASS",
+    "rollback_required": false,
+    "rollback_boot_sha256": "0b065aa6fc5c524107ecdf10ffefb41b464be86bfb9b8673b8fb649f5541dfc0",
     "plan": "docs/validation/firmware-16.0.10.500/candidate-b04-physical-test-plan.md",
-    "rollback_boot_sha256": "0b065aa6fc5c524107ecdf10ffefb41b464be86bfb9b8673b8fb649f5541dfc0"
+    "report": "docs/validation/firmware-16.0.10.500/candidate-b04-physical-validation-2026-08-25.md"
   }
 }
