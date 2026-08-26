@@ -1,7 +1,7 @@
 {
   "schema": "controlled-v1-firmware-compat-candidate-v1",
   "candidate": "B03",
-  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "status": "PHYSICAL_PASS",
   "device": "OnePlus 15 CPH2747 / Canoe",
   "firmware": "OxygenOS 16.0.10.500(EX01)",
   "base": {
@@ -78,9 +78,45 @@
     "outer_avb_verification": "PASS"
   },
   "physical": {
-    "status": "NOT_TESTED",
+    "status": "PASS",
     "flash_authorized_by_this_manifest": false,
+    "qualification_branch": "feature/oos1610500-custom-r53-b03-qualified",
+    "qualification_tag": "oos16.0.10.500-custom-r53-b03-qualified",
+    "tested_slot": "_a",
+    "boot_write_readback": "PASS",
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "init_user0_failed": "NOT_OBSERVED",
+    "eventpoll_runtime_compatibility": "PASS",
+    "exact_vulnerable_interleaving": "NOT_OBSERVED",
+    "eventpoll_harness": {
+      "duration_seconds": 300,
+      "workers": 4,
+      "loops": 2972084,
+      "adds": 11934778,
+      "deletes": 1486043,
+      "descriptor_closes": 18645189,
+      "concurrent_waits": 5293450,
+      "expected_errors": 0,
+      "unexpected_errors": 0,
+      "pthread_errors": 0
+    },
+    "application_activity_operations": "220/220 PASS",
+    "process_churn_operations": "50/50 PASS",
+    "service_query_rounds": "60/60 PASS",
+    "wifi_cellular_handoff": "PASS_AFTER_STABILIZATION",
+    "handoff_transient_packet_loss": "NON_BLOCKING_FIRST_SAMPLE",
+    "deep_idle_cycles": "5/5 PASS",
+    "wlan_6135_wpa3": "PASS",
+    "cellular_dual_stack": "PASS",
+    "bluetooth_hid": "PASS",
+    "nfc_wallet_hce_ese1": "PASS",
+    "camera_capture": "PASS",
+    "audio_ringtone": "PASS_USER_CONFIRMED_PERFECT",
+    "kernel_framework_error_scan": "PASS",
+    "rollback_required": false,
     "rollback_boot_sha256": "dd63f38c658bf81b259f41f5ade970a12e8742bf1e427ed866c532e5f308cb07",
-    "plan": "docs/validation/firmware-16.0.10.500/candidate-b03-physical-test-plan.md"
+    "plan": "docs/validation/firmware-16.0.10.500/candidate-b03-physical-test-plan.md",
+    "report": "docs/validation/firmware-16.0.10.500/candidate-b03-physical-validation-2026-08-25.md"
   }
 }
