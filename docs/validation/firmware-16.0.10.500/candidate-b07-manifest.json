@@ -1,7 +1,7 @@
 {
   "schema": "controlled-v1-firmware-compat-candidate-v1",
   "candidate": "B07",
-  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "status": "PHYSICAL_PASS",
   "device": "OnePlus 15 CPH2747 / Canoe",
   "firmware": "OxygenOS 16.0.10.500(EX01)",
   "base": {
@@ -62,7 +62,7 @@
     "wlan_multicast_membership": "CONFIRMED_ACTIVE",
     "cellular_rmnet_multicast_membership": "CONFIRMED_ACTIVE",
     "exact_mld_query_reallocation_trigger": "NOT_OBSERVED",
-    "live_audit_kernel": "6.12.23-android16-5-o-gaad7cdfe6542-4k"
+    "live_audit_kernel": "6.12.23-android16-5-o-g969639e8ca81-4k"
   },
   "static_contract": {
     "build": "PASS",
@@ -90,11 +90,56 @@
     "outer_avb_verification": "PASS"
   },
   "physical": {
-    "status": "NOT_TESTED",
+    "status": "PASS",
     "flash_authorized_by_this_manifest": false,
+    "qualification_branch": "feature/oos1610500-custom-r53-b07-qualified",
+    "qualification_tag": "oos16.0.10.500-custom-r53-b07-qualified",
+    "tested_slot": "_a",
+    "boot_write_readback": "PASS",
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "init_user0_failed": "NOT_OBSERVED",
+    "ipv6_mld_runtime_compatibility": "PASS",
+    "exact_mld_query_skb_relocation_trigger": "NOT_OBSERVED",
+    "multicast_stress": {
+      "wlan_duration_seconds": 300.005,
+      "wlan_workers": 4,
+      "wlan_joins": 2723911,
+      "wlan_leaves": 2723911,
+      "wlan_sends": 2229274,
+      "wlan_receives": 2229258,
+      "wlan_expected_errors": 494637,
+      "rmnet_duration_seconds": 60.001,
+      "rmnet_workers": 2,
+      "rmnet_joins": 1520766,
+      "rmnet_leaves": 1520766,
+      "rmnet_sends": 1520766,
+      "rmnet_receives": 1520732,
+      "rmnet_expected_errors": 0,
+      "unexpected_errors": 0,
+      "result": "PASS"
+    },
+    "wifi_off_on_observation": "23/25_WITHIN_30_SECONDS;_2_TIMEOUTS;_LATER_STABILIZED_PASS;_NO_REPEAT_PER_NARROWED_TEST_SCOPE",
+    "mobile_data_cycles": "10/10 PASS",
+    "airplane_recovery": "9/10_INITIAL_PLUS_1/1_REPLACEMENT_PASS",
+    "wifi_cellular_handoff": "10/10 PASS",
+    "cellular_ipv6": "PASS_5/5",
+    "wlan_global_ipv6": "NOT_PROVISIONED_SAME_AS_PRE_B07_BASELINE",
+    "wlan_6135_wpa3": "PASS",
+    "bluetooth_hid": "PASS",
+    "nfc_hce_ese1_wallet": "PASS",
+    "camera_capture": "PASS",
+    "audio_ringtone": "PASS_USER_CONFIRMED_AUDIBLE",
+    "usb_adb": "PASS",
+    "deep_idle_cycles": "5/5 PASS",
+    "framework_system_server": "PASS",
+    "module_load_contract": "PASS_82_ENTRIES_WWAN_28",
+    "kernel_framework_error_scan": "PASS",
+    "rollback_required": false,
     "rollback_boot_sha256": "31e6fff0b4212916b64614c4ec96c4f88c8f8cd7168e720e5f77c05b1d402825",
     "plan": "docs/validation/firmware-16.0.10.500/candidate-b07-physical-test-plan.md",
+    "report": "docs/validation/firmware-16.0.10.500/candidate-b07-physical-validation-2026-08-26.md",
     "coverage_rule": "NORMAL_RUNTIME_COMPATIBILITY_AND_EXACT_TRIGGER_ARE_SEPARATE",
-    "cybersecurity_claim": "NOT_MADE_PHYSICAL_RESULT_WILL_BE_COMPATIBILITY_ONLY"
+    "cybersecurity_claim": "NOT_MADE_PHYSICAL_RESULT_IS_COMPATIBILITY_ONLY"
   }
 }
