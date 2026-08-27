@@ -69,14 +69,16 @@ void blk_mq_map_hw_queues(struct blk_mq_queue_map *qmap,
 			  struct device *dev, unsigned int offset)
 
 {
+	bus_irq_get_affinity_t get_affinity;
 	const struct cpumask *mask;
 	unsigned int queue, cpu;
 
-	if (!dev->bus->irq_get_affinity)
+	get_affinity = bus_irq_get_affinity(dev->bus);
+	if (!get_affinity)
 		goto fallback;
 
 	for (queue = 0; queue < qmap->nr_queues; queue++) {
-		mask = dev->bus->irq_get_affinity(dev, queue + offset);
+		mask = get_affinity(dev, queue + offset);
 		if (!mask)
 			goto fallback;
 
