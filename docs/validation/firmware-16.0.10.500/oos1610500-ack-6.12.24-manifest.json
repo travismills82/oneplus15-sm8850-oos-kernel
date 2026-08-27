@@ -1,10 +1,11 @@
 {
-  "schema": "controlled-v1-firmware-compat-ack-candidate-v1",
-  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "schema": "controlled-v1-firmware-compat-ack-qualified-v1",
+  "status": "PHYSICALLY_QUALIFIED",
   "device": "OnePlus 15 CPH2747 / Canoe",
   "firmware": "OxygenOS 16.0.10.500(EX01)",
   "source": {
-    "branch": "experiment/oos1610500-ack-6.12.24",
+    "branch": "feature/oos1610500-ack-6.12.24-qualified",
+    "qualification_tag": "oos16.0.10.500-ack-6.12.24-qualified",
     "parent_branch": "feature/oos1610500-custom-r53-qualified",
     "parent_metadata_head": "6a351339c02dd72b7f797b54aff3563afea35c34",
     "parent_qualified_runtime_head": "338c09465853ddbccde4861e14f8c8fa2f24342e",
@@ -54,7 +55,7 @@
   "static_contract": {
     "build": "PASS",
     "config": "PASS_SEMANTIC_DELTA_0",
-    "fbe_user0": "PASS_STATIC_PHYSICAL_REQUIRED",
+    "fbe_user0": "PASS_STATIC_AND_PHYSICAL",
     "abi": "PASS_EMPTY",
     "kmi": "PASS",
     "modules_checked": 1020,
@@ -74,8 +75,29 @@
     "outer_avb_verification": "PASS"
   },
   "physical": {
-    "status": "NOT_TESTED",
+    "status": "PASS",
     "flash_authorized_by_this_manifest": false,
-    "required_first_gate": "EXISTING_USER0_RUNNING_UNLOCKED_NO_INIT_USER0_FAILED"
+    "tested_slot": "_a",
+    "boot_write_readback": "PASS",
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "vdc_cryptfs_init_user0": "PASS_EXIT_0",
+    "init_user0_failed": "NOT_OBSERVED",
+    "wlan_6135_wpa3": "PASS",
+    "cellular_rmnet": "PASS",
+    "ipv4_routes_ip_dns": "PASS",
+    "public_ipv6": "NOT_PROVISIONED_DURING_BOUNDED_CHECK",
+    "bluetooth_hid": "PASS",
+    "nfc_hce_ese1_wallet": "PASS",
+    "camera_capture": "PASS",
+    "audio_ringtone": "PASS_USER_CONFIRMED_CLEAR",
+    "usb_adb": "PASS",
+    "deep_idle_cycles": "5/5 PASS",
+    "framework_system_server": "PASS",
+    "module_load_contract": "PASS_82_ENTRIES_WWAN_28",
+    "kernel_module_framework_error_scan": "PASS",
+    "rollback_required": false,
+    "rollback_boot_sha256": "66046855b5d44aae821336c6499b3b741866beb82b8413fbeaf7769b6b324c1a",
+    "report": "docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.24-physical-validation-2026-08-27.md"
   }
 }
