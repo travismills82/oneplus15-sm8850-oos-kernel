@@ -1,0 +1,19 @@
+OOS 16.0.10.500 CUSTOM R53 TO ACK 6.12.24 CONFIG DELTA
+
+baseline_config=out/oos1610500-custom-r53-b08-final/.config
+baseline_sha256=d1462645149bbd78acf72356d7a971c68c9a385b250a90384f2309c8597699f9
+candidate_config=out/oos1610500-ack-6.12.24-stock-dlkm/.config
+candidate_sha256=19aaa0f326c5532ea7865c0fd68ecd4154458da539eac757b174673b16f4da47
+
+semantic_config_changes=0
+new_symbols=0
+removed_symbols=0
+value_changes=0
+result=PASS
+
+The only textual difference is the generated version banner:
+
+-# Linux/arm64 6.12.23 Kernel Configuration
++# Linux/arm64 6.12.24 Kernel Configuration
+
+No olddefconfig side effect or unexplained CONFIG change was accepted.

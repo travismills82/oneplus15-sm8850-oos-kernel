@@ -1,0 +1,81 @@
+{
+  "schema": "controlled-v1-firmware-compat-ack-candidate-v1",
+  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "source": {
+    "branch": "experiment/oos1610500-ack-6.12.24",
+    "parent_branch": "feature/oos1610500-custom-r53-qualified",
+    "parent_metadata_head": "6a351339c02dd72b7f797b54aff3563afea35c34",
+    "parent_qualified_runtime_head": "338c09465853ddbccde4861e14f8c8fa2f24342e",
+    "runtime_source_head": "7bd04d49c555d0764568b631bd1ba8990235c2ae",
+    "audit_documentation_parent": "0348b41c16e5aebd2a6cd22db4923de6a1b84217",
+    "kernel_release": "6.12.24-android16-5-o-g0348b41c16e5-4k",
+    "runtime_commits": 377,
+    "runtime_paths": 363,
+    "runtime_paths_outside_common": 0,
+    "ack_6_12_25_or_newer": false
+  },
+  "ack_delta": {
+    "official_range_commits": 394,
+    "apply": 374,
+    "already_present_r53": 18,
+    "superseded_by_b01_b08": 0,
+    "reviewed_android_conflicts": 2,
+    "not_applicable": 0,
+    "unexpected_project_changes": 0
+  },
+  "kernel_artifacts": {
+    "Image_sha256": "efa771a5e0df145127cfab8d0d49d199140408e4a9d7b69f1131d0153f4c4c7e",
+    "config_sha256": "19aaa0f326c5532ea7865c0fd68ecd4154458da539eac757b174673b16f4da47",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27",
+    "System_map_sha256": "627d5520877ceb8777e7e1229d30648f286587de89f0e12cc1ec9e6030818b6a",
+    "vmlinux_sha256": "eb7613f1e1cb0743b934e3f333088b438e056cd0346c7e81faba542656bf2fc8"
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "path": "out/oos1610500-ack-6.12.24-stock-dlkm/boot.img",
+      "sha256": "9e2a7cebe4861d077dc38486b1c8841302ca646880d6bde55dfecb238151d8ad"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "static_contract": {
+    "build": "PASS",
+    "config": "PASS_SEMANTIC_DELTA_0",
+    "fbe_user0": "PASS_STATIC_PHYSICAL_REQUIRED",
+    "abi": "PASS_EMPTY",
+    "kmi": "PASS",
+    "modules_checked": 1020,
+    "active_compatible": 984,
+    "dormant": 36,
+    "import_crc_edges": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "structural_provider_failures": 0,
+    "system_modules_load_entries": 82,
+    "wwan_position": 28,
+    "boot_header_contract": "PASS",
+    "boot_tail_identity": "PASS",
+    "embedded_kernel_identity": "PASS",
+    "outer_avb_verification": "PASS"
+  },
+  "physical": {
+    "status": "NOT_TESTED",
+    "flash_authorized_by_this_manifest": false,
+    "required_first_gate": "EXISTING_USER0_RUNNING_UNLOCKED_NO_INIT_USER0_FAILED"
+  }
+}
