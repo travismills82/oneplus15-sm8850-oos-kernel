@@ -109,5 +109,6 @@
   },
   "qualification_scope": "NORMAL_RUNTIME_COMPATIBILITY_PASS_WITH_SEPARATE_EXACT_TRIGGER_LIMITATIONS",
   "main_promotion_authorized": false,
-  "ack_6_12_24_physical_qualification": "PASS_BOOT_ONLY_EXACT_STOCK_DLKM"
+  "ack_6_12_24_physical_qualification": "PASS_BOOT_ONLY_EXACT_STOCK_DLKM",
+  "ack_6_12_25_physical_qualification": "PASS_BOOT_ONLY_EXACT_STOCK_DLKM"
 }
