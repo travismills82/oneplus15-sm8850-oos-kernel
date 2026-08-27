@@ -1,0 +1,113 @@
+{
+  "schema": "controlled-v1-custom-r53-qualified-baseline-v1",
+  "status": "PHYSICALLY_QUALIFIED",
+  "purpose": "COMPLETE_BOOT_ONLY_CUSTOM_R53_BASELINE",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "kernel": {
+    "release": "6.12.23-android16-5-o-g338c09465853-4k",
+    "ack_generation": "android16-6.12-2025-06_r53",
+    "qualified_runtime_head": "338c09465853ddbccde4861e14f8c8fa2f24342e",
+    "b08_metadata_freeze_head": "504e41fbe77aa6cd385baa30d8bc4441e0461515"
+  },
+  "aggregate_checkpoint": {
+    "branch": "feature/oos1610500-custom-r53-qualified",
+    "tag": "oos16.0.10.500-custom-r53-qualified",
+    "runtime_parent": "feature/oos1610500-custom-r53-b08-qualified",
+    "runtime_parent_head": "504e41fbe77aa6cd385baa30d8bc4441e0461515",
+    "runtime_delta_from_parent": 0,
+    "tested_boot_rebuilt": false
+  },
+  "payloads": {
+    "boot": {
+      "mode": "PHYSICALLY_TESTED_CUSTOM_IMAGE",
+      "sha256": "66046855b5d44aae821336c6499b3b741866beb82b8413fbeaf7769b6b324c1a"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "filesystem": "EROFS",
+      "modules": 103,
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "modules": 437,
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "module_load_contract": {
+    "system_modules_load_entries": 82,
+    "wwan_position": 28
+  },
+  "cumulative_qualified_changes": [
+    {
+      "candidate": "B01",
+      "change": "Binder transaction target lifetime pinning",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b01-physical-validation-2026-08-25.md"
+    },
+    {
+      "candidate": "B02",
+      "change": "BPF per-CPU map copy bounds hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b02-physical-validation-2026-08-25.md"
+    },
+    {
+      "candidate": "B03",
+      "change": "Eventpoll file and RCU lifetime hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b03-physical-validation-2026-08-25.md"
+    },
+    {
+      "candidate": "B04",
+      "change": "AF_PACKET fanout lifetime hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b04-physical-validation-2026-08-25.md"
+    },
+    {
+      "candidate": "B05",
+      "change": "USB gadget UDC lifetime hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b05-physical-validation-2026-08-26.md"
+    },
+    {
+      "candidate": "B06",
+      "change": "AF_UNIX garbage-collection and SCC hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b06-physical-validation-2026-08-26.md"
+    },
+    {
+      "candidate": "B07",
+      "change": "IPv6 MLD query skb lifetime hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b07-physical-validation-2026-08-26.md"
+    },
+    {
+      "candidate": "B08",
+      "change": "Netfilter quota2 counter lifetime hardening",
+      "report": "docs/validation/firmware-16.0.10.500/candidate-b08-physical-validation-2026-08-27.md"
+    }
+  ],
+  "physical_contract": {
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "init_user0_failed": "NOT_OBSERVED",
+    "kernel_framework_error_scan": "PASS",
+    "rollback_required": false
+  },
+  "known_non_blocking_observations": [
+    "Transient first-packet or route-stabilization loss occurred in bounded handoff tests and recovered with healthy registration, routes, IP, and DNS.",
+    "Two B07 Wi-Fi transitions exceeded the 30-second observation window and subsequently recovered without a persistent regression.",
+    "The initial B08 cellular parallel-flow attempt had one route-stabilization connection failure; the bounded retry passed and completed the required 100 MiB total."
+  ],
+  "exact_trigger_limitations": {
+    "B01": "Runtime Binder stress passed; no claim of exact vulnerable interleaving.",
+    "B02": "Exact vulnerable BPF bounds trigger not observed.",
+    "B03": "Exact eventpoll and RCU interleaving not observed.",
+    "B04": "Exact fanout-close and NETDEV_UP interleaving not observed.",
+    "B05": "Exact UDC lifetime trigger not observed.",
+    "B06": "Exact SCM_RIGHTS, MSG_PEEK, and GC/SCC race not observed.",
+    "B07": "Exact MLD query skb relocation condition not observed.",
+    "B08": "Exact concurrent quota-counter acquisition and procfs-creation-failure condition not observed."
+  },
+  "qualification_scope": "NORMAL_RUNTIME_COMPATIBILITY_PASS_WITH_SEPARATE_EXACT_TRIGGER_LIMITATIONS",
+  "main_promotion_authorized": false,
+  "ack_6_12_24_physical_qualification": "NOT_YET_PERFORMED"
+}
