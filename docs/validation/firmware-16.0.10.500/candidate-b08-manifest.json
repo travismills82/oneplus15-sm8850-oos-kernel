@@ -1,0 +1,96 @@
+{
+  "schema": "controlled-v1-firmware-compat-candidate-v1",
+  "candidate": "B08",
+  "status": "STATIC_PASS_PHYSICAL_REQUIRED",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "base": {
+    "qualified_branch": "feature/oos1610500-custom-r53-b07-qualified",
+    "qualified_head": "c2629b3fd92bc913921be48c60dc4b1ad7c68b94",
+    "tested_runtime_source_head": "969639e8ca81ec5048338b4366cf17de28941029",
+    "boot_sha256": "1ef69e85dce34a1aae60d531da327a6ce96ddaeabc097c56f2ee2fb3f486b5c1"
+  },
+  "source": {
+    "branch": "experiment/oos1610500-custom-r53-b08",
+    "runtime_source_head": "338c09465853ddbccde4861e14f8c8fa2f24342e",
+    "kernel_release": "6.12.23-android16-5-o-g338c09465853-4k",
+    "new_change": "Netfilter quota2 counter lifetime hardening",
+    "controlled_source_commit": "def8016a932815636cd777611d22be9078faf45e",
+    "ack_commit": "2993266692b6531d84c4459a60d4312d9e3b3b30",
+    "upstream_commit": "4fa3c1db38c4d05772384cfad9b831b2bcb55d3b",
+    "runtime_paths_changed_from_b07": [
+      "kernel_platform/common/net/netfilter/xt_quota2.c"
+    ]
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "path": "out/oos1610500-custom-r53-b08-final/boot.img",
+      "sha256": "66046855b5d44aae821336c6499b3b741866beb82b8413fbeaf7769b6b324c1a"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "kernel_artifacts": {
+    "Image_sha256": "8497f45612fc4e5314a7bebd837cea7e74de2664c177a67c6660d24c337bc010",
+    "config_sha256": "d1462645149bbd78acf72356d7a971c68c9a385b250a90384f2309c8597699f9",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27",
+    "System_map_sha256": "9c33f22b748c982be163a9367ee1b28f5e4c1936f8675908a9ccef26e9433d2f",
+    "vmlinux_sha256": "1f9613c0f0ac60efda3920ebcb45ac4c5a350d62a3f12a482f35497a0cce7c6a"
+  },
+  "reachability": {
+    "quota2_config": "BUILT_IN",
+    "global_alert_ipv4": "CONFIRMED_ACTIVE_WITH_TRAFFIC",
+    "global_alert_ipv6": "CONFIRMED_ACTIVE_WITH_TRAFFIC",
+    "rmnet_specific_rule": "PRESENT_COUNTER_IDLE_AT_CAPTURE",
+    "exact_procfs_creation_failure_race": "NOT_OBSERVED"
+  },
+  "static_contract": {
+    "build": "PASS",
+    "abi": "PASS_EMPTY",
+    "kmi": "PASS",
+    "fbe_storage_runtime_delta": 0,
+    "semantic_config_delta": 0,
+    "exported_crc_delta": 0,
+    "modules_checked": 1020,
+    "compatible_active": 984,
+    "dormant": 36,
+    "import_crc_edges_matched": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "structural_provider_failures": 0,
+    "unexpected_runtime_groups": 0,
+    "unexpected_dlkm_changes": 0,
+    "system_modules_load_entries": 82,
+    "wwan_position": 28,
+    "boot_header_identity": "PASS",
+    "boot_non_kernel_tail_identity": "PASS",
+    "embedded_kernel_identity": "PASS",
+    "outer_avb_verification": "PASS"
+  },
+  "phase_assessment": {
+    "remaining_high_value_boot_only_groups": 2,
+    "remaining_medium_low_value_groups": 4,
+    "deferred_to_dlkm_phase": 12,
+    "high_risk_or_not_worth_currently": 9,
+    "b09_selected": false
+  },
+  "physical": {
+    "status": "NOT_RUN",
+    "flash_authorized_by_this_manifest": false,
+    "plan": "docs/validation/firmware-16.0.10.500/candidate-b08-physical-test-plan.md",
+    "required_coverage": "NORMAL_RUNTIME_COMPATIBILITY_AND_EXACT_TRIGGER_ARE_SEPARATE"
+  }
+}
