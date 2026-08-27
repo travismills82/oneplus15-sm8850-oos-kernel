@@ -1,0 +1,19 @@
+OOS 16.0.10.500 QUALIFIED ACK 6.12.24 TO ACK 6.12.25 CONFIG DELTA
+
+baseline_config=out/oos1610500-ack-6.12.24-stock-dlkm/.config
+baseline_sha256=19aaa0f326c5532ea7865c0fd68ecd4154458da539eac757b174673b16f4da47
+candidate_config=out/oos1610500-ack-6.12.25-stock-dlkm/.config
+candidate_sha256=cdf9501de4eca7ee31b190c4b7ba72608c69d57e1ecc1aa388ccb126f93e6fb0
+
+semantic_config_changes=0
+new_symbols=0
+removed_symbols=0
+value_changes=0
+result=PASS
+
+The only textual difference is the generated version banner:
+
+-# Linux/arm64 6.12.24 Kernel Configuration
++# Linux/arm64 6.12.25 Kernel Configuration
+
+No olddefconfig side effect or unexplained CONFIG change was accepted.

@@ -1,0 +1,85 @@
+{
+  "schema": "controlled-v1-firmware-compat-ack-static-v1",
+  "status": "STATIC_PASS_PHYSICAL_PENDING",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "source": {
+    "branch": "experiment/oos1610500-ack-6.12.25",
+    "parent_branch": "feature/oos1610500-ack-6.12.24-qualified",
+    "parent_qualified_head": "42ab0d62d012e2dc54c72fb6eef7014bf9e6d9c6",
+    "point_release_integration": "19b41a0ea2d8b24ca0466ed996fe32e10bead86b",
+    "runtime_source_head": "48618bcd62756eb3dc7e497fc74fb704fbec3a66",
+    "kernel_release": "6.12.25-android16-5-o-g48618bcd6275-4k",
+    "runtime_commits": 2,
+    "runtime_paths": 215,
+    "runtime_paths_outside_common": 0,
+    "ack_6_12_26_or_newer": false
+  },
+  "ack_delta": {
+    "linux_6_12_24": "b6efa8ce222e58cfe2bbaa4e3329818c2b4bd74e",
+    "linux_6_12_25": "ef4999852d307d38cfdecd91ed6892cc03beb9b8",
+    "official_range_commits": 218,
+    "official_paths": 226,
+    "apply": 207,
+    "superseded_by_r53": 4,
+    "superseded_by_b01_b08": 0,
+    "reviewed_android_conflicts": 6,
+    "not_applicable": 1,
+    "unexpected_project_changes": 0
+  },
+  "kernel_artifacts": {
+    "Image_sha256": "350cc9bc187d2cfac1d9f04bae72dd8eb11e57cf4e23b8ffb2e2a6adf913234e",
+    "config_sha256": "cdf9501de4eca7ee31b190c4b7ba72608c69d57e1ecc1aa388ccb126f93e6fb0",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27",
+    "System_map_sha256": "5d0bd5ebf043d5ad3bb3d1e2bce4908afe465163d5f19b5e63ac5ae204dab611",
+    "vmlinux_sha256": "4b490418e7e3ff1797da0e39e7d09df3da31d0dedc8b11b0d49f752e4be43aea"
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "path": "out/oos1610500-ack-6.12.25-stock-dlkm/boot.img",
+      "sha256": "494bf88004b13e11379ad3639238f897347d0f8a9b10aa742a553e6c8d812b99"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "static_contract": {
+    "build": "PASS",
+    "config": "PASS_SEMANTIC_DELTA_0",
+    "fbe_user0": "PASS_STATIC_PHYSICAL_PENDING",
+    "abi": "PASS_EMPTY",
+    "kmi_symbol_list": "PASS",
+    "stock_module_contract": "PASS",
+    "modules_checked": 1020,
+    "active_compatible": 984,
+    "dormant": 36,
+    "import_crc_edges": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "structural_provider_failures": 0,
+    "system_modules_load_entries": 82,
+    "wwan_position": 28,
+    "boot_header_contract": "PASS",
+    "boot_tail_identity": "PASS",
+    "embedded_kernel_identity": "PASS",
+    "outer_avb_verification": "PASS"
+  },
+  "physical": {
+    "status": "NOT_TESTED",
+    "flash_authorized_by_this_manifest": false,
+    "next_version_preparation_allowed": false,
+    "rollback_boot_sha256": "9e2a7cebe4861d077dc38486b1c8841302ca646880d6bde55dfecb238151d8ad"
+  }
+}
