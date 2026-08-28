@@ -47,7 +47,13 @@ jobs:
           [ "$found" -eq 1 ]
 
   published-assets:
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    # Boot-only releases intentionally do not carry controlled-stack manifests
+    # or TWRP archives. Validate assets only when a controlled-stack archive is
+    # present, while retaining explicit workflow_dispatch verification.
+    if: >-
+      (github.event_name == 'release' &&
+       contains(join(github.event.release.assets.*.name, ','), '-TWRP.zip')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}

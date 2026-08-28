@@ -1,228 +1,206 @@
-# OnePlus 15 SM8850 kernel source — OxygenOS 16.0.9.400
+# OnePlus 15 SM8850 kernel — OxygenOS 16.0.10.500
 
-Customized source for the OnePlus 15 (Canoe / SM8850), migrated as a
-three-way update from the OxygenOS 16.0.8.300 OnePlus OSS release to the
-OxygenOS 16.0.9.400 release. This is not a replacement of the customized
-tree with a new OnePlus snapshot.
+Authorized Android/Linux kernel development for the OnePlus 15
+(Canoe / CPH2747 / Qualcomm SM8850). The current stable release is a
+physically qualified, boot-only Android 16 ACK 6.12.25 kernel for:
 
-## Repository layout
+~~~text
+OxygenOS 16.0.10.500(EX01)
+kernel 6.12.25-android16-5-o-g48618bcd6275-4k
+~~~
 
-| Path | Purpose |
-| --- | --- |
-| `kernel_platform/` | Android Common Kernel, OnePlus kernel modules, device tree, and build definitions. |
-| `vendor/` | Vendor-side source and build inputs retained by the kernel project. |
-| `tools/` | Repository-owned audit, assembly, validation, and release tooling. |
-| `docs/` | Project documentation, security audits, release records, and validation evidence. |
-| `.github/workflows/` | GitHub Actions validation workflows. |
-| `oneplus_15.xml` | Pinned source manifest used to reproduce the full checkout. |
+This release is firmware-specific. Do not use it on another OxygenOS build
+without repeating the firmware, module, FBE/user0, boot-container, and physical
+qualification.
 
-See [`docs/README.md`](docs/README.md) for the documentation index. Kernel-native documentation under the source tree remains in its upstream locations and is not relocated into the project documentation folder.
+## Stable release
+
+| Field | Qualified value |
+|---|---|
+| Device | OnePlus 15 CPH2747 / Canoe |
+| Firmware | OxygenOS 16.0.10.500(EX01) |
+| Kernel | `6.12.25-android16-5-o-g48618bcd6275-4k` |
+| KMI generation | Android 16 generation 5 |
+| Runtime source | `48618bcd62756eb3dc7e497fc74fb704fbec3a66` |
+| Qualification commit | `e32d8f9502d7b03c0ffa49e584bf96f6d2bc9000` |
+| Qualification tag | `oos16.0.10.500-ack-6.12.25-qualified` |
+| Stable release tag | `oos16.0.10.500-ack-6.12.25` |
+| `boot.img` size | 100,663,296 bytes |
+| `boot.img` SHA-256 | `494bf88004b13e11379ad3639238f897347d0f8a9b10aa742a553e6c8d812b99` |
+
+The GitHub release contains only the exact physically tested `boot.img`.
+It does not contain or require replacement DLKM, vendor_boot, DTBO, VBMeta, or
+dynamic-partition images.
+
+## Firmware payload contract
+
+The supported configuration is:
+
+~~~text
+qualified custom boot.img
++ exact stock OOS 16.0.10.500 system_dlkm
++ exact stock OOS 16.0.10.500 vendor_dlkm
++ exact stock OOS 16.0.10.500 vendor_boot
++ stock DTBO, VBMeta, userdata, metadata, and slot state
+~~~
+
+Immutable stock payloads:
+
+| Payload | SHA-256 |
+|---|---|
+| `system_dlkm` | `18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7` |
+| `vendor_dlkm` | `157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f` |
+| `vendor_boot` | `3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb` |
+
+The stock system-DLKM contract contains 103 modules and 82
+`modules.load` entries, with `wwan.ko` at entry 28. The complete
+current-firmware compatibility audit checks 1,020 modules across system,
+vendor, and vendor_boot load domains.
+
+Do not flash a historical controlled 46-entry system-DLKM with this release.
 
 ## Source provenance
 
-| Source | Previous 16.0.8.300 baseline | Current 16.0.9.400 baseline |
-| --- | --- | --- |
-| android_kernel_oneplus_sm8850 | c88c1b3f75f7e88cd651608362ac7b95f11eb400 | fc30e54174d254ff7f33622a9278e4435f6718d2 |
-| android_kernel_modules_and_devicetree_oneplus_sm8850 | f45a4a587a0ba9107a5421a2dd978404f545164b | 5ab2a689ff87d7d28c511f1762cf41c1b90d965a |
+The firmware-native common-kernel baseline is:
 
-The current OnePlus source release covers CPH2745, CPH2747, and CPH2749
-16.0.9.400(EX01), plus PLK110 16.0.9.400(CN01). Both manifest projects are
-pinned to the exact source commits above; their upstream branch remains
-oneplus/sm8850_b_16.0.0_oneplus_15 for provenance only.
+- ACK tag: `android16-6.12-2025-06_r53`
+- ACK commit: `b2a876903b495c444a94b16f50d1463ffe953957`
+- stock kernel build identity:
+  `6.12.23-android16-5-gb2a876903b49-ab14541642-4k`
 
-The Android Common Kernel is intentionally retained, not replaced with the
-OnePlus common tree:
+The repository retains the OnePlus/Oplus and Qualcomm source pins declared by
+[`oneplus_15.xml`](oneplus_15.xml). Those available OnePlus source pins
+predate the 16.0.10.500 firmware binaries; compatibility with the newer
+firmware is established by the exact stock-module audit and physical
+qualification, not inferred from the source-release label.
 
-- ACK commit: b2a876903b495c444a94b16f50d1463ffe953957
-- ACK tag: android16-6.12-2025-06_r53
-- Build target: //soc-repo:canoe_perf_dist
+The stable Image cumulatively includes the physically qualified boot-only
+hardening batches:
 
-## Local customizations retained
+- Binder transaction target lifetime pinning
+- BPF per-CPU map copy bounds hardening
+- eventpoll file/RCU lifetime hardening
+- AF_PACKET fanout lifetime hardening
+- USB gadget UDC lifetime hardening
+- AF_UNIX garbage-collection/SCC hardening
+- IPv6 MLD query skb lifetime hardening
+- Netfilter quota2 counter lifetime hardening
 
-- Stock-compatible kernel_aarch64 output handling without OnePlus-only
-  vmlinux_oki.
-- CONFIG_CIFS=y, CONFIG_NLS_UTF8=y, and built-in NetFS behavior, with netfs.ko
-  removed from the GKI module-output list.
-- Kleaf/DDK dependency fixes and GKI ZRAM/ZSMALLOC ABI extraction handling.
-- The narrow Bluetooth protected-module compatibility chain needed for stock
-  system_dlkm, without bypassing signatures, MODVERSIONS, ABI, or KMI.
-- An OxygenOS 16.0.9.400-specific trusted public module-signing certificate
-  for stock GKI modules.
-- ADIOS as an available, non-default I/O scheduler.
-- CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y.
-- Built-in NTFS3 (LZX and POSIX ACL), CAKE, and BBR as the default TCP
-  congestion control. Btrfs and NFS remain disabled after their experimental
-  configuration changed the GKI ABI and did not boot reliably.
-- The r4 payload adds built-in SquashFS; common USB serial and USB Ethernet
-  drivers; VLAN, RNDIS host, MACsec, and SocketCAN (including CAN327 and
-  J1939); ISO9660 and UDF; and IKHEADERS. The r7 release retains all of those
-  features, moves the Bluetooth/QCA path, RFCOMM, HIDP, NFC core, TLS, and
-  RTL8150 into Image where ABI-safe, and adds a further source-verified
-  ACK/upstream security refresh. nftables remains disabled because its
-  experiment changed the GKI ABI.
+It then applies reviewed Linux/ACK 6.12.24 and 6.12.25 point-release changes
+with Android KMI-preserving integrations where required. Module signatures,
+MODVERSIONS, GENDWARFKSYMS, CRC validation, protected exports, trusted-key
+handling, and ABI/KMI enforcement remain enabled.
 
-The Oplus display subtree omitted by the original upstream import is restored
-from the official 16.0.8.300 source before applying the corresponding
-16.0.9.400 display fixes.
+## Qualification
 
-## Default supported configuration
+Static validation passed:
 
-~~~text
-custom boot.img
-+ stock OxygenOS 16.0.9.400 EROFS system_dlkm
-+ stock vendor_boot
-+ stock vendor_dlkm
-+ stock dtbo
-~~~
+- common Image build and truthful 6.12.25 release identity
+- semantic configuration delta: zero from the qualified 6.12.24 parent
+- FBE/fscrypt/storage contract
+- GKI ABI report: empty
+- KMI symbol checks
+- 1,020 stock current-firmware modules
+- 57,216 import/CRC edges
+- zero unresolved imports, CRC mismatches, protected-export failures,
+  signature failures, or structural-provider failures
+- boot header, embedded kernel identity, GKI signature tail, and outer AVB
+  container checks
 
-The kernel is not dependent on the generated custom
-system_dlkm.flatten.ext4.img. It remains dependent on compatible GKI modules
-supplied by the stock OxygenOS 16.0.9.400 system_dlkm partition.
+The exact release image physically passed:
 
-Only the boot partition is replaced by the normal release. Do not flash,
-resize, remap, or overwrite system_dlkm, system_dlkm_oki, vendor_boot,
-vendor_dlkm, dtbo, or VBMeta for this configuration.
+- two clean Android boots on slot `_a`
+- existing encrypted user0 `RUNNING_UNLOCKED`
+- no `init_user0_failed` or Rescue Party redirect
+- 6135 MHz WPA3-SAE WLAN
+- LTE/RMNET, IPv4/IPv6 addressing and routes, IP, DNS, and handoff
+- Bluetooth toggle and existing HID reconnect
+- NFC service, Wallet/HCE, and eSE1
+- camera capture, clear ringtone/audio, USB/ADB, graphics/UI
+- five deep-idle/resume cycles
+- stable framework/system_server and clean kernel/module failure scan
 
-### Current boot-only validation (r7 security refresh)
+See:
 
-The verified r7 boot payload was built from source commit
-bd70777d3d2cbb44e758d8ad36c264b18b7b69ab with:
-
-~~~bash
-cd kernel_platform
-tools/bazel build //soc-repo:canoe_perf_dist
-tools/bazel build \
-  //common:kernel_aarch64_abi \
-  //common:kernel_aarch64_abi_kmi_symbol_checks \
-  //common:kernel_aarch64_abi_diff
-~~~
-
-Both commands passed. Strict ABI/KMI validation remains enabled, as do
-CONFIG_MODULE_SIG, CONFIG_MODVERSIONS, CONFIG_GENDWARFKSYMS, symbol CRC
-validation, and protected-module enforcement.
-
-The live-tested r7 boot payload is:
-
-- Kernel release: 6.12.23-android16-5-o-gbd70777d3d2c-4k.
-- boot.img: 100,663,296 bytes, SHA-256
-  86eba62f4f93f02aaacda89ef903c91a3e531575aba1cf253ce70e0887b38d1f.
-
-The r7 payload retains r6 coverage and adds 52 source-verified Linux
-6.12.91--6.12.98/Android Common security patch units. The refresh covers SKB
-shared-frag handling, IPv6 MLD packet lifetime, 16 NTFS3 bounds/lifetime
-fixes, three EROFS decompression/unmount lifetime fixes, 27 Bluetooth fixes,
-and three NFC LLCP UAF fixes. The complete applicability and provenance audit
-is in [`docs/security/cve-audit-2026.md`](docs/security/cve-audit-2026.md).
-
-The ABI-safe system-DLKM reduction work also builds Bluetooth core/QCA HCI,
-RFKILL, power sequencing, RFCOMM, HIDP, NFC core, TLS, and RTL8150 into Image.
-Stock module load requests are satisfied only by the narrow exact-name
-compatibility path after normal signature and module-format checks; no module
-security, ABI, or KMI enforcement is relaxed.
-
-The build still generates system_dlkm.flatten.ext4.img for ABI/KMI development
-and recovery work, but it is not a normal release asset.
-
-The tested stock system_dlkm.img is the CPH2747 OxygenOS
-16.0.9.400(EX01) EROFS image:
-
-- Image bytes: 14,131,200.
-- SHA-256:
-  18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7.
-- Active runtime mount: /dev/block/dm-11 on /system_dlkm type erofs.
-- Active logical-partition capacity: 88,514,560 bytes, unchanged during this
-  test; the first 14,131,200 bytes matched the stock image hash exactly.
-
-The embedded trusted public certificate is the signer reported by stock GKI
-modules such as 6lowpan.ko:
-
-- Certificate serial:
-  6E2DD27B61C8671D2C2AFB38E907FE98DC8F0230.
-- SHA-256 fingerprint:
-  F2:8D:BC:C6:00:85:B2:1A:3C:FF:13:42:48:28:97:FA:64:0B:46:88:47:47:31:47:83:4F:26:C4:FE:B2:DF:43.
-
-It is set as system_trusted_key in kernel_platform/common/BUILD.bazel. This
-trusts the stock modules without weakening module signatures, MODVERSIONS, CRC
-checking, ABI/KMI checks, or protected exports.
-
-The r7 payload was direct-flashed only to active boot_b on rooted CPH2747
-16.0.9.400(EX01), after a full boot_b backup was created. The boot_b readback
-SHA-256 matched the r7 image exactly. Android completed a normal boot on slot
-_b; Bluetooth reached ON with zero framework crashes, and NFC reached ON with
-its controller and HAL initialized. The generated configuration confirms the
-built-in Bluetooth, RFCOMM, HIDP, NFC, NTFS3, and EROFS paths.
-
-The r7 smoke test found no new Oops, BUG, KASAN, UBSAN, panic, module-signature,
-or CRC failure. The boot log still contains the known pre-r7 stale stock USB
-Ethernet module failures (`usbnet`, ASIX, AQC111, CDC, and `r8153_ecm` unknown
-symbols) caused by untouched stock modules attempting to use implementations
-already moved into Image. They are not introduced or fixed by this security
-refresh; broader phone regression and disconnected deep-suspend testing remain
-recommended.
-
-The r7 TWRP archive packages the r7 boot image and retains the existing
-boot-only device checks, backup, flash, and readback-verification flow. Its
-metadata identifies the r7 release and exact r7 kernel payload commit. The
-archive is statically validated; the payload was live smoke-tested through the
-direct active-slot boot path, not installed through TWRP.
-
-**PASS:** system_dlkm.flatten.ext4.img is not required for normal OOS
-16.0.9.400 installation.
+- [static validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.25-static-validation.md)
+- [physical validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.25-physical-validation-2026-08-27.md)
+- [qualified manifest](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.25-manifest.json)
 
 ## Installation
 
-Use only on an unlocked OnePlus 15 / CPH2747 running
-OxygenOS 16.0.9.400(EX01) with its stock EROFS system_dlkm still installed.
-The installer does not alter AVB; it is for the established unlocked test
-configuration only.
+Use only on an unlocked CPH2747 running OxygenOS 16.0.10.500(EX01) with the
+exact stock module stack above. Back up the active boot partition first and
+retain the qualified rollback image.
 
-### TWRP (recommended)
-
-Install OnePlus15-OOS16.0.9.400-r7-TWRP.zip in a compatible TWRP recovery.
-Before it writes anything, it verifies:
-
-- CPH2747 / Canoe identity and the active slot.
-- The exact active firmware manifest.
-- Stock EROFS magic and the known .400 system_dlkm SHA-256.
-- A durable backup location for boot_<active-slot>.
-
-It then flashes only boot_<active-slot>, reads back exactly the image length,
-and restores the backup automatically if writing or verification fails. The ZIP
-never touches dynamic-partition metadata or any non-boot image.
-
-### Fastboot
-
-Back up the active boot image first, determine the active slot, and replace b
-below with the slot reported by fastboot getvar current-slot:
+Confirm the active slot:
 
 ~~~bash
+adb shell getprop ro.boot.slot_suffix
 fastboot getvar current-slot
-fastboot flash boot_b boot.img
+~~~
+
+Flash only the matching active boot partition. For example, if the confirmed
+slot is `_a`:
+
+~~~bash
+fastboot flash boot_a boot.img
 fastboot reboot
 ~~~
 
-Do not flash the generated custom ext4 system_dlkm image for this normal
-release.
+Use `boot_b` instead only when the device explicitly reports slot `_b`.
+Verify the local image before flashing:
 
-## Legacy development/fallback mode
+~~~bash
+sha256sum boot.img
+~~~
 
-Release oos16.0.9.400-r1 and the older matched custom boot.img plus
-system_dlkm.flatten.ext4.img procedure remain historical development/fallback
-material only. That path requires a custom ext4 logical system_dlkm image and
-can require dynamic-partition resizing. It is not included in, or required by,
-the normal r7 boot-only release.
+Expected:
 
-Keep the generated ext4 image available locally for ABI/KMI work, future ACK
-updates, and diagnostic recovery. Do not attach it to normal GitHub releases.
+~~~text
+494bf88004b13e11379ad3639238f897347d0f8a9b10aa742a553e6c8d812b99  boot.img
+~~~
 
-## Build environment
+Do not flash `system_dlkm`, `vendor_dlkm`, `vendor_boot`, DTBO, VBMeta,
+userdata, metadata, or slot metadata for this release.
 
-This source repository intentionally excludes generated out/ artifacts, nested
-Git metadata, and OnePlus-provided binary toolchains under
-kernel_platform/prebuilts/. To reproduce a full build environment, initialize
-a fresh checkout from oneplus_15.xml, sync the pinned projects, and build:
+## Repository layout and build
+
+| Path | Purpose |
+|---|---|
+| `kernel_platform/common/` | ACK/GKI kernel and ABI/KMI definitions |
+| `kernel_platform/soc-repo/` | Canoe build targets, configuration, and module policy |
+| `kernel_platform/qcom/` | Qualcomm integration and device-tree inputs |
+| `kernel_platform/oplus/` | Oplus build/configuration integration |
+| `vendor/` | Qualcomm, OnePlus/Oplus, NXP, and ST source inputs |
+| `tools/` | Repository validation and release tooling |
+| `docs/` | Qualification, compatibility, and release evidence |
+
+Primary Canoe build:
 
 ~~~bash
 cd kernel_platform
 tools/bazel build //soc-repo:canoe_perf_dist
 ~~~
+
+Enforced common ABI comparison:
+
+~~~bash
+cd kernel_platform
+tools/bazel run //common:kernel_aarch64_abi_dist -- --destdir=out/dist
+~~~
+
+No generated output, private key, device backup, or proprietary firmware
+payload belongs in source control.
+
+## Newer generation-5 ACK work
+
+Newer generation-5 ACK work crosses the stock `rust_binder.ko` contract and
+therefore requires an explicit controlled system-DLKM migration beginning with
+a matched `rust_binder.ko`. The precise target and complete provider/consumer
+closure must be recorded by that migration's static validation; CRC patching,
+forged vermagic, and disabled validation are not acceptable.
+
+ACK generation 6 is a separate, broader KMI migration.
+
+Historical OxygenOS 16.0.9.400 releases remain available on the GitHub
+Releases page but are not the current stable firmware target.
