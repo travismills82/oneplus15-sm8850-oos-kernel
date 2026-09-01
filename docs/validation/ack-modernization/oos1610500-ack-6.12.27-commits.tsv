@@ -1,0 +1,3 @@
+order	official_commit	repository_commit	subject	origin	paths	disposition	conflict	reason
+1	92c6f8c577a0ca52d779d3a4d42465bd81f854a1	793d3faa9246539c008a89570b0e0357e6a699f3	bpf: Fix BPF_INTERNAL namespace import	android-common-generation-5	kernel/bpf/preload/bpf_preload_kern.c	APPLY	NO	Correct stable-branch MODULE_IMPORT_NS grammar; replayed individually
+2	b801eaa96a5a2f2a8fe0b5982ffe4a1fba3c1e93	fa3c82a7f526c9f81483599ce80034154cbed316	Linux 6.12.27	android-common-generation-5	Makefile	APPLY	NO	Natural SUBLEVEL 27 release commit; replayed individually
