@@ -1,0 +1,77 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# Create a deterministic detached SHA-512 CMS module signature with the
+# explicitly supplied hermetic OpenSSL binary, then use scripts/sign-file in
+# raw-signature mode to append the standard Linux module-signature trailer.
+
+set -eu
+
+if [ "$#" -lt 6 ] || [ "$#" -gt 7 ]; then
+	echo "usage: sign-file-cms <openssl> <sign-file> <hash> <key> <x509> <module> [dest]" >&2
+	exit 2
+fi
+
+openssl_tool=$1
+sign_file=$2
+hash_algo=$3
+private_key=$4
+x509=$5
+module=$6
+dest=${7:-}
+
+if [ "$hash_algo" != "sha512" ]; then
+	echo "sign-file-cms: refusing non-SHA-512 module signature: $hash_algo" >&2
+	exit 3
+fi
+
+case "$openssl_tool" in
+	*/*) ;;
+	*) openssl_tool=$(command -v "$openssl_tool" || true) ;;
+esac
+if [ ! -x "$openssl_tool" ]; then
+	echo "sign-file-cms: pinned OpenSSL is unavailable: $openssl_tool" >&2
+	exit 4
+fi
+
+# This is the Android main-kernel-2025 platform/prebuilts/build-tools
+# linux_musl-x86 OpenSSL blob at commit
+# 574765b494f226284968a8d156437e4c932aad61. Kleaf's prebuilt_tool rule
+# intentionally selects the musl host-tool variant for this build platform.
+# Kleaf declares //prebuilts/build-tools:openssl as a hermetic tool.  Checking
+# its content here prevents a mutable host executable from being accepted even
+# if a non-hermetic caller supplies an unexpected PATH.
+expected_openssl_sha256=44618139874abf4a78a3d36ddfe42918b12995d1a69f3a526e78b063ef36e91f
+actual_openssl_sha256=$(sha256sum "$openssl_tool" | awk '{print $1}')
+if [ "$actual_openssl_sha256" != "$expected_openssl_sha256" ]; then
+	echo "sign-file-cms: unexpected OpenSSL SHA-256: $actual_openssl_sha256" >&2
+	exit 5
+fi
+
+signature=$(mktemp "${TMPDIR:-/tmp}/sign-file-cms.XXXXXX")
+signer_cert=$(mktemp "${TMPDIR:-/tmp}/sign-file-cms-cert.XXXXXX")
+trap 'rm -f "$signature" "$signer_cert"' EXIT HUP INT TERM
+
+# Kbuild generates certs/signing_key.x509 as DER, while openssl cms expects
+# its -signer input in PEM form. Convert only the disposable public-certificate
+# representation; the certificate identity and the original file passed to
+# sign-file for key-ID derivation remain unchanged. Accept PEM as well so the
+# standalone capability probe exercises the same wrapper.
+if ! "$openssl_tool" x509 -inform DER -in "$x509" -out "$signer_cert" 2>/dev/null; then
+	"$openssl_tool" x509 -in "$x509" -out "$signer_cert"
+fi
+
+set -- cms -sign -binary -noattr -nocerts -md "$hash_algo" \
+	-signer "$signer_cert" -inkey "$private_key" -in "$module" \
+	-outform DER -out "$signature"
+if [ -n "${KBUILD_SIGN_PIN:-}" ]; then
+	set -- "$@" -passin env:KBUILD_SIGN_PIN
+fi
+
+"$openssl_tool" "$@"
+
+if [ -n "$dest" ]; then
+	"$sign_file" -s "$signature" "$hash_algo" "$x509" "$module" "$dest"
+else
+	"$sign_file" -s "$signature" "$hash_algo" "$x509" "$module"
+fi

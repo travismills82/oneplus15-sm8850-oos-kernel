@@ -2647,7 +2647,7 @@ static int handle_transferless_tx_event(struct xhci_hcd *xhci, struct xhci_virt_
 static bool xhci_spurious_success_tx_event(struct xhci_hcd *xhci,
 					   struct xhci_ring *ring)
 {
-	switch (ring->old_trb_comp_code) {
+	switch ((u32)ring->__kabi_reserved1) {
 	case COMP_SHORT_PACKET:
 		return xhci->quirks & XHCI_SPURIOUS_SUCCESS;
 	case COMP_USB_TRANSACTION_ERROR:
@@ -2715,7 +2715,8 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 		if (EVENT_TRB_LEN(le32_to_cpu(event->transfer_len)) != 0) {
 			trb_comp_code = COMP_SHORT_PACKET;
 			xhci_dbg(xhci, "Successful completion on short TX for slot %u ep %u with last td comp code %d\n",
-				 slot_id, ep_index, ep_ring->old_trb_comp_code);
+				 slot_id, ep_index,
+				 (u32)ep_ring->__kabi_reserved1);
 		}
 		break;
 	case COMP_SHORT_PACKET:
@@ -2925,8 +2926,10 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 			 */
 			if (xhci_spurious_success_tx_event(xhci, ep_ring)) {
 				xhci_dbg(xhci, "Spurious event dma %pad, comp_code %u after %u\n",
-					 &ep_trb_dma, trb_comp_code, ep_ring->old_trb_comp_code);
-				ep_ring->old_trb_comp_code = 0;
+					 &ep_trb_dma, trb_comp_code,
+					 (u32)ep_ring->__kabi_reserved1);
+				ep_ring->__kabi_reserved1 = 0;
+				ep_ring->last_td_was_short = false;
 				return 0;
 			}
 
@@ -2954,7 +2957,8 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 	 */
 	} while (ep->skip);
 
-	ep_ring->old_trb_comp_code = trb_comp_code;
+	ep_ring->__kabi_reserved1 = trb_comp_code;
+	ep_ring->last_td_was_short = trb_comp_code == COMP_SHORT_PACKET;
 
 	/* Get out if a TD was queued at enqueue after the xrun occurred */
 	if (ring_xrun_event)

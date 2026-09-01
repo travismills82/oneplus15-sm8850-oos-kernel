@@ -157,6 +157,15 @@ struct request {
 	struct blk_crypto_keyslot *crypt_keyslot;
 #endif
 
+	/*
+	 * OOS 16.0.10.500 binary-module compatibility mirrors.  Native 6.12.26
+	 * block code uses the attached bio for these values; keep the historical
+	 * fields and offsets for OEM modules built against the qualified 6.12.25
+	 * request layout.
+	 */
+	enum rw_hint write_hint;
+	unsigned short ioprio;
+
 	enum mq_rq_state state;
 	atomic_t ref;
 
@@ -1020,6 +1029,7 @@ static inline void blk_rq_bio_prep(struct request *rq, struct bio *bio,
 	rq->nr_phys_segments = nr_segs;
 	rq->__data_len = bio->bi_iter.bi_size;
 	rq->bio = rq->biotail = bio;
+	rq->ioprio = bio_prio(bio);
 }
 
 void blk_mq_hctx_set_fq_lock_class(struct blk_mq_hw_ctx *hctx,

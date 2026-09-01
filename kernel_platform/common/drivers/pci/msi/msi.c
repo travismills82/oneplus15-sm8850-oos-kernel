@@ -7,6 +7,7 @@
  * Copyright (C) 2016 Christoph Hellwig.
  */
 #include <linux/bitfield.h>
+#include <linux/android_kabi.h>
 #include <linux/err.h>
 #include <linux/export.h>
 #include <linux/irq.h>
@@ -14,6 +15,18 @@
 
 #include "../pci.h"
 #include "msi.h"
+
+/*
+ * The 6.12.26 MSI include graph makes struct irq_domain's definition visible
+ * in this translation unit. It was declaration-only in the qualified 6.12.25
+ * provider, while struct irq_data's layout and the exported callback
+ * prototypes remain unchanged. The same include expansion makes struct
+ * device_node (and its property/phandle children) visible even though their
+ * 6.12.25 and 6.12.26 runtime layouts are identical. Keep those incidental
+ * visibility changes out of the stock OOS module version contract.
+ */
+ANDROID_KABI_DECLONLY(irq_domain);
+ANDROID_KABI_DECLONLY(device_node);
 
 int pci_msi_enable = 1;
 

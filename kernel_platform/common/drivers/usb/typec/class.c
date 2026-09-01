@@ -25,6 +25,17 @@ const struct class typec_class = {
 	.name = "typec",
 };
 
+static struct mutex *typec_partner_link_lock(struct typec_port *port)
+{
+	return (struct mutex *)(unsigned long)port->__kabi_reserved1;
+}
+
+static void typec_set_partner_link_lock(struct typec_port *port,
+				       struct mutex *lock)
+{
+	port->__kabi_reserved1 = (u64)(unsigned long)lock;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Common attributes */
 
@@ -932,11 +943,11 @@ struct typec_partner *typec_register_partner(struct typec_port *port,
 	partner->dev.type = &typec_partner_dev_type;
 	dev_set_name(&partner->dev, "%s-partner", dev_name(&port->dev));
 
-	mutex_lock(&port->partner_link_lock);
+	mutex_lock(typec_partner_link_lock(port));
 	ret = device_register(&partner->dev);
 	if (ret) {
 		dev_err(&port->dev, "failed to register partner (%d)\n", ret);
-		mutex_unlock(&port->partner_link_lock);
+		mutex_unlock(typec_partner_link_lock(port));
 		put_device(&partner->dev);
 		return ERR_PTR(ret);
 	}
@@ -945,7 +956,7 @@ struct typec_partner *typec_register_partner(struct typec_port *port,
 		typec_partner_link_device(partner, port->usb2_dev);
 	if (port->usb3_dev)
 		typec_partner_link_device(partner, port->usb3_dev);
-	mutex_unlock(&port->partner_link_lock);
+	mutex_unlock(typec_partner_link_lock(port));
 
 	return partner;
 }
@@ -966,7 +977,7 @@ void typec_unregister_partner(struct typec_partner *partner)
 
 	port = to_typec_port(partner->dev.parent);
 
-	mutex_lock(&port->partner_link_lock);
+	mutex_lock(typec_partner_link_lock(port));
 	if (port->usb2_dev) {
 		typec_partner_unlink_device(partner, port->usb2_dev);
 		port->usb2_dev = NULL;
@@ -977,7 +988,7 @@ void typec_unregister_partner(struct typec_partner *partner)
 	}
 
 	device_unregister(&partner->dev);
-	mutex_unlock(&port->partner_link_lock);
+	mutex_unlock(typec_partner_link_lock(port));
 }
 EXPORT_SYMBOL_GPL(typec_unregister_partner);
 
@@ -1839,6 +1850,7 @@ static void typec_release(struct device *dev)
 	typec_mux_put(port->mux);
 	typec_retimer_put(port->retimer);
 	kfree(port->cap);
+	kfree(typec_partner_link_lock(port));
 	kfree(port);
 }
 
@@ -1874,7 +1886,7 @@ static void typec_partner_attach(struct typec_connector *con, struct device *dev
 	struct typec_partner *partner;
 	struct usb_device *udev = to_usb_device(dev);
 
-	mutex_lock(&port->partner_link_lock);
+	mutex_lock(typec_partner_link_lock(port));
 	if (udev->speed < USB_SPEED_SUPER)
 		port->usb2_dev = dev;
 	else
@@ -1885,7 +1897,7 @@ static void typec_partner_attach(struct typec_connector *con, struct device *dev
 		typec_partner_link_device(partner, dev);
 		put_device(&partner->dev);
 	}
-	mutex_unlock(&port->partner_link_lock);
+	mutex_unlock(typec_partner_link_lock(port));
 }
 
 static void typec_partner_deattach(struct typec_connector *con, struct device *dev)
@@ -1893,7 +1905,7 @@ static void typec_partner_deattach(struct typec_connector *con, struct device *d
 	struct typec_port *port = container_of(con, struct typec_port, con);
 	struct typec_partner *partner;
 
-	mutex_lock(&port->partner_link_lock);
+	mutex_lock(typec_partner_link_lock(port));
 	partner = typec_get_partner(port);
 	if (partner) {
 		typec_partner_unlink_device(partner, dev);
@@ -1904,7 +1916,7 @@ static void typec_partner_deattach(struct typec_connector *con, struct device *d
 		port->usb2_dev = NULL;
 	else if (port->usb3_dev == dev)
 		port->usb3_dev = NULL;
-	mutex_unlock(&port->partner_link_lock);
+	mutex_unlock(typec_partner_link_lock(port));
 }
 
 /**
@@ -2393,6 +2405,7 @@ struct typec_port *typec_register_port(struct device *parent,
 				       const struct typec_capability *cap)
 {
 	struct typec_port *port;
+	struct mutex *partner_link_lock;
 	int ret;
 	int id;
 
@@ -2400,8 +2413,16 @@ struct typec_port *typec_register_port(struct device *parent,
 	if (!port)
 		return ERR_PTR(-ENOMEM);
 
+	partner_link_lock = kzalloc(sizeof(*partner_link_lock), GFP_KERNEL);
+	if (!partner_link_lock) {
+		kfree(port);
+		return ERR_PTR(-ENOMEM);
+	}
+	typec_set_partner_link_lock(port, partner_link_lock);
+
 	id = ida_alloc(&typec_index_ida, GFP_KERNEL);
 	if (id < 0) {
+		kfree(typec_partner_link_lock(port));
 		kfree(port);
 		return ERR_PTR(id);
 	}
@@ -2440,7 +2461,7 @@ struct typec_port *typec_register_port(struct device *parent,
 
 	ida_init(&port->mode_ids);
 	mutex_init(&port->port_type_lock);
-	mutex_init(&port->partner_link_lock);
+	mutex_init(typec_partner_link_lock(port));
 
 	port->id = id;
 	port->ops = cap->ops;

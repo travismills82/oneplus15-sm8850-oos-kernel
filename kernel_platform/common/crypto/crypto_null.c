@@ -17,6 +17,7 @@
 #include <crypto/internal/skcipher.h>
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/mm.h>
 #include <linux/spinlock.h>
 #include <linux/string.h>
 

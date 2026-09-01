@@ -1578,6 +1578,13 @@ alias(
 )
 
 ddk_headers(
+    name = "gpiolib_internal_headers",
+    hdrs = ["drivers/gpio/gpiolib.h"],
+    linux_includes = ["drivers/gpio"],
+    visibility = ["//visibility:public"],
+)
+
+ddk_headers(
     name = "all_headers_aarch64",
     hdrs = [":all_headers_allowlist_aarch64"] + select({
         "//build/kernel/kleaf:allow_ddk_unsafe_headers_set": [":all_headers_unsafe"],

@@ -34,8 +34,10 @@ enum prs_errcode {
 	PERR_CPUSEMPTY,
 	PERR_HKEEPING,
 	PERR_ACCESS,
-	PERR_REMOTE,
 };
+
+/* Preserve the frozen enum definition while retaining the new error value. */
+#define PERR_REMOTE	10
 
 /* bits in struct cpuset flags field */
 typedef enum {
