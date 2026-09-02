@@ -537,6 +537,56 @@ void cpufreq_disable_fast_switch(struct cpufreq_policy *policy)
 }
 EXPORT_SYMBOL_GPL(cpufreq_disable_fast_switch);
 
+/*
+ * Keep explicit limits private to the cpufreq core.  The exported unsorted
+ * table helper retains its Android KMI three-argument interface.
+ */
+int cpufreq_table_index_unsorted_limits(struct cpufreq_policy *policy,
+					unsigned int target_freq,
+					unsigned int min, unsigned int max,
+					unsigned int relation);
+
+static int cpufreq_frequency_table_target_limits(struct cpufreq_policy *policy,
+						 unsigned int target_freq,
+						 unsigned int min,
+						 unsigned int max,
+						 unsigned int relation)
+{
+	bool efficiencies = policy->efficiencies_available &&
+			    (relation & CPUFREQ_RELATION_E);
+	int idx;
+
+	/* The unsorted-table helper has no use for this flag. */
+	relation &= ~CPUFREQ_RELATION_E;
+
+	if (unlikely(policy->freq_table_sorted == CPUFREQ_TABLE_UNSORTED))
+		return cpufreq_table_index_unsorted_limits(policy, target_freq,
+							    min, max, relation);
+retry:
+	switch (relation) {
+	case CPUFREQ_RELATION_L:
+		idx = find_index_l(policy, target_freq, min, max, efficiencies);
+		break;
+	case CPUFREQ_RELATION_H:
+		idx = find_index_h(policy, target_freq, min, max, efficiencies);
+		break;
+	case CPUFREQ_RELATION_C:
+		idx = find_index_c(policy, target_freq, min, max, efficiencies);
+		break;
+	default:
+		WARN_ON_ONCE(1);
+		return 0;
+	}
+
+	/* Limit the selected table entry to this operation's stable snapshot. */
+	if (!cpufreq_is_in_limits_limits(policy, min, max, idx) && efficiencies) {
+		efficiencies = false;
+		goto retry;
+	}
+
+	return idx;
+}
+
 static unsigned int __resolve_freq(struct cpufreq_policy *policy,
 				   unsigned int target_freq,
 				   unsigned int min, unsigned int max,
@@ -551,7 +601,8 @@ static unsigned int __resolve_freq(struct cpufreq_policy *policy,
 	if (!policy->freq_table)
 		return target_freq;
 
-	idx = cpufreq_frequency_table_target(policy, target_freq, min, max, relation);
+	idx = cpufreq_frequency_table_target_limits(policy, target_freq,
+						    min, max, relation);
 	policy->cached_resolved_idx = idx;
 	policy->cached_target_freq = target_freq;
 	return policy->freq_table[idx].frequency;
