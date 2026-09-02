@@ -1,5 +1,6 @@
 release_tag=@RELEASE_TAG@
 firmware=@FIRMWARE@
+build_display_id=@BUILD_DISPLAY_ID@
 device=@DEVICE@
 kernel_release=@KERNEL_RELEASE@
 source_commit=@SOURCE_COMMIT@

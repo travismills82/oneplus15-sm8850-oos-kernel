@@ -25,8 +25,8 @@ It intentionally does not contain a custom system_dlkm image.
 Required installed firmware contract
 ------------------------------------
 
-The active slot must already use the untouched stock CPH2747 OxygenOS
-16.0.9.400(EX01) system_dlkm EROFS image:
+The active slot must already use the untouched stock @FIRMWARE@
+system_dlkm EROFS image:
 
   bytes checked: @STOCK_SYSTEM_DLKM_BYTES@
   EROFS magic at offset 1024: @STOCK_SYSTEM_DLKM_EROFS_MAGIC@

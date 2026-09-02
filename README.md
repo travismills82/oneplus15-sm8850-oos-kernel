@@ -2,11 +2,11 @@
 
 Authorized Android/Linux kernel development for the OnePlus 15
 (Canoe / CPH2747 / Qualcomm SM8850). The current stable release is a
-physically qualified, boot-only Android 16 ACK 6.12.25 kernel for:
+physically qualified, boot-only Android 16 ACK 6.12.27 kernel for:
 
 ~~~text
 OxygenOS 16.0.10.500(EX01)
-kernel 6.12.25-android16-5-o-g48618bcd6275-4k
+kernel 6.12.27-android16-5-o-g20d91bf4ec43-4k
 ~~~
 
 This release is firmware-specific. Do not use it on another OxygenOS build
@@ -19,18 +19,19 @@ qualification.
 |---|---|
 | Device | OnePlus 15 CPH2747 / Canoe |
 | Firmware | OxygenOS 16.0.10.500(EX01) |
-| Kernel | `6.12.25-android16-5-o-g48618bcd6275-4k` |
+| Kernel | `6.12.27-android16-5-o-g20d91bf4ec43-4k` |
 | KMI generation | Android 16 generation 5 |
-| Runtime source | `48618bcd62756eb3dc7e497fc74fb704fbec3a66` |
-| Qualification commit | `e32d8f9502d7b03c0ffa49e584bf96f6d2bc9000` |
-| Qualification tag | `oos16.0.10.500-ack-6.12.25-qualified` |
-| Stable release tag | `oos16.0.10.500-ack-6.12.25` |
+| Runtime source | `20d91bf4ec43f6171bab445c4123350e64ab0883` |
+| Qualification commit | `169fd4e9c3cbd6178bc40f4b6769ace1dff0bbe3` |
+| Qualification tag | `oos16.0.10.500-ack-6.12.27-qualified` |
+| Stable release tag | `oos16.0.10.500-ack-6.12.27` |
 | `boot.img` size | 100,663,296 bytes |
-| `boot.img` SHA-256 | `494bf88004b13e11379ad3639238f897347d0f8a9b10aa742a553e6c8d812b99` |
+| `boot.img` SHA-256 | `8b5753c49a3899c0635558584ef6814e927662b459ecb4233761d532faad15b5` |
 
-The GitHub release contains only the exact physically tested `boot.img`.
-It does not contain or require replacement DLKM, vendor_boot, DTBO, VBMeta, or
-dynamic-partition images.
+The GitHub release contains the exact physically tested `boot.img` and a
+boot-only TWRP installer containing that same image. It does not contain or
+require replacement DLKM, vendor_boot, DTBO, VBMeta, or dynamic-partition
+images.
 
 ## Firmware payload contract
 
@@ -86,17 +87,19 @@ hardening batches:
 - IPv6 MLD query skb lifetime hardening
 - Netfilter quota2 counter lifetime hardening
 
-It then applies reviewed Linux/ACK 6.12.24 and 6.12.25 point-release changes
-with Android KMI-preserving integrations where required. Module signatures,
-MODVERSIONS, GENDWARFKSYMS, CRC validation, protected exports, trusted-key
-handling, and ABI/KMI enforcement remain enabled.
+It then applies reviewed Linux/ACK 6.12.24 through 6.12.27 point-release
+changes with Android KMI-preserving integrations where required. The 6.12.26
+compatibility work retains the qualified OEM-visible request layout and uses a
+pinned hermetic SHA-512 module signer without reverting the stable changes.
+Module signatures, MODVERSIONS, GENDWARFKSYMS, CRC validation, protected
+exports, trusted-key handling, and ABI/KMI enforcement remain enabled.
 
 ## Qualification
 
 Static validation passed:
 
-- common Image build and truthful 6.12.25 release identity
-- semantic configuration delta: zero from the qualified 6.12.24 parent
+- common Image build and truthful 6.12.27 release identity
+- semantic configuration delta: zero from the qualified 6.12.26 parent
 - FBE/fscrypt/storage contract
 - GKI ABI report: empty
 - KMI symbol checks
@@ -116,15 +119,19 @@ The exact release image physically passed:
 - LTE/RMNET, IPv4/IPv6 addressing and routes, IP, DNS, and handoff
 - Bluetooth toggle and existing HID reconnect
 - NFC service, Wallet/HCE, and eSE1
-- camera capture, clear ringtone/audio, USB/ADB, graphics/UI
+- camera, fingerprint authentication, cellular voice/audio, USB/ADB,
+  graphics/UI
 - five deep-idle/resume cycles
 - stable framework/system_server and clean kernel/module failure scan
+- the exact release TWRP ZIP: durable active-boot backup, boot-only write,
+  complete read-back verification, unchanged supporting-partition hashes, and
+  a successful post-install Android/user0/radio boot
 
 See:
 
-- [static validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.25-static-validation.md)
-- [physical validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.25-physical-validation-2026-08-27.md)
-- [qualified manifest](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.25-manifest.json)
+- [static validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-static-validation.md)
+- [physical validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-physical-validation-2026-09-01.md)
+- [qualified manifest](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-manifest.json)
 
 ## Installation
 
@@ -157,8 +164,14 @@ sha256sum boot.img
 Expected:
 
 ~~~text
-494bf88004b13e11379ad3639238f897347d0f8a9b10aa742a553e6c8d812b99  boot.img
+8b5753c49a3899c0635558584ef6814e927662b459ecb4233761d532faad15b5  boot.img
 ~~~
+
+Alternatively, install the firmware-specific TWRP ZIP. It verifies the device,
+active slot, exact `.500` firmware manifest, and stock EROFS `system_dlkm`;
+creates a durable boot backup; writes only the active boot partition; and
+verifies the complete boot read-back. It refuses installation during an OTA
+snapshot/merge or when the firmware/module contract cannot be proven.
 
 Do not flash `system_dlkm`, `vendor_dlkm`, `vendor_boot`, DTBO, VBMeta,
 userdata, metadata, or slot metadata for this release.
@@ -194,11 +207,12 @@ payload belongs in source control.
 
 ## Newer generation-5 ACK work
 
-Newer generation-5 ACK work crosses the stock `rust_binder.ko` contract and
-therefore requires an explicit controlled system-DLKM migration beginning with
-a matched `rust_binder.ko`. The precise target and complete provider/consumer
-closure must be recorded by that migration's static validation; CRC patching,
-forged vermagic, and disabled validation are not acceptable.
+Future ACK point releases continue one subversion at a time from this exact
+qualified baseline. Every applicable official ACK commit must remain an
+individual commit in original dependency order. Each point release must repeat
+the full stock-module, ABI/KMI, existing-user0, radio, and physical validation
+gates; CRC patching, forged vermagic, and disabled validation are not
+acceptable.
 
 ACK generation 6 is a separate, broader KMI migration.
 

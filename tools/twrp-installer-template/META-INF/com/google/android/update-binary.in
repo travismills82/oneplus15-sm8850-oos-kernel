@@ -1,7 +1,7 @@
 #!/sbin/sh
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Boot-only installer for the verified OnePlus 15 OOS 16.0.9.400 release.
+# Firmware-specific boot-only installer for a verified OnePlus 15 release.
 # It reads the active stock system_dlkm only to prove its exact EROFS content;
 # it never mounts, maps, resizes, erases, or writes system_dlkm.
 
@@ -174,7 +174,7 @@ system_dlkm_magic="$(dd if="$SYSTEM_DLKM_BLOCK" bs=1 skip=1024 count=4 2>/dev/nu
 stock_system_dlkm_hash="$(hash_block_prefix "$SYSTEM_DLKM_BLOCK" "$STOCK_SYSTEM_DLKM_BYTES")" ||
     abort_install 'could not hash the stock system_dlkm payload.'
 [ "$stock_system_dlkm_hash" = "$STOCK_SYSTEM_DLKM_SHA256" ] ||
-    abort_install 'active system_dlkm is not the exact stock OOS 16.0.9.400 image.'
+    abort_install "active system_dlkm is not the exact stock $FIRMWARE image."
 
 mkdir -p "$WORKDIR" ||
     abort_install "could not create installer staging directory: $WORKDIR"
@@ -186,9 +186,9 @@ mount -o ro "$MANIFEST_BLOCK" "$MANIFEST_DIR" ||
 MANIFEST_MOUNT="$MANIFEST_DIR"
 [ -r "$MANIFEST_DIR/build.prop" ] ||
     abort_install 'active firmware manifest is missing build.prop.'
-grep -Fx 'ro.build.display.id=CPH2747_16.0.9.400(EX01)' \
+grep -Fx 'ro.build.display.id=@BUILD_DISPLAY_ID@' \
     "$MANIFEST_DIR/build.prop" >/dev/null 2>&1 ||
-    abort_install 'active firmware is not CPH2747 OxygenOS 16.0.9.400(EX01).'
+    abort_install "active firmware is not @BUILD_DISPLAY_ID@."
 grep -Fx 'ro.product.model=CPH2747' "$MANIFEST_DIR/build.prop" >/dev/null 2>&1 ||
     abort_install 'active firmware manifest does not identify CPH2747.'
 umount "$MANIFEST_DIR" ||

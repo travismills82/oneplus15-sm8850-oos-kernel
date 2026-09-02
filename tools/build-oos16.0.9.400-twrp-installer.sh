@@ -1,32 +1,35 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Build the firmware-specific OnePlus 15 boot-only TWRP installer from an
-# already validated boot.img. The installer deliberately retains the stock
-# OxygenOS EROFS system_dlkm partition.
+# Build a firmware-specific OnePlus 15 boot-only TWRP installer from an
+# already validated boot.img. Firmware wrappers may override the defaults
+# below. The installer deliberately retains the stock OxygenOS EROFS
+# system_dlkm partition.
 
 set -euo pipefail
 
-readonly RELEASE_TAG='oos16.0.9.400-r7'
-readonly FIRMWARE='OxygenOS 16.0.9.400(EX01)'
-readonly DEVICE='OnePlus 15 / CPH2747 / Canoe'
-readonly BOOT_PARTITION_BYTES='100663296'
-readonly STOCK_SYSTEM_DLKM_BYTES='14131200'
-readonly STOCK_SYSTEM_DLKM_BLOCKS='3450'
-readonly STOCK_SYSTEM_DLKM_SHA256='18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7'
-readonly STOCK_SYSTEM_DLKM_EROFS_MAGIC='e2e1f5e0'
+readonly RELEASE_TAG="${RELEASE_TAG:-oos16.0.9.400-r7}"
+readonly FIRMWARE="${FIRMWARE:-OxygenOS 16.0.9.400(EX01)}"
+readonly BUILD_DISPLAY_ID="${BUILD_DISPLAY_ID:-CPH2747_16.0.9.400(EX01)}"
+readonly DEVICE="${DEVICE:-OnePlus 15 / CPH2747 / Canoe}"
+readonly BOOT_PARTITION_BYTES="${BOOT_PARTITION_BYTES:-100663296}"
+readonly STOCK_SYSTEM_DLKM_BYTES="${STOCK_SYSTEM_DLKM_BYTES:-14131200}"
+readonly STOCK_SYSTEM_DLKM_BLOCKS="${STOCK_SYSTEM_DLKM_BLOCKS:-3450}"
+readonly STOCK_SYSTEM_DLKM_SHA256="${STOCK_SYSTEM_DLKM_SHA256:-18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7}"
+readonly STOCK_SYSTEM_DLKM_EROFS_MAGIC="${STOCK_SYSTEM_DLKM_EROFS_MAGIC:-e2e1f5e0}"
 readonly TEMPLATE_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/twrp-installer-template"
 readonly REPO_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
 usage() {
     cat <<'EOF'
 Usage:
-  KERNEL_RELEASE=<uname -r> tools/build-oos16.0.9.400-twrp-installer.sh \
-      BOOT_IMAGE OUTPUT_ZIP
+  KERNEL_RELEASE=<uname -r> KERNEL_SOURCE_COMMIT=<commit> \
+      tools/build-oos16.0.9.400-twrp-installer.sh BOOT_IMAGE OUTPUT_ZIP
 
-The input must be the validated OOS 16.0.9.400 boot image. The output path
-must not already exist. The resulting ZIP contains only boot.img and verifies
-the active stock EROFS system_dlkm partition before it writes boot.
+The input must be a physically validated boot image for the configured
+firmware profile. The output path must not already exist. The resulting ZIP
+contains only boot.img and verifies the active stock EROFS system_dlkm
+partition before it writes boot.
 EOF
 }
 
@@ -57,7 +60,7 @@ KERNEL_RELEASE="${KERNEL_RELEASE:-}"
 [ -n "$KERNEL_RELEASE" ] ||
     die 'KERNEL_RELEASE must be set to the validated uname -r value.'
 
-for tool in awk dd dirname git mkdir mktemp sed sha256sum stat zip; do
+for tool in awk dd dirname git mkdir mktemp sed sha256sum stat touch zip; do
     command -v "$tool" >/dev/null 2>&1 || die "required tool is unavailable: $tool"
 done
 
@@ -67,6 +70,8 @@ done
 SOURCE_COMMIT_REF="${KERNEL_SOURCE_COMMIT:-HEAD}"
 SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse --verify "${SOURCE_COMMIT_REF}^{commit}" 2>/dev/null)" ||
     die "could not resolve KERNEL_SOURCE_COMMIT '$SOURCE_COMMIT_REF' from $REPO_ROOT"
+SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$REPO_ROOT" show -s --format=%ct "$SOURCE_COMMIT")}"
+is_decimal "$SOURCE_DATE_EPOCH" || die 'SOURCE_DATE_EPOCH must be a decimal Unix timestamp.'
 
 OUTPUT_DIR="$(dirname -- "$OUTPUT_ZIP")"
 mkdir -p "$OUTPUT_DIR"
@@ -91,6 +96,7 @@ mkdir -p "$STAGE/META-INF/com/google/android"
 sed \
     -e "s|@RELEASE_TAG@|$RELEASE_TAG|g" \
     -e "s|@FIRMWARE@|$FIRMWARE|g" \
+    -e "s|@BUILD_DISPLAY_ID@|$BUILD_DISPLAY_ID|g" \
     -e "s|@DEVICE@|$DEVICE|g" \
     -e "s|@BOOT_BYTES@|$BOOT_BYTES|g" \
     -e "s|@BOOT_PARTITION_BYTES@|$BOOT_PARTITION_BYTES|g" \
@@ -108,6 +114,7 @@ chmod 0755 "$STAGE/META-INF/com/google/android/update-binary"
 sed \
     -e "s|@RELEASE_TAG@|$RELEASE_TAG|g" \
     -e "s|@FIRMWARE@|$FIRMWARE|g" \
+    -e "s|@BUILD_DISPLAY_ID@|$BUILD_DISPLAY_ID|g" \
     -e "s|@DEVICE@|$DEVICE|g" \
     -e "s|@BOOT_BYTES@|$BOOT_BYTES|g" \
     -e "s|@BOOT_PARTITION_BYTES@|$BOOT_PARTITION_BYTES|g" \
@@ -123,6 +130,7 @@ sed \
 sed \
     -e "s|@RELEASE_TAG@|$RELEASE_TAG|g" \
     -e "s|@FIRMWARE@|$FIRMWARE|g" \
+    -e "s|@BUILD_DISPLAY_ID@|$BUILD_DISPLAY_ID|g" \
     -e "s|@DEVICE@|$DEVICE|g" \
     -e "s|@BOOT_BYTES@|$BOOT_BYTES|g" \
     -e "s|@BOOT_PARTITION_BYTES@|$BOOT_PARTITION_BYTES|g" \
@@ -135,8 +143,11 @@ sed \
     -e "s|@SOURCE_COMMIT@|$SOURCE_COMMIT|g" \
     "$TEMPLATE_DIR/kernel-info.txt.in" > "$STAGE/kernel-info.txt"
 
-cp "$TEMPLATE_DIR/META-INF/com/google/android/updater-script" \
-    "$STAGE/META-INF/com/google/android/updater-script"
+sed \
+    -e "s|@RELEASE_TAG@|$RELEASE_TAG|g" \
+    -e "s|@FIRMWARE@|$FIRMWARE|g" \
+    "$TEMPLATE_DIR/META-INF/com/google/android/updater-script" \
+    > "$STAGE/META-INF/com/google/android/updater-script"
 cp "$BOOT_IMAGE" "$STAGE/boot.img"
 
 (
@@ -148,8 +159,12 @@ cp "$BOOT_IMAGE" "$STAGE/boot.img"
         META-INF/com/google/android/update-binary \
         META-INF/com/google/android/updater-script \
         > checksums.sha256
-    zip -q -0 "$OUTPUT_ZIP" boot.img
-    zip -q -9 "$OUTPUT_ZIP" \
+    touch -d "@$SOURCE_DATE_EPOCH" \
+        boot.img kernel-info.txt README.txt checksums.sha256 \
+        META-INF/com/google/android/update-binary \
+        META-INF/com/google/android/updater-script
+    zip -q -X -0 "$OUTPUT_ZIP" boot.img
+    zip -q -X -9 "$OUTPUT_ZIP" \
         META-INF/com/google/android/update-binary \
         META-INF/com/google/android/updater-script \
         kernel-info.txt README.txt checksums.sha256
