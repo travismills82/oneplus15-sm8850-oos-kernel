@@ -1,12 +1,16 @@
 OnePlus 15 @RELEASE_TAG@ boot-only TWRP installer
 =================================================
 
-This archive is the normal release installer for:
+This archive is a boot-only installer for:
 
   @DEVICE@
   @FIRMWARE@
   kernel release: @KERNEL_RELEASE@
   source commit: @SOURCE_COMMIT@
+
+A release tag containing "candidate" or "test" identifies an unqualified
+physical-test package. It must not be represented as stable or physically
+qualified until this exact ZIP has passed the repository's device gates.
 
 Archive contents
 ----------------
@@ -66,4 +70,4 @@ Install the ZIP from TWRP, then reboot System without switching slots. This is
 firmware-specific: do not install it on any other OxygenOS build.
 
 The generated system_dlkm.flatten.ext4.img remains a development and recovery
-fallback artifact. It is not part of this normal boot-only release.
+fallback artifact. It is not part of this boot-only installer.

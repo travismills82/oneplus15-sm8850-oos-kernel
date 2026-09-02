@@ -26,10 +26,11 @@ Usage:
   KERNEL_RELEASE=<uname -r> KERNEL_SOURCE_COMMIT=<commit> \
       tools/build-oos16.0.9.400-twrp-installer.sh BOOT_IMAGE OUTPUT_ZIP
 
-The input must be a physically validated boot image for the configured
-firmware profile. The output path must not already exist. The resulting ZIP
-contains only boot.img and verifies the active stock EROFS system_dlkm
-partition before it writes boot.
+The input must be validated for the configured firmware profile and intended
+package channel. A release tag containing "candidate" or "test" remains an
+unqualified physical-test package. The output path must not already exist.
+The resulting ZIP contains only boot.img and verifies the active stock EROFS
+system_dlkm partition before it writes boot.
 EOF
 }
 
