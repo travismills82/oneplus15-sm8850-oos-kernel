@@ -1,0 +1,114 @@
+{
+  "schema": "controlled-v1-firmware-compat-ack-qualified-v1",
+  "status": "PHYSICALLY_QUALIFIED",
+  "qualification_date": "2026-09-01",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "source": {
+    "branch": "experiment/oos1610500-ack-6.12.27",
+    "parent_branch": "feature/oos1610500-ack-6.12.26-qualified",
+    "parent_qualified_head": "8c18383461dfef341c9395b9fbc95a795a698a21",
+    "built_source_head": "20d91bf4ec43f6171bab445c4123350e64ab0883",
+    "static_validation_commit": "28ac524da0e984b3ff371596237a7521ea61c641",
+    "kernel_release": "6.12.27-android16-5-o-g20d91bf4ec43-4k",
+    "kmi_generation": 5,
+    "ack_6_12_28_or_newer": false
+  },
+  "ack_delta": {
+    "parent_version": "6.12.26",
+    "target_version": "6.12.27",
+    "official_commits": [
+      {
+        "commit": "793d3faa9246539c008a89570b0e0357e6a699f3",
+        "subject": "bpf: Fix BPF_INTERNAL namespace import"
+      },
+      {
+        "commit": "fa3c82a7f526c9f81483599ce80034154cbed316",
+        "subject": "Linux 6.12.27"
+      }
+    ],
+    "official_range_commits": 2,
+    "later_stable_commits": 0,
+    "individual_commit_ancestry": true
+  },
+  "kernel_artifacts": {
+    "Image_size": 39954944,
+    "Image_sha256": "ec61bb30e070b7eda06d4dc9607314f44f75b489eb970410e94546c2bfadb4b5",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27"
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "size": 100663296,
+      "sha256": "8b5753c49a3899c0635558584ef6814e927662b459ecb4233761d532faad15b5",
+      "physical_readback": "PASS_TWO_BOOTS"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "static_contract": {
+    "build": "PASS",
+    "sha512_hermetic_signer": "PASS",
+    "config": "PASS_NO_SEMANTIC_DELTA",
+    "fbe_storage": "PASS",
+    "abi": "PASS_EMPTY",
+    "kmi_symbol_list": "PASS",
+    "stock_module_contract": "PASS",
+    "modules_checked": 1020,
+    "active_compatible": 984,
+    "dormant": 36,
+    "import_crc_edges": 57216,
+    "unresolved": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "structural_provider_failures": 0,
+    "rust_binder_imports": "166/166",
+    "system_modules_load_entries": 82,
+    "wwan_position": 28,
+    "boot_container": "PASS"
+  },
+  "physical": {
+    "status": "PASS",
+    "tested_slot": "_a",
+    "boot_write_readback": "PASS",
+    "boots": "2/2 PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "fbe_ce": "PASS",
+    "init_user0_failed": "NOT_OBSERVED",
+    "wlan_6135_wpa3": "PASS",
+    "cellular_rmnet": "PASS",
+    "cellular_ip_dns_with_wifi_off": "PASS",
+    "cellular_voice_audio": "PASS_USER_CONFIRMED",
+    "bluetooth_hid": "PASS",
+    "nfc_hce_ese1_wallet": "PASS",
+    "camera": "PASS_ACTIVE_HAL_CLIENT",
+    "fingerprint": "PASS_ACCEPT_2_REJECT_0_HAL_DEATH_0",
+    "zram_zsmalloc": "PASS",
+    "charging": "PASS",
+    "usb_adb": "PASS",
+    "display_touch_gpu": "PASS",
+    "deep_idle_cycles": "5/5 PASS",
+    "framework_system_server": "PASS",
+    "kernel_module_framework_error_scan": "PASS_WITH_DOCUMENTED_DOWNSTREAM_WARNINGS",
+    "rollback_required": false,
+    "rollback_boot_sha256": "6a954d968b784886cf8c1dcf5b500fa15129b782e5056b9831af0f0b1ff47099",
+    "report": "docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-physical-validation-2026-09-01.md"
+  },
+  "publication": {
+    "main_updated": false,
+    "remote_pushed": false,
+    "tag_created": false,
+    "release_published": false
+  }
+}
