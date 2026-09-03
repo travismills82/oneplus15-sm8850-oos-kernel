@@ -1,0 +1,7 @@
+--- 6.12.28 generated canoe_perf .config
++++ 6.12.29 generated canoe_perf .config
+@@
+-# Linux/arm64 6.12.28 Kernel Configuration
++# Linux/arm64 6.12.29 Kernel Configuration
+
+No effective CONFIG symbol changed.
