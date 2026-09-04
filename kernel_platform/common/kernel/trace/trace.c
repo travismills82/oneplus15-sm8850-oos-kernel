@@ -8372,9 +8372,13 @@ tracing_buffers_splice_read(struct file *file, loff_t *ppos,
 						  iter->cpu_file, 1);
 		} else if (!i) {
 			/*
-			 * The first iteration reflects invalid userspace input.
-			 * On later iterations a concurrent subbuffer resize can
-			 * legitimately change the required alignment and size.
+			 * If this fails to read on the first iteration, it
+			 * means the length was too small and an error should
+			 * be returned to user space. Otherwise, at least
+			 * one sub-buffer was successfully read but this failed
+			 * due to either the length was unaligned or the
+			 * subbuf order changed. Either case, do not report
+			 * an error.
 			 */
 			ret = -EINVAL;
 		}
