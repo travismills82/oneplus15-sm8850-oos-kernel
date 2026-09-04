@@ -35,7 +35,6 @@
  */
 
 #include <linux/kref.h>
-#include <linux/dma-buf.h>
 #include <linux/dma-resv.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
