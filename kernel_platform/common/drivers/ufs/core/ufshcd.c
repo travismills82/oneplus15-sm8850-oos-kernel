@@ -8686,9 +8686,24 @@ static void ufshcd_quirk_override_pa_h8time(struct ufs_hba *hba)
 		dev_err(hba->dev, "Failed updating PA_HIBERN8TIME: %d\n", ret);
 }
 
+#define UFS_DEVICE_QUIRK_PA_HIBER8TIME_QCOM_LEGACY	BIT(15)
+
 static void ufshcd_tune_unipro_params(struct ufs_hba *hba)
 {
+	bool legacy_qcom_pa_h8time;
+
 	ufshcd_vops_apply_dev_quirks(hba);
+
+	/*
+	 * OOS 16.0.10.500's stock Qualcomm UFS module predates the generic
+	 * PA_HIBER8TIME quirk and carries the same behavior in its private bit
+	 * 15.  Its callback runs first, so do not apply the generic adjustment a
+	 * second time when that exact legacy contract is present.
+	 */
+	legacy_qcom_pa_h8time = hba->vops && hba->vops->name &&
+		!strcmp(hba->vops->name, "qcom") &&
+		(hba->dev_quirks &
+		 UFS_DEVICE_QUIRK_PA_HIBER8TIME_QCOM_LEGACY);
 
 	if (hba->dev_quirks & UFS_DEVICE_QUIRK_PA_TACTIVATE)
 		/* set 1ms timeout for PA_TACTIVATE */
@@ -8697,7 +8712,8 @@ static void ufshcd_tune_unipro_params(struct ufs_hba *hba)
 	if (hba->dev_quirks & UFS_DEVICE_QUIRK_HOST_PA_TACTIVATE)
 		ufshcd_quirk_tune_host_pa_tactivate(hba);
 
-	if (hba->dev_quirks & UFS_DEVICE_QUIRK_PA_HIBER8TIME)
+	if ((hba->dev_quirks & UFS_DEVICE_QUIRK_PA_HIBER8TIME) &&
+	    !legacy_qcom_pa_h8time)
 		ufshcd_quirk_override_pa_h8time(hba);
 }
 
