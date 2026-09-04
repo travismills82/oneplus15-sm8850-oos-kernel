@@ -16,6 +16,14 @@ config MQ_IOSCHED_KYBER
 	  synchronous writes, it will self-tune queue depths to achieve that
 	  goal.
 
+config MQ_IOSCHED_ADIOS
+	tristate "Adaptive Deadline I/O scheduler"
+	help
+	  The Adaptive Deadline I/O Scheduler is a multi-queue I/O scheduler
+	  with learning-based adaptive latency control. Enabling it makes ADIOS
+	  available for explicit per-device selection without changing the
+	  kernel's default elevator policy.
+
 config IOSCHED_BFQ
 	tristate "BFQ I/O scheduler"
 	select BLK_ICQ
