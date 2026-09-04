@@ -25,7 +25,6 @@
 
 #include <trace/events/page_pool.h>
 
-#include "dev.h"
 #include "mp_dmabuf_devmem.h"
 #include "netmem_priv.h"
 #include "page_pool_priv.h"
@@ -1099,6 +1098,23 @@ void page_pool_use_xdp_mem(struct page_pool *pool, void (*disconnect)(void *),
 	pool->xdp_mem_id = mem->id;
 }
 
+/*
+ * Keep the NAPI teardown assertion local to page_pool.c.  Pulling in the
+ * private net/core/dev.h definition graph makes struct netdev_name_node
+ * visible to gendwarfksyms and changes generation-5 module CRCs even though
+ * no module-observable layout changed.
+ */
+static void page_pool_napi_assert_will_not_race(const struct napi_struct *napi)
+{
+	/* An uninitialized instance cannot race. */
+	if (!napi->poll_list.next)
+		return;
+
+	/* NAPI_STATE_SCHED is set and list_owner cleared on disabled instances. */
+	WARN_ON(!test_bit(NAPI_STATE_SCHED, &napi->state));
+	WARN_ON(READ_ONCE(napi->list_owner) != -1);
+}
+
 void page_pool_disable_direct_recycling(struct page_pool *pool)
 {
 	/* Disable direct recycling based on pool->cpuid.
@@ -1109,7 +1125,7 @@ void page_pool_disable_direct_recycling(struct page_pool *pool)
 	if (!pool->p.napi)
 		return;
 
-	napi_assert_will_not_race(pool->p.napi);
+	page_pool_napi_assert_will_not_race(pool->p.napi);
 
 	WRITE_ONCE(pool->p.napi, NULL);
 }
