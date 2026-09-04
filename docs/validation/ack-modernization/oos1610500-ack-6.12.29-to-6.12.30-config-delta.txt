@@ -1,0 +1,12 @@
+--- 6.12.29 generated canoe_perf .config
++++ 6.12.30 generated canoe_perf .config
+@@
+-# Linux/arm64 6.12.29 Kernel Configuration
++# Linux/arm64 6.12.30 Kernel Configuration
+
+No effective CONFIG symbol changed.
+
+The qualified 6.12.29 baseline and this 6.12.30 candidate both leave
+CONFIG_WQ_POWER_EFFICIENT_DEFAULT unset and contain no effective ADIOS config
+symbol. Those pre-existing states were not changed as part of this controlled
+ACK subversion update.
