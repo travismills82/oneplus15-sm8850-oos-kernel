@@ -1,0 +1,39 @@
+OOS 16.0.10.500 ACK 6.12.30 to 6.12.31 generated-config comparison
+
+Qualified parent source:
+  ba43d41251812df0f07d13189174e3174e2b46d8
+
+Candidate source:
+  e42834ea2f518a636677f1c7313874cd6fdbad16
+
+Compared files:
+  out/oos1610500-ack-6.12.30-adios-wq-stock-dlkm/canoe-final-dot-config
+  kernel_platform/out/msm-kernel-canoe-perf/dist/.config
+
+Normalization:
+  Only the generated Linux version comment was excluded.
+
+Effective CONFIG_ symbol delta:
+  NONE
+
+Required retained settings:
+  CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y
+  CONFIG_MQ_IOSCHED_ADIOS=y
+  CONFIG_CIFS=y
+  CONFIG_NETFS_SUPPORT=y
+  CONFIG_NLS_UTF8=y
+  CONFIG_MODULE_SIG=y
+  CONFIG_MODULE_SIG_SHA512=y
+  CONFIG_MODULE_SIG_HASH="sha512"
+  CONFIG_MODVERSIONS=y
+  CONFIG_GENDWARFKSYMS=y
+  CONFIG_BLK_INLINE_ENCRYPTION=y
+  CONFIG_DM_DEFAULT_KEY=y
+  CONFIG_SCSI_UFSHCD=y
+  CONFIG_F2FS_FS=y
+  CONFIG_FS_ENCRYPTION=y
+  CONFIG_FS_ENCRYPTION_INLINE_CRYPT=y
+
+ADIOS is compiled as an optional scheduler. This tree has no
+CONFIG_MQ_IOSCHED_DEFAULT_ADIOS Kconfig choice, and the update does not make
+ADIOS the default scheduler.
