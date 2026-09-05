@@ -2,11 +2,11 @@
 
 Authorized Android/Linux kernel development for the OnePlus 15
 (Canoe / CPH2747 / Qualcomm SM8850). The current stable release is a
-physically qualified, boot-only Android 16 ACK 6.12.27 kernel for:
+physically qualified, boot-only Android 16 ACK 6.12.35 kernel for:
 
 ~~~text
 OxygenOS 16.0.10.500(EX01)
-kernel 6.12.27-android16-5-o-g20d91bf4ec43-4k
+kernel 6.12.35-android16-5-o-gb42c1af35b26-4k
 ~~~
 
 This release is firmware-specific. Do not use it on another OxygenOS build
@@ -19,14 +19,14 @@ qualification.
 |---|---|
 | Device | OnePlus 15 CPH2747 / Canoe |
 | Firmware | OxygenOS 16.0.10.500(EX01) |
-| Kernel | `6.12.27-android16-5-o-g20d91bf4ec43-4k` |
+| Kernel | `6.12.35-android16-5-o-gb42c1af35b26-4k` |
 | KMI generation | Android 16 generation 5 |
-| Runtime source | `20d91bf4ec43f6171bab445c4123350e64ab0883` |
-| Qualification commit | `169fd4e9c3cbd6178bc40f4b6769ace1dff0bbe3` |
-| Qualification tag | `oos16.0.10.500-ack-6.12.27-qualified` |
-| Stable release tag | `oos16.0.10.500-ack-6.12.27` |
+| Runtime source | `b42c1af35b26f7d2e1b0e6c8e9eaaf3628c7e32e` |
+| Qualification commit | `174e1cefa63e618f2baa8c479ab84e302600e5b3` |
+| Qualification tag | `oos16.0.10.500-ack-6.12.35-qualified` |
+| Stable release tag | `oos16.0.10.500-ack-6.12.35` |
 | `boot.img` size | 100,663,296 bytes |
-| `boot.img` SHA-256 | `8b5753c49a3899c0635558584ef6814e927662b459ecb4233761d532faad15b5` |
+| `boot.img` SHA-256 | `bbf3e9ed0fae1e55b3c7522cadff9509decc24bfd5a412ae66d4cbebea5effdc` |
 
 The GitHub release contains the exact physically tested `boot.img` and a
 boot-only TWRP installer containing that same image. It does not contain or
@@ -87,10 +87,13 @@ hardening batches:
 - IPv6 MLD query skb lifetime hardening
 - Netfilter quota2 counter lifetime hardening
 
-It then applies reviewed Linux/ACK 6.12.24 through 6.12.27 point-release
+It then applies reviewed Linux/ACK 6.12.24 through 6.12.35 point-release
 changes with Android KMI-preserving integrations where required. The 6.12.26
 compatibility work retains the qualified OEM-visible request layout and uses a
 pinned hermetic SHA-512 module signer without reverting the stable changes.
+The 6.12.33 through 6.12.35 intervals retain all 945 official stable commits
+as individual reviewable commits, followed by six separate authoritative
+Android KABI repairs.
 Module signatures, MODVERSIONS, GENDWARFKSYMS, CRC validation, protected
 exports, trusted-key handling, and ABI/KMI enforcement remain enabled.
 
@@ -98,13 +101,14 @@ exports, trusted-key handling, and ABI/KMI enforcement remain enabled.
 
 Static validation passed:
 
-- common Image build and truthful 6.12.27 release identity
-- semantic configuration delta: zero from the qualified 6.12.26 parent
+- common Image build and truthful 6.12.35 release identity
+- requested power-efficient workqueue, ADIOS, CIFS/NetFS, signing, and KMI
+  configuration retained
 - FBE/fscrypt/storage contract
 - GKI ABI report: empty
 - KMI symbol checks
-- 1,020 stock current-firmware modules
-- 57,216 import/CRC edges
+- byte-identical `Module.symvers` relative to the previously qualified
+  1,020-module current-firmware provider contract
 - zero unresolved imports, CRC mismatches, protected-export failures,
   signature failures, or structural-provider failures
 - boot header, embedded kernel identity, GKI signature tail, and outer AVB
@@ -119,8 +123,8 @@ The exact release image physically passed:
 - LTE/RMNET, IPv4/IPv6 addressing and routes, IP, DNS, and handoff
 - Bluetooth toggle and existing HID reconnect
 - NFC service, Wallet/HCE, and eSE1
-- camera, fingerprint authentication, cellular voice/audio, USB/ADB,
-  graphics/UI
+- camera, audio, fingerprint, graphics/UI, USB/ADB, and NFC framework/HAL
+  service health
 - five deep-idle/resume cycles
 - stable framework/system_server and clean kernel/module failure scan
 - the exact release TWRP ZIP: durable active-boot backup, boot-only write,
@@ -129,9 +133,9 @@ The exact release image physically passed:
 
 See:
 
-- [static validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-static-validation.md)
-- [physical validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-physical-validation-2026-09-01.md)
-- [qualified manifest](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.27-manifest.json)
+- [static validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.35-static-validation.md)
+- [physical validation](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.35-physical-validation-2026-09-05.md)
+- [qualified manifest](docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.35-manifest.json)
 
 ## Installation
 
@@ -164,7 +168,7 @@ sha256sum boot.img
 Expected:
 
 ~~~text
-8b5753c49a3899c0635558584ef6814e927662b459ecb4233761d532faad15b5  boot.img
+bbf3e9ed0fae1e55b3c7522cadff9509decc24bfd5a412ae66d4cbebea5effdc  boot.img
 ~~~
 
 Alternatively, install the firmware-specific TWRP ZIP. It verifies the device,

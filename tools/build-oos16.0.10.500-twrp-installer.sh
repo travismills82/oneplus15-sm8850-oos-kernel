@@ -5,7 +5,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 
-export RELEASE_TAG='oos16.0.10.500-ack-6.12.27'
+export RELEASE_TAG='oos16.0.10.500-ack-6.12.35'
 export FIRMWARE='OxygenOS 16.0.10.500(EX01)'
 export BUILD_DISPLAY_ID='CPH2747_16.0.10.500(EX01)'
 export DEVICE='OnePlus 15 / CPH2747 / Canoe'
