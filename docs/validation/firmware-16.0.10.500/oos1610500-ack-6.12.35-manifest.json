@@ -1,0 +1,83 @@
+{
+  "schema": "controlled-v1-firmware-compat-ack-qualified-v1",
+  "status": "PHYSICALLY_QUALIFIED",
+  "qualification_date": "2026-09-05",
+  "device": "OnePlus 15 CPH2747 / Canoe",
+  "firmware": "OxygenOS 16.0.10.500(EX01)",
+  "source": {
+    "branch": "experiment/oos1610500-ack-6.12.35-from-6.12.32",
+    "source_parent": "989ec6e0ed86738d48ef35d9a69a22065f55dafb",
+    "built_source_head": "b42c1af35b26f7d2e1b0e6c8e9eaaf3628c7e32e",
+    "kernel_release": "6.12.35-android16-5-o-gb42c1af35b26-4k",
+    "kmi_generation": 5,
+    "ack_6_12_36_or_newer": false
+  },
+  "ack_delta": {
+    "parent_version": "6.12.32",
+    "target_version": "6.12.35",
+    "stable_commits_to_6_12_33": 25,
+    "stable_commits_to_6_12_34": 506,
+    "stable_commits_to_6_12_35": 414,
+    "android_kabi_repairs": 6,
+    "individual_commit_ancestry": true,
+    "later_stable_commits": 0
+  },
+  "kernel_artifacts": {
+    "Image_size": 39959040,
+    "Image_sha256": "cc4a7933fc936c78d63d347da2022795a439c49cd1b9e250cd4a5a09f7e27238",
+    "Module_symvers_sha256": "6889e56eb427705a9002c7b030b2af7b9a6153c874efb1cda5ddaf56be60aa27"
+  },
+  "payloads": {
+    "boot": {
+      "mode": "STOCK_CURRENT_FIRMWARE_CONTAINER_KERNEL_REPLACED",
+      "size": 100663296,
+      "sha256": "bbf3e9ed0fae1e55b3c7522cadff9509decc24bfd5a412ae66d4cbebea5effdc",
+      "physical_readback": "PASS"
+    },
+    "system_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "18f530dcb0e46dc81ede00e18ac4e9b39faf6564fb067f04af9a912d87fd6dd7"
+    },
+    "vendor_dlkm": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "157db23ccfa516c7904d4e87614f62c3c99c2dcbb93cc3fc8ccd3388c2cc793f"
+    },
+    "vendor_boot": {
+      "mode": "EXACT_STOCK_UNCHANGED",
+      "sha256": "3027d80a33fcc65f506d2d909db862657fe28e7eafc6e2af94193d67e6e617eb"
+    }
+  },
+  "static_contract": {
+    "build": "PASS",
+    "config": "PASS",
+    "fbe_storage": "PASS",
+    "abi": "PASS_EMPTY",
+    "kmi_symbol_list": "PASS",
+    "module_symvers_identity": "PASS",
+    "unresolved_runtime_modules": 0,
+    "crc_mismatches": 0,
+    "protected_export_failures": 0,
+    "signature_failures": 0,
+    "boot_container": "PASS"
+  },
+  "physical": {
+    "status": "PASS",
+    "tested_slot": "_a",
+    "raw_boots": "2/2 PASS",
+    "twrp_archive_install": "PASS",
+    "post_archive_boot": "PASS",
+    "existing_user0": "RUNNING_UNLOCKED",
+    "init_user0_failed": "NOT_OBSERVED",
+    "wlan_6135_wpa3": "PASS",
+    "cellular_rmnet": "PASS",
+    "cellular_ip_dns_with_wifi_off": "PASS",
+    "bluetooth_toggle": "PASS",
+    "zram_zsmalloc": "PASS",
+    "deep_idle_cycles": "5/5 PASS",
+    "kernel_module_error_scan": "PASS",
+    "twrp_zip_sha256": "f829602c2717540fa42fba8479afceaa167a096abb65d3ab2db7ac4ac8d0ab73",
+    "camera_audio_fingerprint": "SERVICE_HEALTH_ONLY",
+    "rollback_required": false,
+    "report": "docs/validation/firmware-16.0.10.500/oos1610500-ack-6.12.35-physical-validation-2026-09-05.md"
+  }
+}
