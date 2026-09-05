@@ -1,0 +1,39 @@
+OOS 16.0.10.500 ACK 6.12.31 to 6.12.32 generated-config comparison
+
+Qualified parent repository commit:
+  4e1fed10b7e823970e4673f6da226d52b8bbc0dc
+
+Candidate source commit:
+  d4d99d2135d329d9553d11a4ed09640828c37641
+
+Compared files:
+  out/oos1610500-ack-6.12.31-stock-dlkm/canoe-final-dot-config
+  kernel_platform/out/bazel/output_user_root/e0584b47b17113992da991e0b889695d/execroot/_main/bazel-out/k8-fastbuild/bin/soc-repo/canoe_perf_dtb_build_config/out_dir/.config
+
+Normalization:
+  Only the generated Linux version comment was excluded.
+
+Effective CONFIG_ symbol delta:
+  NONE
+
+Required retained settings:
+  CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y
+  CONFIG_MQ_IOSCHED_ADIOS=y
+  CONFIG_CIFS=y
+  CONFIG_NETFS_SUPPORT=y
+  CONFIG_NLS_UTF8=y
+  CONFIG_MODULE_SIG=y
+  CONFIG_MODULE_SIG_SHA512=y
+  CONFIG_MODULE_SIG_HASH="sha512"
+  CONFIG_MODVERSIONS=y
+  CONFIG_GENDWARFKSYMS=y
+  CONFIG_BLK_INLINE_ENCRYPTION=y
+  CONFIG_DM_DEFAULT_KEY=y
+  CONFIG_SCSI_UFSHCD=y
+  CONFIG_F2FS_FS=y
+  CONFIG_FS_ENCRYPTION=y
+  CONFIG_FS_ENCRYPTION_INLINE_CRYPT=y
+
+ADIOS remains compiled as an optional scheduler. This tree has no
+CONFIG_MQ_IOSCHED_DEFAULT_ADIOS Kconfig choice, and the update does not make
+ADIOS the default scheduler.
