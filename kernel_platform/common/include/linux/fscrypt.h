@@ -194,16 +194,26 @@ struct fscrypt_operations {
 	 * external journal devices), and wants to support inline encryption,
 	 * then it must implement this function.  Otherwise it's not needed.
 	 */
-	ANDROID_KABI_USE(1, unsigned int (*get_devices_new)(
-		struct super_block *sb,
-		struct block_device *devs[FSCRYPT_MAX_DEVICES]));
-
+	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
 
 	ANDROID_OEM_DATA_ARRAY(1, 4);
 };
+
+typedef unsigned int (*fscrypt_get_devices_fn)(
+	struct super_block *sb,
+	struct block_device *devs[FSCRYPT_MAX_DEVICES]);
+
+#define FSCRYPT_OPS_GET_DEVICES(_fn) \
+	.__kabi_reserved1 = (unsigned long)(_fn)
+
+static inline fscrypt_get_devices_fn
+fscrypt_operations_get_devices(const struct fscrypt_operations *ops)
+{
+	return (fscrypt_get_devices_fn)(unsigned long)ops->__kabi_reserved1;
+}
 
 int fscrypt_d_revalidate(struct dentry *dentry, unsigned int flags);
 

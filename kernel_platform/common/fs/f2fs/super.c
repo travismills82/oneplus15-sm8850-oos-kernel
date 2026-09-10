@@ -3383,7 +3383,7 @@ static const struct fscrypt_operations f2fs_cryptops = {
 	.get_dummy_policy	= f2fs_get_dummy_policy,
 	.empty_dir		= f2fs_empty_dir,
 	.has_stable_inodes	= f2fs_has_stable_inodes,
-	.get_devices_new	= f2fs_get_devices,
+	FSCRYPT_OPS_GET_DEVICES(f2fs_get_devices),
 };
 #endif
 

@@ -25,9 +25,12 @@ static unsigned int
 fscrypt_get_devices(struct super_block *sb,
 		    struct block_device *devs[FSCRYPT_MAX_DEVICES])
 {
+	fscrypt_get_devices_fn get_devices_new =
+		fscrypt_operations_get_devices(sb->s_cop);
+
 	WARN_ON_ONCE(sb->s_cop->get_devices);
-	if (sb->s_cop->get_devices_new)
-		return sb->s_cop->get_devices_new(sb, devs);
+	if (get_devices_new)
+		return get_devices_new(sb, devs);
 	devs[0] = sb->s_bdev;
 	return 1;
 }
