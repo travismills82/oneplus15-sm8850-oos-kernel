@@ -248,7 +248,7 @@ struct fscrypt_prepared_key {
 #endif
 };
 
-/* An entry in the linked list ->mk_mode_keys */
+/* An entry in the list returned by fscrypt_master_key_mode_keys() */
 struct fscrypt_mode_key {
 	struct fscrypt_prepared_key key;
 	struct list_head link;
@@ -589,8 +589,8 @@ struct fscrypt_master_key {
 	/*
 	 * Active and structural reference counts.  An active ref guarantees
 	 * that the struct continues to exist, continues to be in the keyring
-	 * ->s_master_keys, and that any non-file-scoped subkeys (e.g.
-	 * ->mk_mode_keys) that have been prepared continue to exist.
+	 * ->s_master_keys, and that any non-file-scoped subkeys that have been
+	 * prepared continue to exist.
 	 * A structural ref only guarantees that the struct continues to exist.
 	 *
 	 * There is one active ref associated with ->mk_present being true, and
@@ -644,21 +644,15 @@ struct fscrypt_master_key {
 	spinlock_t		mk_decrypted_inodes_lock;
 
 	/*
-	 * A list of 'struct fscrypt_mode_key' for the (hkdf_context, mode_num,
-	 * data_unit_bits, inlinecrypt) combinations that are in use for this
-	 * master key, for hkdf_context in [HKDF_CONTEXT_DIRECT_KEY,
-	 * HKDF_CONTEXT_IV_INO_LBLK_32_KEY, HKDF_CONTEXT_IV_INO_LBLK_64_KEY].
-	 *
-	 * This is a linked list and not a hash table because in practice
-	 * there's just a single encryption policy per master key, using
-	 * _at most_ 2 nodes in this list.  Per-file keys don't use this at all.
-	 *
-	 * This list is append-only until the master key is fully removed, at
-	 * which time the list is cleared.  Before then,
-	 * fscrypt_mode_key_setup_mutex synchronizes appends, and searches use
-	 * the RCU read lock together with ->mk_sem held for read.
+	 * Keep the qualified generation-5 layout of struct fscrypt_master_key.
+	 * The multi-data-unit-size key-cache implementation uses the beginning
+	 * of this otherwise obsolete internal storage as its list head.  These
+	 * members remain here, unchanged, because this type is represented in
+	 * the Android ABI even though it is private to fscrypt.
 	 */
-	struct list_head	mk_mode_keys;
+	struct fscrypt_prepared_key mk_direct_keys[FSCRYPT_MODE_MAX + 1];
+	struct fscrypt_prepared_key mk_iv_ino_lblk_64_keys[FSCRYPT_MODE_MAX + 1];
+	struct fscrypt_prepared_key mk_iv_ino_lblk_32_keys[FSCRYPT_MODE_MAX + 1];
 
 	/* Hash key for inode numbers.  Initialized only when needed. */
 	siphash_key_t		mk_ino_hash_key;
@@ -675,6 +669,20 @@ struct fscrypt_master_key {
 	bool			mk_present;
 
 } __randomize_layout;
+
+/*
+ * The newer multi-DUS cache needs one list_head, while the old cache arrays
+ * are no longer otherwise used.  Reusing their first bytes keeps the real
+ * generation-5 structure size and every subsequent member offset intact.
+ */
+static inline struct list_head *
+fscrypt_master_key_mode_keys(struct fscrypt_master_key *mk)
+{
+	static_assert(sizeof(mk->mk_direct_keys) >= sizeof(struct list_head));
+	static_assert(__alignof__(mk->mk_direct_keys) >=
+		      __alignof__(struct list_head));
+	return (struct list_head *)mk->mk_direct_keys;
+}
 
 static inline const char *master_key_spec_type(
 				const struct fscrypt_key_specifier *spec)

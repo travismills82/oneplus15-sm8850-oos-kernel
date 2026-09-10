@@ -115,7 +115,8 @@ void fscrypt_put_master_key_activeref(struct super_block *sb,
 	 * and use them again.  So they're no longer needed.  (This implies no
 	 * concurrent readers, so we don't need list_del_rcu() for example.)
 	 */
-	list_for_each_entry_safe(node, tmp, &mk->mk_mode_keys, link) {
+	list_for_each_entry_safe(node, tmp,
+				 fscrypt_master_key_mode_keys(mk), link) {
 		fscrypt_destroy_prepared_key(sb, &node->key);
 		list_del(&node->link);
 		kfree(node);
@@ -447,7 +448,7 @@ static int add_new_master_key(struct super_block *sb,
 	INIT_LIST_HEAD(&mk->mk_decrypted_inodes);
 	spin_lock_init(&mk->mk_decrypted_inodes_lock);
 
-	INIT_LIST_HEAD(&mk->mk_mode_keys);
+	INIT_LIST_HEAD(fscrypt_master_key_mode_keys(mk));
 
 	if (mk_spec->type == FSCRYPT_KEY_SPEC_TYPE_IDENTIFIER) {
 		err = allocate_master_key_users_keyring(mk);

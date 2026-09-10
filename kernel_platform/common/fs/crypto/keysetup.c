@@ -187,7 +187,7 @@ int fscrypt_set_per_file_enc_key(struct fscrypt_inode_info *ci,
  * mode_num, data_unit_bits, inlinecrypt) combination.
  *
  * The caller must hold ->mk_sem for reading and ->mk_present must be true,
- * ensuring that ->mk_mode_keys is still append-only.
+ * ensuring that the mode-key list is still append-only.
  */
 static struct fscrypt_prepared_key *
 fscrypt_find_mode_key(struct fscrypt_master_key *mk, u8 hkdf_context,
@@ -201,7 +201,7 @@ fscrypt_find_mode_key(struct fscrypt_master_key *mk, u8 hkdf_context,
 	 * returning a pointer to a node without taking any refcount is safe.
 	 */
 	guard(rcu)();
-	list_for_each_entry_rcu(node, &mk->mk_mode_keys, link) {
+	list_for_each_entry_rcu(node, fscrypt_master_key_mode_keys(mk), link) {
 		if (node->hkdf_context == hkdf_context &&
 		    node->mode_num == mode_num &&
 		    node->data_unit_bits == ci->ci_data_unit_bits &&
@@ -292,7 +292,8 @@ static int setup_per_mode_enc_key(struct fscrypt_inode_info *ci,
 		kfree(new_node);
 		return err;
 	}
-	list_add_tail_rcu(&new_node->link, &mk->mk_mode_keys);
+	list_add_tail_rcu(&new_node->link,
+			  fscrypt_master_key_mode_keys(mk));
 	ci->ci_enc_key = *prep_key;
 	return 0;
 }
