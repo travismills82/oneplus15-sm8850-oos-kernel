@@ -298,10 +298,12 @@ int cam_dma_fence_get_put_ref(
 
 	seqno = dma_fence->seqno;
 	refcnt = kref_read(&dma_fence->refcount);
-	if (get_or_put)
+	if (get_or_put) {
 		dma_fence_get(dma_fence);
-	else
-		dma_fence_put(dma_fence);
+	} else if (kref_put(&dma_fence->refcount, dma_fence_release)) {
+		row->fence = NULL;
+		row->state = CAM_DMA_FENCE_STATE_INVALID;
+	}
 
 	spin_unlock_bh(&g_cam_dma_fence_dev->row_spinlocks[dma_fence_row_idx]);
 
@@ -702,6 +704,13 @@ static int __cam_dma_fence_release(int32_t dma_row_idx)
 	dma_fence = row->fence;
 
 	if (row->state == CAM_DMA_FENCE_STATE_INVALID) {
+		if (test_bit(dma_row_idx, g_cam_dma_fence_dev->bitmap)) {
+			memset(row, 0, sizeof(struct cam_dma_fence_row));
+			clear_bit(dma_row_idx, g_cam_dma_fence_dev->bitmap);
+			spin_unlock_bh(&g_cam_dma_fence_dev->row_spinlocks[dma_row_idx]);
+			return 0;
+		}
+
 		CAM_ERR(CAM_DMA_FENCE, "Invalid row index: %u, state: %u",
 			dma_row_idx, row->state);
 		rc = -EINVAL;
@@ -833,6 +842,9 @@ void cam_dma_fence_close(void)
 				__cam_dma_fence_signal_fence(row->fence, -EADV);
 			}
 			dma_fence_put(row->fence);
+			memset(row, 0, sizeof(struct cam_dma_fence_row));
+			clear_bit(i, g_cam_dma_fence_dev->bitmap);
+		} else if (test_bit(i, g_cam_dma_fence_dev->bitmap)) {
 			memset(row, 0, sizeof(struct cam_dma_fence_row));
 			clear_bit(i, g_cam_dma_fence_dev->bitmap);
 		}
