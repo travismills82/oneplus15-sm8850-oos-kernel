@@ -20254,6 +20254,11 @@ pointer_reference {
   pointee_type_id: 0x9817475e
 }
 pointer_reference {
+  id: 0x2c960369
+  kind: POINTER
+  pointee_type_id: 0x9818eb38
+}
+pointer_reference {
   id: 0x2c963e7a
   kind: POINTER
   pointee_type_id: 0x98181f74
@@ -22337,6 +22342,11 @@ pointer_reference {
   id: 0x2d715b45
   kind: POINTER
   pointee_type_id: 0x9f858b89
+}
+pointer_reference {
+  id: 0x2d715c39
+  kind: POINTER
+  pointee_type_id: 0x9f859678
 }
 pointer_reference {
   id: 0x2d72a1d0
@@ -43542,6 +43552,11 @@ primitive {
   bytesize: 0x00000001
 }
 primitive {
+  id: 0xbb7a6fda
+  name: "()"
+  encoding: UNSIGNED_INTEGER
+}
+primitive {
   id: 0xc93e017b
   name: "unsigned short"
   encoding: UNSIGNED_INTEGER
@@ -50628,6 +50643,11 @@ member {
   type_id: 0xb5241757
 }
 member {
+  id: 0x970e9385
+  name: "__0"
+  type_id: 0xb7e008e9
+}
+member {
   id: 0x97281cea
   name: "__0"
   type_id: 0x916f671a
@@ -51290,12 +51310,12 @@ member {
 member {
   id: 0x97ad00b3
   name: "__0"
-  type_id: 0x14733e40
+  type_id: 0x14733ee3
 }
 member {
   id: 0x97ad00b4
   name: "__0"
-  type_id: 0x14733ee3
+  type_id: 0x14733e40
 }
 member {
   id: 0x97ad024c
@@ -52698,6 +52718,11 @@ member {
   name: "__bindgen_anon_1"
   type_id: 0x50acc652
   offset: 1088
+}
+member {
+  id: 0xaa9d102e
+  name: "__bindgen_anon_1"
+  type_id: 0x57b9076a
 }
 member {
   id: 0xaaa03181
@@ -58252,6 +58277,18 @@ member {
   id: 0x7b851b7b
   name: "_pid"
   type_id: 0x763389c7
+}
+member {
+  id: 0xf00ba4e4
+  name: "_pin"
+  type_id: 0x779591fe
+  offset: 9728
+}
+member {
+  id: 0xf00baf3a
+  name: "_pin"
+  type_id: 0x779591fe
+  offset: 41472
 }
 member {
   id: 0xc93fa5f0
@@ -104691,6 +104728,12 @@ member {
   offset: 384
 }
 member {
+  id: 0xc0dfb169
+  name: "end_addr"
+  type_id: 0x3f691753
+  offset: 64
+}
+member {
   id: 0x07554a6e
   name: "end_code"
   type_id: 0x3f691753
@@ -112876,6 +112919,11 @@ member {
   name: "first_slot"
   type_id: 0x6d7f5ff6
   offset: 32
+}
+member {
+  id: 0x589bc374
+  name: "first_tag"
+  type_id: 0x0a448e19
 }
 member {
   id: 0xbd010bed
@@ -148725,6 +148773,11 @@ member {
   type_id: 0x2360e10b
 }
 member {
+  id: 0x2dd218df
+  name: "lock"
+  type_id: 0x3ee7bddd
+}
+member {
   id: 0x2ddaa260
   name: "lock"
   type_id: 0x3654c061
@@ -159443,10 +159496,25 @@ member {
   offset: 1536
 }
 member {
+  id: 0x3052dfab
+  name: "mm"
+  type_id: 0x6c3c87d6
+}
+member {
+  id: 0x30783cf4
+  name: "mm"
+  type_id: 0x46dfd8a8
+}
+member {
   id: 0x309f9e65
   name: "mm"
   type_id: 0xa179a8c5
   offset: 64
+}
+member {
+  id: 0x30b80097
+  name: "mm"
+  type_id: 0x86e3bb05
 }
 member {
   id: 0xf2c3c7ea
@@ -186158,6 +186226,11 @@ member {
   name: "point_y_value"
   type_id: 0x60ca2c23
   offset: 48
+}
+member {
+  id: 0x690d2e9f
+  name: "pointer"
+  type_id: 0x2c960369
 }
 member {
   id: 0x690d41e0
@@ -225117,6 +225190,11 @@ member {
   offset: 320
 }
 member {
+  id: 0xe09ff49e
+  name: "start_addr"
+  type_id: 0x3f691753
+}
+member {
   id: 0x791de3c4
   name: "start_all_reason"
   type_id: 0xacd8d043
@@ -244054,6 +244132,11 @@ member {
   bitsize: 1
 }
 member {
+  id: 0xebdb511a
+  name: "uninit"
+  type_id: 0xbb7a6fda
+}
+member {
   id: 0xb7a98b4d
   name: "uniq"
   type_id: 0x3db8d8c8
@@ -248176,6 +248259,16 @@ member {
   offset: 48
 }
 member {
+  id: 0xa028807b
+  name: "value"
+  type_id: 0x20dcbf50
+}
+member {
+  id: 0xa0318f6d
+  name: "value"
+  type_id: 0x39d3a92e
+}
+member {
   id: 0xa035a600
   name: "value"
   type_id: 0x3dfac40e
@@ -248195,6 +248288,11 @@ member {
   id: 0xa056c750
   name: "value"
   type_id: 0x5e9b9471
+}
+member {
+  id: 0xa057e594
+  name: "value"
+  type_id: 0x5fb9506f
 }
 member {
   id: 0xa0732f23
@@ -248219,6 +248317,16 @@ member {
   type_id: 0x89d2d38c
 }
 member {
+  id: 0xa08aa316
+  name: "value"
+  type_id: 0x82ffd2b9
+}
+member {
+  id: 0xa08ba801
+  name: "value"
+  type_id: 0x83f4c512
+}
+member {
   id: 0xa099117b
   name: "value"
   type_id: 0x914dbfdc
@@ -248227,6 +248335,11 @@ member {
   id: 0xa09a7ff7
   name: "value"
   type_id: 0x92233392
+}
+member {
+  id: 0xa0b957d3
+  name: "value"
+  type_id: 0xb10b17b9
 }
 member {
   id: 0xa0bbb098
@@ -248243,6 +248356,11 @@ member {
   id: 0xa0c72311
   name: "value"
   type_id: 0xcf7fd541
+}
+member {
+  id: 0xa0ca6d94
+  name: "value"
+  type_id: 0xc23150cd
 }
 member {
   id: 0xa0d5322b
@@ -248271,6 +248389,11 @@ member {
   name: "value"
   type_id: 0xe276adef
   offset: 64
+}
+member {
+  id: 0xa0eb32ea
+  name: "value"
+  type_id: 0xe36e2e43
 }
 member {
   id: 0xa0ee727b
@@ -256840,6 +256963,171 @@ member {
   bitsize: 1
 }
 variant_member {
+  id: 0x525d222e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x72c1f79e
+}
+variant_member {
+  id: 0x31627918
+  name: "Some"
+  type_id: 0x648eee7d
+}
+variant_member {
+  id: 0x52fb8a5e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd46987d6
+}
+variant_member {
+  id: 0x319b76f5
+  name: "Some"
+  type_id: 0x9d8103f8
+}
+variant_member {
+  id: 0x52fe2571
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd1c6a87b
+}
+variant_member {
+  id: 0x3119de50
+  name: "Some"
+  type_id: 0x1f29a694
+}
+variant_member {
+  id: 0x5225ccc1
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x0a2f18ed
+}
+variant_member {
+  id: 0x31fab050
+  name: "Some"
+  type_id: 0xfc47a681
+}
+variant_member {
+  id: 0x52a91a7f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x86f9a628
+}
+variant_member {
+  id: 0x315a16f6
+  name: "Some"
+  type_id: 0x5ce10047
+}
+variant_member {
+  id: 0x52dad921
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xf53af8f5
+}
+variant_member {
+  id: 0x31bf8032
+  name: "Some"
+  type_id: 0xb977c419
+}
+variant_member {
+  id: 0x5263aa1c
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x4c49c5d0
+}
+variant_member {
+  id: 0x311aacce
+  name: "Some"
+  type_id: 0x1c5b38c3
+}
+variant_member {
+  id: 0x52938648
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xbc65914c
+}
+variant_member {
+  id: 0x31ef4843
+  name: "Some"
+  type_id: 0xe9bfb502
+}
+variant_member {
+  id: 0x526a8027
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x4563fe1f
+}
+variant_member {
+  id: 0x31a880a5
+  name: "Some"
+  type_id: 0xae775375
+}
+variant_member {
+  id: 0x526ea3e0
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x41403904
+}
+variant_member {
+  id: 0x3139be36
+  name: "Some"
+  type_id: 0x3f49c0d1
+}
+variant_member {
+  id: 0x52acb93e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x835ae72e
+}
+variant_member {
+  id: 0x316bc9fa
+  name: "Some"
+  type_id: 0x6d3e0cc8
+}
+variant_member {
+  id: 0x52caa72b
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xe544f26c
+}
+variant_member {
+  id: 0x31dd1e23
+  name: "Some"
+  type_id: 0xdbe9d51f
+}
+variant_member {
+  id: 0x522fc419
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x0027c02c
+}
+variant_member {
+  id: 0x3125e32b
+  name: "Some"
+  type_id: 0x2314dda7
+}
+variant_member {
+  id: 0x52b21e81
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x9dfd58f2
+}
+variant_member {
+  id: 0x31aa793c
+  name: "Some"
+  type_id: 0xac8eca25
+}
+variant_member {
+  id: 0x52259001
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x0a73d866
+}
+variant_member {
+  id: 0x31081366
+  name: "Some"
+  type_id: 0x0ee49019
+}
+variant_member {
   id: 0x52daf994
   name: "None"
   discriminant_value: 0
@@ -257104,17 +257392,6 @@ variant_member {
   type_id: 0xef164bf2
 }
 variant_member {
-  id: 0x52dad921
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xf53af8f5
-}
-variant_member {
-  id: 0x31bf8032
-  name: "Some"
-  type_id: 0xb977c419
-}
-variant_member {
   id: 0x523724a6
   name: "None"
   discriminant_value: 0
@@ -257300,226 +257577,6 @@ variant_member {
   id: 0x310b15ec
   name: "Some"
   type_id: 0x0de21ae3
-}
-variant_member {
-  id: 0x525d222e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x72c1f79e
-}
-variant_member {
-  id: 0x31627918
-  name: "Some"
-  type_id: 0x648eee7d
-}
-variant_member {
-  id: 0x52fb8a5e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd46987d6
-}
-variant_member {
-  id: 0x319b76f5
-  name: "Some"
-  type_id: 0x9d8103f8
-}
-variant_member {
-  id: 0x52fe2571
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd1c6a87b
-}
-variant_member {
-  id: 0x3119de50
-  name: "Some"
-  type_id: 0x1f29a694
-}
-variant_member {
-  id: 0x5225ccc1
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x0a2f18ed
-}
-variant_member {
-  id: 0x31fab050
-  name: "Some"
-  type_id: 0xfc47a681
-}
-variant_member {
-  id: 0x52a91a7f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x86f9a628
-}
-variant_member {
-  id: 0x315a16f6
-  name: "Some"
-  type_id: 0x5ce10047
-}
-variant_member {
-  id: 0x5263aa1c
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x4c49c5d0
-}
-variant_member {
-  id: 0x311aacce
-  name: "Some"
-  type_id: 0x1c5b38c3
-}
-variant_member {
-  id: 0x52938648
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbc65914c
-}
-variant_member {
-  id: 0x31ef4843
-  name: "Some"
-  type_id: 0xe9bfb502
-}
-variant_member {
-  id: 0x526a8027
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x4563fe1f
-}
-variant_member {
-  id: 0x31a880a5
-  name: "Some"
-  type_id: 0xae775375
-}
-variant_member {
-  id: 0x526ea3e0
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x41403904
-}
-variant_member {
-  id: 0x3139be36
-  name: "Some"
-  type_id: 0x3f49c0d1
-}
-variant_member {
-  id: 0x52acb93e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x835ae72e
-}
-variant_member {
-  id: 0x316bc9fa
-  name: "Some"
-  type_id: 0x6d3e0cc8
-}
-variant_member {
-  id: 0x52caa72b
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xe544f26c
-}
-variant_member {
-  id: 0x31dd1e23
-  name: "Some"
-  type_id: 0xdbe9d51f
-}
-variant_member {
-  id: 0x522fc419
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x0027c02c
-}
-variant_member {
-  id: 0x3125e32b
-  name: "Some"
-  type_id: 0x2314dda7
-}
-variant_member {
-  id: 0x52b21e81
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x9dfd58f2
-}
-variant_member {
-  id: 0x31aa793c
-  name: "Some"
-  type_id: 0xac8eca25
-}
-variant_member {
-  id: 0x52259001
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x0a73d866
-}
-variant_member {
-  id: 0x31081366
-  name: "Some"
-  type_id: 0x0ee49019
-}
-variant_member {
-  id: 0x52f7113c
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd8f2e55b
-}
-variant_member {
-  id: 0x3167bed0
-  name: "Some"
-  type_id: 0x614926a4
-}
-variant_member {
-  id: 0x52332f0b
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x1cccd2c9
-}
-variant_member {
-  id: 0x31d4b14b
-  name: "Some"
-  type_id: 0xd246bd49
-}
-variant_member {
-  id: 0x52b667a3
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x99847ae3
-}
-variant_member {
-  id: 0x3133d767
-  name: "Some"
-  type_id: 0x352091dd
-}
-variant_member {
-  id: 0x52c35e29
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xecbdf094
-}
-variant_member {
-  id: 0x31f87bc3
-  name: "Some"
-  type_id: 0xfe8c3553
-}
-variant_member {
-  id: 0x52e17f5c
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xce9c85c8
-}
-variant_member {
-  id: 0x3138e11d
-  name: "Some"
-  type_id: 0x3e16eb3e
-}
-variant_member {
-  id: 0x52608d47
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x4f6e9e08
-}
-variant_member {
-  id: 0x31af03b6
-  name: "Some"
-  type_id: 0xa9f44084
 }
 variant_member {
   id: 0x523cc16f
@@ -257709,50 +257766,6 @@ variant_member {
   type_id: 0x8835da45
 }
 variant_member {
-  id: 0x524cf853
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x631b8aa7
-}
-variant_member {
-  id: 0x314ff673
-  name: "Some"
-  type_id: 0x49018594
-}
-variant_member {
-  id: 0x524b4ec0
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x64ad1921
-}
-variant_member {
-  id: 0x31ef7d70
-  name: "Some"
-  type_id: 0xe98a862f
-}
-variant_member {
-  id: 0x529be304
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xb400dd65
-}
-variant_member {
-  id: 0x31e8e034
-  name: "Some"
-  type_id: 0xee17c2bc
-}
-variant_member {
-  id: 0x52be87b2
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x91646bac
-}
-variant_member {
-  id: 0x31e41cf3
-  name: "Some"
-  type_id: 0xe2eb05df
-}
-variant_member {
   id: 0x52e4dc44
   name: "None"
   discriminant_value: 0
@@ -257764,675 +257777,15 @@ variant_member {
   type_id: 0x94f7dfa5
 }
 variant_member {
-  id: 0x52091fab
+  id: 0x52900011
   name: "None"
   discriminant_value: 0
-  type_id: 0x26fc7224
+  type_id: 0xbfe3c8ce
 }
 variant_member {
-  id: 0x31409958
+  id: 0x31ad8234
   name: "Some"
-  type_id: 0x466eaea2
-}
-variant_member {
-  id: 0x52cbbc3a
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xe45fe3e1
-}
-variant_member {
-  id: 0x318f8ca6
-  name: "Some"
-  type_id: 0x897b505d
-}
-variant_member {
-  id: 0x529757ff
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xb8b426d1
-}
-variant_member {
-  id: 0x31b2687a
-  name: "Some"
-  type_id: 0xb49f8c1f
-}
-variant_member {
-  id: 0x524cd109
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x6332d015
-}
-variant_member {
-  id: 0x319847e5
-  name: "Some"
-  type_id: 0x9eb01353
-}
-variant_member {
-  id: 0x5243ef07
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x6c0cdec3
-}
-variant_member {
-  id: 0x3160d1a1
-  name: "Some"
-  type_id: 0x662657e6
-}
-variant_member {
-  id: 0x522f1374
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x00f0ad56
-}
-variant_member {
-  id: 0x312086a4
-  name: "Some"
-  type_id: 0x26715200
-}
-variant_member {
-  id: 0x52c0db03
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xef38dae1
-}
-variant_member {
-  id: 0x31645d19
-  name: "Some"
-  type_id: 0x62aaef41
-}
-variant_member {
-  id: 0x5203b7de
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x2c540748
-}
-variant_member {
-  id: 0x3198722b
-  name: "Some"
-  type_id: 0x9e85dd07
-}
-variant_member {
-  id: 0x52b45440
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x9bb7998a
-}
-variant_member {
-  id: 0x31ce6b3e
-  name: "Some"
-  type_id: 0xc89cc80a
-}
-variant_member {
-  id: 0x521c39b3
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x33da6ae9
-}
-variant_member {
-  id: 0x31dabfa1
-  name: "Some"
-  type_id: 0xdc485767
-}
-variant_member {
-  id: 0x523c6f9c
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x138c45b6
-}
-variant_member {
-  id: 0x31701061
-  name: "Some"
-  type_id: 0x76e797b9
-}
-variant_member {
-  id: 0x522d9815
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x027bcc28
-}
-variant_member {
-  id: 0x318d0581
-  name: "Some"
-  type_id: 0x8bf277c0
-}
-variant_member {
-  id: 0x5253c6e4
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x7c253da7
-}
-variant_member {
-  id: 0x317c770b
-  name: "Some"
-  type_id: 0x7a80fd18
-}
-variant_member {
-  id: 0x523a6da4
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x158e7db9
-}
-variant_member {
-  id: 0x318c90fc
-  name: "Some"
-  type_id: 0x8a670a88
-}
-variant_member {
-  id: 0x52e76990
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xc88a491b
-}
-variant_member {
-  id: 0x315affcf
-  name: "Some"
-  type_id: 0x5c083985
-}
-variant_member {
-  id: 0x5284b1e8
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xab5231c5
-}
-variant_member {
-  id: 0x31c40b68
-  name: "Some"
-  type_id: 0xc2fc9e73
-}
-variant_member {
-  id: 0x52ff260f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd0c5d62a
-}
-variant_member {
-  id: 0x3132138e
-  name: "Some"
-  type_id: 0x34e478ad
-}
-variant_member {
-  id: 0x52764676
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x59a5af04
-}
-variant_member {
-  id: 0x31516022
-  name: "Some"
-  type_id: 0x5797d482
-}
-variant_member {
-  id: 0x527fdd1e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x503ec78a
-}
-variant_member {
-  id: 0x31091844
-  name: "Some"
-  type_id: 0x0fefb2ff
-}
-variant_member {
-  id: 0x522d8a5e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x02698756
-}
-variant_member {
-  id: 0x31f3d554
-  name: "Some"
-  type_id: 0xf522a261
-}
-variant_member {
-  id: 0x5268336b
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x47d0b2f7
-}
-variant_member {
-  id: 0x316d884d
-  name: "Some"
-  type_id: 0x6b7fbb01
-}
-variant_member {
-  id: 0x52a34b73
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x8ca8aa0e
-}
-variant_member {
-  id: 0x31c0bb33
-  name: "Some"
-  type_id: 0xc64cc5a8
-}
-variant_member {
-  id: 0x525e35de
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x71d6074c
-}
-variant_member {
-  id: 0x31dabdaf
-  name: "Some"
-  type_id: 0xdc4a598b
-}
-variant_member {
-  id: 0x52cf0364
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xe0e0bd4a
-}
-variant_member {
-  id: 0x310fa0bb
-  name: "Some"
-  type_id: 0x09574dcd
-}
-variant_member {
-  id: 0x520ec8d4
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x212b0d6a
-}
-variant_member {
-  id: 0x316d75c1
-  name: "Some"
-  type_id: 0x6b82374d
-}
-variant_member {
-  id: 0x521196ca
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x3e75133b
-}
-variant_member {
-  id: 0x318c50f9
-  name: "Some"
-  type_id: 0x8aa70ffb
-}
-variant_member {
-  id: 0x529415d5
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbbf60cb1
-}
-variant_member {
-  id: 0x313690f9
-  name: "Some"
-  type_id: 0x30670ff0
-}
-variant_member {
-  id: 0x520d04bd
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x22e76419
-}
-variant_member {
-  id: 0x31775531
-  name: "Some"
-  type_id: 0x71a2c717
-}
-variant_member {
-  id: 0x521614d7
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x39f70e24
-}
-variant_member {
-  id: 0x31e81030
-  name: "Some"
-  type_id: 0xeee7c671
-}
-variant_member {
-  id: 0x52796a54
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x56898d62
-}
-variant_member {
-  id: 0x31f60bcf
-  name: "Some"
-  type_id: 0xf0fc39ad
-}
-variant_member {
-  id: 0x52cf9b7a
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xe078a360
-}
-variant_member {
-  id: 0x3136f2db
-  name: "Some"
-  type_id: 0x30052d0c
-}
-variant_member {
-  id: 0x52c86b13
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xe788ca97
-}
-variant_member {
-  id: 0x31277d53
-  name: "Some"
-  type_id: 0x218aa574
-}
-variant_member {
-  id: 0x525ed47e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x7137a7bd
-}
-variant_member {
-  id: 0x317bb93d
-  name: "Some"
-  type_id: 0x7d4ecbb2
-}
-variant_member {
-  id: 0x52669957
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x497a8e8c
-}
-variant_member {
-  id: 0x3124c02f
-  name: "Some"
-  type_id: 0x2237d947
-}
-variant_member {
-  id: 0x5217c996
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x382a4fcd
-}
-variant_member {
-  id: 0x31577a84
-  name: "Some"
-  type_id: 0x518d72aa
-}
-variant_member {
-  id: 0x52b5c2a4
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x9a217d5d
-}
-variant_member {
-  id: 0x31fcf8ea
-  name: "Some"
-  type_id: 0xfa0f1cd2
-}
-variant_member {
-  id: 0x5242e3cb
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x6d001249
-}
-variant_member {
-  id: 0x3181c2fa
-  name: "Some"
-  type_id: 0x87350c86
-}
-variant_member {
-  id: 0x52e0598c
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xcfba55cb
-}
-variant_member {
-  id: 0x313f1fe0
-  name: "Some"
-  type_id: 0x39e8164f
-}
-variant_member {
-  id: 0x5286d50e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xa936d7e1
-}
-variant_member {
-  id: 0x310fd62c
-  name: "Some"
-  type_id: 0x0921dadf
-}
-variant_member {
-  id: 0x52926767
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbd84be61
-}
-variant_member {
-  id: 0x3171e627
-  name: "Some"
-  type_id: 0x7711d1c0
-}
-variant_member {
-  id: 0x52bf7bf1
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x909828a4
-}
-variant_member {
-  id: 0x315b770c
-  name: "Some"
-  type_id: 0x5d80fa40
-}
-variant_member {
-  id: 0x52068a06
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x2969df66
-}
-variant_member {
-  id: 0x31fb9879
-  name: "Some"
-  type_id: 0xfd6f8f30
-}
-variant_member {
-  id: 0x52058a26
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x2a69ff15
-}
-variant_member {
-  id: 0x31eb735d
-  name: "Some"
-  type_id: 0xed84ab81
-}
-variant_member {
-  id: 0x52dea81f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xf14bc64f
-}
-variant_member {
-  id: 0x31f9d567
-  name: "Some"
-  type_id: 0xff229137
-}
-variant_member {
-  id: 0x52b9670d
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x9684d494
-}
-variant_member {
-  id: 0x31d6287a
-  name: "Some"
-  type_id: 0xd0df8cca
-}
-variant_member {
-  id: 0x5236ceb5
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x192d6ce5
-}
-variant_member {
-  id: 0x312ae0e8
-  name: "Some"
-  type_id: 0x2c171e5d
-}
-variant_member {
-  id: 0x52f97b48
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd69891d7
-}
-variant_member {
-  id: 0x31d02281
-  name: "Some"
-  type_id: 0xd6d57747
-}
-variant_member {
-  id: 0x52418e65
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x6e6dbc15
-}
-variant_member {
-  id: 0x31ae6584
-  name: "Some"
-  type_id: 0xa89272f6
-}
-variant_member {
-  id: 0x5292db94
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbd384d7d
-}
-variant_member {
-  id: 0x31a16e66
-  name: "Some"
-  type_id: 0xa7999034
-}
-variant_member {
-  id: 0x5270f8ab
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x5f1b72d9
-}
-variant_member {
-  id: 0x316e87ef
-  name: "Some"
-  type_id: 0x68701988
-}
-variant_member {
-  id: 0x525e6b4b
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x71889269
-}
-variant_member {
-  id: 0x31d1b712
-  name: "Some"
-  type_id: 0xd740e4da
-}
-variant_member {
-  id: 0x52722c9e
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x5dcf478a
-}
-variant_member {
-  id: 0x31067bc4
-  name: "Some"
-  type_id: 0x008c32ff
-}
-variant_member {
-  id: 0x52a4e940
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x8b0a9928
-}
-variant_member {
-  id: 0x319a9f44
-  name: "Some"
-  type_id: 0x9c68b2a4
-}
-variant_member {
-  id: 0x52bc65fb
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x938622ef
-}
-variant_member {
-  id: 0x3158319a
-  name: "Some"
-  type_id: 0x5ec66cf0
-}
-variant_member {
-  id: 0x528b5c11
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xa4bfc821
-}
-variant_member {
-  id: 0x31befb57
-  name: "Some"
-  type_id: 0xb80ca150
-}
-variant_member {
-  id: 0x52aeb2d5
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x81510c00
-}
-variant_member {
-  id: 0x3103b966
-  name: "Some"
-  type_id: 0x054e9093
-}
-variant_member {
-  id: 0x52fdfd99
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd21e4052
-}
-variant_member {
-  id: 0x31c9c7ad
-  name: "Some"
-  type_id: 0xcf305b7d
-}
-variant_member {
-  id: 0x522f42f2
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x00a12b43
-}
-variant_member {
-  id: 0x317123cf
-  name: "Some"
-  type_id: 0x77d43932
-}
-variant_member {
-  id: 0x52d1793f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xfe9ae6bd
-}
-variant_member {
-  id: 0x31afa467
-  name: "Some"
-  type_id: 0xa95391d1
-}
-variant_member {
-  id: 0x52bbe754
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x94048d6a
-}
-variant_member {
-  id: 0x31c4c601
-  name: "Some"
-  type_id: 0xc231f7df
-}
-variant_member {
-  id: 0x5290cdd6
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbf2e0f6f
-}
-variant_member {
-  id: 0x3197ec79
-  name: "Some"
-  type_id: 0x911b8fbc
+  type_id: 0xab75c2e1
 }
 variant_member {
   id: 0x52c3d90b
@@ -258809,248 +258162,6 @@ variant_member {
   type_id: 0xea8df90e
 }
 variant_member {
-  id: 0x52f8edb7
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd70e6e23
-}
-variant_member {
-  id: 0x314ad205
-  name: "Some"
-  type_id: 0x4c25f3ac
-}
-variant_member {
-  id: 0x5248327a
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x67d1a33b
-}
-variant_member {
-  id: 0x31848ed2
-  name: "Some"
-  type_id: 0x827924d4
-}
-variant_member {
-  id: 0x5290965f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbf75860c
-}
-variant_member {
-  id: 0x313e7996
-  name: "Some"
-  type_id: 0x388e601a
-}
-variant_member {
-  id: 0x52145f0c
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x3bbcd530
-}
-variant_member {
-  id: 0x31cdfb1b
-  name: "Some"
-  type_id: 0xcb0ced5f
-}
-variant_member {
-  id: 0x52f8c56f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd726b67f
-}
-variant_member {
-  id: 0x318d6dec
-  name: "Some"
-  type_id: 0x8b9a1a47
-}
-variant_member {
-  id: 0x527055fd
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x5fb624a1
-}
-variant_member {
-  id: 0x317c7be2
-  name: "Some"
-  type_id: 0x7a8c14be
-}
-variant_member {
-  id: 0x520d37b8
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x22d46158
-}
-variant_member {
-  id: 0x316e18f9
-  name: "Some"
-  type_id: 0x68ef0ff4
-}
-variant_member {
-  id: 0x52764778
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x59a4a12e
-}
-variant_member {
-  id: 0x3114fdb9
-  name: "Some"
-  type_id: 0x120a4f0f
-}
-variant_member {
-  id: 0x52401941
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x6ffa9892
-}
-variant_member {
-  id: 0x319d35dd
-  name: "Some"
-  type_id: 0x9bc22b85
-}
-variant_member {
-  id: 0x52d7a510
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xf846c91c
-}
-variant_member {
-  id: 0x31d61903
-  name: "Some"
-  type_id: 0xd0eef519
-}
-variant_member {
-  id: 0x52ab4ce7
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x84af3ed2
-}
-variant_member {
-  id: 0x316203e8
-  name: "Some"
-  type_id: 0x64f41e92
-}
-variant_member {
-  id: 0x52454d89
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x6aae50c0
-}
-variant_member {
-  id: 0x31bf0ee1
-  name: "Some"
-  type_id: 0xb9f917f7
-}
-variant_member {
-  id: 0x52cc2450
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xe3c789dd
-}
-variant_member {
-  id: 0x31260983
-  name: "Some"
-  type_id: 0x20fe75db
-}
-variant_member {
-  id: 0x5200e3b3
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x2f006ae2
-}
-variant_member {
-  id: 0x310dc44d
-  name: "Some"
-  type_id: 0x0b33bbb2
-}
-variant_member {
-  id: 0x523e383b
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x11dbe21b
-}
-variant_member {
-  id: 0x31308efd
-  name: "Some"
-  type_id: 0x36790b01
-}
-variant_member {
-  id: 0x521d8d8f
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x326e56b8
-}
-variant_member {
-  id: 0x313a8f2a
-  name: "Some"
-  type_id: 0x3c78dc54
-}
-variant_member {
-  id: 0x52da91c0
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xf5721937
-}
-variant_member {
-  id: 0x3133ff2e
-  name: "Some"
-  type_id: 0x3508d894
-}
-variant_member {
-  id: 0x522f3e80
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x00dd591c
-}
-variant_member {
-  id: 0x3115e53e
-  name: "Some"
-  type_id: 0x1312c8eb
-}
-variant_member {
-  id: 0x52f9b446
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xd6579f69
-}
-variant_member {
-  id: 0x31ab0d86
-  name: "Some"
-  type_id: 0xadfa7058
-}
-variant_member {
-  id: 0x524fda81
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x60395878
-}
-variant_member {
-  id: 0x3189cd48
-  name: "Some"
-  type_id: 0x8f3abed0
-}
-variant_member {
-  id: 0x524f0056
-  name: "None"
-  discriminant_value: 0
-  type_id: 0x60e38f7a
-}
-variant_member {
-  id: 0x317573c9
-  name: "Some"
-  type_id: 0x73843f20
-}
-variant_member {
-  id: 0x52900011
-  name: "None"
-  discriminant_value: 0
-  type_id: 0xbfe3c8ce
-}
-variant_member {
-  id: 0x31ad8234
-  name: "Some"
-  type_id: 0xab75c2e1
-}
-variant_member {
   id: 0x529299ce
   name: "None"
   discriminant_value: 0
@@ -259335,6 +258446,435 @@ variant_member {
   id: 0x31521ca9
   name: "Some"
   type_id: 0x54eb5f00
+}
+variant_member {
+  id: 0x52068a06
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x2969df66
+}
+variant_member {
+  id: 0x31fb9879
+  name: "Some"
+  type_id: 0xfd6f8f30
+}
+variant_member {
+  id: 0x523e383b
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x11dbe21b
+}
+variant_member {
+  id: 0x31308efd
+  name: "Some"
+  type_id: 0x36790b01
+}
+variant_member {
+  id: 0x521d8d8f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x326e56b8
+}
+variant_member {
+  id: 0x313a8f2a
+  name: "Some"
+  type_id: 0x3c78dc54
+}
+variant_member {
+  id: 0x52058a26
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x2a69ff15
+}
+variant_member {
+  id: 0x31eb735d
+  name: "Some"
+  type_id: 0xed84ab81
+}
+variant_member {
+  id: 0x52dea81f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xf14bc64f
+}
+variant_member {
+  id: 0x31f9d567
+  name: "Some"
+  type_id: 0xff229137
+}
+variant_member {
+  id: 0x52b9670d
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x9684d494
+}
+variant_member {
+  id: 0x31d6287a
+  name: "Some"
+  type_id: 0xd0df8cca
+}
+variant_member {
+  id: 0x5236ceb5
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x192d6ce5
+}
+variant_member {
+  id: 0x312ae0e8
+  name: "Some"
+  type_id: 0x2c171e5d
+}
+variant_member {
+  id: 0x52f97b48
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd69891d7
+}
+variant_member {
+  id: 0x31d02281
+  name: "Some"
+  type_id: 0xd6d57747
+}
+variant_member {
+  id: 0x52418e65
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x6e6dbc15
+}
+variant_member {
+  id: 0x31ae6584
+  name: "Some"
+  type_id: 0xa89272f6
+}
+variant_member {
+  id: 0x5292db94
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xbd384d7d
+}
+variant_member {
+  id: 0x31a16e66
+  name: "Some"
+  type_id: 0xa7999034
+}
+variant_member {
+  id: 0x5270f8ab
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x5f1b72d9
+}
+variant_member {
+  id: 0x316e87ef
+  name: "Some"
+  type_id: 0x68701988
+}
+variant_member {
+  id: 0x525e6b4b
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x71889269
+}
+variant_member {
+  id: 0x31d1b712
+  name: "Some"
+  type_id: 0xd740e4da
+}
+variant_member {
+  id: 0x52722c9e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x5dcf478a
+}
+variant_member {
+  id: 0x31067bc4
+  name: "Some"
+  type_id: 0x008c32ff
+}
+variant_member {
+  id: 0x52a4e940
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x8b0a9928
+}
+variant_member {
+  id: 0x319a9f44
+  name: "Some"
+  type_id: 0x9c68b2a4
+}
+variant_member {
+  id: 0x52bc65fb
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x938622ef
+}
+variant_member {
+  id: 0x3158319a
+  name: "Some"
+  type_id: 0x5ec66cf0
+}
+variant_member {
+  id: 0x528b5c11
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xa4bfc821
+}
+variant_member {
+  id: 0x31befb57
+  name: "Some"
+  type_id: 0xb80ca150
+}
+variant_member {
+  id: 0x52aeb2d5
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x81510c00
+}
+variant_member {
+  id: 0x3103b966
+  name: "Some"
+  type_id: 0x054e9093
+}
+variant_member {
+  id: 0x52fdfd99
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd21e4052
+}
+variant_member {
+  id: 0x31c9c7ad
+  name: "Some"
+  type_id: 0xcf305b7d
+}
+variant_member {
+  id: 0x522f42f2
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x00a12b43
+}
+variant_member {
+  id: 0x317123cf
+  name: "Some"
+  type_id: 0x77d43932
+}
+variant_member {
+  id: 0x52d1793f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xfe9ae6bd
+}
+variant_member {
+  id: 0x31afa467
+  name: "Some"
+  type_id: 0xa95391d1
+}
+variant_member {
+  id: 0x52bbe754
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x94048d6a
+}
+variant_member {
+  id: 0x31c4c601
+  name: "Some"
+  type_id: 0xc231f7df
+}
+variant_member {
+  id: 0x5290cdd6
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xbf2e0f6f
+}
+variant_member {
+  id: 0x3197ec79
+  name: "Some"
+  type_id: 0x911b8fbc
+}
+variant_member {
+  id: 0x52f8edb7
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd70e6e23
+}
+variant_member {
+  id: 0x314ad205
+  name: "Some"
+  type_id: 0x4c25f3ac
+}
+variant_member {
+  id: 0x5248327a
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x67d1a33b
+}
+variant_member {
+  id: 0x31848ed2
+  name: "Some"
+  type_id: 0x827924d4
+}
+variant_member {
+  id: 0x5290965f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xbf75860c
+}
+variant_member {
+  id: 0x313e7996
+  name: "Some"
+  type_id: 0x388e601a
+}
+variant_member {
+  id: 0x52145f0c
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x3bbcd530
+}
+variant_member {
+  id: 0x31cdfb1b
+  name: "Some"
+  type_id: 0xcb0ced5f
+}
+variant_member {
+  id: 0x52f8c56f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd726b67f
+}
+variant_member {
+  id: 0x318d6dec
+  name: "Some"
+  type_id: 0x8b9a1a47
+}
+variant_member {
+  id: 0x527055fd
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x5fb624a1
+}
+variant_member {
+  id: 0x317c7be2
+  name: "Some"
+  type_id: 0x7a8c14be
+}
+variant_member {
+  id: 0x520d37b8
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x22d46158
+}
+variant_member {
+  id: 0x316e18f9
+  name: "Some"
+  type_id: 0x68ef0ff4
+}
+variant_member {
+  id: 0x52764778
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x59a4a12e
+}
+variant_member {
+  id: 0x3114fdb9
+  name: "Some"
+  type_id: 0x120a4f0f
+}
+variant_member {
+  id: 0x52401941
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x6ffa9892
+}
+variant_member {
+  id: 0x319d35dd
+  name: "Some"
+  type_id: 0x9bc22b85
+}
+variant_member {
+  id: 0x52d7a510
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xf846c91c
+}
+variant_member {
+  id: 0x31d61903
+  name: "Some"
+  type_id: 0xd0eef519
+}
+variant_member {
+  id: 0x52ab4ce7
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x84af3ed2
+}
+variant_member {
+  id: 0x316203e8
+  name: "Some"
+  type_id: 0x64f41e92
+}
+variant_member {
+  id: 0x52454d89
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x6aae50c0
+}
+variant_member {
+  id: 0x31bf0ee1
+  name: "Some"
+  type_id: 0xb9f917f7
+}
+variant_member {
+  id: 0x52cc2450
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xe3c789dd
+}
+variant_member {
+  id: 0x31260983
+  name: "Some"
+  type_id: 0x20fe75db
+}
+variant_member {
+  id: 0x5200e3b3
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x2f006ae2
+}
+variant_member {
+  id: 0x310dc44d
+  name: "Some"
+  type_id: 0x0b33bbb2
+}
+variant_member {
+  id: 0x52da91c0
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xf5721937
+}
+variant_member {
+  id: 0x3133ff2e
+  name: "Some"
+  type_id: 0x3508d894
+}
+variant_member {
+  id: 0x522f3e80
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x00dd591c
+}
+variant_member {
+  id: 0x3115e53e
+  name: "Some"
+  type_id: 0x1312c8eb
+}
+variant_member {
+  id: 0x52f9b446
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd6579f69
+}
+variant_member {
+  id: 0x31ab0d86
+  name: "Some"
+  type_id: 0xadfa7058
 }
 variant_member {
   id: 0x527a7f53
@@ -260041,6 +259581,17 @@ variant_member {
   type_id: 0x39aafa88
 }
 variant_member {
+  id: 0x52b667a3
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x99847ae3
+}
+variant_member {
+  id: 0x3133d767
+  name: "Some"
+  type_id: 0x352091dd
+}
+variant_member {
   id: 0x52c4cf8d
   name: "None"
   discriminant_value: 0
@@ -260250,6 +259801,17 @@ variant_member {
   type_id: 0x283a6869
 }
 variant_member {
+  id: 0x520d04bd
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x22e76419
+}
+variant_member {
+  id: 0x31775531
+  name: "Some"
+  type_id: 0x71a2c717
+}
+variant_member {
   id: 0x52966b1b
   name: "None"
   discriminant_value: 0
@@ -260358,6 +259920,567 @@ variant_member {
   id: 0x31a49584
   name: "Some"
   type_id: 0xa2627226
+}
+variant_member {
+  id: 0x52f7113c
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd8f2e55b
+}
+variant_member {
+  id: 0x3167bed0
+  name: "Some"
+  type_id: 0x614926a4
+}
+variant_member {
+  id: 0x52332f0b
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x1cccd2c9
+}
+variant_member {
+  id: 0x31d4b14b
+  name: "Some"
+  type_id: 0xd246bd49
+}
+variant_member {
+  id: 0x52c35e29
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xecbdf094
+}
+variant_member {
+  id: 0x31f87bc3
+  name: "Some"
+  type_id: 0xfe8c3553
+}
+variant_member {
+  id: 0x52e17f5c
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xce9c85c8
+}
+variant_member {
+  id: 0x3138e11d
+  name: "Some"
+  type_id: 0x3e16eb3e
+}
+variant_member {
+  id: 0x52608d47
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x4f6e9e08
+}
+variant_member {
+  id: 0x31af03b6
+  name: "Some"
+  type_id: 0xa9f44084
+}
+variant_member {
+  id: 0x524cf853
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x631b8aa7
+}
+variant_member {
+  id: 0x314ff673
+  name: "Some"
+  type_id: 0x49018594
+}
+variant_member {
+  id: 0x524b4ec0
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x64ad1921
+}
+variant_member {
+  id: 0x31ef7d70
+  name: "Some"
+  type_id: 0xe98a862f
+}
+variant_member {
+  id: 0x529be304
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xb400dd65
+}
+variant_member {
+  id: 0x31e8e034
+  name: "Some"
+  type_id: 0xee17c2bc
+}
+variant_member {
+  id: 0x52be87b2
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x91646bac
+}
+variant_member {
+  id: 0x31e41cf3
+  name: "Some"
+  type_id: 0xe2eb05df
+}
+variant_member {
+  id: 0x52091fab
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x26fc7224
+}
+variant_member {
+  id: 0x31409958
+  name: "Some"
+  type_id: 0x466eaea2
+}
+variant_member {
+  id: 0x52cbbc3a
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xe45fe3e1
+}
+variant_member {
+  id: 0x318f8ca6
+  name: "Some"
+  type_id: 0x897b505d
+}
+variant_member {
+  id: 0x529757ff
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xb8b426d1
+}
+variant_member {
+  id: 0x31b2687a
+  name: "Some"
+  type_id: 0xb49f8c1f
+}
+variant_member {
+  id: 0x524cd109
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x6332d015
+}
+variant_member {
+  id: 0x319847e5
+  name: "Some"
+  type_id: 0x9eb01353
+}
+variant_member {
+  id: 0x5243ef07
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x6c0cdec3
+}
+variant_member {
+  id: 0x3160d1a1
+  name: "Some"
+  type_id: 0x662657e6
+}
+variant_member {
+  id: 0x522f1374
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x00f0ad56
+}
+variant_member {
+  id: 0x312086a4
+  name: "Some"
+  type_id: 0x26715200
+}
+variant_member {
+  id: 0x52c0db03
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xef38dae1
+}
+variant_member {
+  id: 0x31645d19
+  name: "Some"
+  type_id: 0x62aaef41
+}
+variant_member {
+  id: 0x5203b7de
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x2c540748
+}
+variant_member {
+  id: 0x3198722b
+  name: "Some"
+  type_id: 0x9e85dd07
+}
+variant_member {
+  id: 0x52b45440
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x9bb7998a
+}
+variant_member {
+  id: 0x31ce6b3e
+  name: "Some"
+  type_id: 0xc89cc80a
+}
+variant_member {
+  id: 0x521c39b3
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x33da6ae9
+}
+variant_member {
+  id: 0x31dabfa1
+  name: "Some"
+  type_id: 0xdc485767
+}
+variant_member {
+  id: 0x523c6f9c
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x138c45b6
+}
+variant_member {
+  id: 0x31701061
+  name: "Some"
+  type_id: 0x76e797b9
+}
+variant_member {
+  id: 0x522d9815
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x027bcc28
+}
+variant_member {
+  id: 0x318d0581
+  name: "Some"
+  type_id: 0x8bf277c0
+}
+variant_member {
+  id: 0x5253c6e4
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x7c253da7
+}
+variant_member {
+  id: 0x317c770b
+  name: "Some"
+  type_id: 0x7a80fd18
+}
+variant_member {
+  id: 0x523a6da4
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x158e7db9
+}
+variant_member {
+  id: 0x318c90fc
+  name: "Some"
+  type_id: 0x8a670a88
+}
+variant_member {
+  id: 0x52e76990
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xc88a491b
+}
+variant_member {
+  id: 0x315affcf
+  name: "Some"
+  type_id: 0x5c083985
+}
+variant_member {
+  id: 0x5284b1e8
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xab5231c5
+}
+variant_member {
+  id: 0x31c40b68
+  name: "Some"
+  type_id: 0xc2fc9e73
+}
+variant_member {
+  id: 0x52ff260f
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xd0c5d62a
+}
+variant_member {
+  id: 0x3132138e
+  name: "Some"
+  type_id: 0x34e478ad
+}
+variant_member {
+  id: 0x52764676
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x59a5af04
+}
+variant_member {
+  id: 0x31516022
+  name: "Some"
+  type_id: 0x5797d482
+}
+variant_member {
+  id: 0x527fdd1e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x503ec78a
+}
+variant_member {
+  id: 0x31091844
+  name: "Some"
+  type_id: 0x0fefb2ff
+}
+variant_member {
+  id: 0x522d8a5e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x02698756
+}
+variant_member {
+  id: 0x31f3d554
+  name: "Some"
+  type_id: 0xf522a261
+}
+variant_member {
+  id: 0x5268336b
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x47d0b2f7
+}
+variant_member {
+  id: 0x316d884d
+  name: "Some"
+  type_id: 0x6b7fbb01
+}
+variant_member {
+  id: 0x52a34b73
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x8ca8aa0e
+}
+variant_member {
+  id: 0x31c0bb33
+  name: "Some"
+  type_id: 0xc64cc5a8
+}
+variant_member {
+  id: 0x525e35de
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x71d6074c
+}
+variant_member {
+  id: 0x31dabdaf
+  name: "Some"
+  type_id: 0xdc4a598b
+}
+variant_member {
+  id: 0x52cf0364
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xe0e0bd4a
+}
+variant_member {
+  id: 0x310fa0bb
+  name: "Some"
+  type_id: 0x09574dcd
+}
+variant_member {
+  id: 0x520ec8d4
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x212b0d6a
+}
+variant_member {
+  id: 0x316d75c1
+  name: "Some"
+  type_id: 0x6b82374d
+}
+variant_member {
+  id: 0x521196ca
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x3e75133b
+}
+variant_member {
+  id: 0x318c50f9
+  name: "Some"
+  type_id: 0x8aa70ffb
+}
+variant_member {
+  id: 0x529415d5
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xbbf60cb1
+}
+variant_member {
+  id: 0x313690f9
+  name: "Some"
+  type_id: 0x30670ff0
+}
+variant_member {
+  id: 0x521614d7
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x39f70e24
+}
+variant_member {
+  id: 0x31e81030
+  name: "Some"
+  type_id: 0xeee7c671
+}
+variant_member {
+  id: 0x52796a54
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x56898d62
+}
+variant_member {
+  id: 0x31f60bcf
+  name: "Some"
+  type_id: 0xf0fc39ad
+}
+variant_member {
+  id: 0x52cf9b7a
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xe078a360
+}
+variant_member {
+  id: 0x3136f2db
+  name: "Some"
+  type_id: 0x30052d0c
+}
+variant_member {
+  id: 0x52c86b13
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xe788ca97
+}
+variant_member {
+  id: 0x31277d53
+  name: "Some"
+  type_id: 0x218aa574
+}
+variant_member {
+  id: 0x525ed47e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x7137a7bd
+}
+variant_member {
+  id: 0x317bb93d
+  name: "Some"
+  type_id: 0x7d4ecbb2
+}
+variant_member {
+  id: 0x52669957
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x497a8e8c
+}
+variant_member {
+  id: 0x3124c02f
+  name: "Some"
+  type_id: 0x2237d947
+}
+variant_member {
+  id: 0x5217c996
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x382a4fcd
+}
+variant_member {
+  id: 0x31577a84
+  name: "Some"
+  type_id: 0x518d72aa
+}
+variant_member {
+  id: 0x52b5c2a4
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x9a217d5d
+}
+variant_member {
+  id: 0x31fcf8ea
+  name: "Some"
+  type_id: 0xfa0f1cd2
+}
+variant_member {
+  id: 0x5242e3cb
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x6d001249
+}
+variant_member {
+  id: 0x3181c2fa
+  name: "Some"
+  type_id: 0x87350c86
+}
+variant_member {
+  id: 0x52e0598c
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xcfba55cb
+}
+variant_member {
+  id: 0x313f1fe0
+  name: "Some"
+  type_id: 0x39e8164f
+}
+variant_member {
+  id: 0x5286d50e
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xa936d7e1
+}
+variant_member {
+  id: 0x310fd62c
+  name: "Some"
+  type_id: 0x0921dadf
+}
+variant_member {
+  id: 0x52926767
+  name: "None"
+  discriminant_value: 0
+  type_id: 0xbd84be61
+}
+variant_member {
+  id: 0x3171e627
+  name: "Some"
+  type_id: 0x7711d1c0
+}
+variant_member {
+  id: 0x52bf7bf1
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x909828a4
+}
+variant_member {
+  id: 0x315b770c
+  name: "Some"
+  type_id: 0x5d80fa40
+}
+variant_member {
+  id: 0x524fda81
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x60395878
+}
+variant_member {
+  id: 0x3189cd48
+  name: "Some"
+  type_id: 0x8f3abed0
+}
+variant_member {
+  id: 0x524f0056
+  name: "None"
+  discriminant_value: 0
+  type_id: 0x60e38f7a
+}
+variant_member {
+  id: 0x317573c9
+  name: "Some"
+  type_id: 0x73843f20
 }
 struct_union {
   id: 0x001a6b83
@@ -271696,6 +271819,27 @@ struct_union {
   }
 }
 struct_union {
+  id: 0x4e174e91
+  kind: STRUCT
+  name: "bindings::bindings_raw::alloc_tag_module_section"
+  definition {
+    bytesize: 24
+    member_id: 0xaa9d102e
+    member_id: 0xc0dfb169
+    member_id: 0xd9417ca7
+  }
+}
+struct_union {
+  id: 0x57b9076a
+  kind: UNION
+  name: "bindings::bindings_raw::alloc_tag_module_section__bindgen_ty_1"
+  definition {
+    bytesize: 8
+    member_id: 0xe09ff49e
+    member_id: 0x589bc374
+  }
+}
+struct_union {
   id: 0xb91a087a
   kind: STRUCT
   name: "bindings::bindings_raw::anon_vma"
@@ -274087,6 +274231,15 @@ struct_union {
     member_id: 0xb10d1812
     member_id: 0xf0cda98a
     member_id: 0x0482c7c6
+  }
+}
+struct_union {
+  id: 0x7ad2e67e
+  kind: STRUCT
+  name: "bindings::bindings_raw::class_irq_t"
+  definition {
+    bytesize: 8
+    member_id: 0x2dd218df
   }
 }
 struct_union {
@@ -285969,6 +286122,24 @@ struct_union {
   }
 }
 struct_union {
+  id: 0x83f4c512
+  kind: STRUCT
+  name: "core::cell::UnsafeCell<core::mem::maybe_uninit::MaybeUninit<bindings::bindings_raw::mm_struct>>"
+  definition {
+    bytesize: 1216
+    member_id: 0xa0ca6d94
+  }
+}
+struct_union {
+  id: 0x20dcbf50
+  kind: STRUCT
+  name: "core::cell::UnsafeCell<core::mem::maybe_uninit::MaybeUninit<bindings::bindings_raw::task_struct>>"
+  definition {
+    bytesize: 5184
+    member_id: 0xa0eb32ea
+  }
+}
+struct_union {
   id: 0x204cd383
   kind: STRUCT
   name: "core::marker::PhantomData<*mut bindings::bindings_raw::cgroup>"
@@ -286120,6 +286291,51 @@ struct_union {
   kind: STRUCT
   name: "core::marker::PhantomData<usize>"
   definition {
+  }
+}
+struct_union {
+  id: 0x779591fe
+  kind: STRUCT
+  name: "core::marker::PhantomPinned"
+  definition {
+  }
+}
+struct_union {
+  id: 0x82ffd2b9
+  kind: STRUCT
+  name: "core::mem::manually_drop::ManuallyDrop<bindings::bindings_raw::mm_struct>"
+  definition {
+    bytesize: 1216
+    member_id: 0xa0318f6d
+  }
+}
+struct_union {
+  id: 0x5fb9506f
+  kind: STRUCT
+  name: "core::mem::manually_drop::ManuallyDrop<bindings::bindings_raw::task_struct>"
+  definition {
+    bytesize: 5184
+    member_id: 0xa0b957d3
+  }
+}
+struct_union {
+  id: 0xc23150cd
+  kind: UNION
+  name: "core::mem::maybe_uninit::MaybeUninit<bindings::bindings_raw::mm_struct>"
+  definition {
+    bytesize: 1216
+    member_id: 0xebdb511a
+    member_id: 0xa08aa316
+  }
+}
+struct_union {
+  id: 0xe36e2e43
+  kind: UNION
+  name: "core::mem::maybe_uninit::MaybeUninit<bindings::bindings_raw::task_struct>"
+  definition {
+    bytesize: 5184
+    member_id: 0xebdb511a
+    member_id: 0xa057e594
   }
 }
 struct_union {
@@ -287581,7 +287797,7 @@ struct_union {
   name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::vm_area_struct) -> i32>::Some"
   definition {
     bytesize: 8
-    member_id: 0x97ad00b3
+    member_id: 0x97ad00b4
   }
 }
 struct_union {
@@ -288380,7 +288596,7 @@ struct_union {
   name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::device, bindings::bindings_raw::pm_message) -> i32>::Some"
   definition {
     bytesize: 8
-    member_id: 0x97ad00b4
+    member_id: 0x97ad00b3
   }
 }
 struct_union {
@@ -291560,6 +291776,15 @@ struct_union {
   definition {
     bytesize: 8
     member_id: 0x979f813f
+  }
+}
+struct_union {
+  id: 0x20c34f69
+  kind: STRUCT
+  name: "core::ptr::non_null::NonNull<kernel::mm::MmWithUserAsync>"
+  definition {
+    bytesize: 8
+    member_id: 0x690d2e9f
   }
 }
 struct_union {
@@ -310297,6 +310522,62 @@ struct_union {
   definition {
     bytesize: 32
     member_id: 0x1be9c1b7
+  }
+}
+struct_union {
+  id: 0x46dfd8a8
+  kind: STRUCT
+  name: "kernel::mm::Mm"
+  definition {
+    bytesize: 1216
+    member_id: 0x3052dfab
+  }
+}
+struct_union {
+  id: 0x86e3bb05
+  kind: STRUCT
+  name: "kernel::mm::MmWithUser"
+  definition {
+    bytesize: 1216
+    member_id: 0x30783cf4
+  }
+}
+struct_union {
+  id: 0x9818eb38
+  kind: STRUCT
+  name: "kernel::mm::MmWithUserAsync"
+  definition {
+    bytesize: 1216
+    member_id: 0x30b80097
+  }
+}
+struct_union {
+  id: 0x9f859678
+  kind: STRUCT
+  name: "kernel::task::Task"
+  definition {
+    bytesize: 5184
+    member_id: 0x970e9385
+  }
+}
+struct_union {
+  id: 0x6c3c87d6
+  kind: STRUCT
+  name: "kernel::types::Opaque<bindings::bindings_raw::mm_struct>"
+  definition {
+    bytesize: 1216
+    member_id: 0xa08ba801
+    member_id: 0xf00ba4e4
+  }
+}
+struct_union {
+  id: 0xb7e008e9
+  kind: STRUCT
+  name: "kernel::types::Opaque<bindings::bindings_raw::task_struct>"
+  definition {
+    bytesize: 5184
+    member_id: 0xa028807b
+    member_id: 0xf00baf3a
   }
 }
 struct_union {
@@ -364277,6 +364558,126 @@ enumeration {
   }
 }
 variant {
+  id: 0xe78a875a
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::hrtimer) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x525d222e
+  member_id: 0x31627918
+}
+variant {
+  id: 0x395c6152
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52fb8a5e
+  member_id: 0x319b76f5
+}
+variant {
+  id: 0x94c7b366
+  name: "core::option::Option<unsafe extern \"C\" fn() -> i64>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52fe2571
+  member_id: 0x3119de50
+}
+variant {
+  id: 0xd529f828
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::sched_dl_entity) -> bool>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5225ccc1
+  member_id: 0x31fab050
+}
+variant {
+  id: 0x3ee78588
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::sched_dl_entity) -> *mut bindings::bindings_raw::task_struct>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52a91a7f
+  member_id: 0x315a16f6
+}
+variant {
+  id: 0x1f8b7a23
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::callback_head)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52dad921
+  member_id: 0x31bf8032
+}
+variant {
+  id: 0x29912205
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state) -> *mut bindings::bindings_raw::cgroup_subsys_state>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5263aa1c
+  member_id: 0x311aacce
+}
+variant {
+  id: 0x5b7bc7c0
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52938648
+  member_id: 0x31ef4843
+}
+variant {
+  id: 0x6e95a179
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x526a8027
+  member_id: 0x31a880a5
+}
+variant {
+  id: 0xc82f6cb1
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, i32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x526ea3e0
+  member_id: 0x3139be36
+}
+variant {
+  id: 0xeb714105
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut bindings::bindings_raw::cgroup_subsys_state) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52acb93e
+  member_id: 0x316bc9fa
+}
+variant {
+  id: 0x549484d4
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut i64) -> *mut core::ffi::c_void>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52caa72b
+  member_id: 0x31dd1e23
+}
+variant {
+  id: 0x7be712d7
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut core::ffi::c_void)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x522fc419
+  member_id: 0x3125e32b
+}
+variant {
+  id: 0x2a702a0f
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut core::ffi::c_void, *mut i64) -> *mut core::ffi::c_void>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52b21e81
+  member_id: 0x31aa793c
+}
+variant {
+  id: 0x4af1e5e5
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut core::ffi::c_void) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52259001
+  member_id: 0x31081366
+}
+variant {
   id: 0xe5a6c559
   name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::kobject) -> i32>"
   bytesize: 8
@@ -364469,14 +364870,6 @@ variant {
   member_id: 0x31e9e1bd
 }
 variant {
-  id: 0x1f8b7a23
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::callback_head)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52dad921
-  member_id: 0x31bf8032
-}
-variant {
   id: 0x3f93a3e3
   name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::key, *const bindings::bindings_raw::key_type, *const bindings::bindings_raw::key_payload, *mut bindings::bindings_raw::key) -> i32>"
   bytesize: 8
@@ -364611,166 +365004,6 @@ variant {
   discriminant: 0x01bf28e7
   member_id: 0x523ccb9d
   member_id: 0x310b15ec
-}
-variant {
-  id: 0xe78a875a
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::hrtimer) -> u32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x525d222e
-  member_id: 0x31627918
-}
-variant {
-  id: 0x395c6152
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52fb8a5e
-  member_id: 0x319b76f5
-}
-variant {
-  id: 0x94c7b366
-  name: "core::option::Option<unsafe extern \"C\" fn() -> i64>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52fe2571
-  member_id: 0x3119de50
-}
-variant {
-  id: 0xd529f828
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::sched_dl_entity) -> bool>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5225ccc1
-  member_id: 0x31fab050
-}
-variant {
-  id: 0x3ee78588
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::sched_dl_entity) -> *mut bindings::bindings_raw::task_struct>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52a91a7f
-  member_id: 0x315a16f6
-}
-variant {
-  id: 0x29912205
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state) -> *mut bindings::bindings_raw::cgroup_subsys_state>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5263aa1c
-  member_id: 0x311aacce
-}
-variant {
-  id: 0x5b7bc7c0
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52938648
-  member_id: 0x31ef4843
-}
-variant {
-  id: 0x6e95a179
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x526a8027
-  member_id: 0x31a880a5
-}
-variant {
-  id: 0xc82f6cb1
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, i32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x526ea3e0
-  member_id: 0x3139be36
-}
-variant {
-  id: 0xeb714105
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut bindings::bindings_raw::cgroup_subsys_state) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52acb93e
-  member_id: 0x316bc9fa
-}
-variant {
-  id: 0x549484d4
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut i64) -> *mut core::ffi::c_void>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52caa72b
-  member_id: 0x31dd1e23
-}
-variant {
-  id: 0x7be712d7
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut core::ffi::c_void)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x522fc419
-  member_id: 0x3125e32b
-}
-variant {
-  id: 0x2a702a0f
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut core::ffi::c_void, *mut i64) -> *mut core::ffi::c_void>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52b21e81
-  member_id: 0x31aa793c
-}
-variant {
-  id: 0x4af1e5e5
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut core::ffi::c_void) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52259001
-  member_id: 0x31081366
-}
-variant {
-  id: 0x8d77192e
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_taskset) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52f7113c
-  member_id: 0x3167bed0
-}
-variant {
-  id: 0xc57ebb64
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_taskset)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52332f0b
-  member_id: 0x31d4b14b
-}
-variant {
-  id: 0xbc5358c2
-  name: "core::option::Option<unsafe extern \"C\" fn()>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52b667a3
-  member_id: 0x3133d767
-}
-variant {
-  id: 0xa50da236
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::task_struct, *mut bindings::bindings_raw::css_set) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52c35e29
-  member_id: 0x31f87bc3
-}
-variant {
-  id: 0x664b6ac9
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::task_struct, *mut bindings::bindings_raw::css_set)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52e17f5c
-  member_id: 0x3138e11d
-}
-variant {
-  id: 0xaac42d00
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::task_struct)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52608d47
-  member_id: 0x31af03b6
 }
 variant {
   id: 0x4486eba9
@@ -364909,38 +365142,6 @@ variant {
   member_id: 0x318ec22c
 }
 variant {
-  id: 0x7e313a34
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype) -> u64>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x524cf853
-  member_id: 0x314ff673
-}
-variant {
-  id: 0xecaf39e7
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype) -> i64>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x524b4ec0
-  member_id: 0x31ef7d70
-}
-variant {
-  id: 0xed9e2783
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype, u64) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x529be304
-  member_id: 0x31e8e034
-}
-variant {
-  id: 0xa01155b2
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype, i64) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52be87b2
-  member_id: 0x31e41cf3
-}
-variant {
   id: 0x7f455195
   name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::timer_list)>"
   bytesize: 8
@@ -364949,492 +365150,12 @@ variant {
   member_id: 0x31920029
 }
 variant {
-  id: 0x046b1d13
-  name: "core::option::Option<unsafe extern \"C\" fn(*const core::ffi::c_void, *const bindings::bindings_raw::bpf_insn) -> u32>"
+  id: 0x5cd899e5
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::dev_pagemap, usize, usize, i32) -> i32>"
   bytesize: 8
   discriminant: 0x01bf28e7
-  member_id: 0x52091fab
-  member_id: 0x31409958
-}
-variant {
-  id: 0x803ef253
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_attr) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52cbbc3a
-  member_id: 0x318f8ca6
-}
-variant {
-  id: 0x2b5069a2
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_attr) -> *mut bindings::bindings_raw::bpf_map>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x529757ff
-  member_id: 0x31b2687a
-}
-variant {
-  id: 0x2f16fe6b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x524cd109
-  member_id: 0x319847e5
-}
-variant {
-  id: 0x68d23806
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5243ef07
-  member_id: 0x3160d1a1
-}
-variant {
-  id: 0x8644da24
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut core::ffi::c_void) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x522f1374
-  member_id: 0x312086a4
-}
-variant {
-  id: 0xbd7eb063
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void) -> *mut core::ffi::c_void>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52c0db03
-  member_id: 0x31645d19
-}
-variant {
-  id: 0x4dade71b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *const bindings::bindings_raw::bpf_attr, *mut bindings::bindings_raw::bpf_attr) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5203b7de
-  member_id: 0x3198722b
-}
-variant {
-  id: 0x23d988d3
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut core::ffi::c_void, u64) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52b45440
-  member_id: 0x31ce6b3e
-}
-variant {
-  id: 0x70cd742b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file, *const bindings::bindings_raw::bpf_attr, *mut bindings::bindings_raw::bpf_attr) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x521c39b3
-  member_id: 0x31dabfa1
-}
-variant {
-  id: 0x66e86c2b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut core::ffi::c_void, u64) -> isize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x523c6f9c
-  member_id: 0x31701061
-}
-variant {
-  id: 0xf07105f0
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void) -> isize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x522d9815
-  member_id: 0x318d0581
-}
-variant {
-  id: 0xde2da0d9
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, u64) -> isize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5253c6e4
-  member_id: 0x317c770b
-}
-variant {
-  id: 0x047e00e7
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, u32) -> *mut core::ffi::c_void>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x523a6da4
-  member_id: 0x318c90fc
-}
-variant {
-  id: 0x3ebaea64
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file, i32) -> *mut core::ffi::c_void>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52e76990
-  member_id: 0x315affcf
-}
-variant {
-  id: 0x4242aeef
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, bool)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5284b1e8
-  member_id: 0x31c40b68
-}
-variant {
-  id: 0x86c0e6f6
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::bpf_insn) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52ff260f
-  member_id: 0x3132138e
-}
-variant {
-  id: 0x4219259a
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void) -> u32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52764676
-  member_id: 0x31516022
-}
-variant {
-  id: 0x70068e0f
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut bindings::bindings_raw::seq_file)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x527fdd1e
-  member_id: 0x31091844
-}
-variant {
-  id: 0x5efb50e8
-  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, *const bindings::bindings_raw::btf, *const bindings::bindings_raw::btf_type, *const bindings::bindings_raw::btf_type) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x522d8a5e
-  member_id: 0x31f3d554
-}
-variant {
-  id: 0x9f1826dd
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::bpf_prog_aux) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5268336b
-  member_id: 0x316d884d
-}
-variant {
-  id: 0x655805ca
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::bpf_prog_aux)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52a34b73
-  member_id: 0x31c0bb33
-}
-variant {
-  id: 0x6bcc9e9a
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, u32, *mut bindings::bindings_raw::bpf_prog, *mut bindings::bindings_raw::bpf_prog)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x525e35de
-  member_id: 0x31dabdaf
-}
-variant {
-  id: 0x2e35a940
-  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, *mut u64, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52cf0364
-  member_id: 0x310fa0bb
-}
-variant {
-  id: 0x36138c79
-  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, u64, *mut u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x520ec8d4
-  member_id: 0x316d75c1
-}
-variant {
-  id: 0x45848354
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::vm_area_struct) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x521196ca
-  member_id: 0x318c50f9
-}
-variant {
-  id: 0xfc89585b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file, *mut bindings::bindings_raw::poll_table_struct) -> u32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x529415d5
-  member_id: 0x313690f9
-}
-variant {
-  id: 0x2496b3dd
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::file, usize, usize, usize, usize) -> usize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x520d04bd
-  member_id: 0x31775531
-}
-variant {
-  id: 0xe35d8497
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_local_storage_map, *mut core::ffi::c_void, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x521614d7
-  member_id: 0x31e81030
-}
-variant {
-  id: 0x39ecddcd
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_local_storage_map, *mut core::ffi::c_void, u32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52796a54
-  member_id: 0x31f60bcf
-}
-variant {
-  id: 0x2c45b693
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void) -> *mut *mut bindings::bindings_raw::bpf_local_storage>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52cf9b7a
-  member_id: 0x3136f2db
-}
-variant {
-  id: 0xbf889b90
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, u64, u64) -> isize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52c86b13
-  member_id: 0x31277d53
-}
-variant {
-  id: 0x0aa8fcd2
-  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, *const bindings::bindings_raw::bpf_map) -> bool>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x525ed47e
-  member_id: 0x317bb93d
-}
-variant {
-  id: 0xc521244c
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_verifier_env, *mut bindings::bindings_raw::bpf_func_state, *mut bindings::bindings_raw::bpf_func_state) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52669957
-  member_id: 0x3124c02f
-}
-variant {
-  id: 0x6f7e2cbe
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, core::option::Option<unsafe extern \"C\" fn(u64, u64, u64, u64, u64) -> u64>, *mut core::ffi::c_void, u64) -> isize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5217c996
-  member_id: 0x31577a84
-}
-variant {
-  id: 0xa5099934
-  name: "core::option::Option<unsafe extern \"C\" fn(u64, u64, u64, u64, u64) -> u64>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52b5c2a4
-  member_id: 0x31fcf8ea
-}
-variant {
-  id: 0x2af70d51
-  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map) -> u64>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5242e3cb
-  member_id: 0x3181c2fa
-}
-variant {
-  id: 0xdbb5d297
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void, *mut bindings::bindings_raw::bpf_iter_aux_info) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52e0598c
-  member_id: 0x313f1fe0
-}
-variant {
-  id: 0x364c30fb
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_prog, *const bindings::bindings_raw::bpf_attr, *mut bindings::bindings_raw::bpf_attr) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5286d50e
-  member_id: 0x310fd62c
-}
-variant {
-  id: 0xabea31ea
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::restart_block) -> isize>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52926767
-  member_id: 0x3171e627
-}
-variant {
-  id: 0x7a9a6600
-  name: "core::option::Option<unsafe extern \"C\" fn(i32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52bf7bf1
-  member_id: 0x315b770c
-}
-variant {
-  id: 0x5929ef7f
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bio)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52068a06
-  member_id: 0x31fb9879
-}
-variant {
-  id: 0xda8d411b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bio, *mut bindings::bindings_raw::io_comp_batch, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52058a26
-  member_id: 0x31eb735d
-}
-variant {
-  id: 0x77ed713e
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, *const bindings::bindings_raw::blk_mq_queue_data) -> u8>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52dea81f
-  member_id: 0x31f9d567
-}
-variant {
-  id: 0x8af0be69
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::wait_queue_entry, u32, i32, *mut core::ffi::c_void) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52b9670d
-  member_id: 0x31d6287a
-}
-variant {
-  id: 0xe67a4daf
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5236ceb5
-  member_id: 0x312ae0e8
-}
-variant {
-  id: 0x79282ed6
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::rq_list)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52f97b48
-  member_id: 0x31d02281
-}
-variant {
-  id: 0x66dbe535
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request_queue) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52418e65
-  member_id: 0x31ae6584
-}
-variant {
-  id: 0x39d6ba45
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request_queue, i32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5292db94
-  member_id: 0x31a16e66
-}
-variant {
-  id: 0x88a408a0
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request, i32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5270f8ab
-  member_id: 0x316e87ef
-}
-variant {
-  id: 0xb8a4059a
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x525e6b4b
-  member_id: 0x31d1b712
-}
-variant {
-  id: 0x9f57f1b7
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request) -> u32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52722c9e
-  member_id: 0x31067bc4
-}
-variant {
-  id: 0xdfbe64fc
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, *mut bindings::bindings_raw::io_comp_batch) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52a4e940
-  member_id: 0x319a9f44
-}
-variant {
-  id: 0x97086fef
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52bc65fb
-  member_id: 0x3158319a
-}
-variant {
-  id: 0x4870ffb1
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, *mut core::ffi::c_void, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x528b5c11
-  member_id: 0x31befb57
-}
-variant {
-  id: 0xc1fa1932
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, u32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52aeb2d5
-  member_id: 0x3103b966
-}
-variant {
-  id: 0x8bedc7a6
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_tag_set, *mut bindings::bindings_raw::request, u32, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52fdfd99
-  member_id: 0x31c9c7ad
-}
-variant {
-  id: 0x63753b16
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_tag_set, *mut bindings::bindings_raw::request, u32)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x522f42f2
-  member_id: 0x317123cf
-}
-variant {
-  id: 0x369b800d
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request_queue) -> bool>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52d1793f
-  member_id: 0x31afa467
-}
-variant {
-  id: 0xe26e5c6a
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_tag_set)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52bbe754
-  member_id: 0x31c4c601
-}
-variant {
-  id: 0x890d20b3
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut bindings::bindings_raw::request)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5290cdd6
-  member_id: 0x3197ec79
+  member_id: 0x52900011
+  member_id: 0x31ad8234
 }
 variant {
   id: 0x18b83fac
@@ -365709,182 +365430,6 @@ variant {
   member_id: 0x31ec7a0f
 }
 variant {
-  id: 0x387ac534
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request, u8) -> u32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52f8edb7
-  member_id: 0x314ad205
-}
-variant {
-  id: 0x8c5e10f0
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::io_comp_batch)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5248327a
-  member_id: 0x31848ed2
-}
-variant {
-  id: 0x3b29d2df
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5290965f
-  member_id: 0x313e7996
-}
-variant {
-  id: 0xe64a296d
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52145f0c
-  member_id: 0x31cdfb1b
-}
-variant {
-  id: 0xd5d3ed86
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, u32, u32, usize) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52f8c56f
-  member_id: 0x318d6dec
-}
-variant {
-  id: 0x5ac16212
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, u32) -> u32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x527055fd
-  member_id: 0x317c7be2
-}
-variant {
-  id: 0xac10d723
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, *mut bindings::bindings_raw::hd_geometry) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x520d37b8
-  member_id: 0x316e18f9
-}
-variant {
-  id: 0x3b033d86
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, bool) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52764778
-  member_id: 0x3114fdb9
-}
-variant {
-  id: 0xa04dfe8c
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, usize)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52401941
-  member_id: 0x319d35dd
-}
-variant {
-  id: 0x570eb644
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, u64, u32, core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_zone, u32, *mut core::ffi::c_void) -> i32>, *mut core::ffi::c_void) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52d7a510
-  member_id: 0x31d61903
-}
-variant {
-  id: 0x4d18887a
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_zone, u32, *mut core::ffi::c_void) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52ab4ce7
-  member_id: 0x316203e8
-}
-variant {
-  id: 0xf592afb8
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, *mut u16) -> *mut u8>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52454d89
-  member_id: 0x31bf0ee1
-}
-variant {
-  id: 0xccf22821
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, *mut u8, u32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52cc2450
-  member_id: 0x31260983
-}
-variant {
-  id: 0x09db34e4
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, *mut u64) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x5200e3b3
-  member_id: 0x310dc44d
-}
-variant {
-  id: 0xd981e80d
-  name: "core::option::Option<unsafe extern \"C\" fn(u32, *mut core::ffi::c_void) -> *mut core::ffi::c_void>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x523e383b
-  member_id: 0x31308efd
-}
-variant {
-  id: 0x9b07a70b
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void, *mut core::ffi::c_void)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x521d8d8f
-  member_id: 0x313a8f2a
-}
-variant {
-  id: 0x3499c084
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, bool)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52da91c0
-  member_id: 0x3133ff2e
-}
-variant {
-  id: 0x6f99a9fe
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x522f3e80
-  member_id: 0x3115e53e
-}
-variant {
-  id: 0x4f0a02b9
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52f9b446
-  member_id: 0x31ab0d86
-}
-variant {
-  id: 0x3a6b5a27
-  name: "core::option::Option<unsafe extern \"C\" fn(usize) -> bool>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x524fda81
-  member_id: 0x3189cd48
-}
-variant {
-  id: 0xd8628b6e
-  name: "core::option::Option<unsafe extern \"C\" fn(u32, isize, *mut bindings::bindings_raw::pt_regs)>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x524f0056
-  member_id: 0x317573c9
-}
-variant {
-  id: 0x5cd899e5
-  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::dev_pagemap, usize, usize, i32) -> i32>"
-  bytesize: 8
-  discriminant: 0x01bf28e7
-  member_id: 0x52900011
-  member_id: 0x31ad8234
-}
-variant {
   id: 0x6f9230c2
   name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::inode) -> i32>"
   bytesize: 8
@@ -366091,6 +365636,318 @@ variant {
   discriminant: 0x01bf28e7
   member_id: 0x5290072a
   member_id: 0x31521ca9
+}
+variant {
+  id: 0x5929ef7f
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bio)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52068a06
+  member_id: 0x31fb9879
+}
+variant {
+  id: 0xd981e80d
+  name: "core::option::Option<unsafe extern \"C\" fn(u32, *mut core::ffi::c_void) -> *mut core::ffi::c_void>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x523e383b
+  member_id: 0x31308efd
+}
+variant {
+  id: 0x9b07a70b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void, *mut core::ffi::c_void)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x521d8d8f
+  member_id: 0x313a8f2a
+}
+variant {
+  id: 0xda8d411b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bio, *mut bindings::bindings_raw::io_comp_batch, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52058a26
+  member_id: 0x31eb735d
+}
+variant {
+  id: 0x77ed713e
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, *const bindings::bindings_raw::blk_mq_queue_data) -> u8>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52dea81f
+  member_id: 0x31f9d567
+}
+variant {
+  id: 0x8af0be69
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::wait_queue_entry, u32, i32, *mut core::ffi::c_void) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52b9670d
+  member_id: 0x31d6287a
+}
+variant {
+  id: 0xe67a4daf
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5236ceb5
+  member_id: 0x312ae0e8
+}
+variant {
+  id: 0x79282ed6
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::rq_list)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52f97b48
+  member_id: 0x31d02281
+}
+variant {
+  id: 0x66dbe535
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request_queue) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52418e65
+  member_id: 0x31ae6584
+}
+variant {
+  id: 0x39d6ba45
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request_queue, i32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5292db94
+  member_id: 0x31a16e66
+}
+variant {
+  id: 0x88a408a0
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request, i32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5270f8ab
+  member_id: 0x316e87ef
+}
+variant {
+  id: 0xb8a4059a
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x525e6b4b
+  member_id: 0x31d1b712
+}
+variant {
+  id: 0x9f57f1b7
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52722c9e
+  member_id: 0x31067bc4
+}
+variant {
+  id: 0xdfbe64fc
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, *mut bindings::bindings_raw::io_comp_batch) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52a4e940
+  member_id: 0x319a9f44
+}
+variant {
+  id: 0x97086fef
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52bc65fb
+  member_id: 0x3158319a
+}
+variant {
+  id: 0x4870ffb1
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, *mut core::ffi::c_void, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x528b5c11
+  member_id: 0x31befb57
+}
+variant {
+  id: 0xc1fa1932
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_hw_ctx, u32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52aeb2d5
+  member_id: 0x3103b966
+}
+variant {
+  id: 0x8bedc7a6
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_tag_set, *mut bindings::bindings_raw::request, u32, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52fdfd99
+  member_id: 0x31c9c7ad
+}
+variant {
+  id: 0x63753b16
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_tag_set, *mut bindings::bindings_raw::request, u32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x522f42f2
+  member_id: 0x317123cf
+}
+variant {
+  id: 0x369b800d
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request_queue) -> bool>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52d1793f
+  member_id: 0x31afa467
+}
+variant {
+  id: 0xe26e5c6a
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_mq_tag_set)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52bbe754
+  member_id: 0x31c4c601
+}
+variant {
+  id: 0x890d20b3
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::seq_file, *mut bindings::bindings_raw::request)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5290cdd6
+  member_id: 0x3197ec79
+}
+variant {
+  id: 0x387ac534
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::request, u8) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52f8edb7
+  member_id: 0x314ad205
+}
+variant {
+  id: 0x8c5e10f0
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::io_comp_batch)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5248327a
+  member_id: 0x31848ed2
+}
+variant {
+  id: 0x3b29d2df
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5290965f
+  member_id: 0x313e7996
+}
+variant {
+  id: 0xe64a296d
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52145f0c
+  member_id: 0x31cdfb1b
+}
+variant {
+  id: 0xd5d3ed86
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, u32, u32, usize) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52f8c56f
+  member_id: 0x318d6dec
+}
+variant {
+  id: 0x5ac16212
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, u32) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x527055fd
+  member_id: 0x317c7be2
+}
+variant {
+  id: 0xac10d723
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, *mut bindings::bindings_raw::hd_geometry) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x520d37b8
+  member_id: 0x316e18f9
+}
+variant {
+  id: 0x3b033d86
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, bool) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52764778
+  member_id: 0x3114fdb9
+}
+variant {
+  id: 0xa04dfe8c
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, usize)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52401941
+  member_id: 0x319d35dd
+}
+variant {
+  id: 0x570eb644
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, u64, u32, core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_zone, u32, *mut core::ffi::c_void) -> i32>, *mut core::ffi::c_void) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52d7a510
+  member_id: 0x31d61903
+}
+variant {
+  id: 0x4d18887a
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::blk_zone, u32, *mut core::ffi::c_void) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52ab4ce7
+  member_id: 0x316203e8
+}
+variant {
+  id: 0xf592afb8
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, *mut u16) -> *mut u8>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52454d89
+  member_id: 0x31bf0ee1
+}
+variant {
+  id: 0xccf22821
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, *mut u8, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52cc2450
+  member_id: 0x31260983
+}
+variant {
+  id: 0x09db34e4
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::gendisk, *mut u64) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5200e3b3
+  member_id: 0x310dc44d
+}
+variant {
+  id: 0x3499c084
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device, bool)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52da91c0
+  member_id: 0x3133ff2e
+}
+variant {
+  id: 0x6f99a9fe
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x522f3e80
+  member_id: 0x3115e53e
+}
+variant {
+  id: 0x4f0a02b9
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::block_device) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52f9b446
+  member_id: 0x31ab0d86
 }
 variant {
   id: 0xc0e766fa
@@ -366605,6 +366462,14 @@ variant {
   member_id: 0x313f5d0c
 }
 variant {
+  id: 0xbc5358c2
+  name: "core::option::Option<unsafe extern \"C\" fn()>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52b667a3
+  member_id: 0x3133d767
+}
+variant {
   id: 0x91b3451b
   name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::kunit_suite) -> i32>"
   bytesize: 8
@@ -366757,6 +366622,14 @@ variant {
   member_id: 0x312ecd9e
 }
 variant {
+  id: 0x2496b3dd
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::file, usize, usize, usize, usize) -> usize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x520d04bd
+  member_id: 0x31775531
+}
+variant {
   id: 0xf868b068
   name: "core::option::Option<unsafe extern \"C\" fn(i32) -> i32>"
   bytesize: 8
@@ -366835,6 +366708,414 @@ variant {
   discriminant: 0x01bf28e7
   member_id: 0x52393b15
   member_id: 0x31a49584
+}
+variant {
+  id: 0x8d77192e
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_taskset) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52f7113c
+  member_id: 0x3167bed0
+}
+variant {
+  id: 0xc57ebb64
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_taskset)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52332f0b
+  member_id: 0x31d4b14b
+}
+variant {
+  id: 0xa50da236
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::task_struct, *mut bindings::bindings_raw::css_set) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52c35e29
+  member_id: 0x31f87bc3
+}
+variant {
+  id: 0x664b6ac9
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::task_struct, *mut bindings::bindings_raw::css_set)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52e17f5c
+  member_id: 0x3138e11d
+}
+variant {
+  id: 0xaac42d00
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::task_struct)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52608d47
+  member_id: 0x31af03b6
+}
+variant {
+  id: 0x7e313a34
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype) -> u64>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x524cf853
+  member_id: 0x314ff673
+}
+variant {
+  id: 0xecaf39e7
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype) -> i64>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x524b4ec0
+  member_id: 0x31ef7d70
+}
+variant {
+  id: 0xed9e2783
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype, u64) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x529be304
+  member_id: 0x31e8e034
+}
+variant {
+  id: 0xa01155b2
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::cgroup_subsys_state, *mut bindings::bindings_raw::cftype, i64) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52be87b2
+  member_id: 0x31e41cf3
+}
+variant {
+  id: 0x046b1d13
+  name: "core::option::Option<unsafe extern \"C\" fn(*const core::ffi::c_void, *const bindings::bindings_raw::bpf_insn) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52091fab
+  member_id: 0x31409958
+}
+variant {
+  id: 0x803ef253
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_attr) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52cbbc3a
+  member_id: 0x318f8ca6
+}
+variant {
+  id: 0x2b5069a2
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_attr) -> *mut bindings::bindings_raw::bpf_map>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x529757ff
+  member_id: 0x31b2687a
+}
+variant {
+  id: 0x2f16fe6b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x524cd109
+  member_id: 0x319847e5
+}
+variant {
+  id: 0x68d23806
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5243ef07
+  member_id: 0x3160d1a1
+}
+variant {
+  id: 0x8644da24
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut core::ffi::c_void) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x522f1374
+  member_id: 0x312086a4
+}
+variant {
+  id: 0xbd7eb063
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void) -> *mut core::ffi::c_void>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52c0db03
+  member_id: 0x31645d19
+}
+variant {
+  id: 0x4dade71b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *const bindings::bindings_raw::bpf_attr, *mut bindings::bindings_raw::bpf_attr) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5203b7de
+  member_id: 0x3198722b
+}
+variant {
+  id: 0x23d988d3
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut core::ffi::c_void, u64) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52b45440
+  member_id: 0x31ce6b3e
+}
+variant {
+  id: 0x70cd742b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file, *const bindings::bindings_raw::bpf_attr, *mut bindings::bindings_raw::bpf_attr) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x521c39b3
+  member_id: 0x31dabfa1
+}
+variant {
+  id: 0x66e86c2b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut core::ffi::c_void, u64) -> isize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x523c6f9c
+  member_id: 0x31701061
+}
+variant {
+  id: 0xf07105f0
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void) -> isize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x522d9815
+  member_id: 0x318d0581
+}
+variant {
+  id: 0xde2da0d9
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, u64) -> isize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5253c6e4
+  member_id: 0x317c770b
+}
+variant {
+  id: 0x047e00e7
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, u32) -> *mut core::ffi::c_void>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x523a6da4
+  member_id: 0x318c90fc
+}
+variant {
+  id: 0x3ebaea64
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file, i32) -> *mut core::ffi::c_void>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52e76990
+  member_id: 0x315affcf
+}
+variant {
+  id: 0x4242aeef
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, bool)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5284b1e8
+  member_id: 0x31c40b68
+}
+variant {
+  id: 0x86c0e6f6
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::bpf_insn) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52ff260f
+  member_id: 0x3132138e
+}
+variant {
+  id: 0x4219259a
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52764676
+  member_id: 0x31516022
+}
+variant {
+  id: 0x70068e0f
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut core::ffi::c_void, *mut bindings::bindings_raw::seq_file)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x527fdd1e
+  member_id: 0x31091844
+}
+variant {
+  id: 0x5efb50e8
+  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, *const bindings::bindings_raw::btf, *const bindings::bindings_raw::btf_type, *const bindings::bindings_raw::btf_type) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x522d8a5e
+  member_id: 0x31f3d554
+}
+variant {
+  id: 0x9f1826dd
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::bpf_prog_aux) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5268336b
+  member_id: 0x316d884d
+}
+variant {
+  id: 0x655805ca
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::bpf_prog_aux)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52a34b73
+  member_id: 0x31c0bb33
+}
+variant {
+  id: 0x6bcc9e9a
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, u32, *mut bindings::bindings_raw::bpf_prog, *mut bindings::bindings_raw::bpf_prog)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x525e35de
+  member_id: 0x31dabdaf
+}
+variant {
+  id: 0x2e35a940
+  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, *mut u64, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52cf0364
+  member_id: 0x310fa0bb
+}
+variant {
+  id: 0x36138c79
+  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, u64, *mut u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x520ec8d4
+  member_id: 0x316d75c1
+}
+variant {
+  id: 0x45848354
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::vm_area_struct) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x521196ca
+  member_id: 0x318c50f9
+}
+variant {
+  id: 0xfc89585b
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, *mut bindings::bindings_raw::file, *mut bindings::bindings_raw::poll_table_struct) -> u32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x529415d5
+  member_id: 0x313690f9
+}
+variant {
+  id: 0xe35d8497
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_local_storage_map, *mut core::ffi::c_void, u32) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x521614d7
+  member_id: 0x31e81030
+}
+variant {
+  id: 0x39ecddcd
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_local_storage_map, *mut core::ffi::c_void, u32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52796a54
+  member_id: 0x31f60bcf
+}
+variant {
+  id: 0x2c45b693
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void) -> *mut *mut bindings::bindings_raw::bpf_local_storage>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52cf9b7a
+  member_id: 0x3136f2db
+}
+variant {
+  id: 0xbf889b90
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, u64, u64) -> isize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52c86b13
+  member_id: 0x31277d53
+}
+variant {
+  id: 0x0aa8fcd2
+  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map, *const bindings::bindings_raw::bpf_map) -> bool>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x525ed47e
+  member_id: 0x317bb93d
+}
+variant {
+  id: 0xc521244c
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_verifier_env, *mut bindings::bindings_raw::bpf_func_state, *mut bindings::bindings_raw::bpf_func_state) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52669957
+  member_id: 0x3124c02f
+}
+variant {
+  id: 0x6f7e2cbe
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_map, core::option::Option<unsafe extern \"C\" fn(u64, u64, u64, u64, u64) -> u64>, *mut core::ffi::c_void, u64) -> isize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5217c996
+  member_id: 0x31577a84
+}
+variant {
+  id: 0xa5099934
+  name: "core::option::Option<unsafe extern \"C\" fn(u64, u64, u64, u64, u64) -> u64>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52b5c2a4
+  member_id: 0x31fcf8ea
+}
+variant {
+  id: 0x2af70d51
+  name: "core::option::Option<unsafe extern \"C\" fn(*const bindings::bindings_raw::bpf_map) -> u64>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5242e3cb
+  member_id: 0x3181c2fa
+}
+variant {
+  id: 0xdbb5d297
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut core::ffi::c_void, *mut bindings::bindings_raw::bpf_iter_aux_info) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52e0598c
+  member_id: 0x313f1fe0
+}
+variant {
+  id: 0x364c30fb
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::bpf_prog, *const bindings::bindings_raw::bpf_attr, *mut bindings::bindings_raw::bpf_attr) -> i32>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x5286d50e
+  member_id: 0x310fd62c
+}
+variant {
+  id: 0xabea31ea
+  name: "core::option::Option<unsafe extern \"C\" fn(*mut bindings::bindings_raw::restart_block) -> isize>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52926767
+  member_id: 0x3171e627
+}
+variant {
+  id: 0x7a9a6600
+  name: "core::option::Option<unsafe extern \"C\" fn(i32)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x52bf7bf1
+  member_id: 0x315b770c
+}
+variant {
+  id: 0x3a6b5a27
+  name: "core::option::Option<unsafe extern \"C\" fn(usize) -> bool>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x524fda81
+  member_id: 0x3189cd48
+}
+variant {
+  id: 0xd8628b6e
+  name: "core::option::Option<unsafe extern \"C\" fn(u32, isize, *mut bindings::bindings_raw::pt_regs)>"
+  bytesize: 8
+  discriminant: 0x01bf28e7
+  member_id: 0x524f0056
+  member_id: 0x317573c9
 }
 function {
   id: 0x004cf563
@@ -374933,6 +375214,11 @@ function {
   return_type_id: 0x48b5725f
   parameter_id: 0x249959de
   parameter_id: 0x4585663f
+}
+function {
+  id: 0x18a88249
+  return_type_id: 0x48b5725f
+  parameter_id: 0x20c34f69
 }
 function {
   id: 0x18a94681
@@ -386273,6 +386559,11 @@ function {
   parameter_id: 0x12bb09bf
   parameter_id: 0x12bb09bf
   parameter_id: 0x23e1331e
+}
+function {
+  id: 0x7054ec66
+  return_type_id: 0xe5312866
+  parameter_id: 0x2d715c39
 }
 function {
   id: 0x706a01e7
@@ -397824,6 +398115,10 @@ function {
   parameter_id: 0x2cae7fa9
   parameter_id: 0x18bd6530
   parameter_id: 0x2dcd339f
+}
+function {
+  id: 0x96c36eea
+  return_type_id: 0x7ad2e67e
 }
 function {
   id: 0x96c3b4e1
@@ -421947,6 +422242,10 @@ function {
   parameter_id: 0x13580d6c
 }
 function {
+  id: 0xffebe9c8
+  return_type_id: 0x4e174e91
+}
+function {
   id: 0xfffcea5d
   return_type_id: 0x6d7f5ff6
   parameter_id: 0x0562c566
@@ -422040,6 +422339,42 @@ elf_symbol {
   crc: 0xb0ac7316
   type_id: 0x9188d94b
   full_name: "LZ4_setStreamDecode"
+}
+elf_symbol {
+  id: 0x2e29afcd
+  name: "_RNvMs1_NtCsdfZWD8DztAw_6kernel4taskNtB5_4Task17pid_in_current_ns"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x3eb944ca
+  type_id: 0x7054ec66
+  full_name: "kernel::task::Task::pid_in_current_ns"
+}
+elf_symbol {
+  id: 0x00cac87b
+  name: "_RNvXs1N_NtCsg7kyWky7wBq_8bindings12bindings_rawNtB6_7rb_nodeNtNtCs3o2tGsuHyou_4core7default7Default7default"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xac513da8
+  type_id: 0xffebe9c8
+  full_name: "bindings::bindings_raw::{impl#105}::default"
+}
+elf_symbol {
+  id: 0xe30b0fc3
+  name: "_RNvXs1O_NtCsg7kyWky7wBq_8bindings12bindings_rawNtB6_7rb_rootNtNtCs3o2tGsuHyou_4core7default7Default7default"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x40e23824
+  type_id: 0x96c36eea
+  full_name: "bindings::bindings_raw::{impl#64}::default"
+}
+elf_symbol {
+  id: 0xc9c8347e
+  name: "_RNvXs7_NtCsdfZWD8DztAw_6kernel2mmNtB5_15MmWithUserAsyncNtNtB7_5types16AlwaysRefCounted7dec_ref"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x58aeb644
+  type_id: 0x18a88249
+  full_name: "kernel::mm::{impl#9}::dec_ref"
 }
 elf_symbol {
   id: 0xf56ca4c7
@@ -504573,6 +504908,10 @@ interface {
   symbol_id: 0x740d2b27
   symbol_id: 0x758b3708
   symbol_id: 0xab09bd5e
+  symbol_id: 0x2e29afcd
+  symbol_id: 0x00cac87b
+  symbol_id: 0xe30b0fc3
+  symbol_id: 0xc9c8347e
   symbol_id: 0xf56ca4c7
   symbol_id: 0x59348d38
   symbol_id: 0x41de13f7
