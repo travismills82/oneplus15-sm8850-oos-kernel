@@ -138,7 +138,6 @@ unsafe impl AlwaysRefCounted for MmWithUserAsync {
         unsafe { bindings::mmget(self.as_raw()) };
     }
 
-    #[inline]
     unsafe fn dec_ref(obj: NonNull<Self>) {
         // SAFETY: The caller is giving up their refcount.
         unsafe { bindings::mmput_async(obj.cast().as_ptr()) };

@@ -267,6 +267,14 @@ impl Task {
         unsafe { bindings::task_tgid_nr_ns(self.0.get(), pidns) }
     }
 
+    /// Returns the given task's pid in the current pid namespace.
+    ///
+    /// This compatibility entry point preserves the Android generation-5
+    /// Rust module ABI. New code should use [`Task::tgid_nr_ns`].
+    pub fn pid_in_current_ns(&self) -> Pid {
+        self.tgid_nr_ns(None)
+    }
+
     /// Wakes up the task.
     pub fn wake_up(&self) {
         // SAFETY: It's always safe to call `wake_up_process` on a valid task, even if the task

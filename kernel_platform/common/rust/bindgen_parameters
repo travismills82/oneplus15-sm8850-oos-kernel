@@ -34,3 +34,10 @@
 # We use const helpers to aid bindgen, to avoid conflicts when constants are
 # recognized, block generation of the non-helper constants.
 --blocklist-item ARCH_SLAB_MINALIGN
+
+# These C-only scoped-guard types are not consumed by Rust.  Omitting them
+# keeps subsequent bindings trait identities stable for external Rust modules.
+--blocklist-type class_raw_spinlock_bh_t
+--blocklist-type class_raw_spinlock_bh_try_t
+--blocklist-type class_spinlock_bh_t
+--blocklist-type class_spinlock_bh_try_t
