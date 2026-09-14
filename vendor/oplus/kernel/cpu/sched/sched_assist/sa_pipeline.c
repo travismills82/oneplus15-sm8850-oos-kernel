@@ -789,7 +789,7 @@ bool oplus_pipeline_prime_cpu_capacity_fit(struct task_struct *p, struct rq *rq)
 		return false;
 
 	if (rq->cpu >= nr_cpu_ids - prime_cpu_num) {
-		if (rq->cfs.h_nr_queued <= 1)
+		if (rq->cfs.h_nr_running <= 1)
 			return true;
 	}
 

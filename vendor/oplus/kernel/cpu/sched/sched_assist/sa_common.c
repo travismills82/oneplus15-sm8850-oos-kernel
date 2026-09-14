@@ -814,7 +814,7 @@ void sched_info_systrace_c(unsigned int cpu, struct task_struct *p)
 	struct rq *rq = cpu_rq(cpu);
 	struct cfs_rq *cfs_rq = &rq->cfs;
 	struct rt_rq *rt_rq = &rq->rt;
-	int cfs_running = cfs_rq->h_nr_queued - cfs_rq->h_nr_delayed;
+	int cfs_running = cfs_rq->h_nr_running - cfs_rq->h_nr_delayed;
 	int rt_running = rt_rq->rt_nr_running;
 	struct oplus_task_struct *ots = get_oplus_task_struct(p);
 	int ddl_hint = ots && test_bit(OTS_STATE_DDL_ACTIVE, &ots->state) ? 1 : 0;

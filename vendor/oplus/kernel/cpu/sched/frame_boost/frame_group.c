@@ -2979,7 +2979,7 @@ void fbg_game_ed(struct rq *rq)
 	if (!__frame_boost_enabled())
 		return;
 
-	if (!rq->cfs.h_nr_queued)
+	if (!rq->cfs.h_nr_running)
 		return;
 
 	grp = frame_boost_groups[GAME_FRAME_GROUP_ID];

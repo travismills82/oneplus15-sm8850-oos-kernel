@@ -945,7 +945,7 @@ TRACE_EVENT(walt_nohz_balance_kick,
 	TP_fast_assign(
 		__entry->cpu		= rq->cpu;
 		__entry->nr_running	= rq->nr_running;
-		__entry->nr_cfs_running	= rq->cfs.h_nr_queued;
+		__entry->nr_cfs_running	= rq->cfs.h_nr_running;
 	),
 
 	TP_printk("cpu=%d nr_running=%u nr_cfs_running=%u",
@@ -1015,7 +1015,7 @@ TRACE_EVENT(walt_lb_cpu_util,
 	TP_fast_assign(
 		__entry->cpu			= cpu;
 		__entry->nr_running		= cpu_rq(cpu)->nr_running;
-		__entry->cfs_nr_running		= cpu_rq(cpu)->cfs.h_nr_queued;
+		__entry->cfs_nr_running		= cpu_rq(cpu)->cfs.h_nr_running;
 		__entry->nr_big			= wrq->walt_stats.nr_big_tasks;
 		__entry->nr_rtg_high_prio_tasks	= walt_nr_rtg_high_prio(cpu);
 		__entry->cpu_util		= cpu_util(cpu);

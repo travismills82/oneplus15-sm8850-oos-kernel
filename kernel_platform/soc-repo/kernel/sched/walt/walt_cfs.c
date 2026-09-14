@@ -1539,7 +1539,7 @@ void walt_cfs_tick(struct rq *rq)
 	 * see if we can run any other task including MVP tasks.
 	 */
 	if (((skip_mvp != wrq->skip_mvp) ||
-		(wrq->mvp_tasks.next != &wts->mvp_list)) && rq->cfs.h_nr_queued > 1)
+		(wrq->mvp_tasks.next != &wts->mvp_list)) && rq->cfs.h_nr_running > 1)
 		resched_curr(rq);
 
 out:
