@@ -521,7 +521,7 @@ static int find_first_idle_if_others_are_busy(void)
 static bool similar_cap_skip_cpu(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
-	int cfs_nr_running = rq->cfs.h_nr_running;
+	int cfs_nr_running = rq->cfs.h_nr_queued;
 
 	if (cpu_halted(cpu) && cfs_nr_running)
 		return false;
@@ -587,12 +587,12 @@ static int walt_lb_find_busiest_from_higher_cap_cpu(int dst_cpu, const cpumask_t
 		total_cpus += 1;
 		total_util += util;
 		total_capacity += capacity_orig_of(i);
-		total_nr += cpu_rq(i)->cfs.h_nr_running;
+		total_nr += cpu_rq(i)->cfs.h_nr_queued;
 
-		if (cpu_rq(i)->cfs.h_nr_running < 2)
+		if (cpu_rq(i)->cfs.h_nr_queued < 2)
 			continue;
 
-		if (cpu_rq(i)->cfs.h_nr_running == 2 &&
+		if (cpu_rq(i)->cfs.h_nr_queued == 2 &&
 			task_util(cpu_rq(i)->curr) < SMALL_TASK_THRESHOLD)
 			continue;
 
@@ -656,7 +656,7 @@ static int walt_lb_find_busiest_from_lower_cap_cpu(int dst_cpu, const cpumask_t 
 		total_cpus += 1;
 		total_util += util;
 		total_capacity += capacity_orig_of(i);
-		total_nr += cpu_rq(i)->cfs.h_nr_running;
+		total_nr += cpu_rq(i)->cfs.h_nr_queued;
 
 		/*
 		 * no point in selecting this CPU as busy, as
@@ -666,7 +666,7 @@ static int walt_lb_find_busiest_from_lower_cap_cpu(int dst_cpu, const cpumask_t 
 			continue;
 
 		/* active migration is allowed only to idle cpu */
-		if (cpu_rq(i)->cfs.h_nr_running < 2 &&
+		if (cpu_rq(i)->cfs.h_nr_queued < 2 &&
 			(!wrq->walt_stats.nr_big_tasks || !treat_dst_idle))
 			continue;
 
@@ -1058,11 +1058,11 @@ found_busy_cpu:
 unlock:
 	raw_spin_lock(&this_rq->__lock);
 rt_pulled:
-	if (this_rq->cfs.h_nr_running && !*pulled_task)
+	if (this_rq->cfs.h_nr_queued && !*pulled_task)
 		*pulled_task = 1;
 
 	/* Is there a task of a high priority class? */
-	if (this_rq->nr_running != this_rq->cfs.h_nr_running)
+	if (this_rq->nr_running != this_rq->cfs.h_nr_queued)
 		*pulled_task = -1;
 
 	/* reset the idle time stamp if we pulled any task */

@@ -3510,7 +3510,7 @@ static bool oplus_newidle_balance_pull_runnable_for_pipeline(
 	struct task_struct *p;
 	struct task_struct *pull_me = NULL;
 
-	if (prime_rq->cfs.h_nr_running <= 1)
+	if (prime_rq->cfs.h_nr_queued <= 1)
 		return false;
 
 	if (ux_cputopo.cls_nr <= 2)
@@ -3671,13 +3671,13 @@ out:
 	 * the runnable state and will not get a chance to run for a
 	 * long time.
 	 */
-	if (this_rq->cfs.h_nr_running && !*pulled_task)
+	if (this_rq->cfs.h_nr_queued && !*pulled_task)
 		*pulled_task = 1;
 
 	/*
 	 * Is there a task of a high priority class?
 	 */
-	if (this_rq->nr_running != this_rq->cfs.h_nr_running)
+	if (this_rq->nr_running != this_rq->cfs.h_nr_queued)
 		*pulled_task = -1;
 
 	if (*pulled_task)
@@ -3735,7 +3735,7 @@ out:
 	trace_printk("DEBUG_LB_NEWIDLE_HIT[%d]: cpu=%d, pulled_task=%d, "
 		"done=%d, nr_running=%d, h_nr_running=%d\n",
 		__LINE__, this_cpu, *pulled_task, *done,
-		this_rq->nr_running, this_rq->cfs.h_nr_running);
+		this_rq->nr_running, this_rq->cfs.h_nr_queued);
 #endif
 
 	return ret;
@@ -3887,8 +3887,8 @@ bool __oplus_newidle_balance(void *data, struct rq *this_rq,
 			"nr_running=%d, h_nr_running=%d, high_prio=%d "
 			"is_migration=%d\n",
 		__LINE__, this_cpu, this_rq->curr->comm, this_rq->curr->pid,
-		this_rq->nr_running, this_rq->cfs.h_nr_running,
-		this_rq->nr_running != this_rq->cfs.h_nr_running,
+		this_rq->nr_running, this_rq->cfs.h_nr_queued,
+		this_rq->nr_running != this_rq->cfs.h_nr_queued,
 		is_migration);
 
 	oplus_loadbalance_systrace_print(OPLUS_LB_SYSTRACE_PID,
@@ -4012,7 +4012,7 @@ void show_trackme_stats(void)
 			tk_array[i].max_runnable_time,
 			curr->comm, curr->pid, is_idle, preempt,
 			test_ti_thread_flag(task_thread_info(curr), TIF_NEED_RESCHED),
-			rq->nr_running, rq->cfs.h_nr_running);
+			rq->nr_running, rq->cfs.h_nr_queued);
 
 		/*
 		 * No log if the task is in the running/runnable state
@@ -4622,7 +4622,7 @@ static void ut_dump_cpu_state(void)
 			idle?idle->name:"NULL", idle?idle->desc:"NULL",
 			idle?idle->exit_latency:0, cpu_online(i), cpu_active(i),
 			oplus_idle_cpu(i), available_idle_cpu(i),
-			cpu_rq(i)->nr_running, cpu_rq(i)->cfs.h_nr_running);
+			cpu_rq(i)->nr_running, cpu_rq(i)->cfs.h_nr_queued);
 
 		cpuidle_exit_latency_systrace(i, idle?idle->exit_latency:0);
 	}
@@ -4704,6 +4704,5 @@ void oplus_lb_test_proc_deinit(struct proc_dir_entry *pde)
 	remove_proc_entry("lb_test", pde);
 }
 #endif
-
 
 

@@ -595,7 +595,7 @@ static bool is_ed_task_present(struct rq *rq, u64 wallclock, struct task_struct 
 
 	wrq->ed_task = NULL;
 
-	if (!is_ed_enabled() || !rq->cfs.h_nr_running)
+	if (!is_ed_enabled() || !rq->cfs.h_nr_queued)
 		return false;
 
 	list_for_each_entry(p, &rq->cfs_tasks, se.group_node) {
