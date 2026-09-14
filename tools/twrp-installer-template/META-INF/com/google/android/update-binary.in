@@ -16,14 +16,13 @@ RELEASE_TAG='@RELEASE_TAG@'
 FIRMWARE='@FIRMWARE@'
 DEVICE='@DEVICE@'
 BOOT_BYTES='@BOOT_BYTES@'
-BOOT_PARTITION_BYTES='@BOOT_PARTITION_BYTES@'
 BOOT_SHA256='@BOOT_SHA256@'
 STOCK_SYSTEM_DLKM_BYTES='@STOCK_SYSTEM_DLKM_BYTES@'
-STOCK_SYSTEM_DLKM_BLOCKS='@STOCK_SYSTEM_DLKM_BLOCKS@'
 STOCK_SYSTEM_DLKM_SHA256='@STOCK_SYSTEM_DLKM_SHA256@'
 STOCK_SYSTEM_DLKM_EROFS_MAGIC='@STOCK_SYSTEM_DLKM_EROFS_MAGIC@'
 WORKDIR="/tmp/oneplus15-$RELEASE_TAG-$$"
 MANIFEST_MOUNT=''
+WRITE_STARTED=0
 
 ui_print() {
     if [ -n "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
@@ -60,6 +59,8 @@ hash_block_prefix() {
         sha256sum | awk '{print $1}'
 }
 
+# Called by the EXIT trap, including abort paths exercised by the fixture suite.
+# shellcheck disable=SC2329
 cleanup() {
     if [ -n "$MANIFEST_MOUNT" ]; then
         umount "$MANIFEST_MOUNT" 2>/dev/null || true
@@ -106,30 +107,173 @@ restore_boot() {
     ui_print 'Boot backup restored and verified.'
 }
 
-trap cleanup 0 1 2 15
+# The build embeds this reviewed helper; the ZIP never sources an external file.
+# SPDX-License-Identifier: GPL-2.0-only
+# Embedded verbatim in update-binary by the packager. No partition operations.
+# Properties are evidence from a trusted recovery, not hardware attestation.
+
+family_prop() {
+    getprop "$1" 2>/dev/null || true
+}
+
+detect_oneplus15_family() {
+    ui_print 'OnePlus 15 compatibility check'
+    regional_models=''
+    for property in \
+        ro.product.model ro.product.device ro.product.name \
+        ro.product.vendor.device ro.product.system.device ro.product.odm.device \
+        ro.product.product.device ro.build.product ro.product.board \
+        ro.board.platform ro.hardware ro.boot.hardware ro.boot.product.hardware.sku \
+        ro.boot.slot_suffix ro.boot.slot ro.build.ab_update \
+        ro.boot.dynamic_partitions ro.boot.virtual_ab.enabled ro.virtual_ab.enabled \
+        ro.build.fingerprint ro.vendor.build.fingerprint \
+        ro.boot.prjname ro.boot.project_name ro.boot.project_codename \
+        ro.oplus.market.name ro.vendor.oplus.market.name \
+        ro.twrp.version ro.orangefox.version ro.pbrp.version; do
+        value="$(family_prop "$property")"
+        ui_print "  $property=${value:-<absent>}"
+        # Diagnostic only: never use a regional code to authorize hardware.
+        for code in CPH2745 CPH2747 CPH2749 PLK110; do
+            case "$value" in
+                *"$code"*)
+                    case " $regional_models " in
+                        *" $code "*) ;;
+                        *) regional_models="${regional_models:+$regional_models }$code" ;;
+                    esac ;;
+            esac
+        done
+    done
+    model="$(family_prop ro.product.model)"
+    prjname="$(family_prop ro.boot.prjname)"
+    ui_print "Marketing model: ${model:-<absent>} (informational only)"
+    ui_print "Regional model(s): ${regional_models:-unknown} (informational only)"
+    family_evidence=''
+    alias_evidence=''
+    for property in ro.product.device ro.product.vendor.device \
+        ro.product.system.device ro.product.odm.device ro.product.product.device; do
+        value="$(family_prop "$property")"
+        case "$value" in
+            infiniti) family_evidence="$family_evidence $property=infiniti" ;;
+            OP60FFL1|OP611FL1) alias_evidence="$alias_evidence $property=$value" ;;
+            # Shared system/GSI names are not phone identities and prove nothing.
+            ''|ossi|generic|generic_arm64|gsi_arm64|SM88XX) ;;
+            *) abort_install "conflicting device identity: $property='$value'; expected infiniti family." ;;
+        esac
+    done
+    for property in ro.product.name ro.build.product; do
+        value="$(family_prop "$property")"
+        case "$value" in
+            infiniti|twrp_infiniti|omni_infiniti|fox_infiniti|pbrp_infiniti)
+                family_evidence="$family_evidence $property=$value" ;;
+        esac
+    done
+    # Local qualified TWRP libinit uses OP60FFL1; stock .500 uses OP611FL1.
+    # Without an explicit infiniti property, require the audited project as well.
+    if [ -z "$family_evidence" ] && [ -n "$alias_evidence" ]; then
+        case "$prjname" in
+            24831|24863) family_evidence="$alias_evidence project=$prjname" ;;
+        esac
+    fi
+    [ -n "$family_evidence" ] || abort_install 'no positive infiniti family identity; a model or SM8850 alone is insufficient.'
+
+    platform_evidence=''
+    for property in ro.product.board ro.board.platform ro.hardware ro.boot.hardware; do
+        value="$(family_prop "$property" | tr '[:upper:]' '[:lower:]')"
+        case "$value" in
+            canoe) platform_evidence="$platform_evidence $property=canoe" ;;
+            ''|qcom|sm8850) ;; # Generic Qualcomm/SoC evidence cannot authorize a phone.
+            *) abort_install "incompatible platform: $property='$value'; expected canoe." ;;
+        esac
+    done
+    [ -n "$platform_evidence" ] || abort_install 'no positive canoe platform evidence.'
+    ui_print "Device: infiniti (evidence:$family_evidence)"
+    ui_print "Platform: canoe (evidence:$platform_evidence)"
+
+    slot="$(family_prop ro.boot.slot_suffix)"
+    boot_slot="$(family_prop ro.boot.slot)"
+    case "$boot_slot" in
+        ''|a|b) ;;
+        *) abort_install "invalid ro.boot.slot '$boot_slot'." ;;
+    esac
+    if [ -z "$slot" ] && [ -n "$boot_slot" ]; then slot="_$boot_slot"; fi
+    case "$slot" in
+        _a|_b) ;;
+        *) abort_install "invalid active slot '$slot'." ;;
+    esac
+    if [ -n "$boot_slot" ] && [ "$slot" != "_$boot_slot" ]; then
+        abort_install 'conflicting active-slot properties.'
+    fi
+    case "$(family_prop ro.build.ab_update)" in
+        false|0) abort_install 'device explicitly reports a non-A/B layout.' ;;
+    esac
+    ui_print "Slot: $slot"
+    virtual_ab="$(family_prop ro.boot.virtual_ab.enabled)"
+    [ -n "$virtual_ab" ] || virtual_ab="$(family_prop ro.virtual_ab.enabled)"
+    ui_print "Virtual A/B: ${virtual_ab:-unknown; snapshot metadata must confirm safety}"
+}
+
+resolve_boot_partition() {
+    resolved=''
+    for by_name in /dev/block/bootdevice/by-name /dev/block/by-name; do
+        node="$by_name/boot$1"
+        [ -b "$node" ] || continue
+        canonical="$(readlink -f "$node")" || return 1
+        [ -b "$canonical" ] || return 1
+        if [ -n "$resolved" ] && [ "$resolved" != "$canonical" ]; then
+            return 1 # Conflicting by-name aliases must never select an arbitrary disk.
+        fi
+        resolved="$canonical"
+    done
+    [ -n "$resolved" ] || return 1
+    printf '%s\n' "$resolved"
+}
+
+verify_family_firmware() {
+    # Authenticate firmware bytes separately from family properties. A regional
+    # software prefix is not the physical hardware identity. Keep version exact.
+    installed_display="$(awk -F= '$1 == "ro.build.display.id" {print substr($0, index($0, "=") + 1)}' "$1")"
+    expected_version="${2#*_}"
+    case "$installed_display" in
+        *_"$expected_version")
+            prefix="${installed_display%_"$expected_version"}"
+            case "$prefix" in
+                ''|*[!A-Za-z0-9.-]*) abort_install 'ambiguous firmware build identity.' ;;
+            esac ;;
+        *) abort_install "active firmware '$installed_display' is not OxygenOS $expected_version." ;;
+    esac
+    ui_print "Installed firmware: $installed_display (regional prefix is not hardware authentication)"
+}
+
+# Called by HUP/INT/TERM traps; the interrupted-write fixture proves rollback.
+# shellcheck disable=SC2329
+interrupted() {
+    trap '' 1 2 15
+    if [ "$WRITE_STARTED" -eq 1 ]; then
+        restore_boot || abort_install "interrupted; rollback failed, use $BACKUP_IMAGE."
+    fi
+    abort_install 'installation interrupted.'
+}
+
+trap 'cleanup' EXIT
+trap 'interrupted' HUP INT TERM
 
 [ -r "$ZIPFILE" ] || abort_install "installer archive is not readable: $ZIPFILE"
 
-for tool in awk blockdev date dd df getprop grep lpdump mkdir mount od sha256sum sync tr umount unzip wc; do
+for tool in awk blockdev date dd df getprop grep lpdump mkdir mount od readlink sha256sum sync tr umount unzip wc; do
     command -v "$tool" >/dev/null 2>&1 ||
         abort_install "required recovery tool is unavailable: $tool"
 done
 
-model="$(getprop ro.product.model 2>/dev/null || true)"
-board="$(getprop ro.product.board 2>/dev/null || true)"
-prjname="$(getprop ro.boot.prjname 2>/dev/null || true)"
-[ "$model" = CPH2747 ] ||
-    abort_install "unsupported model '$model'; expected CPH2747."
-[ "$board" = canoe ] ||
-    abort_install "unsupported board '$board'; expected canoe."
-[ "$prjname" = 24863 ] ||
-    abort_install "unsupported project '$prjname'; expected 24863."
+detect_oneplus15_family
 
-slot="$(getprop ro.boot.slot_suffix 2>/dev/null || true)"
+BOOT_A="$(resolve_boot_partition _a)" || abort_install 'cannot uniquely resolve boot_a.'
+BOOT_B="$(resolve_boot_partition _b)" || abort_install 'cannot uniquely resolve boot_b.'
+[ "$BOOT_A" != "$BOOT_B" ] || abort_install 'boot_a and boot_b alias the same partition.'
 case "$slot" in
-    _a|_b) ;;
-    *) abort_install "invalid active slot '$slot'." ;;
+    _a) BOOT_BLOCK="$BOOT_A" ;;
+    _b) BOOT_BLOCK="$BOOT_B" ;;
 esac
+ui_print "Boot partition: $BOOT_BLOCK (boot$slot)"
 
 lpdump_output="$(lpdump --slot "$slot" 2>&1)" ||
     abort_install "lpdump failed for $slot: $lpdump_output"
@@ -146,7 +290,6 @@ case "$lpdump_output" in
     *) abort_install 'snapshot update/merge is active or super metadata is not clean.' ;;
 esac
 
-BOOT_BLOCK="/dev/block/bootdevice/by-name/boot$slot"
 SYSTEM_DLKM_BLOCK="/dev/block/mapper/system_dlkm$slot"
 MANIFEST_BLOCK="/dev/block/mapper/my_manifest$slot"
 [ -b "$BOOT_BLOCK" ] || abort_install "active boot target is unavailable: $BOOT_BLOCK"
@@ -161,8 +304,12 @@ SYSTEM_DLKM_TARGET_BYTES="$(blockdev --getsize64 "$SYSTEM_DLKM_BLOCK" 2>/dev/nul
     abort_install "could not read system_dlkm target size: $SYSTEM_DLKM_BLOCK"
 is_decimal "$BOOT_TARGET_BYTES" || abort_install 'boot target size is invalid.'
 is_decimal "$SYSTEM_DLKM_TARGET_BYTES" || abort_install 'system_dlkm target size is invalid.'
-[ "$BOOT_TARGET_BYTES" = "$BOOT_PARTITION_BYTES" ] ||
-    abort_install "boot target size $BOOT_TARGET_BYTES does not match this release."
+ui_print "Boot capacity: $BOOT_TARGET_BYTES bytes; candidate: $BOOT_BYTES bytes"
+[ "$BOOT_BYTES" -le "$BOOT_TARGET_BYTES" ] || abort_install 'boot image exceeds the active boot partition.'
+# This is a full-partition AVB container, not a portable unpadded Image. A larger
+# partition would place its footer at the wrong offset and cannot hash identically.
+[ "$BOOT_TARGET_BYTES" = "$BOOT_BYTES" ] ||
+    abort_install 'boot capacity differs from the packaged full-partition AVB image; requires a separately validated container (no padding or truncation).'
 [ "$SYSTEM_DLKM_TARGET_BYTES" -ge "$STOCK_SYSTEM_DLKM_BYTES" ] ||
     abort_install 'system_dlkm is too small to contain the required stock EROFS image.'
 
@@ -186,11 +333,7 @@ mount -o ro "$MANIFEST_BLOCK" "$MANIFEST_DIR" ||
 MANIFEST_MOUNT="$MANIFEST_DIR"
 [ -r "$MANIFEST_DIR/build.prop" ] ||
     abort_install 'active firmware manifest is missing build.prop.'
-grep -Fx 'ro.build.display.id=@BUILD_DISPLAY_ID@' \
-    "$MANIFEST_DIR/build.prop" >/dev/null 2>&1 ||
-    abort_install "active firmware is not @BUILD_DISPLAY_ID@."
-grep -Fx 'ro.product.model=CPH2747' "$MANIFEST_DIR/build.prop" >/dev/null 2>&1 ||
-    abort_install 'active firmware manifest does not identify CPH2747.'
+verify_family_firmware "$MANIFEST_DIR/build.prop" '@BUILD_DISPLAY_ID@'
 umount "$MANIFEST_DIR" ||
     abort_install 'could not unmount the read-only firmware manifest.'
 MANIFEST_MOUNT=''
@@ -215,6 +358,9 @@ actual_boot_sha256="$(hash_file "$BOOT_IMAGE")" ||
 [ "$actual_boot_sha256" = "$BOOT_SHA256" ] ||
     abort_install 'boot image checksum does not match the release manifest.'
 
+ui_print 'Compatibility: SUPPORTED ONEPLUS 15 FAMILY'
+ui_print 'Family detection is not physical qualification of every regional variant.'
+
 backup_root="$(choose_backup_root)" ||
     abort_install 'decrypt /data or mount durable writable external storage for a boot backup.'
 mkdir -p "$backup_root" ||
@@ -229,29 +375,45 @@ BACKUP_IMAGE="$BACKUP_DIR/boot$slot.img"
 BOOT_TARGET_BLOCKS=$((BOOT_TARGET_BYTES / 4096))
 [ $((BOOT_TARGET_BYTES % 4096)) -eq 0 ] ||
     abort_install 'boot target is not 4096-byte aligned.'
+SOURCE_SHA256="$(hash_block_prefix "$BOOT_BLOCK" "$BOOT_TARGET_BYTES")" ||
+    abort_install 'could not hash the complete original boot partition.'
 dd if="$BOOT_BLOCK" of="$BACKUP_IMAGE" bs=4096 count="$BOOT_TARGET_BLOCKS" conv=fsync ||
     abort_install "could not back up boot$slot."
+[ "$(wc -c < "$BACKUP_IMAGE" | tr -d '[:space:]')" = "$BOOT_TARGET_BYTES" ] ||
+    abort_install 'boot backup is incomplete; no flash performed.'
 BACKUP_SHA256="$(hash_file "$BACKUP_IMAGE")" ||
     abort_install 'could not hash durable boot backup.'
+[ "$SOURCE_SHA256" = "$BACKUP_SHA256" ] ||
+    abort_install 'source/backup checksum mismatch; no flash performed.'
+source_after_backup="$(hash_block_prefix "$BOOT_BLOCK" "$BOOT_TARGET_BYTES")" ||
+    abort_install 'could not recheck original boot after backup.'
+[ "$SOURCE_SHA256" = "$source_after_backup" ] ||
+    abort_install 'boot changed during backup; no flash performed.'
 {
     printf 'release_tag=%s\n' "$RELEASE_TAG"
     printf 'firmware=%s\n' "$FIRMWARE"
     printf 'slot=%s\n' "$slot"
     printf 'boot_target=%s\nboot_target_bytes=%s\n' "$BOOT_BLOCK" "$BOOT_TARGET_BYTES"
+    printf 'source_sha256=%s\n' "$SOURCE_SHA256"
     printf 'backup_sha256=%s\nrelease_boot_sha256=%s\n' "$BACKUP_SHA256" "$BOOT_SHA256"
     printf 'stock_system_dlkm_sha256=%s\n' "$STOCK_SYSTEM_DLKM_SHA256"
 } > "$BACKUP_DIR/manifest.txt" ||
     abort_install 'could not write backup manifest.'
+sync || abort_install 'could not sync the durable backup before flashing.'
+ui_print "Backup source: $BOOT_BLOCK"
+ui_print "Source SHA256: $SOURCE_SHA256"
+ui_print "Backup SHA256: $BACKUP_SHA256"
 
 ui_print "$DEVICE — $FIRMWARE — $RELEASE_TAG"
 ui_print "Verified stock EROFS system_dlkm$slot and firmware manifest."
 ui_print "Backing up then flashing only boot$slot; no dynamic partitions will be modified."
 
 flash_ok=1
+WRITE_STARTED=1
 dd if="$BOOT_IMAGE" of="$BOOT_BLOCK" bs=4M conv=fsync || flash_ok=0
 sync || flash_ok=0
 if [ "$flash_ok" -eq 1 ]; then
-    readback_sha256="$(hash_block_prefix "$BOOT_BLOCK" "$BOOT_BYTES")" || flash_ok=0
+    readback_sha256="$(hash_block_prefix "$BOOT_BLOCK" "$BOOT_TARGET_BYTES")" || flash_ok=0
     [ "$readback_sha256" = "$BOOT_SHA256" ] || flash_ok=0
 fi
 
@@ -259,8 +421,10 @@ if [ "$flash_ok" -ne 1 ]; then
     ui_print 'Boot write/read-back verification failed; attempting rollback.'
     restore_boot ||
         abort_install "boot rollback failed; manual recovery is required from $BACKUP_IMAGE."
+    WRITE_STARTED=0
     abort_install 'boot write verification failed; the original boot image was restored.'
 fi
+WRITE_STARTED=0
 
 printf 'result=verified\nreadback_sha256=%s\n' "$readback_sha256" >> "$BACKUP_DIR/manifest.txt" ||
     abort_install 'boot was verified, but recording the backup result failed.'

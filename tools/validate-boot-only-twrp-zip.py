@@ -143,7 +143,7 @@ def validate_zip(args: argparse.Namespace) -> None:
         "release_tag": args.release_tag,
         "firmware": args.firmware,
         "build_display_id": args.build_display_id,
-        "device": "OnePlus 15 / CPH2747 / Canoe",
+        "device": "OnePlus 15 / infiniti / canoe",
         "kernel_release": args.kernel_release,
         "source_commit": args.source_commit,
         "boot_bytes": str(args.boot_bytes),
@@ -155,6 +155,10 @@ def validate_zip(args: argparse.Namespace) -> None:
         "stock_system_dlkm_erofs_magic": "e2e1f5e0",
         "stock_system_dlkm_sha256": args.stock_system_dlkm_sha256,
         "installer_writes": "boot_active_slot_only",
+        "device_guard": "infiniti_canoe_family_v1",
+        "regional_identifiers": "CPH2745,CPH2747,CPH2749,PLK110",
+        "physical_qualification": "CPH2747_only_see_validation_report",
+        "boot_capacity_policy": "full_partition_avb_exact_image_length",
     }
     if info != expected_info:
         fail(f"kernel-info contract mismatch: expected={expected_info}, actual={info}")
@@ -182,6 +186,23 @@ def validate_zip(args: argparse.Namespace) -> None:
     ):
         if expected not in combined_text:
             fail(f"archive metadata is missing required value: {expected}")
+
+    for required_guard_text in (
+        "detect_oneplus15_family",
+        "no positive infiniti family identity",
+        "no positive canoe platform evidence",
+        "Compatibility: SUPPORTED ONEPLUS 15 FAMILY",
+        "CPH2745 CPH2747 CPH2749 PLK110",
+        "boot_a and boot_b alias the same partition",
+        "source/backup checksum mismatch",
+        "boot capacity differs from the packaged full-partition AVB image",
+    ):
+        if required_guard_text not in update_text:
+            fail(f"update-binary is missing family/safety guard: {required_guard_text}")
+    if "expected CPH2747" in update_text or '[ "$model" = CPH2747 ]' in update_text:
+        fail("update-binary still uses the obsolete CPH2747-only model guard")
+    if update_text.count("of=\"$BOOT_BLOCK\"") != 2:
+        fail("update-binary must contain exactly the intended flash and rollback boot writes")
 
     for name in FORBIDDEN_PAYLOAD_NAMES:
         if name in EXPECTED_ENTRIES:

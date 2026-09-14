@@ -3,7 +3,7 @@ OnePlus 15 @RELEASE_TAG@ boot-only TWRP installer
 
 This archive is a boot-only installer for:
 
-  @DEVICE@
+  OnePlus 15 / infiniti / canoe
   @FIRMWARE@
   kernel release: @KERNEL_RELEASE@
   source commit: @SOURCE_COMMIT@
@@ -36,18 +36,37 @@ system_dlkm EROFS image:
   EROFS magic at offset 1024: @STOCK_SYSTEM_DLKM_EROFS_MAGIC@
   sha256: @STOCK_SYSTEM_DLKM_SHA256@
 
-The installer verifies the active slot, CPH2747/Canoe identity, the exact
-firmware manifest, EROFS magic, and this stock system_dlkm hash before any
+The installer positively verifies the infiniti/canoe OnePlus 15 family, the
+active A/B slot, exact firmware version, EROFS magic, and stock DLKM hash before any
 write. It refuses an active OTA snapshot/merge, ext4 system_dlkm, a modified
 system_dlkm, an unknown firmware, or a device that cannot be verified.
+
+Installer-supported family identifiers: CPH2745 / CPH2747 / CPH2749 / PLK110.
+The marketing model (including "OnePlus 15"), regional code and software
+fingerprint are diagnostic information, not hardware authentication.
+Explicit infiniti identity and canoe evidence are required. Audited stock/
+TWRP OP611FL1 and OP60FFL1 device aliases additionally require project 24831
+or 24863 if no infiniti property is exposed. Generic SM8850 is insufficient.
+
+Physically qualified kernel: CPH2747 only, with the coverage in its validation
+report. Other regional variants: SUPPORTED BY DEVICE FAMILY DETECTION --
+PHYSICAL REPORTS REQUESTED. The corrected installer ZIP itself has not yet
+been physically tested. Family detection does not prove a different regional
+module stack compatible. A different stock DLKM hash still fails closed;
+do not cross-flash DLKM or regional firmware to get past this guard.
 
 What it does
 ------------
 
 * Extracts and SHA-256 verifies boot.img.
-* Creates a durable backup of boot_<active-slot>.
+* Resolves distinct boot_a and boot_b nodes, then selects the active slot.
+* Measures actual boot capacity before any write. This full-partition AVB
+  image requires capacity exactly equal to @BOOT_BYTES@ bytes; smaller targets
+  fail the capacity check, larger targets need a separately validated container.
+* Creates a complete durable backup of boot_<active-slot> and requires its
+  SHA-256 to equal the source partition hash before writing.
 * Flashes only boot_<active-slot>.
-* Reads back exactly @BOOT_BYTES@ bytes and verifies the boot SHA-256.
+* Reads back the complete boot partition and verifies the exact boot SHA-256.
 * Restores the boot backup if writing or read-back verification fails.
 
 What it never does
@@ -57,13 +76,16 @@ What it never does
   system_dlkm or system_dlkm_oki.
 * It never writes vendor_boot, vendor_dlkm, dtbo, vbmeta, vbmeta_system, or
   vbmeta_vendor.
+* Regional modem/radio/persist partitions, userdata and metadata are untouched.
 * It does not modify dynamic-partition metadata or disable AVB verification.
 
 Requirements
 ------------
 
 * An unlocked OnePlus 15 on the exact firmware above.
-* A TWRP build with lpdump and normal Android recovery tools.
+* TWRP, OrangeFox or PBRP with the required lpdump and Android recovery tools.
+  Missing optional properties are tolerated; missing positive family/platform,
+  active-slot, snapshot, backup or firmware evidence is not bypassed.
 * Decrypted /data or durable mounted external storage for the boot backup.
 
 Install the ZIP from TWRP, then reboot System without switching slots. This is
