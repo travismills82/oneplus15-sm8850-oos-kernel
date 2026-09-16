@@ -186,7 +186,7 @@ impl<T> ArrayRangeAllocator<T> {
         Ok(freed_range)
     }
 
-    pub(crate) fn reservation_commit(&mut self, offset: usize, data: Option<T>) -> Result {
+    pub(crate) fn reservation_commit(&mut self, offset: usize, data: &mut Option<T>) -> Result {
         // This could use a binary search, but linear scans are usually faster for small arrays.
         let range = self
             .ranges
@@ -198,7 +198,7 @@ impl<T> ArrayRangeAllocator<T> {
             return Err(ENOENT);
         };
 
-        range.state = DescriptorState::Allocated(reservation.clone().allocate(data));
+        range.state = DescriptorState::Allocated(reservation.clone().allocate(data.take()));
         Ok(())
     }
 

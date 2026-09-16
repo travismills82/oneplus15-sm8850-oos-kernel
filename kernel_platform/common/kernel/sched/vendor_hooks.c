@@ -14,6 +14,7 @@
 #include <trace/hooks/sched.h>
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_select_task_rq_fair);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_select_task_rq_rt);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_select_task_rq_dl);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_select_fallback_rq);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_scheduler_tick);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_enqueue_task);
@@ -131,5 +132,11 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_dequeue_entity_delayed);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_mmput);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_prio_inheritance);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_prio_restore);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_update_rt_rq_load_avg);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_set_sugov_sched_attr);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_set_iowait);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_uclamp_validate);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_util_fits_cpu);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_before_pick_task_fair);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_balance_fair);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_dump_dl_server);

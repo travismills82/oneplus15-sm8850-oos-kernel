@@ -689,7 +689,7 @@ struct sched_dl_entity {
 	unsigned int			dl_defer	  : 1;
 	unsigned int			dl_defer_armed	  : 1;
 	unsigned int			dl_defer_running  : 1;
-	unsigned int			dl_server_idle    : 1;
+	unsigned int			dl_server_idle    : 1; //UNUSED but kept for KMI
 
 	/*
 	 * Bandwidth enforcement timer. Each -deadline task has its
@@ -716,7 +716,7 @@ struct sched_dl_entity {
 	 * runnable task.
 	 */
 	struct rq			*rq;
-	dl_server_has_tasks_f		server_has_tasks;
+	dl_server_has_tasks_f		server_has_tasks; //UNUSED, but preserved for KMI
 	dl_server_pick_f		server_pick_task;
 
 #ifdef CONFIG_RT_MUTEXES
@@ -2249,7 +2249,6 @@ static inline struct mutex *__get_task_blocked_on(struct task_struct *p)
 static inline void set_blocked_on_waking_nested(struct task_struct *p, struct mutex *m)
 {
 	raw_spin_lock_nested(&p->blocked_lock, SINGLE_DEPTH_NESTING);
-	WARN_ON_ONCE(__get_task_blocked_on(p) != m);
 	__set_blocked_on_waking(p);
 	raw_spin_unlock(&p->blocked_lock);
 }

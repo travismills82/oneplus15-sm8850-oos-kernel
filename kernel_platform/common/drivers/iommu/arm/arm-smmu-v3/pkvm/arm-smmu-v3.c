@@ -721,9 +721,20 @@ static int smmu_alloc_domain(struct kvm_hyp_iommu_domain *domain, int type)
 static void smmu_free_domain(struct kvm_hyp_iommu_domain *domain)
 {
 	struct hyp_arm_smmu_v3_domain *smmu_domain = domain->priv;
+	struct domain_iommu_node *iommu_node, *temp;
 
 	if (smmu_domain->pgtable)
 		kvm_arm_io_pgtable_free(smmu_domain->pgtable);
+
+	/*
+	 * With device assignment it is possible to free a domain with attached devices,
+	 * they will be disabled through dev_block_dma op.
+	 * In that case free the IOMMU nodes to avoid leaking memory.
+	 */
+	list_for_each_entry_safe(iommu_node, temp, &smmu_domain->iommu_list, list) {
+		list_del(&iommu_node->list);
+		hyp_free(iommu_node);
+	}
 
 	hyp_free(smmu_domain);
 }
@@ -1299,7 +1310,7 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 	if (!smmu_domain->pgtable) {
 		ret = smmu_domain_finalise(smmu, domain);
 		if (ret)
-			goto out_unlock;
+			goto out_unlock_ref;
 		if (domain->domain_id == KVM_IOMMU_DOMAIN_IDMAP_ID)
 			init_idmap = true;
 	}
@@ -1308,7 +1319,7 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 		/* Device already attached or pasid for s2. */
 		if (dst->data[0] || pasid) {
 			ret = -EBUSY;
-			goto out_unlock;
+			goto out_unlock_ref;
 		}
 		ret = smmu_domain_config_s2(domain, &ste);
 	} else {
@@ -1321,7 +1332,7 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 	}
 	/* We don't update STEs for pasid domains. */
 	if (ret || pasid)
-		goto out_unlock;
+		goto out_unlock_ref;
 
 	/*
 	 * The SMMU may cache a disabled STE.
@@ -1332,17 +1343,20 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 
 	ret = smmu_sync_ste(smmu, sid);
 	if (ret)
-		goto out_unlock;
+		goto out_unlock_ref;
 
 	WRITE_ONCE(dst->data[0], ste.data[0]);
 	ret = smmu_sync_ste(smmu, sid);
 	WARN_ON(ret);
-out_unlock:
+
+out_unlock_ref:
 	if (iommu_node && ret)
 		hyp_free(iommu_node);
 	else if (iommu_node)
 		list_add_tail(&iommu_node->list, &smmu_domain->iommu_list);
-
+	else if (ret)
+		smmu_put_ref_domain(smmu, smmu_domain);
+out_unlock:
 	kvm_iommu_unlock(iommu);
 	hyp_write_unlock(&smmu_domain->list_lock);
 
@@ -1422,13 +1436,13 @@ static int smmu_detach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 			if (domain->domain_id != domain_id) {
 				ret = -EACCES;
 				goto out_unlock;
-			}
 			cd[0] = 0;
 			smmu_sync_cd(smmu, sid, pasid);
 			cd[1] = 0;
 			cd[2] = 0;
 			cd[3] = 0;
 			ret = smmu_sync_cd(smmu, sid, pasid);
+			smmu_put_ref_domain(smmu, smmu_domain);
 			goto out_unlock;
 		}
 	} else {

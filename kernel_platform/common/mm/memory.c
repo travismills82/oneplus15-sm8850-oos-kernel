@@ -3284,6 +3284,7 @@ static inline void wp_page_reuse(struct vm_fault *vmf, struct folio *folio)
 	flush_cache_page(vma, vmf->address, pte_pfn(vmf->orig_pte));
 	entry = pte_mkyoung(vmf->orig_pte);
 	entry = maybe_mkwrite(pte_mkdirty(entry), vma);
+	trace_android_vh_wp_page_reuse(vmf, folio);
 	if (ptep_set_access_flags(vma, vmf->address, vmf->pte, entry, 1))
 		update_mmu_cache_range(vmf, vma, vmf->address, vmf->pte, 1);
 	pte_unmap_unlock(vmf->pte, vmf->ptl);
@@ -4744,6 +4745,7 @@ static struct folio *alloc_anon_folio(struct vm_fault *vmf)
 	if (folio)
 		goto allocated;
 
+	trace_android_vh_customize_thp_gfp_orders(&gfp, &orders, &order);
 	while (orders) {
 		addr = ALIGN_DOWN(vmf->address, PAGE_SIZE << order);
 		folio = vma_alloc_folio(gfp, order, vma, addr, true);

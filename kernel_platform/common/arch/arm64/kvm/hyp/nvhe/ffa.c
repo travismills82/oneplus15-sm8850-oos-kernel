@@ -80,6 +80,59 @@ static struct kvm_ffa_buffers *ffa_get_buffers(struct pkvm_hyp_vcpu *hyp_vcpu)
 	return &pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu)->ffa_buf;
 }
 
+DECLARE_STATIC_KEY_FALSE(kvm_ffa_unmap_on_lend);
+
+static int ffa_host_store_handle(u64 ffa_handle, bool is_lend)
+{
+	u32 i;
+	struct ffa_handle *free_handle = NULL;
+
+	if (!static_branch_unlikely(&kvm_ffa_unmap_on_lend))
+		return 0;
+
+	if (spm_free_handle) {
+		WARN_ON(spm_free_handle < spm_handles ||
+			spm_free_handle >= (spm_handles + num_spm_handles));
+		free_handle = spm_free_handle;
+		spm_free_handle = NULL;
+	} else {
+		for (i = 0; i < num_spm_handles; i++)
+			if (spm_handles[i].handle == FFA_INVALID_SPM_HANDLE)
+				break;
+
+		if (i == num_spm_handles)
+			return -ENOSPC;
+
+		free_handle = &spm_handles[i];
+	}
+
+	free_handle->handle = ffa_handle;
+	free_handle->is_lend = is_lend;
+	return 0;
+}
+
+static struct ffa_handle *ffa_host_get_handle(u64 ffa_handle)
+{
+	u32 i;
+
+	for (i = 0; i < num_spm_handles; i++)
+		if (spm_handles[i].handle == ffa_handle)
+			return &spm_handles[i];
+	return NULL;
+}
+
+static int ffa_host_clear_handle(u64 ffa_handle)
+{
+	struct ffa_handle *entry = ffa_host_get_handle(ffa_handle);
+
+	if (!entry)
+		return -EINVAL;
+
+	entry->handle = FFA_INVALID_SPM_HANDLE;
+	spm_free_handle = entry;
+	return 0;
+}
+
 static void ffa_to_smccc_error(struct arm_smccc_res *res, u64 ffa_errno)
 {
 	*res = (struct arm_smccc_res) {
@@ -448,7 +501,7 @@ static int ffa_guest_share_ranges(struct ffa_mem_region_addr_range *ranges,
 	struct ffa_mem_region_addr_range *buf = out_region->constituents;
 	int i, j, ret;
 	u32 mem_region_idx = 0;
-	u64 ipa, pa;
+	u64 ipa, pa, offset;
 
 	for (i = 0; i < nranges; i++) {
 		range = &ranges[i];
@@ -458,7 +511,12 @@ static int ffa_guest_share_ranges(struct ffa_mem_region_addr_range *ranges,
 				goto unshare;
 			}
 
-			ipa = range->address + PAGE_SIZE * j;
+			if (check_mul_overflow(j, PAGE_SIZE, &offset) ||
+			    check_add_overflow(range->address, offset, &ipa)) {
+				ret = -EINVAL;
+				goto unshare;
+			}
+
 			ret = __pkvm_guest_share_ffa_page(vcpu, ipa, &pa);
 			if (ret)
 				goto unshare;

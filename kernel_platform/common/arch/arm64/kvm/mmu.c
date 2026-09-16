@@ -4,6 +4,8 @@
  * Author: Christoffer Dall <c.dall@virtualopensystems.com>
  */
 
+#include <linux/cma.h>
+#include <linux/dma-map-ops.h>
 #include <linux/mman.h>
 #include <linux/kvm_host.h>
 #include <linux/io.h>
@@ -1129,11 +1131,18 @@ void kvm_free_stage2_pgd(struct kvm_s2_mmu *mmu)
 
 static void hyp_mc_free_fn(void *addr, void *flags, unsigned long order)
 {
+	static const u8 pmd_order = PMD_SHIFT - PAGE_SHIFT;
+
 	if (!addr)
 		return;
 
 	if ((unsigned long)flags & HYP_MEMCACHE_ACCOUNT_STAGE2)
 		kvm_account_pgtable_pages(addr, -1);
+
+	/* The iommu pool supports top-up from dma_contiguous_default_area */
+	if (order == pmd_order &&
+	    kvm_iommu_cma_release(virt_to_page(addr)))
+		return;
 
 	free_pages((unsigned long)addr, order);
 }
@@ -1753,9 +1762,8 @@ __pkvm_pages_to_ppages(struct kvm *kvm, struct kvm_memory_slot *memslot, gfn_t g
 		ppage->page = pfn_to_page(pfn);
 		ppage->ipa = ipa;
 		ppage->order = get_order(page_size);
-		ppage->pins = 1 << ppage->order;
 		list_add_tail(&ppage->list_node, ppages);
-		nr_ppages += ppage->pins;
+		nr_ppages += 1 << ppage->order;
 
 next:
 		/* Number of pages to skip (covered by a THP) */
@@ -2012,6 +2020,105 @@ int pkvm_mem_abort_prefault(struct kvm_vcpu *vcpu, phys_addr_t fault_ipa,
 	}
 
 	return pkvm_mem_abort(vcpu, fault_ipa, size, memslot);
+}
+
+/*
+ * Splitting is only expected on the back of a relinquish guest HVC in the pKVM case, while
+ * pkvm_pgtable_stage2_split() can be called with dirty logging.
+ */
+int __pkvm_pgtable_stage2_split(struct kvm_vcpu *vcpu, phys_addr_t ipa, size_t size)
+{
+	struct list_head ppage_prealloc = LIST_HEAD_INIT(ppage_prealloc);
+	struct kvm_hyp_memcache *hyp_memcache = &vcpu->arch.stage2_mc;
+	struct kvm_pinned_page *ppage, *tmp;
+	struct kvm_memory_slot *memslot;
+	struct kvm *kvm = vcpu->kvm;
+	int idx, p, ret, nr_pages;
+	struct page **pages;
+	kvm_pfn_t pfn;
+	gfn_t gfn;
+
+	if (WARN_ON(!kvm->arch.pkvm.enabled))
+		return -EINVAL;
+
+	if (!IS_ALIGNED(ipa, PMD_SIZE) || size != PMD_SIZE)
+		return -EINVAL;
+
+	ret = topup_hyp_memcache_account(vcpu->kvm, hyp_memcache, 1, 0);
+	if (ret)
+		return ret;
+
+	/* We already have 1 pin on the Huge Page */
+	nr_pages = (size >> PAGE_SHIFT) - 1;
+	gfn = (ipa >> PAGE_SHIFT) + 1;
+
+	/* Pre-allocate kvm_pinned_page before acquiring the mmu_lock */
+	for (p = 0; p < nr_pages; p++) {
+		ppage = kzalloc(sizeof(*ppage), GFP_KERNEL_ACCOUNT);
+		if (!ppage) {
+			ret = -ENOMEM;
+			goto free_pinned_pages;
+		}
+		list_add(&ppage->list_node, &ppage_prealloc);
+	}
+
+	idx = srcu_read_lock(&vcpu->kvm->srcu);
+	memslot = gfn_to_memslot(vcpu->kvm, gfn);
+	ret = __pkvm_pin_user_pages(kvm, memslot, gfn, nr_pages, &pages);
+	if (ret)
+		goto unlock_srcu;
+
+	write_lock(&kvm->mmu_lock);
+
+	ppage = find_ppage(kvm, ipa);
+	if (!ppage) {
+		ret = -EPERM;
+		goto end;
+	} else if (!ppage->order) {
+		ret = 0;
+		goto end;
+	}
+
+	ret = kvm_call_hyp_nvhe(__pkvm_host_split_guest, ipa >> PAGE_SHIFT, size);
+	if (ret)
+		goto end;
+
+	ppage->order = 0;
+
+	pfn = page_to_pfn(ppage->page) + 1;
+	ipa = ipa + PAGE_SIZE;
+	while (nr_pages--) {
+		/* Pop a ppage from the pre-allocated list */
+		ppage = list_first_entry(&ppage_prealloc, struct kvm_pinned_page, list_node);
+		list_del_init(&ppage->list_node);
+
+		ppage->page = pfn_to_page(pfn);
+		ppage->ipa = ipa;
+		ppage->order = 0;
+		insert_ppage(kvm, ppage);
+
+		pfn += 1;
+		ipa += PAGE_SIZE;
+	}
+
+end:
+	write_unlock(&kvm->mmu_lock);
+
+	if (ret)
+		unpin_user_pages(pages, nr_pages);
+	kfree(pages);
+
+unlock_srcu:
+	srcu_read_unlock(&vcpu->kvm->srcu, idx);
+
+free_pinned_pages:
+	/* Free unused pre-allocated kvm_pinned_page */
+	list_for_each_entry_safe(ppage, tmp, &ppage_prealloc, list_node) {
+		list_del(&ppage->list_node);
+		kfree(ppage);
+	}
+
+	return ret;
 }
 
 static int user_mem_abort(struct kvm_vcpu *vcpu, phys_addr_t fault_ipa,

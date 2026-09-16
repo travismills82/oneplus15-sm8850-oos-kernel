@@ -810,6 +810,11 @@
   dma_heap_get_dev
   dma_heap_get_drvdata
   dma_heap_get_name
+  dma_iova_free
+  dma_iova_link
+  dma_iova_sync
+  dma_iova_try_alloc
+  dma_iova_unlink
   dmam_alloc_attrs
   dma_map_page_attrs
   dma_map_resource
@@ -3371,6 +3376,7 @@
   __traceiter_android_rvh_sched_rebalance_domains
   __traceiter_android_rvh_sched_setaffinity
   __traceiter_android_rvh_schedule
+  __traceiter_android_rvh_scmi_limit_notify_cb
   __traceiter_android_rvh_select_fallback_rq
   __traceiter_android_rvh_select_task_rq_fair
   __traceiter_android_rvh_select_task_rq_rt
@@ -3512,6 +3518,7 @@
   __tracepoint_android_rvh_sched_rebalance_domains
   __tracepoint_android_rvh_sched_setaffinity
   __tracepoint_android_rvh_schedule
+  __tracepoint_android_rvh_scmi_limit_notify_cb
   __tracepoint_android_rvh_select_fallback_rq
   __tracepoint_android_rvh_select_task_rq_fair
   __tracepoint_android_rvh_select_task_rq_rt

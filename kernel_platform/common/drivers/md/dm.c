@@ -1797,8 +1797,7 @@ static void init_clone_info(struct clone_info *ci, struct dm_io *io,
 }
 
 #ifdef CONFIG_BLK_DEV_ZONED
-static inline bool dm_zone_bio_needs_split(struct mapped_device *md,
-					   struct bio *bio)
+static inline bool dm_zone_bio_needs_split(struct bio *bio)
 {
 	/*
 	 * For a mapped device that needs zone append emulation, we must
@@ -1806,9 +1805,23 @@ static inline bool dm_zone_bio_needs_split(struct mapped_device *md,
 	 * split sequential zoned writes to prevent that splitting lower in the
 	 * stack causes bio reordering.
 	 */
-	return ((dm_emulate_zone_append(md) && bio_straddles_zones(bio)) ||
-		(bio_op(bio) == REQ_OP_WRITE && bdev_is_zoned(bio->bi_bdev))) &&
-	       !bio_flagged(bio, BIO_ZONE_WRITE_PLUGGING);
+	switch (bio_op(bio)) {
+	case REQ_OP_ZONE_APPEND:
+	case REQ_OP_ZONE_FINISH:
+	case REQ_OP_ZONE_RESET:
+	case REQ_OP_ZONE_RESET_ALL:
+		return false;
+	default:
+		break;
+	}
+
+	/*
+	 * When mapped devices use the block layer zone write plugging, we must
+	 * split any large BIO to the mapped device limits to not submit BIOs
+	 * that span zone boundaries and to avoid potential deadlocks with
+	 * queue freeze operations.
+	 */
+	return bio_needs_zone_write_plugging(bio) || bio_straddles_zones(bio);
 }
 static inline bool dm_zone_plug_bio(struct mapped_device *md, struct bio *bio)
 {
@@ -1928,8 +1941,7 @@ static blk_status_t __send_zone_reset_all(struct clone_info *ci)
 }
 
 #else
-static inline bool dm_zone_bio_needs_split(struct mapped_device *md,
-					   struct bio *bio)
+static inline bool dm_zone_bio_needs_split(struct bio *bio)
 {
 	return false;
 }
@@ -1958,7 +1970,7 @@ static void dm_split_and_process_bio(struct mapped_device *md,
 	if (static_branch_unlikely(&zoned_enabled)) {
 		/* Special case REQ_OP_ZONE_RESET_ALL as it cannot be split. */
 		need_split = (bio_op(bio) != REQ_OP_ZONE_RESET_ALL) &&
-			(is_abnormal || dm_zone_bio_needs_split(md, bio));
+			(is_abnormal || dm_zone_bio_needs_split(bio));
 	} else {
 		need_split = is_abnormal;
 	}

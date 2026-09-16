@@ -915,6 +915,7 @@ static inline void __free_one_page(struct page *page,
 	bool to_tail;
 	bool bypass = false;
 	int max_order = zone_max_order(zone);
+	unsigned long check_flags;
 
 	trace_android_vh_free_one_page_bypass(page, zone, order,
 		migratetype, (int)fpi_flags, &bypass);
@@ -923,7 +924,9 @@ static inline void __free_one_page(struct page *page,
 		return;
 
 	VM_BUG_ON(!zone_is_initialized(zone));
-	VM_BUG_ON_PAGE(page->flags & PAGE_FLAGS_CHECK_AT_PREP, page);
+	check_flags = PAGE_FLAGS_CHECK_AT_PREP;
+	trace_android_vh_free_one_page_flag_check(&check_flags);
+	VM_BUG_ON_PAGE(page->flags & check_flags, page);
 
 	VM_BUG_ON(migratetype == -1);
 	VM_BUG_ON_PAGE(pfn & ((1 << order) - 1), page);
@@ -2827,6 +2830,7 @@ void free_unref_page(struct page *page, unsigned int order)
 	unsigned long pfn = page_to_pfn(page);
 	int migratetype;
 	bool skip_free_unref_page = false;
+	bool skip_free_page = false;
 
 	if (!pcp_allowed_order(order)) {
 		__free_pages_ok(page, order, FPI_NONE);
@@ -2836,6 +2840,9 @@ void free_unref_page(struct page *page, unsigned int order)
 	if (!free_pages_prepare(page, order))
 		return;
 
+	trace_android_vh_free_page_bypass(page, order, &skip_free_page);
+	if (skip_free_page)
+		return;
 	/*
 	 * We only track unmovable, reclaimable, movable and if restrict cma
 	 * fallback flag is set, CMA on pcp lists.
@@ -2887,8 +2894,14 @@ void free_unref_folios(struct folio_batch *folios)
 		struct folio *folio = folios->folios[i];
 		unsigned long pfn = folio_pfn(folio);
 		unsigned int order = folio_order(folio);
+		bool skip_free_folio = false;
 
 		if (!free_pages_prepare(&folio->page, order))
+			continue;
+
+		trace_android_vh_free_folio_bypass(folio, order,
+				&skip_free_folio);
+		if (skip_free_folio)
 			continue;
 		/*
 		 * Free orders not handled on the PCP directly to the

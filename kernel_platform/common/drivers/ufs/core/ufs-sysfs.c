@@ -1680,7 +1680,7 @@ static ssize_t analysis_trigger_store(struct device *dev,
 		return -EINVAL;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_WRITE_ATTR,
-			QUERY_ATTR_IDN_HID_DEFRAG_OPERATION, &mode);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_DEFRAG_OPERATION, &mode);
 
 	return ret < 0 ? ret : count;
 }
@@ -1702,7 +1702,7 @@ static ssize_t defrag_trigger_store(struct device *dev,
 		return -EINVAL;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_WRITE_ATTR,
-			QUERY_ATTR_IDN_HID_DEFRAG_OPERATION, &mode);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_DEFRAG_OPERATION, &mode);
 
 	return ret < 0 ? ret : count;
 }
@@ -1717,7 +1717,7 @@ static ssize_t fragmented_size_show(struct device *dev,
 	int ret;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_READ_ATTR,
-			QUERY_ATTR_IDN_HID_AVAILABLE_SIZE, &value);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_AVAILABLE_SIZE, &value);
 	if (ret)
 		return ret;
 
@@ -1734,7 +1734,7 @@ static ssize_t defrag_size_show(struct device *dev,
 	int ret;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_READ_ATTR,
-			QUERY_ATTR_IDN_HID_SIZE, &value);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_SIZE, &value);
 	if (ret)
 		return ret;
 
@@ -1752,7 +1752,7 @@ static ssize_t defrag_size_store(struct device *dev,
 		return -EINVAL;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_WRITE_ATTR,
-			QUERY_ATTR_IDN_HID_SIZE, &value);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_SIZE, &value);
 
 	return ret < 0 ? ret : count;
 }
@@ -1767,7 +1767,7 @@ static ssize_t progress_ratio_show(struct device *dev,
 	int ret;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_READ_ATTR,
-			QUERY_ATTR_IDN_HID_PROGRESS_RATIO, &value);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_PROGRESS_RATIO, &value);
 	if (ret)
 		return ret;
 
@@ -1784,7 +1784,7 @@ static ssize_t state_show(struct device *dev,
 	int ret;
 
 	ret = hid_query_attr(hba, UPIU_QUERY_OPCODE_READ_ATTR,
-			QUERY_ATTR_IDN_HID_STATE, &value);
+			(enum attr_idn)QUERY_ATTR_IDN_HID_STATE, &value);
 	if (ret)
 		return ret;
 
