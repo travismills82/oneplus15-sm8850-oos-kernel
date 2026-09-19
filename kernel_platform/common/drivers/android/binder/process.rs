@@ -1307,13 +1307,6 @@ impl Process {
             death.set_cleared(false);
         }
 
-        // Clean up freeze listeners.
-        let freeze_listeners = take(&mut self.node_refs.lock().freeze_listeners);
-        for listener in freeze_listeners.values() {
-            listener.on_process_exit(&self);
-        }
-        drop(freeze_listeners);
-
         // Release refs on foreign nodes.
         {
             let mut refs = self.node_refs.lock();
