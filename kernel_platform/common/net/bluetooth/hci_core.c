@@ -2505,7 +2505,7 @@ struct hci_dev *hci_alloc_dev_priv(int sizeof_priv)
 
 	mutex_init(&hdev->lock);
 	mutex_init(&hdev->req_lock);
-	mutex_init(&hdev->mgmt_pending_lock);
+	mutex_init(hci_mgmt_pending_lock(hdev));
 
 	ida_init(&hdev->unset_handle_ida);
 

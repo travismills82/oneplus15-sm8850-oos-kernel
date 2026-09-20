@@ -219,19 +219,19 @@ struct mgmt_pending_cmd *mgmt_pending_find(unsigned short channel, u16 opcode,
 {
 	struct mgmt_pending_cmd *cmd, *tmp;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	list_for_each_entry_safe(cmd, tmp, &hdev->mgmt_pending, list) {
 		if (hci_sock_get_channel(cmd->sk) != channel)
 			continue;
 
 		if (cmd->opcode == opcode) {
-			mutex_unlock(&hdev->mgmt_pending_lock);
+			mutex_unlock(hci_mgmt_pending_lock(hdev));
 			return cmd;
 		}
 	}
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	return NULL;
 }
@@ -242,7 +242,7 @@ void mgmt_pending_foreach(u16 opcode, struct hci_dev *hdev, bool remove,
 {
 	struct mgmt_pending_cmd *cmd, *tmp;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	list_for_each_entry_safe(cmd, tmp, &hdev->mgmt_pending, list) {
 		if (opcode > 0 && cmd->opcode != opcode)
@@ -257,7 +257,7 @@ void mgmt_pending_foreach(u16 opcode, struct hci_dev *hdev, bool remove,
 			mgmt_pending_free(cmd);
 	}
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 }
 
 struct mgmt_pending_cmd *mgmt_pending_new(struct sock *sk, u16 opcode,
@@ -297,9 +297,9 @@ struct mgmt_pending_cmd *mgmt_pending_add(struct sock *sk, u16 opcode,
 	if (!cmd)
 		return NULL;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 	list_add_tail(&cmd->list, &hdev->mgmt_pending);
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	return cmd;
 }
@@ -313,9 +313,9 @@ void mgmt_pending_free(struct mgmt_pending_cmd *cmd)
 
 void mgmt_pending_remove(struct mgmt_pending_cmd *cmd)
 {
-	mutex_lock(&cmd->hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(cmd->hdev));
 	list_del(&cmd->list);
-	mutex_unlock(&cmd->hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(cmd->hdev));
 
 	mgmt_pending_free(cmd);
 }
@@ -324,7 +324,7 @@ bool __mgmt_pending_listed(struct hci_dev *hdev, struct mgmt_pending_cmd *cmd)
 {
 	struct mgmt_pending_cmd *tmp;
 
-	lockdep_assert_held(&hdev->mgmt_pending_lock);
+	lockdep_assert_held(hci_mgmt_pending_lock(hdev));
 
 	if (!cmd)
 		return false;
@@ -341,9 +341,9 @@ bool mgmt_pending_listed(struct hci_dev *hdev, struct mgmt_pending_cmd *cmd)
 {
 	bool listed;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 	listed = __mgmt_pending_listed(hdev, cmd);
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	return listed;
 }
@@ -355,13 +355,13 @@ bool mgmt_pending_valid(struct hci_dev *hdev, struct mgmt_pending_cmd *cmd)
 	if (!cmd)
 		return false;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	listed = __mgmt_pending_listed(hdev, cmd);
 	if (listed)
 		list_del(&cmd->list);
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	return listed;
 }

@@ -542,7 +542,6 @@ struct hci_dev {
 	struct hci_conn_hash	conn_hash;
 
 	struct list_head	mesh_pending;
-	struct mutex		mgmt_pending_lock;
 	struct list_head	mgmt_pending;
 	struct list_head	reject_list;
 	struct list_head	accept_list;
@@ -653,6 +652,20 @@ struct hci_dev {
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
 };
+
+/*
+ * The upstream mgmt_pending race fix added a mutex in the middle of
+ * struct hci_dev.  Keep the lock in the four contiguous Android KABI
+ * reserve slots instead, preserving every pre-existing member offset and
+ * the total KMI5 structure size.
+ */
+static inline struct mutex *hci_mgmt_pending_lock(struct hci_dev *hdev)
+{
+	BUILD_BUG_ON(sizeof(struct mutex) > 4 * sizeof(u64));
+	BUILD_BUG_ON(__alignof__(struct mutex) > __alignof__(u64));
+
+	return (struct mutex *)&hdev->__kabi_reserved1;
+}
 
 #define HCI_PHY_HANDLE(handle)	(handle & 0xff)
 

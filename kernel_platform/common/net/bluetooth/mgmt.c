@@ -1353,17 +1353,17 @@ static int set_powered_sync(struct hci_dev *hdev, void *data)
 	struct mgmt_pending_cmd *cmd = data;
 	struct mgmt_mode cp;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	/* Make sure cmd still outstanding. */
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	memcpy(&cp, cmd->param, sizeof(cp));
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	BT_DBG("%s", hdev->name);
 
@@ -1972,16 +1972,16 @@ static int set_ssp_sync(struct hci_dev *hdev, void *data)
 	bool changed = false;
 	int err;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	memcpy(&cp, cmd->param, sizeof(cp));
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	if (cp.val)
 		changed = !hci_dev_test_and_set_flag(hdev, HCI_SSP_ENABLED);
@@ -2111,17 +2111,17 @@ static int set_le_sync(struct hci_dev *hdev, void *data)
 	u8 val;
 	int err;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	memcpy(&cp, cmd->param, sizeof(cp));
 	val = !!cp.val;
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	if (!val) {
 		hci_clear_adv_instance_sync(hdev, NULL, 0x00, true);
@@ -2189,17 +2189,17 @@ static int set_mesh_sync(struct hci_dev *hdev, void *data)
 		    sizeof(hdev->mesh_ad_types));
 	size_t len;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	len = cmd->param_len;
 	memcpy(cp, cmd->param, min(__struct_size(cp), len));
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	memset(hdev->mesh_ad_types, 0, sizeof(hdev->mesh_ad_types));
 
@@ -3891,16 +3891,16 @@ static int set_name_sync(struct hci_dev *hdev, void *data)
 	struct mgmt_pending_cmd *cmd = data;
 	struct mgmt_cp_set_local_name cp;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	memcpy(&cp, cmd->param, sizeof(cp));
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	if (lmp_bredr_capable(hdev)) {
 		hci_update_name_sync(hdev, cp.name);
@@ -5363,16 +5363,16 @@ static int mgmt_add_adv_patterns_monitor_sync(struct hci_dev *hdev, void *data)
 	struct mgmt_pending_cmd *cmd = data;
 	struct adv_monitor *mon;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	mon = cmd->user_data;
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	return hci_add_adv_monitor(hdev, mon);
 }
@@ -6489,16 +6489,16 @@ static int set_adv_sync(struct hci_dev *hdev, void *data)
 	struct mgmt_mode cp;
 	u8 val;
 
-	mutex_lock(&hdev->mgmt_pending_lock);
+	mutex_lock(hci_mgmt_pending_lock(hdev));
 
 	if (!__mgmt_pending_listed(hdev, cmd)) {
-		mutex_unlock(&hdev->mgmt_pending_lock);
+		mutex_unlock(hci_mgmt_pending_lock(hdev));
 		return -ECANCELED;
 	}
 
 	memcpy(&cp, cmd->param, sizeof(cp));
 
-	mutex_unlock(&hdev->mgmt_pending_lock);
+	mutex_unlock(hci_mgmt_pending_lock(hdev));
 
 	val = !!cp.val;
 
