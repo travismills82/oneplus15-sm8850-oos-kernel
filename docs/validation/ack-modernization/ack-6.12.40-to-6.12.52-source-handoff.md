@@ -1,5 +1,10 @@
 # ACK 6.12.40 to 6.12.52 source-only handoff
 
+> **History note (2026-09-19):** This file records the original two-parent
+> source integration.  `main` now carries the same resolved kernel content as
+> an individual first-parent replay; see
+> [the linear-history reconciliation](ack-6.12.40-to-6.12.52-linear-history-reconciliation.md).
+
 This is an **unbuilt experiment**, not a boot candidate or qualification.
 The starting repository `main` was `912642ea0339d6f56fc3abc634d1be9051372046`.
 The physically tested `.40` DRM repair on that branch is separate from the
