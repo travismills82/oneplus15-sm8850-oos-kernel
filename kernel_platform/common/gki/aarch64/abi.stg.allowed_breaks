@@ -11,10 +11,6 @@ type 'enum gunyah_rm_vm_status' changed
   'int __traceiter_android_vh_f2fs_printk(void*, struct f2fs_sb_info*, struct va_format*, int, bool)'
   'int __traceiter_f2fs_submit_folio_write(void*, struct folio*, struct f2fs_io_info*)'
 
-type 'struct io_kiocb' changed
-  member 'struct hlist_node hash_node' was removed
-  member 'union { struct hlist_node hash_node; struct callback_head callback_head; }' was added
-
 type 'struct drm_bridge' changed
   member 'union { bool support_hdcp; unsigned char __kabi_ignored0; }' was added
 
@@ -56,3 +52,6 @@ type 'struct readahead_control' changed
 type 'struct bindings::bindings_raw::readahead_control' changed
   member 'union bindings::bindings_raw::readahead_control__bindgen_ty_1 __bindgen_anon_1' was added
 
+type 'struct io_kiocb' changed
+  member 'struct hlist_node hash_node' was removed
+  member 'union { struct hlist_node hash_node; struct callback_head callback_head; }' was added

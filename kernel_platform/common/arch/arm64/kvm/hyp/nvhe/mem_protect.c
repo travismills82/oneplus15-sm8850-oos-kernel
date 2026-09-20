@@ -1630,7 +1630,8 @@ int __pkvm_hyp_donate_host(u64 pfn, u64 nr_pages)
 	ret = __hyp_check_page_state_range(virt, size, PKVM_PAGE_OWNED);
 	if (ret)
 		goto unlock;
-	if (IS_ENABLED(CONFIG_PKVM_STRICT_CHECKS)) {
+	if (IS_ENABLED(CONFIG_NVHE_EL2_DEBUG) ||
+	    IS_ENABLED(CONFIG_PKVM_STRICT_CHECKS)) {
 		ret = ___host_check_page_state_range(phys, size, PKVM_NOPAGE, 0);
 		if (ret)
 			goto unlock;

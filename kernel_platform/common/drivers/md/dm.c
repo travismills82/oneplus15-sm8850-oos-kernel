@@ -1316,9 +1316,8 @@ out:
 /*
  * A target may call dm_accept_partial_bio only from the map routine.  It is
  * allowed for all bio types except REQ_PREFLUSH, REQ_OP_ZONE_* zone management
- * operations, zone append writes (native with REQ_OP_ZONE_APPEND or emulated
- * with write BIOs flagged with BIO_EMULATES_ZONE_APPEND) and any bio serviced
- * by __send_duplicate_bios().
+ * operations, REQ_OP_ZONE_APPEND (zone append writes) and any bio serviced by
+ * __send_duplicate_bios().
  *
  * dm_accept_partial_bio informs the dm that the target only wants to process
  * additional n_sectors sectors of the bio and the rest of the data should be
@@ -1351,18 +1350,10 @@ void dm_accept_partial_bio(struct bio *bio, unsigned int n_sectors)
 	unsigned int bio_sectors = bio_sectors(bio);
 
 	BUG_ON(dm_tio_flagged(tio, DM_TIO_IS_DUPLICATE_BIO));
+	BUG_ON(op_is_zone_mgmt(bio_op(bio)));
+	BUG_ON(bio_op(bio) == REQ_OP_ZONE_APPEND);
 	BUG_ON(bio_sectors > *tio->len_ptr);
 	BUG_ON(n_sectors > bio_sectors);
-
-	if (static_branch_unlikely(&zoned_enabled) &&
-	    unlikely(bdev_is_zoned(bio->bi_bdev))) {
-		enum req_op op = bio_op(bio);
-
-		BUG_ON(op_is_zone_mgmt(op));
-		BUG_ON(op == REQ_OP_WRITE);
-		BUG_ON(op == REQ_OP_WRITE_ZEROES);
-		BUG_ON(op == REQ_OP_ZONE_APPEND);
-	}
 
 	*tio->len_ptr -= bio_sectors - n_sectors;
 	bio->bi_iter.bi_size = n_sectors << SECTOR_SHIFT;
@@ -1809,7 +1800,10 @@ static void init_clone_info(struct clone_info *ci, struct dm_io *io,
 static inline bool dm_zone_bio_needs_split(struct bio *bio)
 {
 	/*
-	 * Special case the zone operations that cannot or should not be split.
+	 * For a mapped device that needs zone append emulation, we must
+	 * split any large BIO that straddles zone boundaries. Additionally,
+	 * split sequential zoned writes to prevent that splitting lower in the
+	 * stack causes bio reordering.
 	 */
 	switch (bio_op(bio)) {
 	case REQ_OP_ZONE_APPEND:
@@ -1829,12 +1823,9 @@ static inline bool dm_zone_bio_needs_split(struct bio *bio)
 	 */
 	return bio_needs_zone_write_plugging(bio) || bio_straddles_zones(bio);
 }
-
 static inline bool dm_zone_plug_bio(struct mapped_device *md, struct bio *bio)
 {
-	if (!bio_needs_zone_write_plugging(bio))
-		return false;
-	return blk_zone_plug_bio(bio, 0);
+	return dm_emulate_zone_append(md) && blk_zone_plug_bio(bio, 0);
 }
 
 static blk_status_t __send_zone_reset_all_emulated(struct clone_info *ci,
@@ -1977,7 +1968,9 @@ static void dm_split_and_process_bio(struct mapped_device *md,
 
 	is_abnormal = is_abnormal_io(bio);
 	if (static_branch_unlikely(&zoned_enabled)) {
-		need_split = is_abnormal || dm_zone_bio_needs_split(bio);
+		/* Special case REQ_OP_ZONE_RESET_ALL as it cannot be split. */
+		need_split = (bio_op(bio) != REQ_OP_ZONE_RESET_ALL) &&
+			(is_abnormal || dm_zone_bio_needs_split(bio));
 	} else {
 		need_split = is_abnormal;
 	}

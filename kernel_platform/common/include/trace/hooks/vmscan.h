@@ -124,6 +124,9 @@ DECLARE_HOOK(android_vh_throttle_direct_reclaim_bypass,
 DECLARE_HOOK(android_vh_shrink_node_memcgs,
 	TP_PROTO(struct mem_cgroup *memcg, bool *skip),
 	TP_ARGS(memcg, skip));
+DECLARE_HOOK(android_vh_shrink_node,
+	TP_PROTO(pg_data_t *pgdat, struct mem_cgroup *memcg),
+	TP_ARGS(pgdat, memcg));
 DECLARE_HOOK(android_vh_mm_isolate_priv_lru,
 	TP_PROTO(unsigned long nr_to_scan, struct lruvec *lruvec, enum lru_list lru,
 		struct list_head *dst, int reclaim_idx, bool may_unmap,

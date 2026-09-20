@@ -30,6 +30,7 @@
 #include <linux/leds.h>
 #include <linux/rculist.h>
 #include <linux/srcu.h>
+#include <linux/android_kabi.h>
 
 #include <net/bluetooth/hci.h>
 #include <net/bluetooth/hci_drv.h>

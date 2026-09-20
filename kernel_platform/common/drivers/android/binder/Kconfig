@@ -20,4 +20,3 @@ config ANDROID_BINDER_IPC_RUST_DUMMY
 	  module. This option can be used to trick the build system into
 	  thinking that Rust Binder was successfully built in cases where Rust
 	  support is unavailable.
-

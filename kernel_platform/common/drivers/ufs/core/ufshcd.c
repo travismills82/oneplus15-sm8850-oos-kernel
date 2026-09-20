@@ -4454,9 +4454,9 @@ out_unlock:
 	mutex_unlock(&hba->uic_cmd_mutex);
 
 	/*
-	 * If the h8 exit fails during the runtime resume process,
-	 * it becomes stuck and cannot be recovered through the error handler.
-	 * To fix this, use link recovery instead of the error handler.
+	 * If the h8 exit fails during the runtime resume process, it becomes
+	 * stuck and cannot be recovered through the error handler.  To fix
+	 * this, use link recovery instead of the error handler.
 	 */
 	if (ret && hba->pm_op_in_progress)
 		ret = ufshcd_link_recovery(hba);
@@ -8555,6 +8555,8 @@ static int ufs_get_device_desc(struct ufs_hba *hba)
 	to_hba_priv(hba)->hid_sup = get_unaligned_be32(desc_buf +
 				DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP) &
 				UFS_DEV_HID_SUPPORT;
+
+	sysfs_update_group(&hba->dev->kobj, &ufs_sysfs_hid_group);
 
 	model_index = desc_buf[DEVICE_DESC_PARAM_PRDCT_NAME];
 

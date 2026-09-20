@@ -1291,7 +1291,6 @@ impl Process {
             } {
                 node.to_key_value().1.release();
             }
-            inner.nodes = nodes;
         }
 
         // Clean up death listeners and remove nodes from external node info lists.

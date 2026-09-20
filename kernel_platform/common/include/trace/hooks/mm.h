@@ -572,22 +572,6 @@ DECLARE_HOOK(android_vh_try_to_unmap_one,
 	TP_PROTO(struct folio *folio, struct vm_area_struct *vma,
 		unsigned long addr, void *arg, bool ret),
 	TP_ARGS(folio, vma, addr, arg, ret));
-DECLARE_HOOK(android_vh_mem_cgroup_charge,
-	TP_PROTO(struct folio *folio, struct mem_cgroup **memcg),
-	TP_ARGS(folio, memcg));
-DECLARE_HOOK(android_vh_filemap_add_folio,
-	TP_PROTO(struct address_space *mapping, struct folio *folio,
-		pgoff_t index),
-	TP_ARGS(mapping, folio, index));
-DECLARE_HOOK(android_vh_gcma_cc_allow_nonworkingset,
-	TP_PROTO(bool *allow_nonworkingset),
-	TP_ARGS(allow_nonworkingset));
-DECLARE_HOOK(android_vh_gcma_cc_store_page_bypass,
-	TP_PROTO(bool *bypass),
-	TP_ARGS(bypass));
-DECLARE_HOOK(android_vh_swap_bio_charge,
-	TP_PROTO(struct bio *bio),
-	TP_ARGS(bio));
 DECLARE_HOOK(android_vh_mm_customize_alloc_anon_thp,
 	TP_PROTO(gfp_t *gfp_mask, unsigned long *orders, int *order, struct folio **folio),
 	TP_ARGS(gfp_mask, orders, order, folio));
@@ -630,6 +614,27 @@ DECLARE_HOOK(android_vh_mm_split_huge_page_bypass,
 DECLARE_HOOK(android_vh_mm_try_split_folio_bypass,
 	TP_PROTO(struct folio *folio, bool *bypass),
 	TP_ARGS(folio, bypass));
+DECLARE_HOOK(android_vh_swap_bio_charge,
+	TP_PROTO(struct bio *bio),
+	TP_ARGS(bio));
+DECLARE_HOOK(android_vh_folio_add_lru_folio_activate,
+	TP_PROTO(struct folio *folio, bool *bypass),
+	TP_ARGS(folio, bypass));
+DECLARE_HOOK(android_vh_filemap_fault_pre_folio_locked,
+	TP_PROTO(struct folio *folio),
+	TP_ARGS(folio));
+DECLARE_HOOK(android_vh_filemap_folio_mapped,
+	TP_PROTO(struct folio *folio),
+	TP_ARGS(folio));
+DECLARE_HOOK(android_vh_folio_remove_rmap_ptes,
+	TP_PROTO(struct folio *folio),
+	TP_ARGS(folio));
+DECLARE_HOOK(android_vh_gcma_cc_allow_nonworkingset,
+	TP_PROTO(bool *allow_nonworkingset),
+	TP_ARGS(allow_nonworkingset));
+DECLARE_HOOK(android_vh_gcma_cc_store_page_bypass,
+	TP_PROTO(bool *bypass),
+	TP_ARGS(bypass));
 DECLARE_HOOK(android_vh_customize_thp_gfp_orders,
 	TP_PROTO(gfp_t *gfp_mask, unsigned long *orders, int *order),
 	TP_ARGS(gfp_mask, orders, order));
