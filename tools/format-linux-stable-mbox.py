@@ -16,6 +16,7 @@ from pathlib import Path
 
 
 BOUNDARY = re.compile(rb"^From ([0-9a-f]{40}) Mon Sep 17 00:00:00 2001\n$")
+INDEX_LINE = re.compile(rb"^index [0-9a-f]+\.\.[0-9a-f]+(?: [0-7]{6})?\n$")
 
 
 def main() -> int:
@@ -48,6 +49,12 @@ def main() -> int:
         elif line.startswith(b"diff --git ") and commit and not trailer_written:
             output.write(f"\n(cherry picked from commit {commit})\n\n".encode())
             trailer_written = True
+        elif trailer_written and INDEX_LINE.match(line):
+            # The target monorepo is a promisor clone.  Feeding foreign full
+            # blob IDs to git-apply makes it query the promisor remote once per
+            # patch even though three-way fallback is not in use.  Index lines
+            # are not needed for textual application, so omit them.
+            continue
         output.write(line)
 
     returncode = proc.wait()
