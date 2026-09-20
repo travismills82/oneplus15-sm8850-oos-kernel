@@ -2427,17 +2427,21 @@ static int hci_suspend_notifier(struct notifier_block *nb, unsigned long action,
 struct hci_dev *hci_alloc_dev_priv(int sizeof_priv)
 {
 	struct hci_dev *hdev;
-	unsigned int alloc_size;
+	unsigned int alloc_size, mgmt_lock_offset;
 
 	alloc_size = sizeof(*hdev);
 	if (sizeof_priv) {
 		/* Fixme: May need ALIGN-ment? */
 		alloc_size += sizeof_priv;
 	}
+	mgmt_lock_offset = ALIGN(alloc_size, __alignof__(struct mutex));
+	alloc_size = mgmt_lock_offset + sizeof(struct mutex);
 
 	hdev = kzalloc(alloc_size, GFP_KERNEL);
 	if (!hdev)
 		return NULL;
+	hdev->mgmt_pending_lock = (struct mutex *)((u8 *)hdev +
+						    mgmt_lock_offset);
 
 	hdev->pkt_type  = (HCI_DM1 | HCI_DH1 | HCI_HV1);
 	hdev->esco_type = (ESCO_HV1);

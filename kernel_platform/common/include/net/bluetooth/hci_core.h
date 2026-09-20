@@ -647,7 +647,7 @@ struct hci_dev {
 				     __u8 **vnd_data);
 	u8 (*classify_pkt_type)(struct hci_dev *hdev, struct sk_buff *skb);
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, struct mutex *mgmt_pending_lock);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
@@ -655,16 +655,13 @@ struct hci_dev {
 
 /*
  * The upstream mgmt_pending race fix added a mutex in the middle of
- * struct hci_dev.  Keep the lock in the four contiguous Android KABI
- * reserve slots instead, preserving every pre-existing member offset and
- * the total KMI5 structure size.
+ * struct hci_dev.  Keep a pointer in the first Android KABI reserve and
+ * allocate the actual lock after the driver's private storage, preserving
+ * every pre-existing member offset and the total KMI5 structure size.
  */
 static inline struct mutex *hci_mgmt_pending_lock(struct hci_dev *hdev)
 {
-	BUILD_BUG_ON(sizeof(struct mutex) > 4 * sizeof(u64));
-	BUILD_BUG_ON(__alignof__(struct mutex) > __alignof__(u64));
-
-	return (struct mutex *)&hdev->__kabi_reserved1;
+	return hdev->mgmt_pending_lock;
 }
 
 #define HCI_PHY_HANDLE(handle)	(handle & 0xff)
