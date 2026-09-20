@@ -133,13 +133,51 @@ def main() -> int:
     parser.add_argument("--from-commit", required=True)
     parser.add_argument("--to-commit", required=True)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="use one batched log scan and defer patch applicability to replay",
+    )
     args = parser.parse_args()
 
-    commits = text(
-        args.stable_repo,
-        ["rev-list", "--reverse", "--topo-order", "--no-merges",
-         f"{args.from_commit}..{args.to_commit}"],
-    ).splitlines()
+    metadata: list[tuple[str, str, str, list[str]]] = []
+    if args.metadata_only:
+        marker = "__KMI5_COMMIT__"
+        raw = text(
+            args.stable_repo,
+            [
+                "log", "--reverse", "--topo-order", "--no-merges",
+                f"--format={marker}%H%x1f%an <%ae>%x1f%s", "--name-only",
+                f"{args.from_commit}..{args.to_commit}",
+            ],
+        )
+        current: tuple[str, str, str, list[str]] | None = None
+        for line in raw.splitlines():
+            if line.startswith(marker):
+                if current is not None:
+                    metadata.append(current)
+                commit, author, subject = line[len(marker):].split("\x1f", 2)
+                current = (commit, author, subject, [])
+            elif line and current is not None:
+                current[3].append(line)
+        if current is not None:
+            metadata.append(current)
+    else:
+        commits = text(
+            args.stable_repo,
+            ["rev-list", "--reverse", "--topo-order", "--no-merges",
+             f"{args.from_commit}..{args.to_commit}"],
+        ).splitlines()
+        for commit in commits:
+            metadata.append((
+                commit,
+                text(args.stable_repo, ["show", "-s", "--format=%an <%ae>", commit]),
+                text(args.stable_repo, ["show", "-s", "--format=%s", commit]),
+                text(
+                    args.stable_repo,
+                    ["diff-tree", "--no-commit-id", "--name-only", "-r", commit],
+                ).splitlines(),
+            ))
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8", newline="") as handle:
@@ -148,17 +186,19 @@ def main() -> int:
             "order", "commit", "author", "subject", "files", "subsystem",
             "abi_classification", "already_present", "action", "reason",
         ])
-        for index, commit in enumerate(commits, start=1):
-            author = text(args.stable_repo, ["show", "-s", "--format=%an <%ae>", commit])
-            subject = text(args.stable_repo, ["show", "-s", "--format=%s", commit])
-            files = text(
-                args.stable_repo,
-                ["diff-tree", "--no-commit-id", "--name-only", "-r", commit],
-            ).splitlines()
-            patch = run(args.stable_repo, ["diff", f"{commit}^", commit, "--binary"]).stdout
-            patch_text = patch.decode("utf-8", "replace")
+        for index, (commit, author, subject, files) in enumerate(metadata, start=1):
+            if args.metadata_only:
+                patch = b""
+                patch_text = ""
+            else:
+                patch = run(args.stable_repo, ["diff", f"{commit}^", commit, "--binary"]).stdout
+                patch_text = patch.decode("utf-8", "replace")
             abi_class, abi_reason = classify_abi(commit, files, patch_text)
-            already, action, apply_reason = applicability(args.baseline_repo, patch)
+            if args.metadata_only:
+                already, action = "REVIEW", "IMPORT_PENDING"
+                apply_reason = "Applicability is evaluated in ordered replay"
+            else:
+                already, action, apply_reason = applicability(args.baseline_repo, patch)
             reason = f"{abi_reason}; {apply_reason}"
             writer.writerow([
                 index,
@@ -173,7 +213,7 @@ def main() -> int:
                 reason,
             ])
 
-    print(f"wrote {len(commits)} commits to {args.output}")
+    print(f"wrote {len(metadata)} commits to {args.output}")
     return 0
 
 
