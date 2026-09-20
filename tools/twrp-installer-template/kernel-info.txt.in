@@ -15,5 +15,5 @@ stock_system_dlkm_sha256=@STOCK_SYSTEM_DLKM_SHA256@
 installer_writes=boot_active_slot_only
 device_guard=infiniti_canoe_family_v1
 regional_identifiers=CPH2745,CPH2747,CPH2749,PLK110
-physical_qualification=CPH2747_only_see_validation_report
+physical_qualification=@PHYSICAL_QUALIFICATION@
 boot_capacity_policy=full_partition_avb_exact_image_length

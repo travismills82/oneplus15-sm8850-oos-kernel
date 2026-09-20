@@ -157,7 +157,7 @@ def validate_zip(args: argparse.Namespace) -> None:
         "installer_writes": "boot_active_slot_only",
         "device_guard": "infiniti_canoe_family_v1",
         "regional_identifiers": "CPH2745,CPH2747,CPH2749,PLK110",
-        "physical_qualification": "CPH2747_only_see_validation_report",
+        "physical_qualification": args.physical_qualification,
         "boot_capacity_policy": "full_partition_avb_exact_image_length",
     }
     if info != expected_info:
@@ -254,6 +254,7 @@ def main() -> int:
     parser.add_argument("--kernel-release", required=True)
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--stock-system-dlkm-sha256", required=True)
+    parser.add_argument("--physical-qualification", required=True)
     parser.add_argument("--boot-bytes", type=int, default=100663296)
     args = parser.parse_args()
     try:

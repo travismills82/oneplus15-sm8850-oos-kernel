@@ -48,12 +48,14 @@ Explicit infiniti identity and canoe evidence are required. Audited stock/
 TWRP OP611FL1 and OP60FFL1 device aliases additionally require project 24831
 or 24863 if no infiniti property is exposed. Generic SM8850 is insufficient.
 
-Physically qualified kernel: CPH2747 only, with the coverage in its validation
-report. Other regional variants: SUPPORTED BY DEVICE FAMILY DETECTION --
-PHYSICAL REPORTS REQUESTED. The corrected installer ZIP itself has not yet
-been physically tested. Family detection does not prove a different regional
-module stack compatible. A different stock DLKM hash still fails closed;
-do not cross-flash DLKM or regional firmware to get past this guard.
+Physically qualified variants and their exact firmware are listed in the
+release validation report. Other regional variants are supported only by the
+family detector until a physical report is recorded. The installer ZIP itself
+may contain a byte-identical physically qualified boot image without the ZIP
+archive having been separately flashed. Family detection does not prove a
+different regional module stack compatible. A different stock DLKM hash still
+fails closed; do not cross-flash DLKM or regional firmware to get past this
+guard.
 
 What it does
 ------------
