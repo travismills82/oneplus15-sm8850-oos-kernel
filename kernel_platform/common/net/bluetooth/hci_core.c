@@ -2440,8 +2440,8 @@ struct hci_dev *hci_alloc_dev_priv(int sizeof_priv)
 	hdev = kzalloc(alloc_size, GFP_KERNEL);
 	if (!hdev)
 		return NULL;
-	hdev->mgmt_pending_lock = (struct mutex *)((u8 *)hdev +
-						    mgmt_lock_offset);
+	hdev->__kabi_reserved1 = (unsigned long)((u8 *)hdev +
+						  mgmt_lock_offset);
 
 	hdev->pkt_type  = (HCI_DM1 | HCI_DH1 | HCI_HV1);
 	hdev->esco_type = (ESCO_HV1);

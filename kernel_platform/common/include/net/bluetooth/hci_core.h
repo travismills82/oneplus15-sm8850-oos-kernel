@@ -647,7 +647,7 @@ struct hci_dev {
 				     __u8 **vnd_data);
 	u8 (*classify_pkt_type)(struct hci_dev *hdev, struct sk_buff *skb);
 
-	ANDROID_KABI_USE(1, struct mutex *mgmt_pending_lock);
+	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
@@ -661,7 +661,7 @@ struct hci_dev {
  */
 static inline struct mutex *hci_mgmt_pending_lock(struct hci_dev *hdev)
 {
-	return hdev->mgmt_pending_lock;
+	return (struct mutex *)(unsigned long)hdev->__kabi_reserved1;
 }
 
 #define HCI_PHY_HANDLE(handle)	(handle & 0xff)
@@ -747,6 +747,7 @@ struct hci_conn {
 
 	__u8		remote_cap;
 	__u8		remote_auth;
+	__u8		remote_id;
 
 	unsigned int	sent;
 
