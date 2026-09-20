@@ -2988,6 +2988,14 @@ static int __dm_suspend(struct mapped_device *md, struct dm_table *map,
 	 */
 	if (map)
 		r = dm_wait_for_completion(md, task_state);
+	else
+		/*
+		 * A concurrent table load may have started initializing an mq
+		 * queue without publishing a live table yet.  Do not inspect that
+		 * partially initialized queue, but retain the bio-based quiescence
+		 * that Android's mapless suspend path historically provided.
+		 */
+		r = dm_wait_for_bios_completion(md, task_state);
 	if (!r)
 		set_bit(dmf_suspended_flag, &md->flags);
 
