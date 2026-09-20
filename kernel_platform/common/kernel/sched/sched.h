@@ -697,18 +697,10 @@ struct cfs_rq {
 	s64			avg_vruntime;
 	u64			avg_load;
 
-	ANDROID_KABI_REPLACE(u64, min_vruntime,
-		union {
-			u64			min_vruntime;
-			u64			zero_vruntime;
-		});
+	u64			min_vruntime;
 #ifdef CONFIG_SCHED_CORE
 	unsigned int		forceidle_seq;
-	ANDROID_KABI_REPLACE(u64, min_vruntime_fi,
-		union {
-			u64			min_vruntime_fi;
-			u64			zero_vruntime_fi;
-		});
+	u64			min_vruntime_fi;
 #endif
 
 	struct rb_root_cached	tasks_timeline;

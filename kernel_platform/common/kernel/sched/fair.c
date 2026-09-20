@@ -602,7 +602,7 @@ static inline bool entity_before(const struct sched_entity *a,
  */
 static inline s64 entity_key(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
-	return (s64)(se->vruntime - cfs_rq->zero_vruntime);
+	return (s64)(se->vruntime - cfs_rq->min_vruntime);
 }
 
 #define __node_2_se(node) \
@@ -693,7 +693,7 @@ void update_zero_vruntime(struct cfs_rq *cfs_rq, s64 delta)
 	 * v' = v + d ==> avg_vruntime' = avg_vruntime - d*avg_load
 	 */
 	cfs_rq->avg_vruntime -= cfs_rq->avg_load * delta;
-	cfs_rq->zero_vruntime += delta;
+	cfs_rq->min_vruntime += delta;
 }
 
 /*
@@ -736,12 +736,12 @@ u64 avg_vruntime(struct cfs_rq *cfs_rq)
 		/*
 		 * When there is but one element, it is the average.
 		 */
-		delta = curr->vruntime - cfs_rq->zero_vruntime;
+		delta = curr->vruntime - cfs_rq->min_vruntime;
 	}
 
 	update_zero_vruntime(cfs_rq, delta);
 
-	return cfs_rq->zero_vruntime;
+	return cfs_rq->min_vruntime;
 }
 
 /*
@@ -807,7 +807,7 @@ static int vruntime_eligible(struct cfs_rq *cfs_rq, u64 vruntime)
 		load += weight;
 	}
 
-	return avg >= (s64)(vruntime - cfs_rq->zero_vruntime) * load;
+	return avg >= (s64)(vruntime - cfs_rq->min_vruntime) * load;
 }
 
 int entity_eligible(struct cfs_rq *cfs_rq, struct sched_entity *se)
@@ -13302,7 +13302,7 @@ static void se_fi_update(const struct sched_entity *se, unsigned int fi_seq,
 			cfs_rq->forceidle_seq = fi_seq;
 		}
 
-		cfs_rq->zero_vruntime_fi = cfs_rq->zero_vruntime;
+		cfs_rq->min_vruntime_fi = cfs_rq->min_vruntime;
 	}
 }
 
@@ -13359,7 +13359,7 @@ bool cfs_prio_less(const struct task_struct *a, const struct task_struct *b,
 	 * to se_fi_update().
 	 */
 	delta = (s64)(sea->vruntime - seb->vruntime) +
-		(s64)(cfs_rqb->zero_vruntime_fi - cfs_rqa->zero_vruntime_fi);
+		(s64)(cfs_rqb->min_vruntime_fi - cfs_rqa->min_vruntime_fi);
 
 	return delta > 0;
 }
@@ -13597,7 +13597,7 @@ static void set_next_task_fair(struct rq *rq, struct task_struct *p, bool first)
 void init_cfs_rq(struct cfs_rq *cfs_rq)
 {
 	cfs_rq->tasks_timeline = RB_ROOT_CACHED;
-	cfs_rq->zero_vruntime = (u64)(-(1LL << 20));
+	cfs_rq->min_vruntime = (u64)(-(1LL << 20));
 #ifdef CONFIG_SMP
 	raw_spin_lock_init(&cfs_rq->removed.lock);
 #endif
