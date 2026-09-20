@@ -7137,7 +7137,8 @@ unsigned long isolate_and_split_free_page(struct page *page,
 	set_page_private(page, order);
 	list_add(&page->lru, &list[order]);
 
-	split_free_pages(list);
+	/* Preserve the historical semantics of this Android/OEM helper. */
+	split_free_pages(list, __GFP_MOVABLE);
 
 	return isolated;
 }
