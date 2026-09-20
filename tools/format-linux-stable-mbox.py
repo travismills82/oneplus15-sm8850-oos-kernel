@@ -46,6 +46,11 @@ def main() -> int:
                 raise RuntimeError(f"patch {commit} contained no diff")
             commit = match.group(1).decode("ascii")
             trailer_written = False
+            # Do not expose the foreign stable commit as the mbox identity.
+            # In a promisor clone git-am otherwise asks the AOSP promisor for
+            # that object once per patch.  The exact identity remains recorded
+            # in the commit-message trailer written below.
+            line = b"From " + (b"0" * 40) + b" Mon Sep 17 00:00:00 2001\n"
         elif line.startswith(b"diff --git ") and commit and not trailer_written:
             output.write(f"\n(cherry picked from commit {commit})\n\n".encode())
             trailer_written = True
