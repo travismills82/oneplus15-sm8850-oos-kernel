@@ -1,4 +1,9 @@
-# Linux 6.12.110 first-test strategy
+# Superseded Linux 6.12.110 first-test strategy
+
+This plan was superseded when the repository owner selected Linux 6.12.80 as
+the first post-6.12.52 physical checkpoint.  See
+`linux-6.12.80-first-test-strategy.md`.  Linux 6.12.81 and later remain out of
+scope until the 6.12.80 result is known.
 
 The repository owner's selected first test target is Linux 6.12.110 while
 retaining the Android 16 generation-5 KMI contract.  The intermediate
