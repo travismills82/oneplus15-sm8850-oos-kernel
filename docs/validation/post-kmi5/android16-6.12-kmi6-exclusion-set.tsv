@@ -1,0 +1,17 @@
+commit	subject	classification	action	reason
+889d5333b9f1e133bf13badc4df829040b6120fb	ANDROID: bump KMI generation number	KMI6_THAW	DO_NOT_IMPORT_DIRECTLY	Changes KMI_GENERATION from 5 to 6
+6b6ffe2c091924ce45dff6afb5304312a64ed6f0	Merge android16-6.12 into android16-6.12-lts	KMI6_THAW_MERGE	DO_NOT_IMPORT_WHOLESALE	Post-6.12.53 Android mainline merge contains generation-6 thaw changes
+0740c125fc3d6da805ed6bb56c8e8750e9833c09	Merge android16-6.12 into android16-6.12-lts	KMI6_THAW_MERGE	DO_NOT_IMPORT_WHOLESALE	Post-bump Android mainline merge cannot be used as a KMI5 source update
+493133424e30c6117aa0c035eeace13e7dfff67b	ANDROID: delist f2fs_submit_folio_write and android_vh_f2fs_printk symbols	ABI_DELISTING	DO_NOT_IMPORT_DIRECTLY	Removes existing Android ABI list entries
+9c0e9beeb6f8dadf2cc6e9b0394996a943a8d892	ANDROID: GKI: remove users of ANDROID_KABI_ENUMERATOR_IGNORE()	KABI_CLEANUP	DO_NOT_IMPORT_DIRECTLY	Removes generation-5 compatibility treatment
+a2aa614399bd5e7380b8622e1962baa979b4da18	Revert ANDROID: Fixup init_user_ns CRC change	CRC_COMPAT_REVERT	DO_NOT_IMPORT_DIRECTLY	Drops a generation-5 CRC compatibility repair
+941e2a01e6fd8ac36ac088db913edbdf51154835	Revert ANDROID: MODVERSIONS: hide type definition in drivers/usb/core/driver.c	CRC_COMPAT_REVERT	DO_NOT_IMPORT_DIRECTLY	Drops a MODVERSIONS compatibility repair
+3fb73bb73d80a783ad0f0063fff99673e7e89df0	Revert ANDROID: f2fs: fixup ABI break due to reserved_pin_section	RESERVED_FIELD_REVERT	DO_NOT_IMPORT_DIRECTLY	Drops an F2FS generation-5 reserved-field repair
+0b870ee2188a7d311bd3b54fb6c4cb6425a5013b	Revert ANDROID: CRC / ABI fixups for sched_dl_entity bitfield addition	CRC_COMPAT_REVERT	DO_NOT_IMPORT_DIRECTLY	Drops scheduler generation-5 CRC/ABI repair
+a09eff777ff41dd296e3afce4dc82720b08cec86	ANDROID: GKI: remove ANDROID_KABI_DECLONLY from dma-buf.c	KABI_CLEANUP	DO_NOT_IMPORT_DIRECTLY	Removes a compatibility declaration rule
+311624c0c51dca238ba10296b653f67a6be6d169	ANDROID: GKI: remove remaining entries from abi.stg.allowed_breaks	GEN6_ABI_REFRESH	DO_NOT_IMPORT_DIRECTLY	Generation-6 reference cleanup is not a KMI5 update
+3d3df1d1f006205a7b3ae0e42341f1293a6934ff	ANDROID: GKI: update the abi.stg file after abi break reverts	GEN6_ABI_REFRESH	DO_NOT_IMPORT_DIRECTLY	Refresh incorporates thawed ABI state
+52402c83f20ca52f37d356cd7c57b0c009769605	ANDROID: ABI: Update the symbol list for mtk	GEN6_ABI_REFRESH	DO_NOT_IMPORT_DIRECTLY	Post-bump symbol-list state is reference-only
+fff065e02ac597f23fcbe2766f8ab3168405aac1	ANDROID: GKI: Update symbol list for Amlogic	GEN6_ABI_REFRESH	DO_NOT_IMPORT_DIRECTLY	Post-bump symbol-list state is reference-only
+3a98cc3be90b8a496279e61a592a6d0dfeabfb55	ANDROID: GKI: Update symbol list for qcom	GEN6_ABI_REFRESH	DO_NOT_IMPORT_DIRECTLY	Post-bump qcom list cannot replace the OOS KMI5 contract
+
