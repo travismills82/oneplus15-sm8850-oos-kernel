@@ -4,7 +4,7 @@
   <remote fetch="https://android.googlesource.com" name="aosp-gki"/>
   <remote fetch="https://github.com/OnePlusOSS" name="origin"/>
   <default remote="clo-la" revision="dummy_revision" sync-c="true" sync-tags="false"/>
-  <project remote="aosp-gki" name="kernel/common" path="kernel_platform/common" revision="c026dd5eaf39a29cfac9ed1405778d420ec79939" upstream="refs/tags/android16-6.12.40_r00">
+  <project remote="aosp-gki" name="kernel/common" path="kernel_platform/common" revision="36e5f6313583daf75ec31104ee8a186798a3b95f" upstream="refs/tags/android16-6.12.52_r00">
     <linkfile dest="kernel_platform/.source_date_epoch_dir" src="."/>
   </project>
   <project remote="origin" name="android_kernel_oneplus_sm8850" path="kernel_platform/soc-repo" revision="fc30e54174d254ff7f33622a9278e4435f6718d2" upstream="refs/heads/oneplus/sm8850_b_16.0.0_oneplus_15">
