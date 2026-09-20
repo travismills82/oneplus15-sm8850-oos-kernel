@@ -270,6 +270,77 @@ out_put:
 	return err;
 }
 
+/*
+ * KMI5 compatibility path for external callers of the pre-6.12.63 API.
+ * In-tree users stay on the skb-aware API above, including its confirmed-ct
+ * duplicate suppression.  This retains the exact legacy semantics for OEM
+ * modules whose call contract cannot supply an skb.
+ */
+static int __nf_conncount_add_tuple(struct net *net,
+				    struct nf_conncount_list *list,
+				    const struct nf_conntrack_tuple *tuple,
+				    const struct nf_conntrack_zone *zone)
+{
+	const struct nf_conntrack_tuple_hash *found;
+	struct nf_conncount_tuple *conn, *conn_n;
+	struct nf_conn *found_ct;
+	unsigned int collect = 0;
+
+	if ((u32)jiffies == list->last_gc &&
+	    (list->count - list->last_gc_count) < CONNCOUNT_GC_MAX_COLLECT)
+		goto add_new_node;
+
+	list_for_each_entry_safe(conn, conn_n, &list->head, node) {
+		if (collect > CONNCOUNT_GC_MAX_COLLECT)
+			break;
+
+		found = find_or_evict(net, list, conn);
+		if (IS_ERR(found)) {
+			if (PTR_ERR(found) == -EAGAIN) {
+				if (nf_ct_tuple_equal(&conn->tuple, tuple) &&
+				    nf_ct_zone_id(&conn->zone, conn->zone.dir) ==
+				    nf_ct_zone_id(zone, zone->dir))
+					return 0;
+			} else {
+				collect++;
+			}
+			continue;
+		}
+
+		found_ct = nf_ct_tuplehash_to_ctrack(found);
+		if (nf_ct_tuple_equal(&conn->tuple, tuple) &&
+		    nf_ct_zone_equal(found_ct, zone, zone->dir)) {
+			nf_ct_put(found_ct);
+			return 0;
+		} else if (already_closed(found_ct)) {
+			nf_ct_put(found_ct);
+			conn_free(list, conn);
+			collect++;
+			continue;
+		}
+
+		nf_ct_put(found_ct);
+	}
+	list->last_gc = (u32)jiffies;
+	list->last_gc_count = list->count;
+
+add_new_node:
+	if (WARN_ON_ONCE(list->count > INT_MAX))
+		return -EOVERFLOW;
+
+	conn = kmem_cache_alloc(conncount_conn_cachep, GFP_ATOMIC);
+	if (!conn)
+		return -ENOMEM;
+
+	conn->tuple = *tuple;
+	conn->zone = *zone;
+	conn->cpu = raw_smp_processor_id();
+	conn->jiffies32 = (u32)jiffies;
+	list_add_tail(&conn->node, &list->head);
+	list->count++;
+	return 0;
+}
+
 int nf_conncount_add_skb(struct net *net,
 			 const struct sk_buff *skb,
 			 u16 l3num,
@@ -285,6 +356,19 @@ int nf_conncount_add_skb(struct net *net,
 	return ret;
 }
 EXPORT_SYMBOL_GPL(nf_conncount_add_skb);
+
+int nf_conncount_add(struct net *net, struct nf_conncount_list *list,
+		     const struct nf_conntrack_tuple *tuple,
+		     const struct nf_conntrack_zone *zone)
+{
+	int ret;
+
+	spin_lock_bh(&list->list_lock);
+	ret = __nf_conncount_add_tuple(net, list, tuple, zone);
+	spin_unlock_bh(&list->list_lock);
+	return ret;
+}
+EXPORT_SYMBOL_GPL(nf_conncount_add);
 
 void nf_conncount_list_init(struct nf_conncount_list *list)
 {
@@ -547,6 +631,133 @@ count_tree(struct net *net,
 	return insert_tree(net, skb, l3num, data, root, hash, key);
 }
 
+static unsigned int
+insert_tree_tuple(struct net *net,
+		  struct nf_conncount_data *data,
+		  struct rb_root *root,
+		  unsigned int hash,
+		  const u32 *key,
+		  const struct nf_conntrack_tuple *tuple,
+		  const struct nf_conntrack_zone *zone)
+{
+	struct nf_conncount_rb *gc_nodes[CONNCOUNT_GC_MAX_NODES];
+	unsigned int count = 0, gc_count = 0;
+	struct rb_node **rbnode, *parent;
+	struct nf_conncount_tuple *conn;
+	struct nf_conncount_rb *rbconn;
+	bool do_gc = true;
+
+	spin_lock_bh(&nf_conncount_locks[hash]);
+restart:
+	parent = NULL;
+	rbnode = &root->rb_node;
+	while (*rbnode) {
+		int diff;
+
+		rbconn = rb_entry(*rbnode, struct nf_conncount_rb, node);
+		parent = *rbnode;
+		diff = key_diff(key, rbconn->key, data->keylen);
+		if (diff < 0) {
+			rbnode = &(*rbnode)->rb_left;
+		} else if (diff > 0) {
+			rbnode = &(*rbnode)->rb_right;
+		} else {
+			if (nf_conncount_add(net, &rbconn->list, tuple, zone))
+				count = 0;
+			else
+				count = rbconn->list.count;
+			tree_nodes_free(root, gc_nodes, gc_count);
+			goto out_unlock;
+		}
+
+		if (gc_count >= ARRAY_SIZE(gc_nodes))
+			continue;
+		if (do_gc && nf_conncount_gc_list(net, &rbconn->list))
+			gc_nodes[gc_count++] = rbconn;
+	}
+
+	if (gc_count) {
+		tree_nodes_free(root, gc_nodes, gc_count);
+		schedule_gc_worker(data, hash);
+		gc_count = 0;
+		do_gc = false;
+		goto restart;
+	}
+
+	rbconn = kmem_cache_alloc(conncount_rb_cachep, GFP_ATOMIC);
+	if (!rbconn)
+		goto out_unlock;
+	conn = kmem_cache_alloc(conncount_conn_cachep, GFP_ATOMIC);
+	if (!conn) {
+		kmem_cache_free(conncount_rb_cachep, rbconn);
+		goto out_unlock;
+	}
+
+	conn->tuple = *tuple;
+	conn->zone = *zone;
+	conn->cpu = raw_smp_processor_id();
+	conn->jiffies32 = (u32)jiffies;
+	memcpy(rbconn->key, key, sizeof(u32) * data->keylen);
+	nf_conncount_list_init(&rbconn->list);
+	list_add(&conn->node, &rbconn->list.head);
+	rbconn->list.count = 1;
+	count = 1;
+	rb_link_node_rcu(&rbconn->node, parent, rbnode);
+	rb_insert_color(&rbconn->node, root);
+
+out_unlock:
+	spin_unlock_bh(&nf_conncount_locks[hash]);
+	return count;
+}
+
+static unsigned int
+count_tree_tuple(struct net *net,
+		 struct nf_conncount_data *data,
+		 const u32 *key,
+		 const struct nf_conntrack_tuple *tuple,
+		 const struct nf_conntrack_zone *zone)
+{
+	struct rb_root *root;
+	struct rb_node *parent;
+	struct nf_conncount_rb *rbconn;
+	unsigned int hash;
+
+	hash = jhash2(key, data->keylen, conncount_rnd) % CONNCOUNT_SLOTS;
+	root = &data->root[hash];
+	parent = rcu_dereference_raw(root->rb_node);
+	while (parent) {
+		int diff;
+
+		rbconn = rb_entry(parent, struct nf_conncount_rb, node);
+		diff = key_diff(key, rbconn->key, data->keylen);
+		if (diff < 0) {
+			parent = rcu_dereference_raw(parent->rb_left);
+		} else if (diff > 0) {
+			parent = rcu_dereference_raw(parent->rb_right);
+		} else {
+			int ret;
+
+			if (!tuple) {
+				nf_conncount_gc_list(net, &rbconn->list);
+				return rbconn->list.count;
+			}
+			spin_lock_bh(&rbconn->list.list_lock);
+			if (!rbconn->list.count) {
+				spin_unlock_bh(&rbconn->list.list_lock);
+				break;
+			}
+			ret = __nf_conncount_add_tuple(net, &rbconn->list,
+						       tuple, zone);
+			spin_unlock_bh(&rbconn->list.list_lock);
+			return ret ? 0 : rbconn->list.count;
+		}
+	}
+
+	if (!tuple)
+		return 0;
+	return insert_tree_tuple(net, data, root, hash, key, tuple, zone);
+}
+
 static void tree_gc_worker(struct work_struct *work)
 {
 	struct nf_conncount_data *data = container_of(work, struct nf_conncount_data, gc_work);
@@ -619,6 +830,16 @@ unsigned int nf_conncount_count_skb(struct net *net,
 
 }
 EXPORT_SYMBOL_GPL(nf_conncount_count_skb);
+
+unsigned int nf_conncount_count(struct net *net,
+				struct nf_conncount_data *data,
+				const u32 *key,
+				const struct nf_conntrack_tuple *tuple,
+				const struct nf_conntrack_zone *zone)
+{
+	return count_tree_tuple(net, data, key, tuple, zone);
+}
+EXPORT_SYMBOL_GPL(nf_conncount_count);
 
 struct nf_conncount_data *nf_conncount_init(struct net *net, unsigned int keylen)
 {
