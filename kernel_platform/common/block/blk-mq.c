@@ -23,13 +23,22 @@
 #include <linux/cache.h>
 #include <linux/sched/topology.h>
 #include <linux/sched/signal.h>
+#ifndef __GENKSYMS__
 #include <linux/suspend.h>
+#else
+extern bool pm_wakeup_pending(void);
+#endif
 #include <linux/delay.h>
 #include <linux/crash_dump.h>
 #include <linux/prefetch.h>
 #include <linux/blk-crypto.h>
 #include <linux/part_stat.h>
 #include <linux/sched/isolation.h>
+
+ANDROID_KABI_DECLONLY(mem_cgroup);
+ANDROID_KABI_DECLONLY(obj_cgroup);
+ANDROID_KABI_DECLONLY(reclaim_state);
+ANDROID_KABI_DECLONLY(swap_info_struct);
 
 #include <trace/events/block.h>
 
