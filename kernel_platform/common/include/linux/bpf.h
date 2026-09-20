@@ -303,7 +303,6 @@ struct bpf_map {
 		enum bpf_prog_type type;
 		bool jited;
 		bool xdp_has_frags;
-		enum bpf_attach_type expected_attach_type;
 	} owner;
 	bool bypass_spec_v1;
 	bool frozen; /* write-once; write-protected by freeze_mutex */
@@ -312,6 +311,40 @@ struct bpf_map {
 	atomic64_t sleepable_refcnt;
 	s64 __percpu *elem_count;
 };
+
+/*
+ * 6.12.y stores the program-array attach type in the existing tail padding
+ * of owner.  Keep the KMI5-visible owner type byte-for-byte unchanged while
+ * retaining the stable tail-call compatibility check.
+ */
+#define BPF_MAP_OWNER_EXPECTED_ATTACH_TYPE_OFFSET			\
+	ALIGN(offsetof(typeof(((struct bpf_map *)0)->owner), xdp_has_frags) + \
+	      sizeof(bool), __alignof__(enum bpf_attach_type))
+
+static inline enum bpf_attach_type
+bpf_map_owner_expected_attach_type(const struct bpf_map *map)
+{
+	const enum bpf_attach_type *slot;
+
+	BUILD_BUG_ON(BPF_MAP_OWNER_EXPECTED_ATTACH_TYPE_OFFSET +
+		     sizeof(*slot) > sizeof(map->owner));
+	slot = (const void *)((const u8 *)&map->owner +
+			    BPF_MAP_OWNER_EXPECTED_ATTACH_TYPE_OFFSET);
+	return *slot;
+}
+
+static inline void
+bpf_map_set_owner_expected_attach_type(struct bpf_map *map,
+				       enum bpf_attach_type type)
+{
+	enum bpf_attach_type *slot;
+
+	BUILD_BUG_ON(BPF_MAP_OWNER_EXPECTED_ATTACH_TYPE_OFFSET +
+		     sizeof(*slot) > sizeof(map->owner));
+	slot = (void *)((u8 *)&map->owner +
+			BPF_MAP_OWNER_EXPECTED_ATTACH_TYPE_OFFSET);
+	*slot = type;
+}
 
 static inline const char *btf_field_type_name(enum btf_field_type type)
 {
