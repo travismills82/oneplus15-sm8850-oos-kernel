@@ -2556,7 +2556,7 @@ void sk_setup_caps(struct sock *sk, struct dst_entry *dst)
 		struct inet_connection_sock *icsk = inet_csk(sk);
 
 		sk->sk_route_caps |= NETIF_F_GSO;
-		icsk->icsk_ack.dst_quick_ack = dst_metric(dst, RTAX_QUICKACK);
+		inet_csk_set_dst_quick_ack(icsk, dst_metric(dst, RTAX_QUICKACK));
 	}
 	if (sk->sk_route_caps & NETIF_F_GSO)
 		sk->sk_route_caps |= NETIF_F_GSO_SOFTWARE;

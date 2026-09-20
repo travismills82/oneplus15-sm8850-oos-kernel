@@ -119,8 +119,7 @@ struct inet_connection_sock {
 		#define ATO_BITS 8
 		__u32		  ato:ATO_BITS,	 /* Predicted tick of soft clock	   */
 				  lrcv_flowlabel:20, /* last received ipv6 flowlabel	   */
-				  dst_quick_ack:1, /* cache dst RTAX_QUICKACK		   */
-				  unused:3;
+				  unused:4;
 		unsigned long	  timeout;	 /* Currently scheduled timeout		   */
 		__u32		  lrcvtime;	 /* timestamp of last received data packet */
 		__u16		  last_seg_size; /* Size of last incoming segment	   */
@@ -146,6 +145,21 @@ struct inet_connection_sock {
 	u64			  icsk_ca_priv[104 / sizeof(u64)];
 #define ICSK_CA_PRIV_SIZE	  sizeof_field(struct inet_connection_sock, icsk_ca_priv)
 };
+
+/*
+ * The RTAX_QUICKACK cache occupies a previously unused bit in 6.12.y.
+ * Access that bit without changing the KMI5-visible declaration or layout.
+ */
+static inline bool inet_csk_dst_quick_ack(const struct inet_connection_sock *icsk)
+{
+	return icsk->icsk_ack.unused & 1;
+}
+
+static inline void inet_csk_set_dst_quick_ack(struct inet_connection_sock *icsk,
+					       bool enabled)
+{
+	icsk->icsk_ack.unused = (icsk->icsk_ack.unused & ~1U) | enabled;
+}
 
 #define ICSK_TIME_RETRANS	1	/* Retransmit timer */
 #define ICSK_TIME_DACK		2	/* Delayed ack timer */

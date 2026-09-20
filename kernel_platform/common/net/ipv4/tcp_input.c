@@ -333,7 +333,7 @@ static bool tcp_in_quickack_mode(struct sock *sk)
 {
 	const struct inet_connection_sock *icsk = inet_csk(sk);
 
-	return icsk->icsk_ack.dst_quick_ack ||
+	return inet_csk_dst_quick_ack(icsk) ||
 		(icsk->icsk_ack.quick && !inet_csk_in_pingpong_mode(sk));
 }
 
