@@ -197,7 +197,7 @@ struct usb_request *usb_ep_alloc_request(struct usb_ep *ep,
 	req = ep->ops->alloc_request(ep, gfp_flags);
 
 	if (req)
-		req->ep = ep;
+		usb_request_set_ep(req, ep);
 
 	trace_usb_ep_alloc_request(ep, req, req ? 0 : -ENOMEM);
 
