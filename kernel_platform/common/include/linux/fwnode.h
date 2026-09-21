@@ -54,7 +54,10 @@ struct fwnode_handle {
 	struct device *dev;
 	struct list_head suppliers;
 	struct list_head consumers;
-	ANDROID_KABI_REPLACE(u8, flags, unsigned long flags);
+	union {
+		u8 flags;
+		unsigned long atomic_flags;
+	};
 	ANDROID_KABI_RESERVE(1);
 };
 
@@ -208,30 +211,31 @@ static inline void fwnode_init(struct fwnode_handle *fwnode,
 	fwnode->ops = ops;
 	INIT_LIST_HEAD(&fwnode->consumers);
 	INIT_LIST_HEAD(&fwnode->suppliers);
+	fwnode->atomic_flags = 0;
 }
 
 static inline void fwnode_set_flag(struct fwnode_handle *fwnode,
 				   unsigned int bit)
 {
-	set_bit(bit, &fwnode->flags);
+	set_bit(bit, &fwnode->atomic_flags);
 }
 
 static inline void fwnode_clear_flag(struct fwnode_handle *fwnode,
 				     unsigned int bit)
 {
-	clear_bit(bit, &fwnode->flags);
+	clear_bit(bit, &fwnode->atomic_flags);
 }
 
 static inline void fwnode_assign_flag(struct fwnode_handle *fwnode,
 				      unsigned int bit, bool value)
 {
-	assign_bit(bit, &fwnode->flags, value);
+	assign_bit(bit, &fwnode->atomic_flags, value);
 }
 
 static inline bool fwnode_test_flag(struct fwnode_handle *fwnode,
 				    unsigned int bit)
 {
-	return test_bit(bit, &fwnode->flags);
+	return test_bit(bit, &fwnode->atomic_flags);
 }
 
 static inline void fwnode_dev_initialized(struct fwnode_handle *fwnode,
