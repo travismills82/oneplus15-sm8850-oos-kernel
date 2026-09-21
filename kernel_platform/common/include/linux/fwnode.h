@@ -54,7 +54,7 @@ struct fwnode_handle {
 	struct device *dev;
 	struct list_head suppliers;
 	struct list_head consumers;
-	unsigned long flags;
+	ANDROID_KABI_REPLACE(u8, flags, unsigned long flags);
 	ANDROID_KABI_RESERVE(1);
 };
 
