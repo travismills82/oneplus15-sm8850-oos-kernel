@@ -281,7 +281,7 @@ static bool task_still_dumpable(struct task_struct *task, unsigned int mode)
 		return ptrace_has_cap(mm->user_ns, mode);
 	}
 
-	if (task->user_dumpable)
+	if (task_user_dumpable(task))
 		return true;
 	return ptrace_has_cap(&init_user_ns, mode);
 }

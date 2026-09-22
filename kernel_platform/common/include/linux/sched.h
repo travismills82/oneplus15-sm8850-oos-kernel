@@ -1656,10 +1656,7 @@ struct task_struct {
 #endif
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
-	ANDROID_KABI_USE(3, struct {
-		/* Save user-dumpable when mm goes away */
-		unsigned	user_dumpable:1;
-		});
+	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
 	ANDROID_KABI_RESERVE(5);
 	ANDROID_KABI_RESERVE(6);
@@ -1696,6 +1693,25 @@ struct task_struct {
 	 * Do not put anything below here!
 	 */
 };
+
+/*
+ * Linux 6.12.88 added task_struct::user_dumpable.  Keep the generation-5
+ * task_struct type contract intact by storing the new boolean in the low bit
+ * of Android KABI reserve slot 3.  Accessors keep the stable behavior while
+ * leaving the reserve's source and DWARF representation unchanged for OEM
+ * modules and Rust KMI users.
+ */
+static inline bool task_user_dumpable(const struct task_struct *task)
+{
+	return task->__kabi_reserved3 & 1;
+}
+
+static inline void task_set_user_dumpable(struct task_struct *task,
+					 bool user_dumpable)
+{
+	task->__kabi_reserved3 = (task->__kabi_reserved3 & ~1ULL) |
+				 user_dumpable;
+}
 
 #ifdef CONFIG_SCHED_PROXY_EXEC
 DECLARE_STATIC_KEY_FALSE(__sched_proxy_exec);
