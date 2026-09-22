@@ -2431,17 +2431,30 @@ struct net_device {
 	ANDROID_KABI_RESERVE(5);
 	ANDROID_KABI_RESERVE(6);
 	ANDROID_KABI_RESERVE(7);
-	/*
-	 * Keep the 6.12.81 mangle-ID feature mask out of the middle of this
-	 * frozen structure.  Reserve 8 has the same width and alignment as
-	 * netdev_features_t, so source users retain the stable semantics while
-	 * generation-5 binary modules keep every historical member offset.
-	 */
-	ANDROID_KABI_USE(8, netdev_features_t mangleid_features);
+	ANDROID_KABI_RESERVE(8);
 
 	u8			priv[] ____cacheline_aligned
 				       __counted_by(priv_len);
 } ____cacheline_aligned;
+
+/*
+ * Keep the 6.12.81 mangle-ID feature mask in the existing reserve without
+ * replacing its ABI record.  The reserve has the same width and alignment as
+ * netdev_features_t; typed accessors prevent the storage detail from leaking
+ * into runtime code or the frozen generation-5 structure description.
+ */
+static inline netdev_features_t
+netdev_mangleid_features(const struct net_device *dev)
+{
+	return (netdev_features_t)READ_ONCE(dev->__kabi_reserved8);
+}
+
+static inline void netdev_add_mangleid_features(struct net_device *dev,
+						netdev_features_t features)
+{
+	dev->__kabi_reserved8 |= (u64)features;
+}
+
 #define to_net_dev(d) container_of(d, struct net_device, dev)
 
 /*
