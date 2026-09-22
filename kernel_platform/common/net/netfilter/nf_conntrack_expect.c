@@ -20,6 +20,7 @@
 #include <linux/siphash.h>
 #include <linux/moduleparam.h>
 #include <linux/export.h>
+#include <linux/xarray.h>
 #include <net/net_namespace.h>
 #include <net/netns/hash.h>
 
@@ -42,6 +43,72 @@ unsigned int nf_ct_expect_max __read_mostly;
 
 static struct kmem_cache *nf_ct_expect_cachep __read_mostly;
 static siphash_aligned_key_t nf_ct_expect_hashrnd;
+
+/*
+ * Linux 6.12.81 stores the namespace and zone directly in
+ * struct nf_conntrack_expect so RCU lookups never have to dereference a
+ * possibly dying or recycled master conntrack.  That insertion changes the
+ * frozen Android generation-5 layout, so retain the new lifetime semantics
+ * in metadata keyed by the expectation address instead.
+ *
+ * Entries are installed together with the expectation allocation and erased
+ * from its RCU callback.  Consequently an expectation visible to a reader
+ * always has metadata, and metadata cannot be freed until all pre-existing
+ * expectation readers have completed.
+ */
+struct nf_ct_expect_metadata {
+	possible_net_t net;
+#ifdef CONFIG_NF_CONNTRACK_ZONES
+	struct nf_conntrack_zone zone;
+#endif
+};
+
+static DEFINE_XARRAY(nf_ct_expect_metadata);
+
+static struct nf_ct_expect_metadata *
+nf_ct_expect_metadata_lookup(const struct nf_conntrack_expect *exp)
+{
+	return xa_load(&nf_ct_expect_metadata, (unsigned long)exp);
+}
+
+struct net *nf_ct_exp_net(const struct nf_conntrack_expect *exp)
+{
+	struct nf_ct_expect_metadata *metadata;
+	struct net *net;
+
+	rcu_read_lock();
+	metadata = nf_ct_expect_metadata_lookup(exp);
+	if (WARN_ON_ONCE(!metadata)) {
+		rcu_read_unlock();
+		return nf_ct_net(exp->master);
+	}
+
+	net = read_pnet(&metadata->net);
+	rcu_read_unlock();
+	return net;
+}
+
+bool nf_ct_exp_zone_equal_any(const struct nf_conntrack_expect *exp,
+			      const struct nf_conntrack_zone *zone)
+{
+#ifdef CONFIG_NF_CONNTRACK_ZONES
+	struct nf_ct_expect_metadata *metadata;
+	bool equal;
+
+	rcu_read_lock();
+	metadata = nf_ct_expect_metadata_lookup(exp);
+	if (WARN_ON_ONCE(!metadata)) {
+		rcu_read_unlock();
+		return nf_ct_zone_equal_any(exp->master, zone);
+	}
+
+	equal = metadata->zone.id == zone->id;
+	rcu_read_unlock();
+	return equal;
+#else
+	return true;
+#endif
+}
 
 /* nf_conntrack_expect helper functions */
 void nf_ct_unlink_expect_report(struct nf_conntrack_expect *exp,
@@ -112,7 +179,7 @@ nf_ct_exp_equal(const struct nf_conntrack_tuple *tuple,
 		const struct net *net)
 {
 	return nf_ct_tuple_mask_cmp(tuple, &i->tuple, &i->mask) &&
-	       net_eq(net, read_pnet(&i->net)) &&
+	       net_eq(net, nf_ct_exp_net(i)) &&
 	       nf_ct_exp_zone_equal_any(i, zone);
 }
 
@@ -297,15 +364,37 @@ EXPORT_SYMBOL_GPL(nf_ct_unexpect_related);
  * always killed before the conntrack itself */
 struct nf_conntrack_expect *nf_ct_expect_alloc(struct nf_conn *me)
 {
+	struct nf_ct_expect_metadata *metadata;
 	struct nf_conntrack_expect *new;
+	int err;
 
 	new = kmem_cache_alloc(nf_ct_expect_cachep, GFP_ATOMIC);
 	if (!new)
 		return NULL;
 
+	metadata = kmalloc(sizeof(*metadata), GFP_ATOMIC);
+	if (!metadata)
+		goto err_free_expect;
+
+	write_pnet(&metadata->net, nf_ct_net(me));
+#ifdef CONFIG_NF_CONNTRACK_ZONES
+	metadata->zone = me->zone;
+#endif
+
+	err = xa_insert(&nf_ct_expect_metadata, (unsigned long)new, metadata,
+			GFP_ATOMIC);
+	if (err)
+		goto err_free_metadata;
+
 	new->master = me;
 	refcount_set(&new->use, 1);
 	return new;
+
+err_free_metadata:
+	kfree(metadata);
+err_free_expect:
+	kmem_cache_free(nf_ct_expect_cachep, new);
+	return NULL;
 }
 EXPORT_SYMBOL_GPL(nf_ct_expect_alloc);
 
@@ -321,7 +410,6 @@ void nf_ct_expect_init(struct nf_conntrack_expect *exp, unsigned int class,
 {
 	struct nf_conntrack_helper *helper = NULL;
 	struct nf_conn *ct = exp->master;
-	struct net *net = read_pnet(&ct->ct_net);
 	struct nf_conn_help *help;
 	int len;
 
@@ -339,10 +427,6 @@ void nf_ct_expect_init(struct nf_conntrack_expect *exp, unsigned int class,
 		helper = rcu_dereference(help->helper);
 
 	rcu_assign_pointer(exp->helper, helper);
-	write_pnet(&exp->net, net);
-#ifdef CONFIG_NF_CONNTRACK_ZONES
-	exp->zone = ct->zone;
-#endif
 	exp->tuple.src.l3num = family;
 	exp->tuple.dst.protonum = proto;
 
@@ -387,8 +471,12 @@ EXPORT_SYMBOL_GPL(nf_ct_expect_init);
 static void nf_ct_expect_free_rcu(struct rcu_head *head)
 {
 	struct nf_conntrack_expect *exp;
+	struct nf_ct_expect_metadata *metadata;
 
 	exp = container_of(head, struct nf_conntrack_expect, rcu);
+	metadata = xa_erase(&nf_ct_expect_metadata, (unsigned long)exp);
+	WARN_ON_ONCE(!metadata);
+	kfree(metadata);
 	kmem_cache_free(nf_ct_expect_cachep, exp);
 }
 
@@ -759,6 +847,8 @@ int nf_conntrack_expect_init(void)
 void nf_conntrack_expect_fini(void)
 {
 	rcu_barrier(); /* Wait for call_rcu() before destroy */
+	WARN_ON_ONCE(!xa_empty(&nf_ct_expect_metadata));
+	xa_destroy(&nf_ct_expect_metadata);
 	kmem_cache_destroy(nf_ct_expect_cachep);
 	kvfree(nf_ct_expect_hash);
 }
