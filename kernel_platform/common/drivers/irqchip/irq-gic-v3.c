@@ -460,7 +460,7 @@ static int gic_peek_irq(struct irq_data *d, u32 offset)
 	u32 index, mask;
 
 	offset = convert_offset_index(d, offset, &index);
-	mask = 1 << (index % 32);
+	mask = BIT(index % 32);
 
 	if (gic_irq_in_rdist(d))
 		base = gic_data_rdist_sgi_base();
@@ -476,7 +476,7 @@ static void gic_poke_irq(struct irq_data *d, u32 offset)
 	u32 index, mask;
 
 	offset = convert_offset_index(d, offset, &index);
-	mask = 1 << (index % 32);
+	mask = BIT(index % 32);
 
 	if (gic_irq_in_rdist(d))
 		base = gic_data_rdist_sgi_base();
