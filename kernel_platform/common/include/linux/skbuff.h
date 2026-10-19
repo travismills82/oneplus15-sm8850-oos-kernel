@@ -1018,8 +1018,6 @@ struct sk_buff {
 	__u16			tc_index;	/* traffic control index */
 #endif
 
-	u16			alloc_cpu;
-
 	union {
 		__wsum		csum;
 		struct {
@@ -1074,6 +1072,8 @@ struct sk_buff {
 	ANDROID_KABI_RESERVE(2);
 
 	); /* end headers group */
+
+	u16			alloc_cpu;
 
 	/* These elements must be at the end, see alloc_skb() for details.  */
 	sk_buff_data_t		tail;
