@@ -3,6 +3,7 @@
  * Copyright (C) 2014-2026 NVIDIA CORPORATION.  All rights reserved.
  */
 
+#include <linux/android_kabi.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
@@ -21,6 +22,68 @@
 #include <soc/tegra/fuse.h>
 
 #include "mc.h"
+
+/*
+ * The OOS 17 arm_smmu.ko only holds struct tegra_mc as an opaque pointer and
+ * calls the two exported helpers below.  Preserve its shipping type graph for
+ * symbol versioning while retaining the newer Tegra implementation and its
+ * corrected private layouts.  No Canoe runtime object dereferences these
+ * definitions across the module boundary.
+ */
+ANDROID_KABI_TYPE_STRING("s#tegra_mc_ops",
+	"structure_type tegra_mc_ops { member pointer_type { subroutine_type ( formal_parameter "
+	"pointer_type { s#tegra_mc } ) -> base_type int byte_size(4) encoding(5) } probe "
+	"data_member_location(0) , member pointer_type { subroutine_type ( formal_parameter "
+	"pointer_type { s#tegra_mc } ) -> base_type void } remove data_member_location(8) , "
+	"member pointer_type { subroutine_type ( formal_parameter pointer_type { s#tegra_mc } ) "
+	"-> base_type int byte_size(4) encoding(5) } resume data_member_location(16) , member "
+	"pointer_type { subroutine_type ( formal_parameter base_type int byte_size(4) encoding(5) "
+	", formal_parameter pointer_type { base_type void } ) -> t#irqreturn_t } handle_irq "
+	"data_member_location(24) , member pointer_type { subroutine_type ( formal_parameter "
+	"pointer_type { s#tegra_mc } , formal_parameter pointer_type { s#device } ) -> base_type "
+	"int byte_size(4) encoding(5) } probe_device data_member_location(32) } byte_size(40)");
+
+ANDROID_KABI_TYPE_STRING("s#tegra_mc_soc",
+	"structure_type tegra_mc_soc { member pointer_type { const_type { s#tegra_mc_client } } "
+	"clients data_member_location(0) , member base_type unsigned int byte_size(4) encoding(7) "
+	"num_clients data_member_location(8) , member pointer_type { const_type { base_type "
+	"unsigned long byte_size(8) encoding(7) } } emem_regs data_member_location(16) , member "
+	"base_type unsigned int byte_size(4) encoding(7) num_emem_regs data_member_location(24) , "
+	"member base_type unsigned int byte_size(4) encoding(7) num_address_bits "
+	"data_member_location(28) , member base_type unsigned int byte_size(4) encoding(7) "
+	"atom_size data_member_location(32) , member base_type unsigned int byte_size(4) "
+	"encoding(7) num_carveouts data_member_location(36) , member t#u16 client_id_mask "
+	"data_member_location(40) , member t#u8 num_channels data_member_location(42) , member "
+	"pointer_type { const_type { s#tegra_smmu_soc } } smmu data_member_location(48) , member "
+	"t#u32 intmask data_member_location(56) , member t#u32 ch_intmask "
+	"data_member_location(60) , member t#u32 global_intstatus_channel_shift "
+	"data_member_location(64) , member t#bool has_addr_hi_reg data_member_location(68) , "
+	"member pointer_type { const_type { s#tegra_mc_reset_ops } } reset_ops "
+	"data_member_location(72) , member pointer_type { const_type { s#tegra_mc_reset } } "
+	"resets data_member_location(80) , member base_type unsigned int byte_size(4) encoding(7) "
+	"num_resets data_member_location(88) , member pointer_type { const_type { "
+	"s#tegra_mc_icc_ops } } icc_ops data_member_location(96) , member pointer_type { "
+	"const_type { s#tegra_mc_ops } } ops data_member_location(104) } byte_size(112)");
+
+ANDROID_KABI_TYPE_STRING("s#tegra_mc",
+	"structure_type tegra_mc { member pointer_type { s#tegra_bpmp } bpmp "
+	"data_member_location(0) , member pointer_type { s#device } dev data_member_location(8) , "
+	"member pointer_type { s#tegra_smmu } smmu data_member_location(16) , member pointer_type "
+	"{ base_type void } regs data_member_location(24) , member pointer_type { base_type void "
+	"} bcast_ch_regs data_member_location(32) , member pointer_type { pointer_type { "
+	"base_type void } } ch_regs data_member_location(40) , member pointer_type { s#clk } clk "
+	"data_member_location(48) , member base_type int byte_size(4) encoding(5) irq "
+	"data_member_location(56) , member pointer_type { const_type { s#tegra_mc_soc } } soc "
+	"data_member_location(64) , member base_type unsigned long byte_size(8) encoding(7) tick "
+	"data_member_location(72) , member pointer_type { s#tegra_mc_timing } timings "
+	"data_member_location(80) , member base_type unsigned int byte_size(4) encoding(7) "
+	"num_timings data_member_location(88) , member base_type unsigned int byte_size(4) "
+	"encoding(7) num_channels data_member_location(92) , member t#bool bwmgr_mrq_supported "
+	"data_member_location(96) , member s#reset_controller_dev reset data_member_location(104) "
+	", member s#icc_provider provider data_member_location(200) , member t#spinlock_t lock "
+	"data_member_location(304) , member structure_type { member pointer_type { s#dentry } "
+	"root data_member_location(0) } byte_size(8) debugfs data_member_location(312) } "
+	"byte_size(320)");
 
 static const struct of_device_id tegra_mc_of_match[] = {
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC

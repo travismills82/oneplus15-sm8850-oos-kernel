@@ -36,11 +36,4 @@ type __kernel_size_t = usize;
 type __kernel_ssize_t = isize;
 type __kernel_ptrdiff_t = isize;
 
-// `struct net` is an opaque kernel type. UAPI bindings may carry pointers to
-// it, but must not expose or depend on the kernel-private layout.
-#[repr(C)]
-pub struct net {
-    _unused: [u8; 0],
-}
-
 include!(concat!(env!("OBJTREE"), "/rust/uapi/uapi_generated.rs"));

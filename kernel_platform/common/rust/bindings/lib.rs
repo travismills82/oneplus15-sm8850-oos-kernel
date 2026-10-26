@@ -38,13 +38,6 @@ mod bindings_raw {
     type __kernel_ssize_t = isize;
     type __kernel_ptrdiff_t = isize;
 
-    // `struct net` is an opaque C type to Rust.  The Rust networking APIs only
-    // pass pointers to it to C helpers and must not publish its private layout.
-    #[repr(C)]
-    pub struct net {
-        _unused: [u8; 0],
-    }
-
     // Use glob import here to expose all helpers.
     // Symbols defined within the module will take precedence to the glob import.
     pub use super::bindings_helper::*;

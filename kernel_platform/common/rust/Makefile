@@ -6,11 +6,6 @@ rustdoc_output := $(objtree)/Documentation/output/rust/rustdoc
 obj-$(CONFIG_RUST) += core.o compiler_builtins.o ffi.o
 always-$(CONFIG_RUST) += exports_core_generated.h
 
-# OOS 16.0.10.601 ships prebuilt Rust modules whose compiler-generated
-# provider contract predates Rust AutoFDO.  Keep core's exported Rust ABI
-# independent of profiling metadata while retaining AutoFDO elsewhere.
-AUTOFDO_PROFILE_core.o := n
-
 ifdef CONFIG_RUST_INLINE_HELPERS
 always-$(CONFIG_RUST) += helpers/helpers.bc helpers/helpers_module.bc
 else

@@ -4,22 +4,7 @@
  * Copyright (C) 2026 Google LLC.
  */
 
-#include <linux/android_kabi.h>
 #include <net/genetlink.h>
-
-/*
- * Keep the Rust view of struct net opaque for KMI versioning.  Adding the
- * generic netlink bindings makes bindgen emit the complete structure, even
- * though the existing Rust interfaces only carry it behind opaque pointers.
- * Expanding it would therefore change the CRCs of unrelated Rust exports
- * without changing their binary calling convention.
- *
- * This is the exact representation used by the qualified OOS 16.0.10.601
- * kernel and its stock rust_binder.ko.
- */
-ANDROID_KABI_TYPE_STRING(
-	"s#bindings::bindings_raw::net",
-	"structure_type bindings::bindings_raw::net { member array_type[0] { base_type u8 byte_size(1) encoding(7) } _unused accessibility(3) data_member_location(0) } byte_size(0) alignment(1)");
 
 #ifdef CONFIG_NET
 

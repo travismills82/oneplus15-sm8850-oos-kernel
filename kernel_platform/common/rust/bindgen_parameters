@@ -23,13 +23,6 @@
 # warning. We don't need to peek into it anyway.
 --opaque-type spinlock
 
-# Rust only passes `struct net` through pointers to C helpers and never
-# dereferences its fields. Keep the generated Rust type blocklisted so the
-# bindings crate can provide the same zero-sized declaration used before the
-# generic-netlink headers exposed the private C layout. This does not alter
-# the C definition of `struct net`.
---blocklist-type '^net$'
-
 # `seccomp`'s comment gets understood as a doctest
 --no-doc-comments
 
