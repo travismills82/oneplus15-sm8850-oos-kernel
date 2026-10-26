@@ -166,8 +166,8 @@ def define_single_android_build(
         key = "//tools/mkbootimg:gki/testdata/testkey_rsa4096.pem",
         props = [
             "com.android.build.boot.os_version:16",
-            "com.android.build.boot.fingerprint:qti/canoe/canoe:16/BP2A.250605.015/1780323679878:user/release-keys",
-            "com.android.build.boot.security_patch:2026-06-01",
+            "com.android.build.boot.fingerprint:qti/canoe/canoe:16/BP2A.250605.015/1792254911768:user/release-keys",
+            "com.android.build.boot.security_patch:2026-10-01",
         ],
         boot_partition_size = build_img_opts.boot_partition_size,
     )
