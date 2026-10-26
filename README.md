@@ -1,7 +1,8 @@
 # OnePlus 15 SM8850 kernel
 
 Authorized Android/Linux kernel development for the OnePlus 15
-(`infiniti` / Canoe / Qualcomm SM8850), Android 16, and OxygenOS 16.
+(`infiniti` / Canoe / Qualcomm SM8850), Android 16, and firmware-specific
+OxygenOS/ColorOS 16 and 17 releases.
 
 Kernel releases are firmware-specific. Never cross-flash a boot image merely
 because it targets the same phone family; each OxygenOS build has its own
@@ -11,6 +12,7 @@ kernel, module, FBE/user0, and boot-container contract.
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS/OxygenOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.112-android16-6-o-g3b4aea7fd691-4k` | Stable boot-only release | `coloros17.0.0.102-linux-6.12.112-kmi6` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.112-android16-6-o-g8dd9cb4790b7-4k` | Watchdog-corrected boot/stability release | `oos16.0.10.601-linux-6.12.112-kmi6-watchdog` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.95-android16-6-o-g02714090683b-4k` | Boot/stability release | `oos16.0.10.601-linux-6.12.95-kmi6-canary` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.89-android16-6-o-g5d9b99c7d104-4k` | Fully qualified rollback baseline | `oos16.0.10.601-linux-6.12.89-kmi6` |
@@ -18,6 +20,49 @@ kernel, module, FBE/user0, and boot-container contract.
 | OxygenOS 16.0.10.500(EX01) | CPH2747 | `6.12.37-android16-5-o-g57b52d3bb803-4k` | Fully qualified | `oos16.0.10.500-ack-6.12.37` |
 
 Use only the release matching the installed firmware.
+
+## Linux 6.12.112 stable for ColorOS/OxygenOS 17.0.0.102
+
+| Field | Tested value |
+|---|---|
+| Device family | OnePlus 15 / `infiniti` / `canoe` |
+| Physical device | CPH2745IN / OP611FL1 |
+| Firmware | `CPH2745_17.0.0.102(EX01)` |
+| Kernel | `6.12.112-android16-6-o-g3b4aea7fd691-4k` |
+| KMI generation | Android 16 generation 6 |
+| Source commit containing the tested tree | `041fc63003508b49fd9f101e1e130c9ec96854ab` |
+| `boot.img` size | 100,663,296 bytes |
+| `boot.img` SHA-256 | `723c6d5339f3ce312af5add567487ecde79d0c082aae19ea575bbf6a528897ff` |
+| Embedded Image SHA-256 | `7b4bdb5c42b45dab73ecf9fd671e768dd50a03252c5ee135e7e790762b7b50a9` |
+| TWRP ZIP | `Kernel-ColorOS-17-17.0.0.102.zip` |
+| TWRP ZIP SHA-256 | `d931af2fda503d49c47dd448081ca0a3212f3466dbb04e4ab5fbca9aff1be3ca` |
+
+This is a boot-only release. It retains the exact stock 17.0.0.102
+`system_dlkm`, `vendor_dlkm`, `vendor_boot`, `init_boot`, DTBO, VBMeta,
+metadata, and userdata. The complete stock-module oracle passed with 1,032
+compatible modules, 38 dormant modules, 60,701 hard imports resolved, and
+61,777 MODVERSIONS records matched. Missing providers, CRC mismatches,
+namespace failures, and active blockers were all zero.
+
+The exact published `boot.img` passed a full active-slot write/read-back,
+Android boot, encrypted user0 `RUNNING_UNLOCKED`, F2FS `/data` with
+`inlinecrypt`, 691 stock loaded modules, Wi-Fi, Bluetooth, LTE data, NFC,
+USB/charging, camera photo and video capture, microphone recording, media
+playback, fingerprint unlock, ZRAM, CPUFreq, and fatal kernel/module scans.
+
+Three warnings rooted in unchanged stock vendor modules are documented: the
+Oplus HBP one-element-array fortify warning, schedinfo constructor plus
+zero-allocation warning, and repeated `clk_qcom` suspend-trace registration.
+No functional failure, panic, Oops, lockup, RCU stall, hung task, or module
+loader failure was observed. An external NFC tag, Bluetooth peripheral
+session, USB-disconnected deep suspend, TWRP decryption, and repeated
+cold/warm boots were not exercised in this release session.
+
+See:
+
+- [17.0.0.102 compatibility report](docs/validation/firmware-17.0.0.102/oos1700102-6.12.112-kmi6-compatibility.md)
+- [17.0.0.102 physical qualification](docs/validation/firmware-17.0.0.102/oos1700102-6.12.112-module-signing-canary-20261026.md)
+- [17.0.0.102 release notes](docs/releases/coloros17.0.0.102-linux-6.12.112-kmi6/release-notes.md)
 
 ## Linux 6.12.112 watchdog release for OxygenOS 16.0.10.601
 
@@ -205,10 +250,10 @@ fastboot flash boot_a boot.img
 fastboot reboot
 ```
 
-For the 6.12.52 `.400` release the expected `boot.img` SHA-256 is:
+For the current 17.0.0.102 release the expected `boot.img` SHA-256 is:
 
 ```text
-1aa1de79d79cfa5b184d2df4fb25fa56811f615d8420d5faf6c6dac29d49e41a
+723c6d5339f3ce312af5add567487ecde79d0c082aae19ea575bbf6a528897ff
 ```
 
 Alternatively, use the firmware-specific TWRP ZIP. It verifies the
