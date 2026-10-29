@@ -244,7 +244,8 @@ struct mem_cgroup {
 	 * that this indicator should NOT be used in legacy cgroup mode
 	 * where socket memory is accounted/charged separately.
 	 */
-	u64			socket_pressure;
+	ANDROID_KABI_REPLACE(unsigned long, socket_pressure,
+			     u64 socket_pressure);
 #if BITS_PER_LONG < 64
 	seqlock_t		socket_pressure_seqlock;
 #endif
