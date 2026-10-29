@@ -171,6 +171,7 @@ static void free_tty_struct(struct tty_struct *tty)
 	tty_ldisc_deinit(tty);
 	put_device(tty->dev);
 	kvfree(tty->write_buf);
+	kfree(tty->break_wait);
 	kfree(tty);
 }
 
@@ -623,7 +624,7 @@ static void __tty_hangup(struct tty_struct *tty, int exit_session)
 
 	tty_ldisc_hangup(tty, cons_filp != NULL);
 
-	wake_up_interruptible(&tty->break_wait);
+	wake_up_interruptible(tty->break_wait);
 
 	spin_lock_irq(&tty->ctrl.lock);
 	clear_bit(TTY_THROTTLED, &tty->flags);
@@ -2503,7 +2504,7 @@ static int send_break(struct file *file, struct tty_struct *tty, unsigned int du
 	}
 
 	timeout = msecs_to_jiffies(duration);
-	timeout = wait_event_interruptible_timeout(tty->break_wait,
+	timeout = wait_event_interruptible_timeout(*tty->break_wait,
 						   tty_hung_up_p(file),
 						   timeout);
 	/* return early on hangup only */
@@ -3133,9 +3134,15 @@ struct tty_struct *alloc_tty_struct(struct tty_driver *driver, int idx)
 	tty = kzalloc(sizeof(*tty), GFP_KERNEL_ACCOUNT);
 	if (!tty)
 		return NULL;
+	tty->break_wait = kmalloc(sizeof(*tty->break_wait), GFP_KERNEL_ACCOUNT);
+	if (!tty->break_wait) {
+		kfree(tty);
+		return NULL;
+	}
 
 	kref_init(&tty->kref);
 	if (tty_ldisc_init(tty)) {
+		kfree(tty->break_wait);
 		kfree(tty);
 		return NULL;
 	}
@@ -3148,7 +3155,7 @@ struct tty_struct *alloc_tty_struct(struct tty_driver *driver, int idx)
 	init_ldsem(&tty->ldisc_sem);
 	init_waitqueue_head(&tty->write_wait);
 	init_waitqueue_head(&tty->read_wait);
-	init_waitqueue_head(&tty->break_wait);
+	init_waitqueue_head(tty->break_wait);
 	INIT_WORK(&tty->hangup_work, do_tty_hangup);
 	mutex_init(&tty->atomic_write_lock);
 	spin_lock_init(&tty->ctrl.lock);

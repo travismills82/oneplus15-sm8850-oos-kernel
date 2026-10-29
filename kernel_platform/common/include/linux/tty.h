@@ -231,7 +231,6 @@ struct tty_struct {
 	struct fasync_struct *fasync;
 	wait_queue_head_t write_wait;
 	wait_queue_head_t read_wait;
-	wait_queue_head_t break_wait;
 	struct work_struct hangup_work;
 	void *disc_data;
 	void *driver_data;
@@ -244,7 +243,7 @@ struct tty_struct {
 #define N_TTY_BUF_SIZE 4096
 	struct work_struct SAK_work;
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, wait_queue_head_t *break_wait);
 	ANDROID_KABI_RESERVE(2);
 } __randomize_layout;
 
