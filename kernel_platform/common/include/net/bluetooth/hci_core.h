@@ -66,7 +66,7 @@ struct inquiry_entry {
 		NAME_PENDING,
 		NAME_KNOWN,
 	} name_state;
-	unsigned long		timestamp;
+	__u32			timestamp;
 	struct inquiry_data	data;
 };
 
@@ -82,7 +82,7 @@ struct discovery_state {
 	struct list_head	all;	/* All devices found during inquiry */
 	struct list_head	unknown;	/* Name state not known */
 	struct list_head	resolve;	/* Name needs to be resolved */
-	unsigned long		timestamp;
+	__u32			timestamp;
 	bdaddr_t		last_adv_addr;
 	u8			last_adv_addr_type;
 	s8			last_adv_rssi;
@@ -554,7 +554,6 @@ struct hci_dev {
 	struct list_head	link_keys;
 	struct list_head	long_term_keys;
 	struct list_head	identity_resolving_keys;
-	struct mutex		remote_oob_lock;
 	struct list_head	remote_oob_data;
 	struct list_head	le_accept_list;
 	struct list_head	le_resolv_list;
@@ -656,7 +655,7 @@ struct hci_dev {
 	ANDROID_KABI_USE2(1, unsigned int cis_num, unsigned int bis_num);
 	ANDROID_KABI_USE2(2, unsigned int pa_num,
 			  unsigned int hci_count_pad);
-	ANDROID_KABI_RESERVE(3);
+	ANDROID_KABI_USE(3, struct mutex *remote_oob_lock);
 	ANDROID_KABI_RESERVE(4);
 };
 
@@ -930,12 +929,14 @@ static inline int inquiry_cache_empty(struct hci_dev *hdev)
 static inline long inquiry_cache_age(struct hci_dev *hdev)
 {
 	struct discovery_state *c = &hdev->discovery;
-	return jiffies - c->timestamp;
+
+	/* The cache timeout is short; modulo-u32 subtraction is wrap-safe. */
+	return (u32)jiffies - c->timestamp;
 }
 
 static inline long inquiry_entry_age(struct inquiry_entry *e)
 {
-	return jiffies - e->timestamp;
+	return (u32)jiffies - e->timestamp;
 }
 
 struct inquiry_entry *hci_inquiry_cache_lookup(struct hci_dev *hdev,
