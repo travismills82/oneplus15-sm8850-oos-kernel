@@ -854,6 +854,26 @@ enum dwc3_err_state {
 	DWC3_ERR_UNRECOVERABLE,
 };
 
+/**
+ * struct dwc3_err_recovery - private controller error-recovery state
+ * @dwc: controller owning this recovery state
+ * @work: work item used for controller error recovery
+ * @connect_mutex: serializes pull-up run/stop against recovery
+ * @state: current error-recovery state
+ * @count: consecutive recovery attempts since the last healthy reset
+ *
+ * Keep this state out of struct dwc3.  Qualcomm glue modules access that
+ * structure directly, so growing it would shift the private OEM ABI even
+ * though no exported symbol CRC changes.
+ */
+struct dwc3_err_recovery {
+	struct dwc3		*dwc;
+	struct work_struct	work;
+	struct mutex		connect_mutex;
+	enum dwc3_err_state	state;
+	u32			count;
+};
+
 /* TRB Length, PCM and Status */
 #define DWC3_TRB_SIZE_MASK	(0x00ffffff)
 #define DWC3_TRB_SIZE_LENGTH(n)	((n) & DWC3_TRB_SIZE_MASK)
@@ -1019,7 +1039,6 @@ struct dwc3_scratchpad_array {
 /**
  * struct dwc3 - representation of our controller
  * @drd_work: workqueue used for role swapping
- * @err_recovery_work: workqueue used for controller error recovery
  * @ep0_trb: trb which is used for the ctrl_req
  * @bounce: address of bounce buffer
  * @setup_buf: used while precessing STD USB requests
@@ -1029,7 +1048,6 @@ struct dwc3_scratchpad_array {
  * @ep0_in_setup: one control transfer is completed and enter setup phase
  * @lock: for synchronizing
  * @mutex: for mode switching
- * @connect_mutex: for the pull-up and err_recovery_work
  * @dev: pointer to our struct device
  * @sysdev: pointer to the DMA-capable device
  * @xhci: pointer to our xHCI child
@@ -1093,9 +1111,7 @@ struct dwc3_scratchpad_array {
  * @ep0_next_event: hold the next expected event
  * @ep0state: state of endpoint zero
  * @link_state: link state
- * @err_state: current error recovery state.
- * @err_recovery_count: number of consecutive error recovery attempts until
- *		confirmed healthy and reset to 0 on reset event.
+ * @err_recovery: private error-recovery state stored behind a KABI reserve
  * @speed: device speed (super, high, full, low)
  * @hwparams: copy of hwparams registers
  * @regset: debugfs pointer to regdump file
@@ -1202,7 +1218,6 @@ struct dwc3_scratchpad_array {
  */
 struct dwc3 {
 	struct work_struct	drd_work;
-	struct work_struct	err_recovery_work;
 	struct dwc3_trb		*ep0_trb;
 	void			*bounce;
 	u8			*setup_buf;
@@ -1216,9 +1231,6 @@ struct dwc3 {
 
 	/* mode switching lock */
 	struct mutex		mutex;
-
-	/* serializes pull-up run/stop vs error recovery */
-	struct mutex		connect_mutex;
 
 	struct device		*dev;
 	struct device		*sysdev;
@@ -1343,9 +1355,6 @@ struct dwc3 {
 	enum dwc3_ep0_next	ep0_next_event;
 	enum dwc3_ep0_state	ep0state;
 	enum dwc3_link_state	link_state;
-	enum dwc3_err_state	err_state;
-
-	u32			err_recovery_count;
 
 	u16			u2sel;
 	u16			u2pel;
@@ -1442,11 +1451,16 @@ struct dwc3 {
 	u32			gsbuscfg0_reqinfo;
 	u32			wakeup_pending_funcs;
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, struct dwc3_err_recovery *err_recovery);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
 };
+
+static inline enum dwc3_err_state dwc3_get_err_state(const struct dwc3 *dwc)
+{
+	return dwc->err_recovery ? dwc->err_recovery->state : DWC3_ERR_NONE;
+}
 
 #define INCRX_BURST_MODE 0
 #define INCRX_UNDEF_LENGTH_BURST_MODE 1
