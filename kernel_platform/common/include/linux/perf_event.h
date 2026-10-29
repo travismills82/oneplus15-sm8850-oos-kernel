@@ -1689,7 +1689,7 @@ static inline int perf_is_paranoid(void)
 	return sysctl_perf_event_paranoid > -1;
 }
 
-int perf_allow_kernel(void);
+int perf_allow_kernel(struct perf_event_attr *attr);
 
 static inline int perf_allow_cpu(void)
 {

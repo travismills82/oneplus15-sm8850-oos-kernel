@@ -12569,7 +12569,7 @@ static int perf_copy_attr(struct perf_event_attr __user *uattr,
 		}
 		/* privileged levels capture (kernel, hv): check permissions */
 		if (mask & PERF_SAMPLE_BRANCH_PERM_PLM) {
-			ret = perf_allow_kernel();
+			ret = perf_allow_kernel(attr);
 			if (ret)
 				return ret;
 		}
@@ -12834,7 +12834,7 @@ SYSCALL_DEFINE5(perf_event_open,
 	if (!attr.exclude_kernel || attr.text_poke ||
 	    ((attr.sample_type & PERF_SAMPLE_CALLCHAIN) &&
 	     !attr.exclude_callchain_kernel)) {
-		err = perf_allow_kernel();
+		err = perf_allow_kernel(&attr);
 		if (err)
 			return err;
 	}
@@ -12854,7 +12854,7 @@ SYSCALL_DEFINE5(perf_event_open,
 
 	/* Only privileged users can get physical addresses */
 	if ((attr.sample_type & PERF_SAMPLE_PHYS_ADDR)) {
-		err = perf_allow_kernel();
+		err = perf_allow_kernel(&attr);
 		if (err)
 			return err;
 	}
@@ -13648,8 +13648,11 @@ const struct perf_event_attr *perf_event_attrs(struct perf_event *event)
 	return &event->attr;
 }
 
-int perf_allow_kernel(void)
+int perf_allow_kernel(struct perf_event_attr *attr)
 {
+	/* Kept in the exported signature for Android KMI compatibility. */
+	(void)attr;
+
 	if (sysctl_perf_event_paranoid > 1 && !perfmon_capable())
 		return -EACCES;
 
