@@ -11,6 +11,7 @@
 
 #ifdef CONFIG_SCHED_CLASS_EXT
 
+#include <linux/android_kabi.h>
 #include <linux/llist.h>
 #include <linux/rhashtable-types.h>
 
@@ -147,7 +148,7 @@ struct sched_ext_entity {
 	s32			sticky_cpu;
 	s32			holding_cpu;
 	u32			kf_mask;	/* see scx_kf_mask above */
-	u32			ops_qseq;	/* protected by rq lock */
+	ANDROID_KABI_IGNORE(1, u32 ops_qseq); /* protected by rq lock */
 	struct task_struct	*kf_tasks[2];	/* see SCX_CALL_OP_TASK() */
 	atomic_long_t		ops_state;
 
