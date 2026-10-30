@@ -60,16 +60,12 @@
 	FN(TC_EGRESS)			\
 	FN(SECURITY_HOOK)		\
 	FN(QDISC_DROP)			\
-	FN(FQ_BAND_LIMIT)		\
-	FN(FQ_HORIZON_LIMIT)		\
-	FN(FQ_FLOW_LIMIT)		\
 	FN(CPU_BACKLOG)			\
 	FN(XDP)				\
 	FN(TC_INGRESS)			\
 	FN(UNHANDLED_PROTO)		\
 	FN(SKB_CSUM)			\
 	FN(SKB_GSO_SEG)			\
-	FN(SKB_BAD_GSO)			\
 	FN(SKB_UCOPY_FAULT)		\
 	FN(DEV_HDR)			\
 	FN(DEV_READY)			\
@@ -100,6 +96,10 @@
 	FN(TC_RECLASSIFY_LOOP)		\
 	FN(SOCKET_CLOSE)		\
 	FN(UNIX_SKIP_OOB)		\
+	FN(FQ_BAND_LIMIT)		\
+	FN(FQ_HORIZON_LIMIT)		\
+	FN(FQ_FLOW_LIMIT)		\
+	FN(SKB_BAD_GSO)			\
 	FNe(MAX)
 
 /**
@@ -307,21 +307,6 @@ enum skb_drop_reason {
 	 */
 	SKB_DROP_REASON_QDISC_DROP,
 	/**
-	 * @SKB_DROP_REASON_FQ_BAND_LIMIT: dropped by fq qdisc when per band
-	 * limit is reached.
-	 */
-	SKB_DROP_REASON_FQ_BAND_LIMIT,
-	/**
-	 * @SKB_DROP_REASON_FQ_HORIZON_LIMIT: dropped by fq qdisc when packet
-	 * timestamp is too far in the future.
-	 */
-	SKB_DROP_REASON_FQ_HORIZON_LIMIT,
-	/**
-	 * @SKB_DROP_REASON_FQ_FLOW_LIMIT: dropped by fq qdisc when a flow
-	 * exceeds its limits.
-	 */
-	SKB_DROP_REASON_FQ_FLOW_LIMIT,
-	/**
 	 * @SKB_DROP_REASON_CPU_BACKLOG: failed to enqueue the skb to the per CPU
 	 * backlog queue. This can be caused by backlog queue full (see
 	 * netdev_max_backlog in net.rst) or RPS flow limit
@@ -337,8 +322,6 @@ enum skb_drop_reason {
 	SKB_DROP_REASON_SKB_CSUM,
 	/** @SKB_DROP_REASON_SKB_GSO_SEG: gso segmentation error */
 	SKB_DROP_REASON_SKB_GSO_SEG,
-	/** @SKB_DROP_REASON_SKB_BAD_GSO: malicious gso packet. */
-	SKB_DROP_REASON_SKB_BAD_GSO,
 	/**
 	 * @SKB_DROP_REASON_SKB_UCOPY_FAULT: failed to copy data from user space,
 	 * e.g., via zerocopy_sg_from_iter() or skb_orphan_frags_rx()
@@ -450,6 +433,15 @@ enum skb_drop_reason {
 	 * recv() without MSG_OOB so dropped.
 	 */
 	SKB_DROP_REASON_UNIX_SKIP_OOB,
+	/* Keep new reasons after all pre-6.12.114 ABI-visible values. */
+	/** @SKB_DROP_REASON_FQ_BAND_LIMIT: fq per-band limit reached. */
+	SKB_DROP_REASON_FQ_BAND_LIMIT,
+	/** @SKB_DROP_REASON_FQ_HORIZON_LIMIT: fq horizon limit reached. */
+	SKB_DROP_REASON_FQ_HORIZON_LIMIT,
+	/** @SKB_DROP_REASON_FQ_FLOW_LIMIT: fq per-flow limit reached. */
+	SKB_DROP_REASON_FQ_FLOW_LIMIT,
+	/** @SKB_DROP_REASON_SKB_BAD_GSO: malicious gso packet. */
+	SKB_DROP_REASON_SKB_BAD_GSO,
 	/**
 	 * @SKB_DROP_REASON_MAX: the maximum of core drop reasons, which
 	 * shouldn't be used as a real 'reason' - only for tracing code gen
@@ -467,6 +459,14 @@ ANDROID_KABI_ENUMERATOR_IGNORE(skb_drop_reason,
 			       SKB_DROP_REASON_SOCKET_CLOSE);
 ANDROID_KABI_ENUMERATOR_IGNORE(skb_drop_reason,
 			       SKB_DROP_REASON_UNIX_SKIP_OOB);
+ANDROID_KABI_ENUMERATOR_IGNORE(skb_drop_reason,
+			       SKB_DROP_REASON_FQ_BAND_LIMIT);
+ANDROID_KABI_ENUMERATOR_IGNORE(skb_drop_reason,
+			       SKB_DROP_REASON_FQ_HORIZON_LIMIT);
+ANDROID_KABI_ENUMERATOR_IGNORE(skb_drop_reason,
+			       SKB_DROP_REASON_FQ_FLOW_LIMIT);
+ANDROID_KABI_ENUMERATOR_IGNORE(skb_drop_reason,
+			       SKB_DROP_REASON_SKB_BAD_GSO);
 ANDROID_KABI_ENUMERATOR_VALUE(skb_drop_reason, SKB_DROP_REASON_MAX, 90);
 
 #define SKB_DROP_REASON_SUBSYS_SHIFT	16
