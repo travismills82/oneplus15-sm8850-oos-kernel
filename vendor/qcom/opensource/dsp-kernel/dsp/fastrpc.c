@@ -6907,6 +6907,7 @@ int fastrpc_driver_register(struct fastrpc_driver *frpc_driver)
 	struct fastrpc_user *user = NULL;
 	struct fastrpc_channel_ctx *cctx = NULL;
 	struct fastrpc_domain *domain = NULL;
+	int dsp_state;
 
 	if(frpc_driver == NULL) {
 		pr_err("%s : invalid registraion request", __func__);
@@ -6944,9 +6945,12 @@ int fastrpc_driver_register(struct fastrpc_driver *frpc_driver)
 	return -ESRCH;
 
 process_found:
-	if(atomic_read(&user->state) >= DSP_EXIT_START) {
+	/* Registration requires the device published by completed creation. */
+	dsp_state = atomic_read(&user->state);
+	if (dsp_state != DSP_CREATE_COMPLETE) {
 		spin_unlock_irqrestore(&cctx->lock, irq_flags);
-		pr_err("%s : process already exited", __func__);
+		pr_err("%s : invalid process state for registration: %d\n",
+		       __func__, dsp_state);
 		fastrpc_file_put(user, false);
 		return -ESRCH;
 	}
