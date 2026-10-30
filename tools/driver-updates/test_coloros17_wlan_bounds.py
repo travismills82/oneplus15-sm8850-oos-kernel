@@ -28,6 +28,61 @@ def function(source, name):
 
 
 class WlanBounds(unittest.TestCase):
+    def test_actual_mlo_predicate_does_not_read_ap_station_state(self):
+        source = (QCA / 'core/hdd/src/wlan_hdd_stats.c').read_text()
+        body = block(source, '__wlan_hdd_cfg80211_ll_stats_get(')
+        condition = re.search(r'if \((adapter->device_mode == QDF_STA_MODE &&\s*'
+                              r'mlo_is_ml_connection_in_progress\(hdd_ctx->psoc,\s*'
+                              r'link_info->vdev_id\))\)', body)
+        self.assertIsNotNone(condition)
+        prefix = r'''
+#include <assert.h>
+#include <stdbool.h>
+#include <stdlib.h>
+enum { QDF_STA_MODE, QDF_SAP_MODE, QDF_P2P_CLIENT_MODE };
+struct sta { bool connecting; }; struct psoc { struct sta *sta_ctx; };
+struct hdd { struct psoc *psoc; }; struct adapter { int device_mode; };
+struct link { int vdev_id; };
+static unsigned calls;
+static bool mlo_is_ml_connection_in_progress(struct psoc *p, int id) {
+    (void)id; ++calls; return p->sta_ctx->connecting;
+}
+static bool check(struct adapter *adapter, struct hdd *hdd_ctx, struct link *link_info) {
+    return CONDITION;
+}
+int main(int argc, char **argv) {
+    (void)argv; struct psoc p={0}; struct hdd h={&p}; struct link l={0};
+    struct adapter a={QDF_SAP_MODE};
+    /* MLO AP has ap_ctx rather than sta_ctx; short circuit must avoid helper. */
+    assert(!check(&a,&h,&l)); assert(calls==0);
+    if(argc>1) return 0;
+    a.device_mode=QDF_P2P_CLIENT_MODE; assert(!check(&a,&h,&l)); assert(calls==0);
+    struct sta s={true}; p.sta_ctx=&s; a.device_mode=QDF_STA_MODE;
+    assert(check(&a,&h,&l)); assert(calls==1);
+    s.connecting=false; assert(!check(&a,&h,&l)); assert(calls==2); return 0;
+}
+'''
+        with tempfile.TemporaryDirectory(prefix='coloros17-mlo-host-') as tmp:
+            for mutation in (False, True):
+                predicate = condition.group(1)
+                if mutation:
+                    predicate = re.sub(r'adapter->device_mode == QDF_STA_MODE &&\s*', '', predicate)
+                text = prefix.replace('CONDITION', predicate)
+                # The mutant no longer reads adapter; keep warning checks strict.
+                text = text.replace('return ' + predicate, '(void)adapter; return ' + predicate)
+                binary = str(Path(tmp) / ('mutant' if mutation else 'guard'))
+                cc = subprocess.run(['clang', '-std=c11', '-O1', '-Wall', '-Wextra', '-Werror',
+                                     '-fsanitize=address,undefined', '-x', 'c', '-', '-o', binary],
+                                    input=text, text=True, capture_output=True, timeout=30)
+                self.assertEqual(cc.returncode, 0, cc.stderr)
+                result = subprocess.run([binary] + (['mutant'] if mutation else []),
+                                        text=True, capture_output=True, timeout=10)
+                if mutation:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('runtime error', result.stderr)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_actual_monitor_wrappers_select_header_type_or_fail_closed(self):
         source = (QCA / 'core/hdd/src/wlan_hdd_cfg80211.c').read_text()
         old = block(source, 'static int __maybe_unused wlan_hdd_cfg80211_set_mon_ch(')

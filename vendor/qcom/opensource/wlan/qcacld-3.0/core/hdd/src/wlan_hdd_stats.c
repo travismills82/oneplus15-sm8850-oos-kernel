@@ -3867,7 +3867,8 @@ __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
 		return -EBUSY;
 	}
 
-	if (mlo_is_ml_connection_in_progress(hdd_ctx->psoc,
+	if (adapter->device_mode == QDF_STA_MODE &&
+	    mlo_is_ml_connection_in_progress(hdd_ctx->psoc,
 					     link_info->vdev_id)) {
 		hdd_debug("MLO connection in progress, can't process the request");
 		return -EBUSY;
