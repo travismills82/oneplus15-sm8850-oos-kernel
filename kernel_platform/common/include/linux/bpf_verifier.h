@@ -606,8 +606,10 @@ struct bpf_insn_aux_data {
 	 */
 	bool calls_callback;
 	/* true if some jump or call instruction targets this instruction */
-	bool jump_target;
+	ANDROID_KABI_IGNORE(1, bool jump_target);
 };
+
+ANDROID_KABI_BYTE_SIZE(bpf_insn_aux_data, 72);
 
 #define MAX_USED_MAPS 64 /* max number of maps accessed by one eBPF program */
 #define MAX_USED_BTFS 64 /* max number of BTFs accessed by one BPF program */
