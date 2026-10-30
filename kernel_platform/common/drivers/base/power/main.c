@@ -1815,16 +1815,17 @@ static void device_prepare_smart_suspend(struct device *dev)
 	 * or any of its suppliers that take runtime PM into account, it cannot
 	 * be enabled for the device either.
 	 */
-	dev->power.smart_suspend = (dev->power.no_pm_callbacks ||
-		dev_pm_test_driver_flags(dev, DPM_FLAG_SMART_SUSPEND)) &&
-		!pm_runtime_blocked(dev);
+	dev_pm_set_smart_suspend(dev,
+		(dev->power.no_pm_callbacks ||
+		 dev_pm_test_driver_flags(dev, DPM_FLAG_SMART_SUSPEND)) &&
+		!pm_runtime_blocked(dev));
 
 	if (!dev_pm_smart_suspend(dev))
 		return;
 
 	if (dev->parent && !dev_pm_smart_suspend(dev->parent) &&
 	    !dev->parent->power.ignore_children && !pm_runtime_blocked(dev->parent)) {
-		dev->power.smart_suspend = false;
+		dev_pm_set_smart_suspend(dev, false);
 		return;
 	}
 
@@ -1836,7 +1837,7 @@ static void device_prepare_smart_suspend(struct device *dev)
 
 		if (!dev_pm_smart_suspend(link->supplier) &&
 		    !pm_runtime_blocked(link->supplier)) {
-			dev->power.smart_suspend = false;
+			dev_pm_set_smart_suspend(dev, false);
 			break;
 		}
 	}

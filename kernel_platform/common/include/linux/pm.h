@@ -606,6 +606,8 @@ enum rpm_status {
 	RPM_BLOCKED,
 };
 
+ANDROID_KABI_ENUMERATOR_IGNORE(rpm_status, RPM_BLOCKED);
+
 /*
  * Device run-time power management request types.
  *
@@ -686,7 +688,6 @@ struct dev_pm_info {
 	bool			syscore:1;
 	bool			no_pm_callbacks:1;	/* Owned by the PM core */
 	bool			async_in_progress:1;	/* Owned by the PM core */
-	bool			smart_suspend:1;	/* Owned by the PM core */
 	bool			must_resume:1;		/* Owned by the PM core */
 	bool			may_skip_resume:1;	/* Set by subsystems */
 #else
@@ -727,6 +728,7 @@ struct dev_pm_info {
 	void (*set_latency_tolerance)(struct device *, s32);
 	struct dev_pm_qos	*qos;
 
+	/* Bit 0 is used internally for the smart-suspend state. */
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 };

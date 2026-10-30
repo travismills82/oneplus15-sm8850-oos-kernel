@@ -909,9 +909,19 @@ static inline bool dev_pm_test_driver_flags(struct device *dev, u32 flags)
 static inline bool dev_pm_smart_suspend(struct device *dev)
 {
 #ifdef CONFIG_PM_SLEEP
-	return dev->power.smart_suspend;
+	return !!(dev->power.__kabi_reserved1 & BIT_ULL(0));
 #else
 	return false;
+#endif
+}
+
+static inline void dev_pm_set_smart_suspend(struct device *dev, bool enabled)
+{
+#ifdef CONFIG_PM_SLEEP
+	if (enabled)
+		dev->power.__kabi_reserved1 |= BIT_ULL(0);
+	else
+		dev->power.__kabi_reserved1 &= ~BIT_ULL(0);
 #endif
 }
 
