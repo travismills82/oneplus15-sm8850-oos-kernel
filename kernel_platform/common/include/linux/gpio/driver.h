@@ -449,12 +449,6 @@ struct gpio_chip {
 	void			(*set_multiple)(struct gpio_chip *gc,
 						unsigned long *mask,
 						unsigned long *bits);
-	int			(*set_rv)(struct gpio_chip *gc,
-					  unsigned int offset,
-					  int value);
-	int			(*set_multiple_rv)(struct gpio_chip *gc,
-						   unsigned long *mask,
-						   unsigned long *bits);
 	int			(*set_config)(struct gpio_chip *gc,
 					      unsigned int offset,
 					      unsigned long config);
@@ -544,8 +538,11 @@ struct gpio_chip {
 			const struct of_phandle_args *gpiospec, u32 *flags);
 #endif /* CONFIG_OF_GPIO */
 
-	ANDROID_KABI_RESERVE(1);
-	ANDROID_KABI_RESERVE(2);
+	ANDROID_KABI_USE(1, int (*set_rv)(struct gpio_chip *gc,
+					 unsigned int offset, int value));
+	ANDROID_KABI_USE(2, int (*set_multiple_rv)(struct gpio_chip *gc,
+						  unsigned long *mask,
+						  unsigned long *bits));
 };
 
 char *gpiochip_dup_line_label(struct gpio_chip *gc, unsigned int offset);

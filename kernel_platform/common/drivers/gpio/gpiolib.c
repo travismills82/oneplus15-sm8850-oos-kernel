@@ -41,6 +41,21 @@
 #include "gpiolib-sysfs.h"
 #include "gpiolib.h"
 
+/*
+ * Returning int is ABI-compatible with the legacy void interface for existing
+ * callers: the argument ABI is unchanged and old callers simply ignore x0.
+ * Keep the stable error-reporting API for new callers while retaining the
+ * ColorOS module version contract.
+ */
+ANDROID_KABI_TYPE_STRING("gpiod_set_raw_value",
+	"subprogram ( formal_parameter pointer_type { s#gpio_desc } desc , formal_parameter base_type int byte_size(4) encoding(5) value ) -> base_type void");
+ANDROID_KABI_TYPE_STRING("gpiod_set_raw_value_cansleep",
+	"subprogram ( formal_parameter pointer_type { s#gpio_desc } desc , formal_parameter base_type int byte_size(4) encoding(5) value ) -> base_type void");
+ANDROID_KABI_TYPE_STRING("gpiod_set_value",
+	"subprogram ( formal_parameter pointer_type { s#gpio_desc } desc , formal_parameter base_type int byte_size(4) encoding(5) value ) -> base_type void");
+ANDROID_KABI_TYPE_STRING("gpiod_set_value_cansleep",
+	"subprogram ( formal_parameter pointer_type { s#gpio_desc } desc , formal_parameter base_type int byte_size(4) encoding(5) value ) -> base_type void");
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/gpio.h>
 
