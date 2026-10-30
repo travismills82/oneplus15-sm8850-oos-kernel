@@ -19,6 +19,7 @@
 #include <linux/kthread.h>
 #include <linux/blk-mq.h>
 #include <linux/llist.h>
+#include <linux/android_kabi.h>
 #include "blk.h"
 #include <linux/android_vendor.h>
 
@@ -146,8 +147,10 @@ struct blkg_policy_data {
 	int				plid;
 	bool				online;
 
-	struct rcu_head			rcu_head;
+	ANDROID_KABI_IGNORE(1, struct rcu_head rcu_head);
 };
+
+ANDROID_KABI_BYTE_SIZE(blkg_policy_data, 16);
 
 /*
  * Policies that need to keep per-blkcg data which is independent from any
