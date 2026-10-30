@@ -759,7 +759,6 @@ struct hci_conn {
 
 	struct hci_dev	*hdev;
 
-	spinlock_t	proto_lock; /* lock guarding protocol data */
 	void		*l2cap_data;
 	void		*sco_data;
 	void		*iso_data;
@@ -776,7 +775,7 @@ struct hci_conn {
 
 	void (*cleanup)(struct hci_conn *conn);
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, spinlock_t proto_lock); /* guards protocol data */
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
