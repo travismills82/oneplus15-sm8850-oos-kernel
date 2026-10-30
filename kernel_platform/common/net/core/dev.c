@@ -11726,9 +11726,9 @@ EXPORT_SYMBOL(unregister_netdev);
  *	Callers must hold the rtnl semaphore.
  */
 
-int __dev_change_net_namespace(struct net_device *dev, struct net *net,
-			       const char *pat, int new_ifindex,
-			       struct netlink_ext_ack *extack)
+int __dev_change_net_namespace_extack(struct net_device *dev, struct net *net,
+				      const char *pat, int new_ifindex,
+				      struct netlink_ext_ack *extack)
 {
 	struct netdev_name_node *name_node, *tmp;
 	struct net *net_old = dev_net(dev);
@@ -11899,6 +11899,13 @@ int __dev_change_net_namespace(struct net_device *dev, struct net *net,
 	err = 0;
 out:
 	return err;
+}
+
+int __dev_change_net_namespace(struct net_device *dev, struct net *net,
+			       const char *pat, int new_ifindex)
+{
+	return __dev_change_net_namespace_extack(dev, net, pat, new_ifindex,
+						 NULL);
 }
 EXPORT_SYMBOL_GPL(__dev_change_net_namespace);
 

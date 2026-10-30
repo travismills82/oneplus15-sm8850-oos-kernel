@@ -2306,9 +2306,6 @@ struct net_device {
 	/* These may be needed for future network-power-down code. */
 	struct timer_list	watchdog_timer;
 	int			watchdog_timeo;
-	spinlock_t		watchdog_lock;
-	bool			watchdog_ref_held;
-
 	u32                     proto_down_reason;
 
 	struct list_head	todo_list;
@@ -2394,7 +2391,7 @@ struct net_device {
 	/* priv_flags_slow, ungrouped to save space */
 	unsigned long		see_all_hwtstamp_requests:1;
 	unsigned long		change_proto_down:1;
-	unsigned long		netns_immutable:1;
+	unsigned long		netns_local:1;
 	unsigned long		fcoe_mtu:1;
 
 	struct list_head	net_notifier_list;
@@ -2430,7 +2427,8 @@ struct net_device {
 	/** @irq_moder: dim parameters used if IS_ENABLED(CONFIG_DIMLIB). */
 	struct dim_irq_moder	*irq_moder;
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE2(1, spinlock_t watchdog_lock,
+			  bool watchdog_ref_held);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
@@ -2442,6 +2440,14 @@ struct net_device {
 	u8			priv[] ____cacheline_aligned
 				       __counted_by(priv_len);
 } ____cacheline_aligned;
+
+/*
+ * Upstream renamed this flag without changing its meaning.  Retain the old
+ * member spelling so it stays in the original bitfield storage unit, while
+ * allowing current in-tree users to use the clearer name.
+ */
+#define netns_immutable netns_local
+
 #define to_net_dev(d) container_of(d, struct net_device, dev)
 
 /*
@@ -4057,13 +4063,15 @@ int dev_change_flags(struct net_device *dev, unsigned int flags,
 int dev_set_alias(struct net_device *, const char *, size_t);
 int dev_get_alias(const struct net_device *, char *, size_t);
 int __dev_change_net_namespace(struct net_device *dev, struct net *net,
-			       const char *pat, int new_ifindex,
-			       struct netlink_ext_ack *extack);
+			       const char *pat, int new_ifindex);
+int __dev_change_net_namespace_extack(struct net_device *dev, struct net *net,
+				      const char *pat, int new_ifindex,
+				      struct netlink_ext_ack *extack);
 static inline
 int dev_change_net_namespace(struct net_device *dev, struct net *net,
 			     const char *pat)
 {
-	return __dev_change_net_namespace(dev, net, pat, 0, NULL);
+	return __dev_change_net_namespace(dev, net, pat, 0);
 }
 int __dev_set_mtu(struct net_device *, int);
 int dev_set_mtu(struct net_device *, int);
