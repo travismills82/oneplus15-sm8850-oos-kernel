@@ -110,9 +110,17 @@ struct v4l2_m2m_dev {
 	unsigned long		job_queue_flags;
 
 	const struct v4l2_m2m_ops *m2m_ops;
+};
 
+struct v4l2_m2m_dev_ref {
+	struct v4l2_m2m_dev m2m_dev;
 	struct kref kref;
 };
+
+static struct v4l2_m2m_dev_ref *m2m_dev_to_ref(struct v4l2_m2m_dev *m2m_dev)
+{
+	return container_of(m2m_dev, struct v4l2_m2m_dev_ref, m2m_dev);
+}
 
 static struct v4l2_m2m_queue_ctx *get_queue_ctx(struct v4l2_m2m_ctx *m2m_ctx,
 						enum v4l2_buf_type type)
@@ -1199,21 +1207,23 @@ EXPORT_SYMBOL_GPL(v4l2_m2m_register_media_controller);
 
 struct v4l2_m2m_dev *v4l2_m2m_init(const struct v4l2_m2m_ops *m2m_ops)
 {
+	struct v4l2_m2m_dev_ref *m2m_ref;
 	struct v4l2_m2m_dev *m2m_dev;
 
 	if (!m2m_ops || WARN_ON(!m2m_ops->device_run))
 		return ERR_PTR(-EINVAL);
 
-	m2m_dev = kzalloc(sizeof *m2m_dev, GFP_KERNEL);
-	if (!m2m_dev)
+	m2m_ref = kzalloc(sizeof(*m2m_ref), GFP_KERNEL);
+	if (!m2m_ref)
 		return ERR_PTR(-ENOMEM);
+	m2m_dev = &m2m_ref->m2m_dev;
 
 	m2m_dev->curr_ctx = NULL;
 	m2m_dev->m2m_ops = m2m_ops;
 	INIT_LIST_HEAD(&m2m_dev->job_queue);
 	spin_lock_init(&m2m_dev->job_spinlock);
 	INIT_WORK(&m2m_dev->job_work, v4l2_m2m_device_run_work);
-	kref_init(&m2m_dev->kref);
+	kref_init(&m2m_ref->kref);
 
 	return m2m_dev;
 }
@@ -1227,20 +1237,22 @@ EXPORT_SYMBOL_GPL(v4l2_m2m_release);
 
 void v4l2_m2m_get(struct v4l2_m2m_dev *m2m_dev)
 {
-	kref_get(&m2m_dev->kref);
+	kref_get(&m2m_dev_to_ref(m2m_dev)->kref);
 }
 EXPORT_SYMBOL_GPL(v4l2_m2m_get);
 
 static void v4l2_m2m_release_from_kref(struct kref *kref)
 {
-	struct v4l2_m2m_dev *m2m_dev = container_of(kref, struct v4l2_m2m_dev, kref);
+	struct v4l2_m2m_dev_ref *m2m_ref =
+		container_of(kref, struct v4l2_m2m_dev_ref, kref);
 
-	v4l2_m2m_release(m2m_dev);
+	v4l2_m2m_release(&m2m_ref->m2m_dev);
 }
 
 void v4l2_m2m_put(struct v4l2_m2m_dev *m2m_dev)
 {
-	kref_put(&m2m_dev->kref, v4l2_m2m_release_from_kref);
+	kref_put(&m2m_dev_to_ref(m2m_dev)->kref,
+		 v4l2_m2m_release_from_kref);
 }
 EXPORT_SYMBOL_GPL(v4l2_m2m_put);
 
