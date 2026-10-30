@@ -669,7 +669,7 @@ static void qcrypto_bw_reaper_timer_callback(struct timer_list *data)
 	struct crypto_engine *pengine = from_timer(pengine, data,
 		bw_reaper_timer);
 
-	schedule_work(&pengine->bw_reaper_ws);
+	queue_work(system_wq, &pengine->bw_reaper_ws);
 }
 
 static void qcrypto_bw_set_timeout(struct crypto_engine *pengine)
@@ -682,7 +682,7 @@ static void qcrypto_bw_set_timeout(struct crypto_engine *pengine)
 
 static void qcrypto_ce_bw_allocate_req(struct crypto_engine *pengine)
 {
-	schedule_work(&pengine->bw_allocate_ws);
+	queue_work(system_wq, &pengine->bw_allocate_ws);
 }
 
 static int _start_qcrypto_process(struct crypto_priv *cp,
