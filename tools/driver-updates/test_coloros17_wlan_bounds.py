@@ -28,6 +28,160 @@ def function(source, name):
 
 
 class WlanBounds(unittest.TestCase):
+    def test_actual_monitor_wrappers_select_header_type_or_fail_closed(self):
+        source = (QCA / 'core/hdd/src/wlan_hdd_cfg80211.c').read_text()
+        old = block(source, 'static int __maybe_unused wlan_hdd_cfg80211_set_mon_ch(')
+        new = block(source, 'wlan_hdd_cfg80211_set_mon_ch_with_netdev(struct wiphy')
+        pos = source.index('.set_monitor_channel = _Generic(')
+        expression = source[pos:source.index('#endif', pos)].split('=', 1)[1].strip().removesuffix(',')
+        self.assertNotIn('default:', expression)
+        prefix = r'''
+#include <assert.h>
+struct wiphy { int unused; }; struct net_device { int unused; };
+struct cfg80211_chan_def { int unused; }; struct osif_psoc_sync { int unused; };
+static int start_error, inner_error, starts, stops, inner_calls;
+static struct osif_psoc_sync synchronization;
+static struct wiphy *wiphy_dev(struct wiphy *w) { return w; }
+static int osif_psoc_sync_op_start(struct wiphy *w, struct osif_psoc_sync **sync) {
+    (void)w; ++starts; *sync=&synchronization; return start_error;
+}
+static void osif_psoc_sync_op_stop(struct osif_psoc_sync *sync) { (void)sync; ++stops; }
+static int __wlan_hdd_cfg80211_set_mon_ch(struct wiphy *w, struct cfg80211_chan_def *c) {
+    (void)w; (void)c; ++inner_calls; return inner_error;
+}
+'''
+        wrappers = ('static int __attribute__((unused)) wlan_hdd_cfg80211_set_mon_ch('
+                    'struct wiphy *wiphy, struct cfg80211_chan_def *chandef) ' + old + '\n'
+                    'static int __attribute__((unused)) wlan_hdd_cfg80211_set_mon_ch_with_netdev('
+                    'struct wiphy *wiphy, struct net_device *dev, struct cfg80211_chan_def *chandef) '
+                    + new)
+        with tempfile.TemporaryDirectory(prefix='coloros17-wlan-api-') as tmp:
+            for kind in ('old', 'new', 'unknown'):
+                prototype = {'old': 'struct wiphy *, struct cfg80211_chan_def *',
+                             'new': 'struct wiphy *, struct net_device *, struct cfg80211_chan_def *',
+                             'unknown': 'struct wiphy *, long *'}[kind]
+                call = '&w, &c' if kind == 'old' else '&w, &d, &c'
+                suffix = r'''
+int main(void) {
+    struct wiphy w={0}; struct net_device d={0}; struct cfg80211_chan_def c={0};
+    (void)d; start_error=-3;
+    assert(CALL == -3); assert(starts==1 && stops==0 && inner_calls==0);
+    start_error=0; inner_error=-5;
+    assert(CALL == -5); assert(starts==2 && stops==1 && inner_calls==1);
+    inner_error=0;
+    assert(CALL == 0); assert(starts==3 && stops==2 && inner_calls==2); return 0;
+}
+'''.replace('CALL', 'ops.set_monitor_channel(' + call + ')')
+                if kind == 'unknown':
+                    suffix = 'int main(void) { return 0; }'
+                full = (prefix + 'struct cfg80211_ops { int (*set_monitor_channel)(' + prototype + '); };\n'
+                        + wrappers + '\nstatic const struct cfg80211_ops ops = { .set_monitor_channel = '
+                        + expression + ' };\n' + suffix)
+                binary = str(Path(tmp) / kind)
+                cc = subprocess.run(['clang', '-std=gnu11', '-O1', '-Wall', '-Wextra', '-Werror',
+                                     '-fsanitize=address,undefined', '-x', 'c', '-', '-o', binary],
+                                    input=full, text=True, capture_output=True, timeout=30)
+                if kind == 'unknown':
+                    self.assertNotEqual(cc.returncode, 0)
+                    self.assertIn('generic', cc.stderr)
+                else:
+                    self.assertEqual(cc.returncode, 0, cc.stderr)
+                    result = subprocess.run([binary], capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_mlo_and_lifetime_source_contracts(self):
+        stats = (QCA / 'core/hdd/src/wlan_hdd_stats.c').read_text()
+        body = block(stats, '__wlan_hdd_cfg80211_ll_stats_get(')
+        self.assertLess(body.index('mlo_is_ml_connection_in_progress('),
+                        body.index('wlan_cfg80211_nla_parse('))
+        main = (QCA / 'components/dp/core/src/wlan_dp_main.c').read_text()
+        self.assertEqual(main.count('qdf_spin_lock_bh(&dp_link->vdev_lock);'),
+                         main.count('qdf_spin_unlock_bh(&dp_link->vdev_lock);'))
+        for name in ('dp_sta_notify_tx_comp_cb(', 'dp_rx_packet_cbk('):
+            txrx = (QCA / 'components/dp/core/src/wlan_dp_txrx.c').read_text()
+            body = block(txrx, name)
+            self.assertIn('dp_objmgr_get_vdev_by_user(dp_link, WLAN_TDLS_SB_ID)', body)
+            self.assertIn('dp_objmgr_put_vdev_by_user(vdev, WLAN_TDLS_SB_ID)', body)
+            self.assertNotIn('wlan_objmgr_vdev_try_get_ref(dp_link->vdev', body)
+
+    def test_runtime_pm_ini_disable_precedes_kernel_status(self):
+        source = (QCA.parent / 'qca-wifi-host-cmn/hif/src/hif_runtime_pm.c').read_text()
+        body = block(source, 'static bool hif_rtpm_enabled(void)')
+        self.assertRegex(body, r'if \(!gp_hif_rtpm_ctx->enable_rpm\)\s+return false;')
+        self.assertLess(body.index('!gp_hif_rtpm_ctx->enable_rpm'), body.index('__hif_rtpm_enabled('))
+
+    def test_real_p2p_tlv_function_with_sanitizers_and_mutation(self):
+        """Real TLV parser body; host shims validate OUI lookup separately."""
+        compiler = shutil.which('clang')
+        self.assertIsNotNone(compiler)
+        source = (QCA / 'components/p2p/core/src/wlan_p2p_main.c').read_text()
+        public = (QCA / 'components/p2p/dispatcher/inc/wlan_p2p_public_struct.h').read_text()
+        constants = '\n'.join('#define ' + key + ' ' + value for key, value in
+                              re.findall(r'\b(P2P_ATTR_[A-Z_]+)\s*=\s*([0-9]+)', public))
+        body = block(source, 'p2p_parse_assoc_ie_for_device_info(')
+        prefix = r'''
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stddef.h>
+#define P2P_OUI "P2P"
+#define P2P_OUI_SIZE 4
+#define HEADER_LEN_P2P_IE 6
+#define WLAN_MAX_IE_LEN 255
+#define QDF_MAC_ADDR_SIZE 6
+#define MAX_CONFIG_METHODS_LEN 2
+#define DEVICE_CATEGORY_MAX_LEN 1
+#define LE_READ_2(p) ((unsigned)(p)[0] | ((unsigned)(p)[1] << 8))
+#define p2p_err(...) ((void)0)
+/* Host shim supplies a validated vendor IE. This is not an OUI-lookup test. */
+static const uint8_t *wlan_get_vendor_ie_ptr_from_oui(const char *oui, unsigned size,
+        const uint8_t *ie, uint32_t length) {
+    (void)oui; (void)size;
+    return length >= 2 && ie[1] <= length - 2 ? ie : NULL;
+}
+static bool is_p2p_oui(const uint8_t *ie) { (void)ie; return true; }
+'''
+        suffix = r'''
+int main(int argc, char **argv) {
+    (void)argv;
+    if (argc > 1) {
+        /* The old payload-only bound consumes 3 bytes past this allocation. */
+        uint8_t *ie = malloc(12); memset(ie, 255, 12);
+        ie[1]=10; ie[6]=255; ie[7]=6; ie[8]=0;
+        p2p_parse_assoc_ie_for_device_info(ie, 12); free(ie); return 0;
+    }
+    for (unsigned payload=2; payload<=251; ++payload) {
+        uint8_t *ie=malloc(6+payload);
+        for (unsigned attr=0; attr<=65535; ++attr) {
+            memset(ie,255,6+payload); ie[1]=4+payload;
+            ie[6]=255; ie[7]=attr; if(payload>2) ie[8]=attr>>8;
+            if (p2p_parse_assoc_ie_for_device_info(ie,6+payload)) return 1;
+        }
+        free(ie);
+    }
+    uint8_t valid[26]={0}; valid[1]=24; valid[6]=13; valid[7]=17;
+    return p2p_parse_assoc_ie_for_device_info(valid,26) == valid+9 ? 0 : 2;
+}
+'''
+        with tempfile.TemporaryDirectory(prefix='coloros17-p2p-host-') as tmp:
+            for mutation in (False, True):
+                tested_body = body.replace('(3 + attr_len) > rem_len', 'attr_len > rem_len') if mutation else body
+                binary = str(Path(tmp) / ('mutant' if mutation else 'parser'))
+                full = (prefix + constants + '\nconst uint8_t *p2p_parse_assoc_ie_for_device_info('
+                        'const uint8_t *assoc_ie, uint32_t assoc_ie_len) ' + tested_body + suffix)
+                cc = subprocess.run([compiler, '-std=c11', '-O1', '-Wall', '-Wextra', '-Werror',
+                                     '-fsanitize=address,undefined', '-x', 'c', '-', '-o', binary],
+                                    input=full, capture_output=True, text=True, timeout=30)
+                self.assertEqual(cc.returncode, 0, cc.stderr)
+                result = subprocess.run([binary] + (['mutant'] if mutation else []),
+                                        capture_output=True, text=True, timeout=60)
+                if mutation:
+                    self.assertNotEqual(result.returncode, 0, 'Missing bound was not detected')
+                    self.assertIn('AddressSanitizer', result.stderr)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_reassociation_span_and_short_frame_guard(self):
         source = (QCA / 'core/mac/src/sys/legacy/src/utils/src/parser_api.c').read_text()
         body = block(source, 'sir_convert_reassoc_req_frame2_mlo_struct(')
