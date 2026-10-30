@@ -1,0 +1,520 @@
+partition	module	parameter_and_description
+system_dlkm	bluetooth	disable_esco:Disable eSCO connection creation (bool)
+system_dlkm	bluetooth	enable_ecred:Enable enhanced credit flow control mode (bool)
+system_dlkm	bluetooth	disable_ertm:Disable enhanced retransmission mode (bool)
+system_dlkm	can_gw	max_hops:maximum can-gw routing hops for CAN frames (valid values: 1-6 hops, default: 1) (uint)
+system_dlkm	can	stats_timer:enable timer for statistics (default:on) (int)
+system_dlkm	cdc_ncm	prefer_mbim:Prefer MBIM setting on dual NCM/MBIM functions (bool)
+system_dlkm	ftdi_sio	ndi_latency_timer:NDI device latency timer override (int)
+system_dlkm	hci_uart	irq_polarity:IRQ polarity 0: active-high 1: active-low (int)
+system_dlkm	kunit	filter_action:Changes behavior of filtered tests using attributes, valid values are: <none>: do not run filtered tests as normal 'skip': skip all filtered tests instead so tests will appear in output  (charp)
+system_dlkm	kunit	filter:Filter which KUnit test suites/tests run at boot-time using attributes, e.g. speed>slow (charp)
+system_dlkm	kunit	filter_glob:Filter which KUnit test suites/tests run at boot-time, e.g. list* or list*.*del_test (charp)
+system_dlkm	kunit	action:Changes KUnit executor behavior, valid values are: <none>: run the tests like normal 'list' to list test names instead of running them. 'list_attr' to list test names and attributes instead of running them.  (charp)
+system_dlkm	kunit	stats_enabled:Print test stats: never (0), only for multiple subtests (1), or always (2) (int)
+system_dlkm	kunit	enable:Enable KUnit tests (bool)
+system_dlkm	netfs	netfs_debug:Netfs support debugging mask
+system_dlkm	netfs	debug:uint
+system_dlkm	rfcomm	l2cap_ertm:Use L2CAP ERTM mode for connection (bool)
+system_dlkm	rfcomm	channel_mtu:Default MTU for the RFCOMM channel (int)
+system_dlkm	rfcomm	disable_cfc:Disable credit based flow control (bool)
+system_dlkm	rust_binder	rust_devices:charp
+system_dlkm	usbnet	msg_level:Override default message level (int)
+system_dlkm	vcan	echo:Echo sent frames (for testing). Default: 0 (Off) (bool)
+system_dlkm	virtio_blk	queue_depth:uint
+system_dlkm	virtio_blk	poll_queues:The number of dedicated virtqueues for polling I/O (uint)
+system_dlkm	virtio_blk	num_request_queues:Limit the number of request queues to use for blk device. 0 for no limit. Values > nr_cpu_ids truncated to nr_cpu_ids. (uint)
+system_dlkm	virtio_pci	force_legacy:Force legacy mode for transitional virtio 1 devices (bool)
+system_dlkm	zram	num_devices:Number of pre-created zram devices (uint)
+vendor_boot	arm_smmu	disable_bypass:Disable bypass streams such that incoming transactions from devices that are not attached to an iommu domain will report an abort back to the device and will not be allowed to pass through the SMMU. (bool)
+vendor_boot	arm_smmu	force_stage:Force SMMU mappings to be installed at a particular stage of translation. A value of '1' or '2' forces the corresponding stage. All other values are ignored (i.e. no stage is forced). Note that selecting a specific stage will disable support for nested translation. (int)
+vendor_boot	bcl_soc	boot_frequency:int
+vendor_boot	camera_extension	oplus_debug_priority:uint
+vendor_boot	camera_extension	oplus_debug_type:uint
+vendor_boot	camera_extension	oplus_debug_mdl:ullong
+vendor_boot	cfg80211	bss_entries_limit:limit to number of scan BSS entries (per wiphy, default 1000) (int)
+vendor_boot	cfg80211	ieee80211_regdom:IEEE 802.11 regulatory domain code (charp)
+vendor_boot	cfg80211	cfg80211_disable_40mhz_24ghz:Disable 40MHz support in the 2.4GHz band (bool)
+vendor_boot	coresight_stm	boot_nr_channel:int
+vendor_boot	cpufreq_bouncing	decay:uint
+vendor_boot	cpufreq_bouncing	debug:bool
+vendor_boot	cpufreq_bouncing	core_ctl_check:bool
+vendor_boot	cpufreq_bouncing	core_boost_lat_ns:uint
+vendor_boot	cpufreq_bouncing	freq_qos_check:bool
+vendor_boot	cpufreq_bouncing	sleep_range_ms:array of ulong
+vendor_boot	drm_display_helper	dp_aux_i2c_transfer_size:Number of bytes to transfer in a single I2C over DP AUX CH message, (1-16, default 16) (int)
+vendor_boot	drm_display_helper	dp_aux_i2c_speed_khz:Assumed speed of the i2c bus in kHz, (1-400, default 10) (int)
+vendor_boot	dwc3_msm	ep_addr_txdbg_mask:uint
+vendor_boot	dwc3_msm	ep_addr_rxdbg_mask:uint
+vendor_boot	gh_rm_booster	target_cpu:Choose the target core for Resource Manager
+vendor_boot	mac80211	minstrel_vht_only:Use only VHT rates when VHT is supported by sta. (bool)
+vendor_boot	mac80211	ieee80211_default_rc_algo:Default rate control algorithm for mac80211 to use (charp)
+vendor_boot	mac80211	probe_wait_ms:Maximum time(ms) to wait for probe response before disconnecting (reason 4). (int)
+vendor_boot	mac80211	beacon_loss_count:Number of beacon intervals before we decide beacon was lost. (int)
+vendor_boot	mac80211	max_probe_tries:Maximum probe tries before disconnecting (reason 4). (int)
+vendor_boot	mac80211	max_nullfunc_tries:Maximum nullfunc tx tries before disconnecting (reason 4). (int)
+vendor_boot	mem_offline	nopasr:uint
+vendor_boot	mem_offline	bypass_send_msg:skip mem offline/online mesg sent to rpm/aop. (bool)
+vendor_boot	microdump_collector	start_qcomdump:int
+vendor_boot	microdump_collector	enable_microdump:int
+vendor_boot	minidump	stack_dump:bool
+vendor_boot	minidump	key_modules:array of charp
+vendor_boot	msm_drm	dumpstate:Dump KMS state on errors (bool)
+vendor_boot	msm_drm	vram:Configure VRAM size (for devices without IOMMU/GPUMMU) (charp)
+vendor_boot	msm_drm	reglog:Enable register read/write logging (bool)
+vendor_boot	msm_drm	sdecustom:Enable customizations for sde clients (bool)
+vendor_boot	msm_hw_fence	enable:Enable hardware fences (bool)
+vendor_boot	msm_show_resume_irq	debug_mask:int
+vendor_boot	nvmem_qfprom	read_raw_data:Read raw instead of corrected data (bool)
+vendor_boot	oplus_binder_strategy	binder_set_mid_inherit_ux_enable:int
+vendor_boot	oplus_binder_strategy	select_more_tasks:int
+vendor_boot	oplus_binder_strategy	g_desired_select_task_num:int
+vendor_boot	oplus_binder_strategy	get_random_binder_task:int
+vendor_boot	oplus_binder_strategy	binder_feature_enable:uint
+vendor_boot	oplus_binder_strategy	binder_fg_debug_interval:int
+vendor_boot	oplus_binder_strategy	binder_fg_debug_pid:int
+vendor_boot	oplus_binder_strategy	binder_max_works_in_fg:int
+vendor_boot	oplus_binder_strategy	binder_fg_list_async_first:int
+vendor_boot	oplus_binder_strategy	binder_fg_list_enable:int
+vendor_boot	oplus_binder_strategy	binder_unset_ux_match_t:uint
+vendor_boot	oplus_binder_strategy	binder_allow_accumulate_ux:uint
+vendor_boot	oplus_binder_strategy	binder_set_async_ux_after_pending:uint
+vendor_boot	oplus_binder_strategy	binder_set_last_async_ux:uint
+vendor_boot	oplus_binder_strategy	binder_sync_insert_queue:uint
+vendor_boot	oplus_binder_strategy	binder_async_insert_queue:uint
+vendor_boot	oplus_binder_strategy	binder_ux_enable:uint
+vendor_boot	oplus_binder_strategy	binder_sched_ux_test:uint
+vendor_boot	oplus_binder_strategy	binder_sched_debug:ullong
+vendor_boot	oplus_binder_strategy	binder_sched_enable:uint
+vendor_boot	oplus_bsp_aizerofs	enable_fsnotify:enable fsnotify (1 or 0) (int)
+vendor_boot	oplus_bsp_aizerofs	write_enabled:Enable or disable aizerofs (default: enable)
+vendor_boot	oplus_bsp_aizerofs	enabled:Enable or disable aizerofs (default: enable)
+vendor_boot	oplus_bsp_aizerofs	rus_disable:int
+vendor_boot	oplus_bsp_dfr_fdleak_check	symbol:string
+vendor_boot	oplus_bsp_dfr_ordump	shrinkdump_mode:int
+vendor_boot	oplus_bsp_dfr_ordump	lbaooo:unsigned long
+vendor_boot	oplus_bsp_dfr_ordump	debug_magic:debug magic number (int)
+vendor_boot	oplus_bsp_dynamic_readahead	background_ra_pages:uint
+vendor_boot	oplus_bsp_dynamic_readahead	enable:bool
+vendor_boot	oplus_bsp_geas_data	mem_major:int
+vendor_boot	oplus_bsp_memleak_detect	daemon_thread:int
+vendor_boot	oplus_bsp_memleak_detect	vmalloc_debug:int
+vendor_boot	oplus_bsp_memleak_detect	kmalloc_debug:int
+vendor_boot	oplus_bsp_mm_osvelte	feature_disable1:string
+vendor_boot	oplus_bsp_proactive_compact	compaction_proactiveness:uint
+vendor_boot	oplus_bsp_proactive_compact	compaction_hpage_order:uint
+vendor_boot	oplus_bsp_sched_assist	boost_kill:uint
+vendor_boot	oplus_bsp_schedinfo	ohm_action_ctrl:bool
+vendor_boot	oplus_bsp_storage_io_metrics	ufs_compl_command_enabled: Debug android_vh_ufs_compl_command (bool)
+vendor_boot	oplus_bsp_storage_io_metrics	proc_show_enabled: Debug proc (bool)
+vendor_boot	oplus_bsp_storage_io_metrics	block_rq_complete_enabled:Enable block_rq_complete debug (default: false) (bool)
+vendor_boot	oplus_bsp_storage_io_metrics	block_rq_issue_enabled:Enable block_rq_issue debug (default: false) (bool)
+vendor_boot	oplus_bsp_synaptics_tcm2	tune_debug_enable:int
+vendor_boot	oplus_bsp_uxmem_opt	enable:bool
+vendor_boot	oplus_bsp_zram_opt	oplus_extra_free_kbytes:int
+vendor_boot	oplus_bsp_zram_opt	dynamic_direct_swappiness_threshold:int
+vendor_boot	oplus_bsp_zram_opt	dynamic_direct_swappiness:int
+vendor_boot	oplus_bsp_zram_opt	swappiness_threshold2_size:int
+vendor_boot	oplus_bsp_zram_opt	swappiness_threshold1_size:int
+vendor_boot	oplus_bsp_zram_opt	vm_swappiness_threshold2:int
+vendor_boot	oplus_bsp_zram_opt	vm_swappiness_threshold1:int
+vendor_boot	oplus_bsp_zram_opt	hybridswapd_swappiness:int
+vendor_boot	oplus_bsp_zram_opt	direct_vm_swappiness:int
+vendor_boot	oplus_bsp_zram_opt	vm_swappiness:int
+vendor_boot	oplus_chg_v2	e30_test:debug e30 (int)
+vendor_boot	oplus_chg_v2	hl7603_debug_track:debug track (int)
+vendor_boot	oplus_chg_v2	wlspen_dbg_timeout:debug wlspen chg timeout (int)
+vendor_boot	oplus_chg_v2	ufcs_debug_track:ufcs debug track (int)
+vendor_boot	oplus_chg_v2	plc_info_debug_track:debug track (int)
+vendor_boot	oplus_chg_v2	oplus_log_level:debug log level (int)
+vendor_boot	oplus_chg_v2	fg_reset_test:zy0603 fg reset test (bool)
+vendor_boot	oplus_chg_v2	oplus_dbg_hmac_func_level:oplus debug override of hmac_func_level, <0 disables override (int)
+vendor_boot	oplus_chg_v2	oplus_gauge_r_data:oplus gauge r data flag (int)
+vendor_boot	oplus_chg_v2	oplus_dbg_timeout:oplus debug chg timeout (int)
+vendor_boot	oplus_chg_v2	oplus_dbg_tbat:oplus debug battery temperature (int)
+vendor_boot	oplus_chg_v2	usbtemp_dbg_curr_status:debug usbtemp current status (int)
+vendor_boot	oplus_chg_v2	usbtemp_dbg_templ:debug usbtemp temp l (int)
+vendor_boot	oplus_chg_v2	usbtemp_dbg_tempr:debug usbtemp temp r (int)
+vendor_boot	oplus_chg_v2	usbtemp_debug:debug usbtemp (int)
+vendor_boot	oplus_chg_v2	usbtemp_recover_test:int
+vendor_boot	oplus_chg_v2	usbtemp_recover_interval:int
+vendor_boot	oplus_chg_v2	gauge_ffc_ra_soc_data:gauge ffc ra soc data flag (int)
+vendor_boot	oplus_chg_v2	gauge_dbg_ibat:debug battery current (int)
+vendor_boot	oplus_chg_v2	gauge_dbg_vbat:debug battery voltage (int)
+vendor_boot	oplus_chg_v2	gauge_dbg_tbat:debug battery temperature (int)
+vendor_boot	oplus_chg_v2	mms_gauge_debug_track:debug track (int)
+vendor_boot	oplus_fan	dbg_rpm:oplus debug fan rpm (int)
+vendor_boot	oplus_icc_mcu	bufsiz:data bytes in biggest supported SPI message (uint)
+vendor_boot	oplus_locking_strategy	rwsem_opt_spin_timeout_exit_cnt:int
+vendor_boot	oplus_locking_strategy	rwsem_opt_spin_total_cnt:int
+vendor_boot	oplus_locking_strategy	rwsem_ux_opt_spin_time_threshold:int
+vendor_boot	oplus_locking_strategy	rwsem_opt_spin_time_threshold:int
+vendor_boot	oplus_locking_strategy	mutex_opt_spin_timeout_exit_cnt:int
+vendor_boot	oplus_locking_strategy	mutex_opt_spin_total_cnt:int
+vendor_boot	oplus_locking_strategy	mutex_ux_opt_spin_time_threshold:int
+vendor_boot	oplus_locking_strategy	mutex_opt_spin_time_threshold:int
+vendor_boot	oplus_locking_strategy	futex_set_blocked_ux_cnt:long
+vendor_boot	oplus_locking_strategy	futex_ux_unset_cnt:long
+vendor_boot	oplus_locking_strategy	futex_ux_set_cnt:long
+vendor_boot	oplus_locking_strategy	lock_boost_debug_enable:int
+vendor_boot	oplus_locking_strategy	lazy_debug_enable:uint
+vendor_boot	oplus_locking_strategy	locking_debug:uint
+vendor_boot	oplus_locking_strategy	locking_enable:uint
+vendor_boot	oplus_magcvr_ak09973	v_adjust:int
+vendor_boot	oplus_magcvr_mkh100a	v_adjust:int
+vendor_boot	oplus_magcvr_mxm1120	v_adjust:int
+vendor_boot	oplus_magnetic_cover	v_adjust:int
+vendor_boot	oplus_network_tuning	hystart_ack_delta_us:spacing between ack's indicating train (usecs) (int)
+vendor_boot	oplus_network_tuning	hystart_low_window:lower bound cwnd for hybrid slow start (int)
+vendor_boot	oplus_network_tuning	hystart_detect:hybrid slow start detection mechanisms 1: packet-train 2: delay 3: both packet-train and delay (int)
+vendor_boot	oplus_network_tuning	hystart:turn on/off hybrid slow start algorithm (int)
+vendor_boot	oplus_network_tuning	tcp_friendliness:turn on/off tcp friendliness (int)
+vendor_boot	oplus_network_tuning	bic_scale:scale (scaled by 1024) value for bic function (bic_scale/1024) (int)
+vendor_boot	oplus_network_tuning	initial_ssthresh:initial value of slow start threshold (int)
+vendor_boot	oplus_network_tuning	beta:beta for multiplicative increase (int)
+vendor_boot	oplus_network_tuning	fast_convergence:turn on/off fast convergence (int)
+vendor_boot	oplus_network_vnet	numvnets:Number of ovnet devices (int)
+vendor_boot	oplus_overlay	ovl_override_creds_def:Use mounter's credentials for accesses
+vendor_boot	oplus_overlay	override_creds:bool
+vendor_boot	oplus_overlay	metacopy:Default to on or off for the metadata only copy up feature (bool)
+vendor_boot	oplus_overlay	nfs_export:Default to on or off for the NFS export feature (bool)
+vendor_boot	oplus_overlay	index:Default to on or off for the inodes index feature (bool)
+vendor_boot	oplus_overlay	xino_auto:Auto enable xino feature (bool)
+vendor_boot	oplus_overlay	redirect_always_follow:Follow redirects even if redirect_dir feature is turned off (bool)
+vendor_boot	oplus_overlay	redirect_dir:Default to on or off for the redirect_dir feature (bool)
+vendor_boot	oplus_overlay	redirect_max:Maximum length of absolute redirect xattr value (ushort)
+vendor_boot	oplus_overlay	check_copy_up:Obsolete; does nothing
+vendor_boot	oplus_powermodel	mem_major:int
+vendor_boot	oplus_wireless_pen_mt5806	mt_pen_log_level:wireless_pen log level (int)
+vendor_boot	oplusboot	stackup_pcb_absent:string
+vendor_boot	pci_msm_drv	pcie_sm_regs:This is needed to override the PWR_CTRL/MASK regs (array of int)
+vendor_boot	qcom_scm	pas_shutdown_retry_delay_ms:uint
+vendor_boot	qcom_scm	download_mode:bool
+vendor_boot	qcom_ramdump	enable_dump_collection:int
+vendor_boot	qti_power_telemetry	reporting_interval:int
+vendor_boot	sg	allow_dio:allow direct I/O (default: 0 (disallow)) (int)
+vendor_boot	sg	def_reserved_size:size of buffer reserved for each fd (int)
+vendor_boot	sg	scatter_elem_sz:scatter gather element size (default: max(SG_SCATTER_SZ, PAGE_SIZE)) (int)
+vendor_boot	stm_heartbeat	interval_ms:int
+vendor_boot	stm_heartbeat	nr_devs:int
+vendor_boot	ufcs_class	ufcs_log_level:ufcs log level (int)
+vendor_boot	ufs_qcom	ber_duration_ms:Set the duration of BER monitor window. The default value is 3600000(1 hour)
+vendor_boot	ufs_qcom	ber_threshold:Set UFS BER threshold, should be less than 16. The default value is 3 for G5 and 0 for Non G5.
+vendor_boot	ufs_qcom	crash_on_ber:Crash if PHY BER exceeds threshold. the default value is false (bool)
+vendor_boot	wonder	physical_name:Interface name to use (e.g., wlan0, radiotap0, ...) (charp)
+vendor_boot	zram	queue_size_per_kcompressd:Size of queue for kcompressd
+vendor_boot	zram	nr_kcompressd:Number of pre-created daemon for page compression
+vendor_boot	zram	num_devices:Number of pre-created zram devices (uint)
+vendor_dlkm	audio_pkt_dlkm	debug_mask:int
+vendor_dlkm	camera	i3c_lookahead_en:Flag to enable/disable BURST/Lookahead register packing for I3C QUP (uint)
+vendor_dlkm	camera	i2c_lookahead_en:Flag to enable/disable BURST/Lookahead register packing for I2C QUP (uint)
+vendor_dlkm	camera	csiphy_qmargin:Functionality to print registers related to PHY tuning
+vendor_dlkm	camera	csiphy_onthego_regs:Functionality to let csiphy registers program on the fly
+vendor_dlkm	camera	cam_min_camnoc_ib_bw:uint
+vendor_dlkm	camera	cpas_dump:uint
+vendor_dlkm	camera	g_num_pf_handled:int
+vendor_dlkm	camera	cam_debug_ctx_req_list:uint
+vendor_dlkm	camera	timeout_multiplier:uint
+vendor_dlkm	camera	debug_bypass_drivers:uint
+vendor_dlkm	camera	debug_disable_rt_clk_bw_limit:uint
+vendor_dlkm	camera	debug_drv:uint
+vendor_dlkm	camera	debug_priority:uint
+vendor_dlkm	camera	debug_type:uint
+vendor_dlkm	camera	debug_mdl:ullong
+vendor_dlkm	camera	skip_mmrm_set_rate:uint
+vendor_dlkm	camera	mass_mem_threshold:Threshold to define massive memory whose life cycle will get recorded while free (uint)
+vendor_dlkm	camera_extension	oplus_debug_priority:uint
+vendor_dlkm	camera_extension	oplus_debug_type:uint
+vendor_dlkm	camera_extension	oplus_debug_mdl:ullong
+vendor_dlkm	cfg80211	bss_entries_limit:limit to number of scan BSS entries (per wiphy, default 1000) (int)
+vendor_dlkm	cfg80211	ieee80211_regdom:IEEE 802.11 regulatory domain code (charp)
+vendor_dlkm	cfg80211	cfg80211_disable_40mhz_24ghz:Disable 40MHz support in the 2.4GHz band (bool)
+vendor_dlkm	coresight_stm	boot_nr_channel:int
+vendor_dlkm	drm_display_helper	dp_aux_i2c_transfer_size:Number of bytes to transfer in a single I2C over DP AUX CH message, (1-16, default 16) (int)
+vendor_dlkm	drm_display_helper	dp_aux_i2c_speed_khz:Assumed speed of the i2c bus in kHz, (1-400, default 10) (int)
+vendor_dlkm	dwc3_msm	ep_addr_txdbg_mask:uint
+vendor_dlkm	dwc3_msm	ep_addr_rxdbg_mask:uint
+vendor_dlkm	gh_rm_booster	target_cpu:Choose the target core for Resource Manager
+vendor_dlkm	lpass_cdc_tx_macro_dlkm	tx_unmute_delay:delay to unmute the tx path (int)
+vendor_dlkm	lpass_cdc_va_macro_dlkm	va_tx_unmute_delay:delay to unmute the tx path (int)
+vendor_dlkm	mac80211	minstrel_vht_only:Use only VHT rates when VHT is supported by sta. (bool)
+vendor_dlkm	mac80211	ieee80211_default_rc_algo:Default rate control algorithm for mac80211 to use (charp)
+vendor_dlkm	mac80211	probe_wait_ms:Maximum time(ms) to wait for probe response before disconnecting (reason 4). (int)
+vendor_dlkm	mac80211	beacon_loss_count:Number of beacon intervals before we decide beacon was lost. (int)
+vendor_dlkm	mac80211	max_probe_tries:Maximum probe tries before disconnecting (reason 4). (int)
+vendor_dlkm	mac80211	max_nullfunc_tries:Maximum nullfunc tx tries before disconnecting (reason 4). (int)
+vendor_dlkm	mem_offline	nopasr:uint
+vendor_dlkm	mem_offline	bypass_send_msg:skip mem offline/online mesg sent to rpm/aop. (bool)
+vendor_dlkm	microdump_collector	start_qcomdump:int
+vendor_dlkm	microdump_collector	enable_microdump:int
+vendor_dlkm	msm_drm	dumpstate:Dump KMS state on errors (bool)
+vendor_dlkm	msm_drm	vram:Configure VRAM size (for devices without IOMMU/GPUMMU) (charp)
+vendor_dlkm	msm_drm	reglog:Enable register read/write logging (bool)
+vendor_dlkm	msm_drm	sdecustom:Enable customizations for sde clients (bool)
+vendor_dlkm	msm_hw_fence	enable:Enable hardware fences (bool)
+vendor_dlkm	msm_kgsl	slice_mask_override:Override GPU slice mask (uint)
+vendor_dlkm	msm_kgsl	gpu_speed_bin_override:Override GPU speed bin (uint)
+vendor_dlkm	msm_kgsl	gpu_sku_override:Override SKU code identifier for GPU driver (uint)
+vendor_dlkm	msm_kgsl	preempt_enable:Enable GPU HW Preemption (bool)
+vendor_dlkm	msm_show_resume_irq	debug_mask:int
+vendor_dlkm	nvmem_qfprom	read_raw_data:Read raw instead of corrected data (bool)
+vendor_dlkm	oplus_audio_tfa98xx	pcm_no_constraint:do not use constraints for PCM parameters  (int)
+vendor_dlkm	oplus_audio_tfa98xx	no_reset:do not use the reset line; for debugging via user  (int)
+vendor_dlkm	oplus_audio_tfa98xx	no_start:do not start the work queue; for debugging via user  (int)
+vendor_dlkm	oplus_audio_tfa98xx	dflt_prof_name:charp
+vendor_dlkm	oplus_audio_tfa98xx	fw_name:TFA98xx DSP firmware (container file) name. (charp)
+vendor_dlkm	oplus_audio_tfa98xx_v6	pcm_no_constraint:do not use constraints for PCM parameters  (int)
+vendor_dlkm	oplus_audio_tfa98xx_v6	no_reset:do not use the reset line; for debugging via user  (int)
+vendor_dlkm	oplus_audio_tfa98xx_v6	no_start:do not start the work queue; for debugging via user  (int)
+vendor_dlkm	oplus_audio_tfa98xx_v6	dflt_prof_name:charp
+vendor_dlkm	oplus_audio_tfa98xx_v6	fw_name:TFA98xx DSP firmware (container file) name. (charp)
+vendor_dlkm	oplus_binder_strategy	binder_set_mid_inherit_ux_enable:int
+vendor_dlkm	oplus_binder_strategy	select_more_tasks:int
+vendor_dlkm	oplus_binder_strategy	g_desired_select_task_num:int
+vendor_dlkm	oplus_binder_strategy	get_random_binder_task:int
+vendor_dlkm	oplus_binder_strategy	binder_feature_enable:uint
+vendor_dlkm	oplus_binder_strategy	binder_fg_debug_interval:int
+vendor_dlkm	oplus_binder_strategy	binder_fg_debug_pid:int
+vendor_dlkm	oplus_binder_strategy	binder_max_works_in_fg:int
+vendor_dlkm	oplus_binder_strategy	binder_fg_list_async_first:int
+vendor_dlkm	oplus_binder_strategy	binder_fg_list_enable:int
+vendor_dlkm	oplus_binder_strategy	binder_unset_ux_match_t:uint
+vendor_dlkm	oplus_binder_strategy	binder_allow_accumulate_ux:uint
+vendor_dlkm	oplus_binder_strategy	binder_set_async_ux_after_pending:uint
+vendor_dlkm	oplus_binder_strategy	binder_set_last_async_ux:uint
+vendor_dlkm	oplus_binder_strategy	binder_sync_insert_queue:uint
+vendor_dlkm	oplus_binder_strategy	binder_async_insert_queue:uint
+vendor_dlkm	oplus_binder_strategy	binder_ux_enable:uint
+vendor_dlkm	oplus_binder_strategy	binder_sched_ux_test:uint
+vendor_dlkm	oplus_binder_strategy	binder_sched_debug:ullong
+vendor_dlkm	oplus_binder_strategy	binder_sched_enable:uint
+vendor_dlkm	oplus_bsp_dfr_fdleak_check	symbol:string
+vendor_dlkm	oplus_bsp_dfr_ordump	shrinkdump_mode:int
+vendor_dlkm	oplus_bsp_dfr_ordump	lbaooo:unsigned long
+vendor_dlkm	oplus_bsp_dfr_ordump	debug_magic:debug magic number (int)
+vendor_dlkm	oplus_bsp_dynamic_readahead	background_ra_pages:uint
+vendor_dlkm	oplus_bsp_dynamic_readahead	enable:bool
+vendor_dlkm	oplus_bsp_geas_data	mem_major:int
+vendor_dlkm	oplus_bsp_memleak_detect	daemon_thread:int
+vendor_dlkm	oplus_bsp_memleak_detect	vmalloc_debug:int
+vendor_dlkm	oplus_bsp_memleak_detect	kmalloc_debug:int
+vendor_dlkm	oplus_bsp_proactive_compact	compaction_proactiveness:uint
+vendor_dlkm	oplus_bsp_proactive_compact	compaction_hpage_order:uint
+vendor_dlkm	oplus_bsp_schedinfo	ohm_action_ctrl:bool
+vendor_dlkm	oplus_bsp_synaptics_tcm2	tune_debug_enable:int
+vendor_dlkm	oplus_bsp_uxmem_opt	enable:bool
+vendor_dlkm	oplus_bsp_zram_opt	oplus_extra_free_kbytes:int
+vendor_dlkm	oplus_bsp_zram_opt	dynamic_direct_swappiness_threshold:int
+vendor_dlkm	oplus_bsp_zram_opt	dynamic_direct_swappiness:int
+vendor_dlkm	oplus_bsp_zram_opt	swappiness_threshold2_size:int
+vendor_dlkm	oplus_bsp_zram_opt	swappiness_threshold1_size:int
+vendor_dlkm	oplus_bsp_zram_opt	vm_swappiness_threshold2:int
+vendor_dlkm	oplus_bsp_zram_opt	vm_swappiness_threshold1:int
+vendor_dlkm	oplus_bsp_zram_opt	hybridswapd_swappiness:int
+vendor_dlkm	oplus_bsp_zram_opt	direct_vm_swappiness:int
+vendor_dlkm	oplus_bsp_zram_opt	vm_swappiness:int
+vendor_dlkm	oplus_chg_v2	e30_test:debug e30 (int)
+vendor_dlkm	oplus_chg_v2	hl7603_debug_track:debug track (int)
+vendor_dlkm	oplus_chg_v2	wlspen_dbg_timeout:debug wlspen chg timeout (int)
+vendor_dlkm	oplus_chg_v2	ufcs_debug_track:ufcs debug track (int)
+vendor_dlkm	oplus_chg_v2	plc_info_debug_track:debug track (int)
+vendor_dlkm	oplus_chg_v2	oplus_log_level:debug log level (int)
+vendor_dlkm	oplus_chg_v2	fg_reset_test:zy0603 fg reset test (bool)
+vendor_dlkm	oplus_chg_v2	oplus_dbg_hmac_func_level:oplus debug override of hmac_func_level, <0 disables override (int)
+vendor_dlkm	oplus_chg_v2	oplus_gauge_r_data:oplus gauge r data flag (int)
+vendor_dlkm	oplus_chg_v2	oplus_dbg_timeout:oplus debug chg timeout (int)
+vendor_dlkm	oplus_chg_v2	oplus_dbg_tbat:oplus debug battery temperature (int)
+vendor_dlkm	oplus_chg_v2	usbtemp_dbg_curr_status:debug usbtemp current status (int)
+vendor_dlkm	oplus_chg_v2	usbtemp_dbg_templ:debug usbtemp temp l (int)
+vendor_dlkm	oplus_chg_v2	usbtemp_dbg_tempr:debug usbtemp temp r (int)
+vendor_dlkm	oplus_chg_v2	usbtemp_debug:debug usbtemp (int)
+vendor_dlkm	oplus_chg_v2	usbtemp_recover_test:int
+vendor_dlkm	oplus_chg_v2	usbtemp_recover_interval:int
+vendor_dlkm	oplus_chg_v2	gauge_ffc_ra_soc_data:gauge ffc ra soc data flag (int)
+vendor_dlkm	oplus_chg_v2	gauge_dbg_ibat:debug battery current (int)
+vendor_dlkm	oplus_chg_v2	gauge_dbg_vbat:debug battery voltage (int)
+vendor_dlkm	oplus_chg_v2	gauge_dbg_tbat:debug battery temperature (int)
+vendor_dlkm	oplus_chg_v2	mms_gauge_debug_track:debug track (int)
+vendor_dlkm	oplus_fan	dbg_rpm:oplus debug fan rpm (int)
+vendor_dlkm	oplus_icc_mcu	bufsiz:data bytes in biggest supported SPI message (uint)
+vendor_dlkm	oplus_locking_strategy	rwsem_opt_spin_timeout_exit_cnt:int
+vendor_dlkm	oplus_locking_strategy	rwsem_opt_spin_total_cnt:int
+vendor_dlkm	oplus_locking_strategy	rwsem_ux_opt_spin_time_threshold:int
+vendor_dlkm	oplus_locking_strategy	rwsem_opt_spin_time_threshold:int
+vendor_dlkm	oplus_locking_strategy	mutex_opt_spin_timeout_exit_cnt:int
+vendor_dlkm	oplus_locking_strategy	mutex_opt_spin_total_cnt:int
+vendor_dlkm	oplus_locking_strategy	mutex_ux_opt_spin_time_threshold:int
+vendor_dlkm	oplus_locking_strategy	mutex_opt_spin_time_threshold:int
+vendor_dlkm	oplus_locking_strategy	futex_set_blocked_ux_cnt:long
+vendor_dlkm	oplus_locking_strategy	futex_ux_unset_cnt:long
+vendor_dlkm	oplus_locking_strategy	futex_ux_set_cnt:long
+vendor_dlkm	oplus_locking_strategy	lock_boost_debug_enable:int
+vendor_dlkm	oplus_locking_strategy	lazy_debug_enable:uint
+vendor_dlkm	oplus_locking_strategy	locking_debug:uint
+vendor_dlkm	oplus_locking_strategy	locking_enable:uint
+vendor_dlkm	oplus_magcvr_ak09973	v_adjust:int
+vendor_dlkm	oplus_magcvr_mkh100a	v_adjust:int
+vendor_dlkm	oplus_magcvr_mxm1120	v_adjust:int
+vendor_dlkm	oplus_magnetic_cover	v_adjust:int
+vendor_dlkm	oplus_network_tuning	hystart_ack_delta_us:spacing between ack's indicating train (usecs) (int)
+vendor_dlkm	oplus_network_tuning	hystart_low_window:lower bound cwnd for hybrid slow start (int)
+vendor_dlkm	oplus_network_tuning	hystart_detect:hybrid slow start detection mechanisms 1: packet-train 2: delay 3: both packet-train and delay (int)
+vendor_dlkm	oplus_network_tuning	hystart:turn on/off hybrid slow start algorithm (int)
+vendor_dlkm	oplus_network_tuning	tcp_friendliness:turn on/off tcp friendliness (int)
+vendor_dlkm	oplus_network_tuning	bic_scale:scale (scaled by 1024) value for bic function (bic_scale/1024) (int)
+vendor_dlkm	oplus_network_tuning	initial_ssthresh:initial value of slow start threshold (int)
+vendor_dlkm	oplus_network_tuning	beta:beta for multiplicative increase (int)
+vendor_dlkm	oplus_network_tuning	fast_convergence:turn on/off fast convergence (int)
+vendor_dlkm	oplus_network_vnet	numvnets:Number of ovnet devices (int)
+vendor_dlkm	oplus_overlay	ovl_override_creds_def:Use mounter's credentials for accesses
+vendor_dlkm	oplus_overlay	override_creds:bool
+vendor_dlkm	oplus_overlay	metacopy:Default to on or off for the metadata only copy up feature (bool)
+vendor_dlkm	oplus_overlay	nfs_export:Default to on or off for the NFS export feature (bool)
+vendor_dlkm	oplus_overlay	index:Default to on or off for the inodes index feature (bool)
+vendor_dlkm	oplus_overlay	xino_auto:Auto enable xino feature (bool)
+vendor_dlkm	oplus_overlay	redirect_always_follow:Follow redirects even if redirect_dir feature is turned off (bool)
+vendor_dlkm	oplus_overlay	redirect_dir:Default to on or off for the redirect_dir feature (bool)
+vendor_dlkm	oplus_overlay	redirect_max:Maximum length of absolute redirect xattr value (ushort)
+vendor_dlkm	oplus_overlay	check_copy_up:Obsolete; does nothing
+vendor_dlkm	oplus_powermodel	mem_major:int
+vendor_dlkm	oplus_wireless_pen_mt5806	mt_pen_log_level:wireless_pen log level (int)
+vendor_dlkm	pci_msm_drv	pcie_sm_regs:This is needed to override the PWR_CTRL/MASK regs (array of int)
+vendor_dlkm	qca_cld3_kiwi_v2	country_code:charp
+vendor_dlkm	qca_cld3_kiwi_v2	enable_11d:int
+vendor_dlkm	qca_cld3_kiwi_v2	enable_dfs_chan_scan:int
+vendor_dlkm	qca_cld3_kiwi_v2	qdf_log_flush_timer_period:uint
+vendor_dlkm	qca_cld3_kiwi_v2	qdf_log_dump_at_kernel_enable:bool
+vendor_dlkm	qca_cld3_kiwi_v2	prealloc_disabled:bool
+vendor_dlkm	qca_cld3_peach_v2	country_code:charp
+vendor_dlkm	qca_cld3_peach_v2	enable_11d:int
+vendor_dlkm	qca_cld3_peach_v2	enable_dfs_chan_scan:int
+vendor_dlkm	qca_cld3_peach_v2	qdf_log_flush_timer_period:uint
+vendor_dlkm	qca_cld3_peach_v2	qdf_log_dump_at_kernel_enable:bool
+vendor_dlkm	qca_cld3_peach_v2	prealloc_disabled:bool
+vendor_dlkm	qca_cld3_wcn7750	country_code:charp
+vendor_dlkm	qca_cld3_wcn7750	enable_11d:int
+vendor_dlkm	qca_cld3_wcn7750	enable_dfs_chan_scan:int
+vendor_dlkm	qca_cld3_wcn7750	qdf_log_flush_timer_period:uint
+vendor_dlkm	qca_cld3_wcn7750	qdf_log_dump_at_kernel_enable:bool
+vendor_dlkm	qca_cld3_wcn7750	prealloc_disabled:bool
+vendor_dlkm	qcom_ramdump	enable_dump_collection:int
+vendor_dlkm	qti_power_telemetry	reporting_interval:int
+vendor_dlkm	radio_i2c_rtc6226_qca	rds_buf:RDS buffer entries: *100*
+vendor_dlkm	radio_i2c_rtc6226_qca	radio_nr:Radio Nr
+vendor_dlkm	rmnet_aps	inactive_time:Inactive time in seconds
+vendor_dlkm	rmnet_aps	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_mem	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_mem	rmnet_mem_cache_add_fails:fail to add per cache pool (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_cache_adds:add per cache pool (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_pb_ind_max:Pool size vote that is active on PB ind (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_err:Error counting (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_stats:Rmnet mem stats for modules (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_order_gaveup:gaveup per order (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_id_gaveup:gaveup per id (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_order_recycled:Recycled per order (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_id_recycled:Recycled per id (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_id_req:Request per id (array of ullong)
+vendor_dlkm	rmnet_mem	rmnet_mem_order_requests:Request per order (array of ullong)
+vendor_dlkm	rmnet_mem	pool_unbound_featue:Pool bound gate
+vendor_dlkm	rmnet_mem	pool_unbound_feature:array of uint
+vendor_dlkm	rmnet_mem	target_pool_size:Pool size wq will adjust to on run (array of int)
+vendor_dlkm	rmnet_mem	static_pool_size:Pool size per order (array of int)
+vendor_dlkm	rmnet_mem	cache_pool_size:Pool size per order (array of int)
+vendor_dlkm	rmnet_mem	max_pool_size:Max Pool size per order (array of int)
+vendor_dlkm	rmnet_mem	rmnet_mem_pb_enable:rmnet_mem_pb_enable pb ind pool boosts (uint)
+vendor_dlkm	rmnet_mem	rmnet_mem_debug:rmnet_mem debug status (uint)
+vendor_dlkm	rmnet_offload	rmnet_offload_stat:array of ullong
+vendor_dlkm	rmnet_offload	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_perf	rmnet_perf_udp_stat:array of ullong
+vendor_dlkm	rmnet_perf	rmnet_perf_tcp_stat:array of ullong
+vendor_dlkm	rmnet_perf	rmnet_perf_tcp_knob0:uint
+vendor_dlkm	rmnet_perf	rmnet_perf_knob1:bool
+vendor_dlkm	rmnet_perf	rmnet_perf_knob0:bool
+vendor_dlkm	rmnet_perf	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_perf_tether	knob2:uint
+vendor_dlkm	rmnet_perf_tether	configure_knob2:uint
+vendor_dlkm	rmnet_perf_tether	knob1:uint
+vendor_dlkm	rmnet_perf_tether	configure_knob1:uint
+vendor_dlkm	rmnet_perf_tether	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_sch	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_shs	rmnet_shs_freq_enable:Enable/disable freq boost feature (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_pb_boost_timer_ms:Duration that PB Boost will be active for before reset (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_esp_pkts: Esp packets seen (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_max_phy_backlog:Max phy backlog seen (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_max_qmap_steer:Max packets shs will steer (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_max_qmap_wait:uint
+vendor_dlkm	rmnet_shs	rmnet_shs_max_qmap_pkt:Max interleaved ipa pkts shs will be park for (ms) (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_duration:up duty cycle in ms
+vendor_dlkm	rmnet_shs	rmnet_shs_perf_duration:uint
+vendor_dlkm	rmnet_shs	rmnet_shs_wake:wake status (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_no_sync_packets:rmnet shs async packet count (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_no_sync_off:rmnet no sync feature toggle (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_reserve_on:reserve mask feature flag (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_restart_count:rmnet shs wq restart count (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_pause_count:rmnet shs wq pause count (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_wq_tick:rmnet_shs_Wq execution tick  (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_ll_phy_cpu:Current LL phy cpu  (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_ll_flow_cpu:Current LL flow cpu  (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_crit_err:rmnet shs crtical error type (array of ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_mid_err:rmnet shs mid error type (array of ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_stats_enabled:Enable Disable stats collection (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_debug:rmnet_shs_debug (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_halt_mask:rmnet_shs_halt_mask (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_resever_mask:rmnet_shs_reserve_mask
+vendor_dlkm	rmnet_shs	rmnet_shs_reserve_mask:uint
+vendor_dlkm	rmnet_shs	rmnet_oom_pkt_limit:Max rmnet pre-backlog (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_prio_dur:Staying duration for netrx switch (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_max_coresum:Max coresum seen of each core (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_ooo_count:OOO count for each cpu (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_max_qdiff:Max queue length seen of each core (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_switch_cores:Switch core upon hitting threshold (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_timeout:Option to configure fall back duration (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_inst_rate_max_pkts:Max pkts in a burst before prioritizing (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_backlog_max_pkts:Max pkts in backlog prioritizing (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_fall_back_timer:Option to enable fall back limit for parking (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_inst_rate_switch:Configurable option to enable rx rate cpu switching (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_inst_rate_interval:Max interval we sample for instant burst prioritizing (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_max_core_wait:Max wait module will wait during move to perf core in ms (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_pkts_store_limit:Maximum pkts module will park (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_byte_store_limit:Maximum byte module will park (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_flush_reason:rmnet shs skb flush trigger type (array of ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_switch_reason:rmnet shs skb core swtich type (array of ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_gold_balance:SHS Suggest Gold Balance (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_gold_to_silver:SHS Suggest Gold to Silver (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_silver_to_gold:SHS Suggest Silver to Gold (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_rx_pps:SHS stamp pkt enq rate per flow (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_rx_bps:SHS stamp enq rate per flow (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_rx_pkts:SHS stamp total pkts per flow (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_rx_bytes:SHS stamp bytes per flow (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_cpu_recommended:SHS stamp flow proc CPU (array of int)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_cpu:SHS stamp flow processing CPU (array of int)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_inactive_tsec:SHS stamp inactive flow time (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_proto:SHS stamp hash transport protocol (array of ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_flow_hash:SHS stamp hash flow (array of ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_qhead_total:SHS nw queue processed total (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_qhead_diff:SHS nw stack queue processed diff (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_pps:SHS stamp pkt enq rate per CPU (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_bps:SHS stamp enq rate per CPU (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_pkts:SHS stamp total pkts per CPU (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_bytes:SHS stamp bytes per CPU (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_filter_flows:Num filtered flows per core (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_flows:Num flows processed per core (array of uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_min_pps_thresh:Min pkts core can handle (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_cpu_rx_max_pps_thresh:Max pkts core can handle (array of ullong)
+vendor_dlkm	rmnet_shs	rmnet_shs_wq_tuning:moving average weightage (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_max_flow_inactivity_sec:Max flow inactive time before clean up (ulong)
+vendor_dlkm	rmnet_shs	rmnet_shs_wq_interval_ms:Interval between wq runs (ms) (uint)
+vendor_dlkm	rmnet_shs	verinfo:Version of the driver (array of charp)
+vendor_dlkm	rmnet_shs	rmnet_shs_filter_count:LL filter count seen in ll rmnet_shs (uint)
+vendor_dlkm	rmnet_shs	rmnet_shs_ll_pkts:LL packets seen in ll rmnet_shs (uint)
+vendor_dlkm	rmnet_wlan	rmnet_wlan_forward_stat:array of ullong
+vendor_dlkm	rmnet_wlan	rmnet_wlan_stat:array of ullong
+vendor_dlkm	rmnet_wlan	verinfo:Version of the driver (array of charp)
+vendor_dlkm	stm_heartbeat	interval_ms:int
+vendor_dlkm	stm_heartbeat	nr_devs:int
+vendor_dlkm	swr_ctrl_dlkm	auto_suspend_timer:timer for auto suspend (int)
+vendor_dlkm	ufcs_class	ufcs_log_level:ufcs log level (int)
+vendor_dlkm	wonder	physical_name:Interface name to use (e.g., wlan0, radiotap0, ...) (charp)
+vendor_dlkm	zram	queue_size_per_kcompressd:Size of queue for kcompressd
+vendor_dlkm	zram	nr_kcompressd:Number of pre-created daemon for page compression
+vendor_dlkm	zram	num_devices:Number of pre-created zram devices (uint)
