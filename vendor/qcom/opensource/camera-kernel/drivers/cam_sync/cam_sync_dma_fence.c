@@ -246,7 +246,7 @@ static void __cam_dma_fence_dump_monitor_array(int dma_row_idx)
 	obj_info.name = row->name;
 	obj_info.obj_id = row->fd;
 	obj_info.state = row->state;
-	obj_info.ref_cnt = kref_read(&fence->refcount);
+	obj_info.ref_cnt = fence ? kref_read(&fence->refcount) : 0;
 	obj_info.monitor_data = CAM_GENERIC_MONITOR_GET_DATA(
 		g_cam_dma_fence_dev->monitor_data, dma_row_idx);
 	obj_info.fence_type = CAM_GENERIC_FENCE_TYPE_DMA_FENCE;
@@ -316,6 +316,8 @@ int cam_dma_fence_get_put_ref(
 monitor_dump:
 	__cam_dma_fence_dump_monitor_array(dma_fence_row_idx);
 	spin_unlock_bh(&g_cam_dma_fence_dev->row_spinlocks[dma_fence_row_idx]);
+	if (expected_fence && !get_or_put)
+		dma_fence_put(expected_fence);
 	return rc;
 }
 
