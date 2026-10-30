@@ -1661,9 +1661,9 @@ err_free_dev:
 static void
 i3c_master_register_new_i3c_devs(struct i3c_master_controller *master)
 {
-	struct i3c_device *i3cdev, *tmp;
+	struct i3c_device *unreg_devs[I3C_BUS_MAX_DEVS] = { };
 	struct i3c_dev_desc *desc;
-	LIST_HEAD(i3c_unreg_devs);
+	unsigned int nr_unreg = 0, i;
 	int ret;
 
 	if (!master->init_done)
@@ -1691,26 +1691,34 @@ i3c_master_register_new_i3c_devs(struct i3c_master_controller *master)
 		if (desc->boardinfo)
 			desc->dev->dev.of_node = desc->boardinfo->of_node;
 
-		list_add_tail(&desc->dev->node, &i3c_unreg_devs);
+		if (WARN_ON_ONCE(nr_unreg == ARRAY_SIZE(unreg_devs))) {
+			kfree(desc->dev);
+			desc->dev = NULL;
+			continue;
+		}
+
+		unreg_devs[nr_unreg++] = desc->dev;
 	}
 
 	i3c_bus_maintenance_unlock(&master->bus);
 
-	list_for_each_entry_safe(i3cdev, tmp, &i3c_unreg_devs, node) {
-		ret = device_register(&i3cdev->dev);
+	for (i = 0; i < nr_unreg; i++) {
+		ret = device_register(&unreg_devs[i]->dev);
 		if (ret)
 			dev_err(&master->dev, "Failed to add I3C device (err = %d)\n", ret);
 		else
-			list_del_init(&i3cdev->node);
+			unreg_devs[i] = NULL;
 	}
 
 	i3c_bus_maintenance_lock(&master->bus);
 
-	list_for_each_entry_safe(i3cdev, tmp, &i3c_unreg_devs, node) {
-		list_del(&i3cdev->node);
-		desc = i3cdev->desc;
-		i3cdev->desc = NULL;
-		put_device(&i3cdev->dev);
+	for (i = 0; i < nr_unreg; i++) {
+		if (!unreg_devs[i])
+			continue;
+
+		desc = unreg_devs[i]->desc;
+		unreg_devs[i]->desc = NULL;
+		put_device(&unreg_devs[i]->dev);
 		desc->dev = NULL;
 	}
 
