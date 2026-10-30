@@ -5,6 +5,7 @@
 #define XSK_BUFF_POOL_H_
 
 #include <linux/if_xdp.h>
+#include <linux/android_kabi.h>
 #include <linux/types.h>
 #include <linux/dma-mapping.h>
 #include <linux/bpf.h>
@@ -97,6 +98,13 @@ struct xsk_buff_pool {
 	spinlock_t cq_lock;
 	struct xdp_buff_xsk *free_heads[];
 };
+
+/*
+ * The 6.12.114 Tx batching state is private to the in-tree AF_XDP
+ * implementation.  Preserve the established external type representation so
+ * unrelated exports compiled in the same translation units retain their KMI.
+ */
+ANDROID_KABI_TYPE_STRING("s#xsk_buff_pool", "structure_type xsk_buff_pool { member pointer_type { s#device } dev data_member_location(0) , member pointer_type { s#net_device } netdev data_member_location(8) , member s#list_head xsk_tx_list data_member_location(16) , member t#spinlock_t xsk_tx_list_lock data_member_location(32) , member t#refcount_t users data_member_location(36) , member pointer_type { s#xdp_umem } umem data_member_location(40) , member s#work_struct work data_member_location(48) , member t#spinlock_t rx_lock data_member_location(80) , member s#list_head free_list data_member_location(88) , member s#list_head xskb_list data_member_location(104) , member t#u32 heads_cnt data_member_location(120) , member t#u16 queue_id data_member_location(124) , member pointer_type { s#xsk_queue } fq data_member_location(128) , member pointer_type { s#xsk_queue } cq data_member_location(136) , member pointer_type { t#dma_addr_t } dma_pages data_member_location(144) , member pointer_type { s#xdp_buff_xsk } heads data_member_location(152) , member pointer_type { s#xdp_desc } tx_descs data_member_location(160) , member t#u64 chunk_mask data_member_location(168) , member t#u64 addrs_cnt data_member_location(176) , member t#u32 free_list_cnt data_member_location(184) , member t#u32 dma_pages_cnt data_member_location(188) , member t#u32 free_heads_cnt data_member_location(192) , member t#u32 headroom data_member_location(196) , member t#u32 chunk_size data_member_location(200) , member t#u32 chunk_shift data_member_location(204) , member t#u32 frame_len data_member_location(208) , member t#u8 tx_metadata_len data_member_location(212) , member t#u8 cached_need_wakeup data_member_location(213) , member t#bool uses_need_wakeup data_member_location(214) , member t#bool unaligned data_member_location(215) , member t#bool tx_sw_csum data_member_location(216) , member pointer_type { base_type void } addrs data_member_location(224) , member t#spinlock_t cq_lock data_member_location(232) , member array_type[] { pointer_type { s#xdp_buff_xsk } } free_heads data_member_location(240) } byte_size(256)");
 
 /* Masks for xdp_umem_page flags.
  * The low 12-bits of the addr will be 0 since this is the page address, so we
