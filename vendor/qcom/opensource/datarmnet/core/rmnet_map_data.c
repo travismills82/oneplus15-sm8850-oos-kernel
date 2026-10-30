@@ -346,12 +346,19 @@ struct sk_buff *rmnet_map_deaggregate(struct sk_buff *skb,
 {
 	struct rmnet_map_header *maph;
 	struct sk_buff *skbn;
-	unsigned char *data = rmnet_map_data_ptr(skb), *next_hdr = NULL;
+	unsigned char *data, *next_hdr = NULL;
 	u32 packet_len;
 
-	if (skb->len == 0)
+	if (skb->len < sizeof(*maph))
 		return NULL;
 
+	/* The legacy nonlinear clone path copies each frame from frag 0. */
+	if (skb_is_nonlinear(skb) &&
+	    (skb_headlen(skb) || !skb_shinfo(skb)->nr_frags ||
+	     skb_frag_size(skb_shinfo(skb)->frags) < sizeof(*maph)))
+		return NULL;
+
+	data = rmnet_map_data_ptr(skb);
 	maph = (struct rmnet_map_header *)data;
 	packet_len = ntohs(maph->pkt_len) + sizeof(struct rmnet_map_header);
 
@@ -367,6 +374,10 @@ struct sk_buff *rmnet_map_deaggregate(struct sk_buff *skb,
 	}
 
 	if (((int)skb->len - (int)packet_len) < 0)
+		return NULL;
+
+	if (skb_is_nonlinear(skb) &&
+	    packet_len > skb_frag_size(skb_shinfo(skb)->frags))
 		return NULL;
 
 	/* Some hardware can send us empty frames. Catch them */
@@ -1258,13 +1269,20 @@ static int rmnet_map_data_check_coal_header(struct sk_buff *skb,
 					    u64 *nlo_err_mask)
 {
 	struct rmnet_map_v5_coal_header *coal_hdr;
-	unsigned char *data = rmnet_map_data_ptr(skb);
+	unsigned char *data;
 	struct rmnet_priv *priv = netdev_priv(skb->dev);
 	u32 available;
 	u64 mask = 0;
 	int i;
-	u8 veid, pkts = 0;
+	u8 veid;
+	unsigned int pkts = 0;
 
+	if (skb->len < sizeof(struct rmnet_map_header) + sizeof(*coal_hdr)) {
+		priv->stats.coal.coal_hdr_nlo_err++;
+		return -EINVAL;
+	}
+
+	data = rmnet_map_data_ptr(skb);
 	coal_hdr = ((struct rmnet_map_v5_coal_header *)
 		    (data + sizeof(struct rmnet_map_header)));
 	veid = coal_hdr->virtual_channel_id;
@@ -1325,6 +1343,10 @@ int rmnet_map_process_next_hdr_packet(struct sk_buff *skb,
 	struct rmnet_priv *priv = netdev_priv(skb->dev);
 	u64 nlo_err_mask;
 	int rc = 0;
+
+	if (skb->len < sizeof(struct rmnet_map_header) +
+		       sizeof(struct rmnet_map_v5_csum_header))
+		return -EINVAL;
 
 	switch (rmnet_map_get_next_hdr_type(skb)) {
 	case RMNET_MAP_HEADER_TYPE_COALESCING:

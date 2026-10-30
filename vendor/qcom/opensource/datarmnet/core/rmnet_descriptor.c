@@ -1499,7 +1499,8 @@ rmnet_frag_segment_coal_data(struct rmnet_frag_descriptor *coal_desc,
 	 * no checksum errors, and are allowing GRO. We can just reuse this
 	 * descriptor unchanged.
 	 */
-	if (gro && coal_hdr.num_nlos == 1 && coal_hdr.csum_valid) {
+	if (gro && coal_hdr.num_nlos == 1 && coal_hdr.csum_valid &&
+	    coal_hdr.nl_pairs[0].num_packets) {
 		u16 gro_pkt_len = ntohs(coal_hdr.nl_pairs[0].pkt_len);
 		u32 gro_hlen = coal_desc->ip_len + coal_desc->trans_len;
 
@@ -1674,7 +1675,8 @@ rmnet_frag_data_check_coal_header(struct rmnet_frag_descriptor *frag_desc,
 	struct rmnet_priv *priv = netdev_priv(frag_desc->dev);
 	u64 mask = 0;
 	int i;
-	u8 veid, pkts = 0;
+	u8 veid;
+	unsigned int pkts = 0;
 
 	coal_hdr = rmnet_frag_header_ptr(frag_desc,
 					 sizeof(struct rmnet_map_header),

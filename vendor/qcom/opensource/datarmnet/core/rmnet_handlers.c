@@ -175,6 +175,12 @@ __rmnet_map_ingress_handler(struct sk_buff *skb,
 	if (skb->len < sizeof(*qmap))
 		goto free_skb;
 
+	/* A legacy nonlinear frame must be entirely within frag 0. */
+	if (skb_is_nonlinear(skb) &&
+	    (skb_headlen(skb) || !skb_shinfo(skb)->nr_frags ||
+	     skb_frag_size(skb_shinfo(skb)->frags) < skb->len))
+		goto free_skb;
+
 	qmap = (struct rmnet_map_header *)rmnet_map_data_ptr(skb);
 	if (qmap->cd_bit) {
 		qmi_rmnet_set_dl_msg_active(port);
