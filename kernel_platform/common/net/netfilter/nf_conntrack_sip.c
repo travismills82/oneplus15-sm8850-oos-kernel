@@ -27,6 +27,8 @@
 #include <net/netfilter/nf_conntrack_zones.h>
 #include <linux/netfilter/nf_conntrack_sip.h>
 
+#include "nf_conntrack_expect_priv.h"
+
 #define HELPER_NAME "sip"
 
 MODULE_LICENSE("GPL");
@@ -894,11 +896,10 @@ static int refresh_signalling_expectation(struct nf_conn *ct,
 		    exp->tuple.dst.protonum != proto ||
 		    exp->tuple.dst.u.udp.port != port)
 			continue;
-		if (mod_timer_pending(&exp->timeout, jiffies + expires * HZ)) {
-			exp->flags &= ~NF_CT_EXPECT_INACTIVE;
-			found = 1;
-			break;
-		}
+		WRITE_ONCE(nf_ct_expect_priv(exp)->expires, nfct_time_stamp + (expires * HZ));
+		WRITE_ONCE(exp->flags, exp->flags & ~NF_CT_EXPECT_INACTIVE);
+		found = 1;
+		break;
 	}
 	spin_unlock_bh(&nf_conntrack_expect_lock);
 	return found;
@@ -914,8 +915,7 @@ static void flush_expectations(struct nf_conn *ct, bool media)
 	hlist_for_each_entry_safe(exp, next, &help->expectations, lnode) {
 		if ((exp->class != SIP_EXPECT_SIGNALLING) ^ media)
 			continue;
-		if (!nf_ct_remove_expect(exp))
-			continue;
+		nf_ct_unlink_expect(exp);
 		if (!media)
 			break;
 	}
@@ -1005,7 +1005,8 @@ static int set_expected_rtp_rtcp(struct sk_buff *skb, unsigned int protoff,
 		exp = __nf_ct_expect_find(net, nf_ct_zone(ct), &tuple);
 
 		if (!exp || exp->master == ct ||
-		    nfct_help(exp->master)->helper != nfct_help(ct)->helper ||
+		    rcu_access_pointer(nf_ct_expect_priv(exp)->creator) !=
+		    rcu_access_pointer(nfct_help(ct)->helper) ||
 		    exp->class != class)
 			break;
 #if IS_ENABLED(CONFIG_NF_NAT)
@@ -1385,7 +1386,6 @@ static int process_register_request(struct sk_buff *skb, unsigned int protoff,
 
 	nf_ct_expect_init(exp, SIP_EXPECT_SIGNALLING, nf_ct_l3num(ct),
 			  saddr, &daddr, proto, NULL, &port);
-	exp->timeout.expires = sip_timeout * HZ;
 	exp->helper = helper;
 	exp->flags = NF_CT_EXPECT_PERMANENT | NF_CT_EXPECT_INACTIVE;
 

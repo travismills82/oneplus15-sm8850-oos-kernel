@@ -30,6 +30,8 @@
 #include <net/netfilter/nf_log.h>
 #include <net/ip.h>
 
+#include "nf_conntrack_expect_priv.h"
+
 static DEFINE_MUTEX(nf_ct_helper_mutex);
 struct hlist_head *nf_ct_helper_hash __read_mostly;
 EXPORT_SYMBOL_GPL(nf_ct_helper_hash);
@@ -105,8 +107,10 @@ EXPORT_SYMBOL_GPL(nf_conntrack_helper_try_module_get);
 
 void nf_conntrack_helper_put(struct nf_conntrack_helper *helper)
 {
+	struct module *owner = helper->me;
+
 	refcount_dec(&helper->refcnt);
-	module_put(helper->me);
+	module_put(owner);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_helper_put);
 
@@ -180,10 +184,10 @@ nf_ct_helper_ext_add(struct nf_conn *ct, gfp_t gfp)
 	struct nf_conn_help *help;
 
 	help = nf_ct_ext_add(ct, NF_CT_EXT_HELPER, gfp);
-	if (help)
+	if (help) {
+		__set_bit(IPS_HELPER_BIT, &ct->status);
 		INIT_HLIST_HEAD(&help->expectations);
-	else
-		pr_debug("failed to add helper extension area");
+	}
 	return help;
 }
 EXPORT_SYMBOL_GPL(nf_ct_helper_ext_add);
@@ -202,10 +206,8 @@ int __nf_ct_try_assign_helper(struct nf_conn *ct, struct nf_conn *tmpl,
 		return 0;
 
 	help = nfct_help(tmpl);
-	if (help != NULL) {
+	if (help)
 		helper = rcu_dereference(help->helper);
-		set_bit(IPS_HELPER_BIT, &ct->status);
-	}
 
 	help = nfct_help(ct);
 
@@ -414,14 +416,13 @@ EXPORT_SYMBOL_GPL(nf_conntrack_helper_register);
 
 static bool expect_iter_me(struct nf_conntrack_expect *exp, void *data)
 {
-	struct nf_conn_help *help = nfct_help(exp->master);
 	const struct nf_conntrack_helper *me = data;
 	const struct nf_conntrack_helper *this;
 
 	if (exp->helper == me)
 		return true;
 
-	this = rcu_dereference_protected(help->helper,
+	this = rcu_dereference_protected(nf_ct_expect_priv(exp)->creator,
 					 lockdep_is_held(&nf_conntrack_expect_lock));
 	return this == me;
 }

@@ -34,6 +34,8 @@
 #include <net/netfilter/nf_conntrack_zones.h>
 #include <linux/netfilter/nf_conntrack_h323.h>
 
+#include "nf_conntrack_expect_priv.h"
+
 #define H323_MAX_SIZE 65535
 
 /* Parameters */
@@ -1396,8 +1398,8 @@ static int process_rcf(struct sk_buff *skb, struct nf_conn *ct,
 				 "timeout to %u seconds for",
 				 info->timeout);
 			nf_ct_dump_tuple(&exp->tuple);
-			mod_timer_pending(&exp->timeout,
-					  jiffies + info->timeout * HZ);
+			WRITE_ONCE(nf_ct_expect_priv(exp)->expires,
+				   nfct_time_stamp + (info->timeout * HZ));
 		}
 		spin_unlock_bh(&nf_conntrack_expect_lock);
 	}

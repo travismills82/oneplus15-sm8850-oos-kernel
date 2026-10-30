@@ -45,7 +45,7 @@ struct nf_conntrack_expect {
 	/* The conntrack of the master connection */
 	struct nf_conn *master;
 
-	/* Timer function; deletes the expectation. */
+	/* Retired timer storage, retained for Android/OEM layout compatibility. */
 	struct timer_list timeout;
 
 #if IS_ENABLED(CONFIG_NF_NAT)
@@ -60,10 +60,7 @@ struct nf_conntrack_expect {
 	struct rcu_head rcu;
 };
 
-static inline struct net *nf_ct_exp_net(struct nf_conntrack_expect *exp)
-{
-	return nf_ct_net(exp->master);
-}
+struct net *nf_ct_exp_net(const struct nf_conntrack_expect *exp);
 
 #define NF_CT_EXP_POLICY_NAME_LEN	16
 
@@ -111,7 +108,6 @@ static inline void nf_ct_unlink_expect(struct nf_conntrack_expect *exp)
 
 void nf_ct_remove_expectations(struct nf_conn *ct);
 void nf_ct_unexpect_related(struct nf_conntrack_expect *exp);
-bool nf_ct_remove_expect(struct nf_conntrack_expect *exp);
 
 void nf_ct_expect_iterate_destroy(bool (*iter)(struct nf_conntrack_expect *e, void *data), void *data);
 void nf_ct_expect_iterate_net(struct net *net,
@@ -133,6 +129,12 @@ static inline int nf_ct_expect_related(struct nf_conntrack_expect *expect,
 {
 	return nf_ct_expect_related_report(expect, 0, 0, flags);
 }
+
+int nf_ct_expect_related_pair(struct nf_conntrack_expect *expect[],
+			      unsigned int flags);
+
+struct nf_conn_help;
+void nf_ct_expectation_gc(struct nf_conn_help *master_help);
 
 #endif /*_NF_CONNTRACK_EXPECT_H*/
 
