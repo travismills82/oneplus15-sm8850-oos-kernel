@@ -1251,7 +1251,7 @@ int nf_nat_register_fn(struct net *net, u8 pf, const struct nf_hook_ops *ops,
 				priv = nat_ops[i].priv;
 				kfree_rcu(priv, rcu_head);
 			}
-			kfree_rcu(nat_ops, rcu);
+			kfree_rcu_mightsleep(nat_ops);
 			return ret;
 		}
 
@@ -1315,7 +1315,7 @@ void nf_nat_unregister_fn(struct net *net, u8 pf, const struct nf_hook_ops *ops,
 		}
 
 		nat_proto_net->nat_hook_ops = NULL;
-		kfree_rcu(nat_ops, rcu);
+		kfree_rcu_mightsleep(nat_ops);
 	}
 unlock:
 	mutex_unlock(&nf_nat_proto_mutex);
