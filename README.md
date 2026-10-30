@@ -12,6 +12,7 @@ kernel, module, FBE/user0, and boot-container contract.
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.114-android16-6-o-gb6bd4a40410d-4k` | Stable boot-only security release; scoped qualification and known GKI differences disclosed | `coloros17.0.0.102-linux-6.12.114-kmi6-security` |
 | ColorOS/OxygenOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.112-android16-6-o-g3b4aea7fd691-4k` | Stable boot-only release | `coloros17.0.0.102-linux-6.12.112-kmi6` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.112-android16-6-o-g8dd9cb4790b7-4k` | Watchdog-corrected boot/stability release | `oos16.0.10.601-linux-6.12.112-kmi6-watchdog` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.95-android16-6-o-g02714090683b-4k` | Boot/stability release | `oos16.0.10.601-linux-6.12.95-kmi6-canary` |
@@ -20,6 +21,37 @@ kernel, module, FBE/user0, and boot-container contract.
 | OxygenOS 16.0.10.500(EX01) | CPH2747 | `6.12.37-android16-5-o-g57b52d3bb803-4k` | Fully qualified | `oos16.0.10.500-ack-6.12.37` |
 
 Use only the release matching the installed firmware.
+
+## Linux 6.12.114 security release for ColorOS 17.0.0.102
+
+This firmware-bound **boot.img-only** release preserves stock `system_dlkm`,
+`vendor_dlkm`, `vendor_boot`, `init_boot`, DTBO, VBMeta and encryption policy.
+Do not install it on another firmware or flash generic rebuilt DLKM images.
+
+- Kernel: `6.12.114-android16-6-o-gb6bd4a40410d-4k`, Android 16 KMI6.
+- Content-equivalent committed kernel source: `10b349653c7b3a3a1e55d2fd357ed7220190c1b9`.
+- Boot SHA256: `1affe0774f9a483606d3ff44ac7e65214171f29ef439cae74ff49c6742a2fbb3`.
+- The original tested bytes are published unchanged; the build-parent suffix
+  predates the separate source/validation commits. No release rebuild occurred.
+- Adds the reviewed CVE-2026-80668 conntrack repair and CVE-2026-99103,
+  CVE-2026-99136, CVE-2026-99138, CVE-2026-99139 and CVE-2026-99167 fixes.
+- All 841 individual upstream interval commits and separate downstream
+  compatibility/security commits remain visible; no history was squashed.
+
+Production build, strict KMI, common/Canoe ABI generation, unchanged ABI delta,
+the exact 1,070-module stock oracle and isolated KASAN regression runs passed.
+The enforced GKI reference comparison is **FAIL/exit4 with the same 38 reviewed
+downstream differences**, not overall GKI PASS. No ABI reference was updated.
+
+The exact payload passed full active-boot read-back, a ten-minute Android/FBE/
+module canary and Wi-Fi traffic. Stock warnings remain disclosed. Earlier
+hardware results are not transferred to these new bytes: VPN/tethering,
+hands-on peripherals, recovery decryption, repeated boots and USB-disconnected
+deep suspend were not repeated in this canary.
+
+See [release notes and installation](docs/releases/coloros17.0.0.102-linux-6.12.114-kmi6-security/release-notes.md),
+[physical results](docs/validation/firmware-17.0.0.102/coloros1700102-6.12.114-five-cves-physical-20261030.md)
+and [security provenance](docs/security/coloros1700102-five-cve-backports-20261029.md).
 
 ## Linux 6.12.112 stable for ColorOS/OxygenOS 17.0.0.102
 

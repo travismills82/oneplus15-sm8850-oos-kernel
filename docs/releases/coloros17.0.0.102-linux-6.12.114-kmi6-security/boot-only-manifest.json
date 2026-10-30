@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "profile": "oneplus15-coloros17-boot-only-v1",
+  "repository": "travismills82/oneplus15-sm8850-oos-kernel",
+  "release_tag": "coloros17.0.0.102-linux-6.12.114-kmi6-security",
+  "release_commit": "TAG_TARGET",
+  "channel": "stable",
+  "approval": "Owner explicitly authorized main publication and a scoped stable release after the recorded physical canary.",
+  "device": {
+    "family": "OnePlus 15",
+    "soc": "SM8850",
+    "platform": "canoe",
+    "codename": "infiniti",
+    "physically_tested_model": "CPH2745IN / OP611FL1",
+    "firmware_display_id": "CPH2745_17.0.0.102(EX01)",
+    "cross_firmware_compatibility": "NOT QUALIFIED"
+  },
+  "payload": {
+    "file": "boot.img",
+    "size_bytes": 100663296,
+    "sha256": "1affe0774f9a483606d3ff44ac7e65214171f29ef439cae74ff49c6742a2fbb3",
+    "embedded_image_size_bytes": 42646016,
+    "embedded_image_sha256": "8ebe51e2a565a55886245793f572661e87c1a40bf5016bb79b84855370242456",
+    "kernel_release": "6.12.114-android16-6-o-gb6bd4a40410d-4k",
+    "runtime_gnu_build_id": "631855c02d3a5c50f57eedc2d640554570f807ee",
+    "rebuilt_or_repackaged_for_release": false
+  },
+  "source": {
+    "content_equivalent_commit": "10b349653c7b3a3a1e55d2fd357ed7220190c1b9",
+    "common_tree": "818ee1b0ff65d6d475afeeba55bf4099cfcbfc22",
+    "build_parent": "b6bd4a40410d1f1eee1628a8b78e312690b9c685",
+    "tracked_build_patch_sha256": "dd056ba8cd141422663c543c03b5f00505682ccf6eda22abe0c824a334646244",
+    "additional_private_header_sha256": "f9ce8852f39b7c4a2933c92e63b13468b0753228ff577f578634469dd0898b4b",
+    "preserved_individual_interval_commits": 841,
+    "compatibility_commits": 14,
+    "conntrack_local_port_commits": 1,
+    "individual_five_cve_and_dependency_commits": 6,
+    "history_rewritten": false,
+    "authorship": "Original upstream authors retained; downstream source/validation/release commits by Travis Mills."
+  },
+  "build": {
+    "target": "//soc-repo:canoe_perf_dist",
+    "status": "PASS",
+    "module_symvers_sha256": "6a6413d41ce692c0476a0ccd81e38a446fe1490400f3924c79424c597a390da1",
+    "config_sha256": "e5495ab30241f869f12b3fc2ff3590886150fb464c736975c8054303a9e9981a",
+    "toolchain_inputs_manifest_sha256": "a8bd68b381f621085b7d7431a090dbb5410831b7fcba85c3d541f680d986257b",
+    "production_config_changed": false,
+    "strict_kmi": "PASS",
+    "common_abi_generation": "PASS",
+    "canoe_abi_generation": "PASS"
+  },
+  "abi": {
+    "enforced_common_comparison": "FAIL",
+    "exit_code": 4,
+    "reviewed_preexisting_difference_owners": 38,
+    "new_difference_owners": 0,
+    "abi_reference_modified": false,
+    "abi_reference_sha256": "99ae68d5f6f6fa387c4dc8eb2809de8ea4634de517aec269858be1258223bb9e",
+    "classification": "Firmware-specific downstream compatibility only; not official GKI certification."
+  },
+  "stock_module_oracle": {
+    "status": "PASS",
+    "modules": 1070,
+    "active_compatible": 1032,
+    "dormant": 38,
+    "hard_imports_resolved": 60701,
+    "hard_imports_total": 60701,
+    "crc_records_matched": 61777,
+    "crc_records_total": 61777,
+    "missing_providers": 0,
+    "crc_mismatches": 0,
+    "namespace_failures": 0,
+    "protected_failures": 0,
+    "active_blockers": 0,
+    "production_provider_mismatches": 0,
+    "vmlinux_first_edges": 54785,
+    "unchanged_provider_ambiguities": 3220,
+    "trusted_signed_modules": 103,
+    "retained_unsigned_modules": 967,
+    "stock_modules_replaced": []
+  },
+  "avb": {
+    "status": "PASS",
+    "boot_header_version": 4,
+    "ramdisk_size_bytes": 0,
+    "algorithm": "SHA256_RSA4096",
+    "public_key_sha1": "2597c218aae470a130f61162feaae70afd97f011",
+    "flags": 0,
+    "rollback_index": 0,
+    "rollback_index_location": 0,
+    "outer_os_version": "16",
+    "outer_security_patch": "2026-10-01",
+    "outer_fingerprint": "qti/canoe/canoe:16/BP2A.250605.015/1792254911768:user/release-keys",
+    "contract_changed": false
+  },
+  "write_contract": {
+    "payloads": [
+      "boot.img"
+    ],
+    "partition": "Confirmed active boot only; boot_b was tested",
+    "slot_switch": false,
+    "supporting_partitions_modified": [],
+    "forbidden_writes": [
+      "system_dlkm",
+      "vendor_dlkm",
+      "vendor_boot",
+      "init_boot",
+      "dtbo",
+      "vbmeta",
+      "recovery",
+      "metadata",
+      "userdata"
+    ],
+    "recovery_zip_included": false
+  },
+  "physical": {
+    "date": "2026-10-30",
+    "status": "PASS — bounded boot/FBE/module canary only",
+    "observed_snapshot_seconds": 610.03,
+    "full_boot_readback": "PASS",
+    "android": "PASS",
+    "user0": "RUNNING_UNLOCKED",
+    "ce_de_access": "PASS",
+    "data_fs": "F2FS rw + inlinecrypt",
+    "rust_binder": "Live",
+    "loaded_module_names_unchanged": 691,
+    "wifi_payload": "PASS",
+    "bluetooth": "Enabled; pairing not repeated",
+    "nfc": "Enabled; transaction not tested",
+    "hung_task_timeout_seconds": 60,
+    "new_crash_or_hung_task_root_observed": false,
+    "not_retested": [
+      "VPN/tethering traffic",
+      "LTE Internet payload",
+      "hands-on camera/audio/fingerprint/OTG",
+      "Bluetooth peripheral session",
+      "NFC tag/payment",
+      "TWRP decryption",
+      "repeated cold/warm boots",
+      "USB-disconnected deep suspend"
+    ]
+  },
+  "regression_tests": {
+    "isolated_x86_64_kasan_runs": 2,
+    "status": "PASS",
+    "scope": [
+      "workqueue lifetime",
+      "TCP option concurrency and payload",
+      "dm-crypt I/O and injected errors",
+      "TC action lifetime",
+      "conntrack helper/NAT/expectation lifetime"
+    ],
+    "limitations": [
+      "Finite stress does not prove absence of all races.",
+      "Dynamic BPF struct_ops retirement was not exercised.",
+      "VM results do not substitute for ARM64/firmware/Android qualification."
+    ]
+  },
+  "cves": [
+    {
+      "id": "CVE-2026-80668",
+      "local_commit": "633ac4e5f56b64aa9cf80d5813c6fac82cf43d82",
+      "upstream": "b8b09dc2bf35a00d4e0556b5d6308c7b917ebda2",
+      "linux_6_12_reference": "02f7809a19fc88cfd9bc113a4bfe7add6305db39",
+      "treatment": "Reviewed local KABI-compatible lifetime port; not an unchanged cherry-pick."
+    },
+    {
+      "id": "CVE-2026-99103",
+      "local_commit": "708bbd8e4dccb4043bf91ff79b55e97f4589ce26",
+      "upstream": "cf9c8aaea0d47410df8708bec195889f3a85cd3c"
+    },
+    {
+      "id": "CVE-2026-99136",
+      "local_commit": "2a993e8f8f924cb87f29279b3c1004c1d74a9403",
+      "upstream": "148845aa1921d95ef5dc851c76e6a284f6657df6"
+    },
+    {
+      "id": "CVE-2026-99139",
+      "local_commit": "1fe72679857b853e845bc03ca58cbe9fc3cce425",
+      "upstream": "5271b79b7ad68dcb222e893773f92bdabf7750f3"
+    },
+    {
+      "id": "CVE-2026-99138",
+      "local_commit": "569c1e097a63baaee81ee999c3dcf6fd51a38337",
+      "upstream": "385e474086c2e7e29e2dded690be40dc273e20ee"
+    },
+    {
+      "id": "CVE-2026-99167",
+      "local_commit": "10b349653c7b3a3a1e55d2fd357ed7220190c1b9",
+      "upstream": "7b16eb911091aae237a8673da94e4dfb9cd21d54"
+    }
+  ],
+  "disclosures": [
+    "38 existing enforced GKI comparison differences remain; comparison is not PASS.",
+    "Stock HBP and schedinfo WARNs remain.",
+    "Unchanged unprivileged-eBPF/Spectre BHB configuration advisory remains.",
+    "Two pre-existing firmware debug-script child SIGABRTs remain.",
+    "Two earliest SPMI warnings from the preceding canary remain unclassified; current saved logs start at1.79s.",
+    "No exhaustive kernel/vendor-module/firmware CVE clearance is claimed."
+  ],
+  "evidence": {
+    "offline_139_entry_manifest_sha256": "a96be4e19e344c286c3f2d8828a94c1cfe8b4505d67962117435e5ece562c8fb",
+    "physical_48_entry_manifest_sha256": "fc612a432526b3d482c6a38581c6bae488d506e017fd1697f05aa46509fab73a",
+    "raw_device_logs_published": false
+  }
+}

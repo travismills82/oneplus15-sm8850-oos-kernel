@@ -1,0 +1,22 @@
+commit	author	subject
+9fa89cff8a7ae2bc6d5aa2f2c52c1007a9821d77	Travis Mills <travismills82@gmail.com>	net: preserve ColorOS .102 network-device KABI
+64f285f01954623dbc614d2a0192d7955609ba96	Travis Mills <travismills82@gmail.com>	gpio: preserve ColorOS setter callback and call ABI
+fb9182bf4b2e30796fa1c54cd75ea517cbc8e3fe	Travis Mills <travismills82@gmail.com>	PM: preserve ColorOS power-management member offsets
+d3228d10fb3b3a8fb07c085b77103a1066a44d0e	Travis Mills <travismills82@gmail.com>	wifi: cfg80211: retain the shipping disconnect-work ABI
+bda262322bbdc228432c63c293be1dd60f86ae11	Travis Mills <travismills82@gmail.com>	net: adapt namespace teardown through the existing batch callback
+992e120a5d2fc4091f2de8e20fdbf43f958a3d45	Travis Mills <travismills82@gmail.com>	i3c: keep pending registration state out of the public device
+dbe977e90a7d7f29396ffa68ae49b08d447da269	Travis Mills <travismills82@gmail.com>	media: v4l2-mem2mem: retain KABI with a private reference wrapper
+c8027bef75d15eaf0049d8f9eb4abfb624c1e3a5	Travis Mills <travismills82@gmail.com>	blkcg: preserve the external policy-data type view
+fda3bdb5a8a9fb11b6a93c8058c97e3dcdbe9b25	Travis Mills <travismills82@gmail.com>	mm: preserve the external folio-queue tracing type view
+a29c4705c227ed72ae08de5fbd3383119065aaba	Travis Mills <travismills82@gmail.com>	bpf: retain KABI for private verifier jump metadata
+49edb121f2982d413eb33008524578caab585c90	Travis Mills <travismills82@gmail.com>	Bluetooth: place the protocol lock in existing KABI storage
+c1078d864efffbff5c753bfbcaf4e618733bc142	Travis Mills <travismills82@gmail.com>	xsk: retain the qualified external buffer-pool type view
+547cd39bfbe931731631eb32904fe0a8feeb9bc6	Travis Mills <travismills82@gmail.com>	net: append new drop reasons without renumbering shipping values
+28503cfd7a0dc72d7811a8bc39faadcda987b825	Travis Mills <travismills82@gmail.com>	netfilter: preserve hook layout with headless deferred frees
+633ac4e5f56b64aa9cf80d5813c6fac82cf43d82	Travis Mills <travismills82@gmail.com>	netfilter: backport expectation lifetime safety with ColorOS KABI
+2afd847ab8a5b2ea961719bef4cc428095b0504f	Breno Leitao <leitao@debian.org>	workqueue: release pwq pools by pool type
+708bbd8e4dccb4043bf91ff79b55e97f4589ce26	Yao Kai <yaokai34@huawei.com>	workqueue: Fix unbound pool lifetime for pending pwqs
+2a993e8f8f924cb87f29279b3c1004c1d74a9403	Ben Cressey <ben@cressey.dev>	dm-crypt: fix a tiny race condition in crypt_dec_pending
+1fe72679857b853e845bc03ca58cbe9fc3cce425	Cen Zhang (Microsoft Security FORGE Labs) <blbllhy@gmail.com>	tcp: fix use-after-free in do_tcp_getsockopt(TCP_CONGESTION)
+569c1e097a63baaee81ee999c3dcf6fd51a38337	Cen Zhang (Microsoft Security FORGE Labs) <blbllhy@gmail.com>	tcp: fix use-after-free in do_tcp_getsockopt(TCP_CC_INFO)
+10b349653c7b3a3a1e55d2fd357ed7220190c1b9	Jérémy Jean <Jeremy.Jean@oss.cyber.gouv.fr>	net/sched: fix use-after-free in __tcf_action_put()
