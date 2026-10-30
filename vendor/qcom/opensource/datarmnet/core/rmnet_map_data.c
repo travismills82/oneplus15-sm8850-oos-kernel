@@ -1328,7 +1328,8 @@ enum hrtimer_restart rmnet_map_flush_tx_packet_queue(struct hrtimer *t)
 
 	state = container_of(t, struct rmnet_aggregation_state, hrtimer);
 
-	schedule_work(&state->agg_wq);
+	/* Preserve the stock ColorOS KMI workqueue provider. */
+	queue_work(system_wq, &state->agg_wq);
 	return HRTIMER_NORESTART;
 }
 
