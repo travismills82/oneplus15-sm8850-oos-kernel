@@ -14,6 +14,7 @@
 #ifndef _LINUX_FOLIO_QUEUE_H
 #define _LINUX_FOLIO_QUEUE_H
 
+#include <linux/android_kabi.h>
 #include <linux/pagevec.h>
 
 /*
@@ -37,9 +38,11 @@ struct folio_queue {
 #if PAGEVEC_SIZE > BITS_PER_LONG
 #error marks is not big enough
 #endif
-	unsigned int		rreq_id;
-	unsigned int		debug_id;
+	ANDROID_KABI_IGNORE(1, unsigned int rreq_id);
+	ANDROID_KABI_IGNORE(2, unsigned int debug_id);
 };
+
+ANDROID_KABI_BYTE_SIZE(folio_queue, 328);
 
 /**
  * folioq_init - Initialise a folio queue segment
