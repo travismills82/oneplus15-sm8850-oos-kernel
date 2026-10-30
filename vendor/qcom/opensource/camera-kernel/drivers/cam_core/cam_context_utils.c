@@ -577,7 +577,7 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	atomic_set(&req->num_in_acked, 0);
 
 	if (!req->hw_update_entries || !req->in_map_entries || !req->out_map_entries) {
-		CAM_ERR(CAM_CTXT,"[%s][%d] Request entries freed, ctx may have been released",
+		CAM_ERR(CAM_CTXT, "[%s][%d] Request entries freed, ctx may have been released",
 			ctx->dev_name, ctx->ctx_id);
 		rc = -EINVAL;
 		goto free_req;
