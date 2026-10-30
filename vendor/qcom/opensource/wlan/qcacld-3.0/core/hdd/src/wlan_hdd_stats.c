@@ -6246,8 +6246,15 @@ static void hdd_get_max_rate_he(struct hdd_station_info *stainfo,
 			mcsidx = stats->tx_rate.mcs;
 		}
 
+		BUILD_BUG_ON(ARRAY_SIZE(supported_he_mcs_rate_nss1) !=
+			     ARRAY_SIZE(supported_he_mcs_rate_nss2));
+		BUILD_BUG_ON(ARRAY_SIZE(supported_he_mcs_rate_nss1) >
+			     MAX_RSSI_MCS_INDEX);
+		if (mcsidx >= ARRAY_SIZE(supported_he_mcs_rate_nss1))
+			mcsidx = ARRAY_SIZE(supported_he_mcs_rate_nss1) - 1;
+
 		if (!report_max) {
-			for (i = 0; i <= mcsidx; i++) {
+			for (i = 0; i <= mcsidx && i < MAX_RSSI_MCS_INDEX; i++) {
 				if (rssi <= rssi_mcs_tbl[mode][i]) {
 					mcsidx = i;
 					break;
@@ -6257,8 +6264,8 @@ static void hdd_get_max_rate_he(struct hdd_station_info *stainfo,
 				mcsidx = stats->tx_rate.mcs;
 		}
 
-		if (mcsidx > MAX_HT_MCS_INDEX)
-			mcsidx = MAX_HT_MCS_INDEX;
+		if (mcsidx >= ARRAY_SIZE(supported_he_mcs_rate_nss1))
+			mcsidx = ARRAY_SIZE(supported_he_mcs_rate_nss1) - 1;
 
 		if (rate_flags & TX_RATE_HE160)
 			tmprate =
@@ -6353,6 +6360,11 @@ static void hdd_get_max_rate_vht(struct hdd_station_info *stainfo,
 			mcsidx = stats->tx_rate.mcs;
 		}
 
+		BUILD_BUG_ON(ARRAY_SIZE(supported_vht_mcs_rate_nss1) !=
+			     ARRAY_SIZE(supported_vht_mcs_rate_nss2));
+		if (mcsidx >= ARRAY_SIZE(supported_vht_mcs_rate_nss1))
+			mcsidx = ARRAY_SIZE(supported_vht_mcs_rate_nss1) - 1;
+
 		if (!report_max) {
 			for (i = 0; i <= mcsidx && i < MAX_RSSI_MCS_INDEX; i++) {
 				if (rssi <= rssi_mcs_tbl[mode][i]) {
@@ -6363,6 +6375,9 @@ static void hdd_get_max_rate_vht(struct hdd_station_info *stainfo,
 			if (mcsidx < stats->tx_rate.mcs)
 				mcsidx = stats->tx_rate.mcs;
 		}
+
+		if (mcsidx >= ARRAY_SIZE(supported_vht_mcs_rate_nss1))
+			mcsidx = ARRAY_SIZE(supported_vht_mcs_rate_nss1) - 1;
 
 		if (rate_flags & TX_RATE_VHT80)
 			tmprate =

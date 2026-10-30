@@ -4954,6 +4954,9 @@ sir_convert_reassoc_req_frame2_mlo_struct(uint8_t *pframe, uint32_t nframe,
 		goto end;
 	}
 
+	if (nframe < WLAN_REASSOC_REQ_IES_OFFSET)
+		return QDF_STATUS_E_INVAL;
+
 	status = util_find_mlie(pframe + WLAN_REASSOC_REQ_IES_OFFSET,
 				nframe - WLAN_REASSOC_REQ_IES_OFFSET,
 				&ml_ie, &ml_ie_total_len);
