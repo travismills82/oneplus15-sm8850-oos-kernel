@@ -15,10 +15,20 @@
 #include "trace.h"
 #include "internal.h"
 
-static const struct regcache_ops *cache_types[] = {
-	&regcache_rbtree_ops,
-	&regcache_maple_ops,
-	&regcache_flat_ops,
+/*
+ * Keep optional population state in the core-owned backend registry. The
+ * operations table is reachable through struct regmap in the vendor KMI;
+ * inserting a callback there would move all of its existing callbacks.
+ */
+struct regcache_backend {
+	const struct regcache_ops *ops;
+	int (*populate)(struct regmap *map);
+};
+
+static const struct regcache_backend cache_types[] = {
+	{ .ops = &regcache_rbtree_ops },
+	{ .ops = &regcache_maple_ops },
+	{ .ops = &regcache_flat_ops },
 };
 
 static int regcache_hw_init(struct regmap *map)
@@ -142,7 +152,7 @@ int regcache_init(struct regmap *map, const struct regmap_config *config)
 			return -EINVAL;
 
 	for (i = 0; i < ARRAY_SIZE(cache_types); i++)
-		if (cache_types[i]->type == map->cache_type)
+		if (cache_types[i].ops->type == map->cache_type)
 			break;
 
 	if (i == ARRAY_SIZE(cache_types)) {
@@ -158,7 +168,7 @@ int regcache_init(struct regmap *map, const struct regmap_config *config)
 	map->cache_size_raw = map->cache_word_size * config->num_reg_defaults_raw;
 
 	map->cache = NULL;
-	map->cache_ops = cache_types[i];
+	map->cache_ops = cache_types[i].ops;
 
 	if (!map->cache_ops->read ||
 	    !map->cache_ops->write ||
@@ -200,10 +210,10 @@ int regcache_init(struct regmap *map, const struct regmap_config *config)
 			goto err_free;
 	}
 
-	if (map->num_reg_defaults && map->cache_ops->populate) {
+	if (map->num_reg_defaults && cache_types[i].populate) {
 		dev_dbg(map->dev, "Populating %s cache\n", map->cache_ops->name);
 		map->lock(map->lock_arg);
-		ret = map->cache_ops->populate(map);
+		ret = cache_types[i].populate(map);
 		map->unlock(map->lock_arg);
 		if (ret)
 			goto err_exit;
