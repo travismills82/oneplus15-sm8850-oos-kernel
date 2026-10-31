@@ -366,7 +366,7 @@ installed partition or qualified artifact is modified by this repair phase.
 |---|---|---|
 | Futex MM identity | Place the atomic identity in proven existing tail padding; retain unique-ID initialization/publication and same-width futex identity semantics. | Compiled layout/stock-callback proof PASS; root1-futex-mm-final evidence. |
 | Perf accounting | Consume a compatible existing user_struct reserve for the independent perf counter. | Compiled root proof PASS; commit `c3158f6c34c9f665d49eb0a0d8d4772b65e69782`. |
-| Keyring identities | Preserve public prefixes with core-owned private identity state and cached IDs; retain SipHash/address-independent ordering and unregister-safe lifetime. | Ownership/consumer audit in progress; no source change. |
+| Keyring identities | Preserve public prefixes with core-owned private identity state and cached IDs; retain SipHash/address-independent ordering and unregister-safe lifetime. | Compiled C layout/API proof PASS; only the separate perf Rust-binding representation remains. |
 | Regcache population | Keep the existing operations table intact; hold the optional populate callback in a core-private backend registry. | Compiled root proof PASS; commit `410359e2ca1107485c017f09f23d98c932615e2b`. |
 | Unicode RCU | Keep the public map unchanged inside an allocation-owned private RCU wrapper. | Compiled root proof PASS; commit `173b52b15d776`; full module gate remains failed through other roots. |
 | io_uring polling RCU | Use proven tail padding without moving existing fields; retain reference-held deferred wakeup and pending-state synchronization. | Compiled root proof PASS; commit `238ad2a9f8cbf`; overall module gate still FAIL. |
@@ -487,7 +487,80 @@ symbols / 26,014 CRC mismatch records** (157 fewer records), with zero
 missing providers and namespace failures. All 1,032 active locations are
 still blocked through remaining shared keyring types; no overall PASS is
 claimed. Normal vmlinux-first provider validation reports the same remaining
-26,014 incompatibilities. Keyring is the final unadapted root group.
+26,014 incompatibilities. Keyring is the final unadapted root at this stage.
+
+### Keyring private-state preservation: source review
+
+The adaptation preserves upstream
+`de891c73c1cf41ac8de12c07fa2c84d6a912ad0c` / stable
+`13fc051269d670810d9e314061b61c6dd06116a0`. It does not restore pointer-based
+hashing or ordering. The actual ID allocator, SipHash inputs, chunk ordering
+and key comparison remain the stable implementation, with only member access
+paths changed. Existing type/domain IDs remain cached after unregister.
+
+- `key_type.index_id` consumes reserve 1; reserve 2 remains intact.
+- Public `key_tag`, `keyring_index_key` and `key` declarations are restored
+  verbatim to .114. Allocation-owned private state is not an exported-type
+  override or a manually forced CRC.
+- `key_tag_alloc` contains the public tag first, followed by its atomic ID.
+  All three ownership paths are converted: initial network tag, dynamic
+  namespace tag, and default non-network tag. The RCU free pointer remains
+  the true allocation base.
+- `key_alloc_state` contains the public key first and both cached IDs after
+  it. The sole slab allocation site, slab object size and GC wipe coverage
+  use the private allocation. Release order is unchanged.
+- Private search contexts and stack indexes keep both IDs. Every associative
+  array find/insert/delete path passes a private index, never a cast from the
+  smaller public prefix. Object-to-index conversions copy the stored IDs.
+- Link preparation derives the index from the actual current owned key;
+  request-key's existing-key replacement cannot leave stale candidate IDs.
+  Inspection of `assoc_array_insert` and its edit helpers confirms it consumes
+  the index synchronously and retains copied chunks, not the temporary input
+  pointer. Locking, reference counts, quota behavior and edit application are
+  not changed.
+
+The exact installed population imports `key_put` and `keyring_alloc` from
+normal/recovery cfg80211 (four relevant edges); no module imports key-tag
+creation/removal or key-type registration. The source allocation audit also
+finds no caller-owned embedded key. This does not imply public key fields have
+no transitive consumers: their original layout still must be preserved.
+
+Nine focused extracted-C/source tests pass, including concurrent ID
+publication, address-reuse uniqueness, copied IDs with retired descriptor
+pointers, both automatic domain choices, all index chunks/diff offsets,
+allocation-base/RCU reference handling and complete GC wiping. Negative controls detect
+address hashing, dropped cached IDs and an undersized wipe. The complete host
+suite passes **170 tests**. Host core dumps are disabled for crashing negative
+fixtures only; no kernel diagnostic is disabled. Host-only crypto/RCU infrastructure is stubbed;
+these results do not claim SipHash strength, weak-memory or FBE runtime proof.
+The normal common build, strict symbol-list check and ABI dump pass in
+1,297.392 seconds. Actual ARM64 BTF/DWARF restore key 240, key_tag 24,
+keyring_index_key 40 and key_type 184 bytes, with zero existing member
+offset/size changes. The first three declarations/layouts match verbatim.
+The type ID occupies reserve 1 at byte 152. Private allocations remain the
+unadapted .115 sizes: key_alloc_state 256 (key at 0, IDs at 240/248),
+key_tag_alloc 32 (tag at 0, ID at 24), private index 56 (prefix at 0,
+IDs at 40/48). Existing 8-byte alignment is retained.
+
+`key_put` and `keyring_alloc` naturally reproduce shipping CRCs `0x410161a3`
+and `0x85cb55f1`; both emitted KCFI words match the qualified binary. Every
+non-Rust vmlinux export CRC, including `module_layout = 0x797f2b3e` and
+`bsg_setup_queue = 0xf6c636b8`, now matches the qualified .114 provider.
+There are still **25 Rust export CRC differences**, 23 of which are imported
+by the single active stock Rust Binder location. The unchanged oracle is
+**FAIL: 1,031 active compatible / 1 blocker / 38 dormant, 23 CRC mismatches**,
+zero missing providers/namespaces and 23 production-provider mismatches.
+This is a real retained-module blocker, not a waived representation report.
+
+Normal Rust symtypes isolate its remaining root: `user_struct`'s consumed
+perf reserve becomes member `__bindgen_anon_1` at byte 128, while the actual
+qualified generated Rust source has `__kabi_reserved1`. Size 144, alignment 8
+and field storage are unchanged. GENDWARFKSYMS already converts the union to
+the original u64 type but retains this new parent-member name. The next
+focused correction is to give the real reserve union its original reserved
+name and access the real atomic through it. No whole-type string replacement
+or manual CRC output is required. `perf-rust-binding-root.json` preserves the
+exact qualified generated declaration and candidate type-expansion line.
 
 **io_uring provenance correction:** the description of the newly created
 `238ad2a9f8cbf` source commit mistakenly gives
@@ -514,12 +587,13 @@ the actual generated CRC records, not merely textual type reachability:
 | io polling | 46 | 6,598 | 2,817 | 26,171 |
 | Perf accounting | 6,572 | 6,594 | 2,817 | 26,171 |
 | MM/futex identity | 6,592 | 6,570 | 2,804 | 26,014 |
+| Keyring private identities | 6,570 | 25 (Rust only) | 23 | 23 |
 
 `stage-summary.json/.tsv` and each `*-all-export-deltas.tsv` retain every
 qualified, preceding-stage and candidate CRC plus module-import edge count.
 The changed CRC values are genuine normal build results; the unchanged fail
-count is not represented as a pass. Keyring work remains before
-the final shared type graph can be evaluated.
+count is not represented as a pass. The remaining perf Rust reserve-name
+representation must be repaired and rebuilt before full compatibility passes.
 
 **Overall KABI/module compatibility remains FAIL pending the incremental
 compiled/oracle results. GPU modernization remains mandatory and quarantined

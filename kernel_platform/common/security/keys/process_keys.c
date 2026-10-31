@@ -189,8 +189,8 @@ struct key *get_user_session_keyring_rcu(const struct cred *cred)
 	char buf[20];
 
 	struct keyring_search_context ctx = {
-		.index_key.type		= &key_type_keyring,
-		.index_key.description	= buf,
+		.index_key.key.type		= &key_type_keyring,
+		.index_key.key.description	= buf,
 		.cred			= cred,
 		.match_data.cmp		= key_default_cmp,
 		.match_data.raw_data	= buf,
@@ -201,7 +201,7 @@ struct key *get_user_session_keyring_rcu(const struct cred *cred)
 	if (!reg_keyring)
 		return NULL;
 
-	ctx.index_key.desc_len = snprintf(buf, sizeof(buf), "_uid_ses.%u",
+	ctx.index_key.key.desc_len = snprintf(buf, sizeof(buf), "_uid_ses.%u",
 					  from_kuid(cred->user_ns,
 						    cred->user->uid));
 
@@ -552,7 +552,7 @@ key_ref_t search_process_keyrings_rcu(struct keyring_search_context *ctx)
 	 */
 	if (ctx->cred->request_key_auth &&
 	    ctx->cred == current_cred() &&
-	    ctx->index_key.type != &key_type_request_key_auth
+	    ctx->index_key.key.type != &key_type_request_key_auth
 	    ) {
 		const struct cred *cred = ctx->cred;
 
@@ -754,7 +754,7 @@ try_again:
 		key_ref = make_key_ref(key, 0);
 
 		/* check to see if we possess the key */
-		ctx.index_key			= key->index_key;
+		ctx.index_key			= key_get_index_key(key);
 		ctx.match_data.raw_data		= key;
 		kdebug("check possessed");
 		rcu_read_lock();

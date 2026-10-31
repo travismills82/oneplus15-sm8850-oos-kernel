@@ -178,7 +178,7 @@ static u64 key_index_id(atomic64_t *id)
  * Hash a key type, domain and description.  KEYCTL_READ exposes the tree's
  * traversal order, so no part of the index may contain kernel addresses.
  */
-static void hash_key_type_and_desc(struct keyring_index_key *index_key)
+static void hash_key_type_and_desc(struct keyring_index_key_private *index_key)
 {
 	const unsigned level_shift = ASSOC_ARRAY_LEVEL_STEP;
 	const unsigned long fan_mask = ASSOC_ARRAY_FAN_MASK;
@@ -187,7 +187,7 @@ static void hash_key_type_and_desc(struct keyring_index_key *index_key)
 	u64 acc;
 
 	get_random_once(&hash_key, sizeof(hash_key));
-	acc = siphash(index_key->description, index_key->desc_len, &hash_key);
+	acc = siphash(index_key->key.description, index_key->key.desc_len, &hash_key);
 	acc = siphash_3u64(index_key->type_id, index_key->domain_id, acc,
 			   &hash_key);
 
@@ -200,38 +200,41 @@ static void hash_key_type_and_desc(struct keyring_index_key *index_key)
 	 * ordinary keys by making sure the lowest level segment in the hash is
 	 * zero for keyrings and non-zero otherwise.
 	 */
-	if (index_key->type != &key_type_keyring && (hash & fan_mask) == 0)
+	if (index_key->key.type != &key_type_keyring && (hash & fan_mask) == 0)
 		hash |= (hash >> (ASSOC_ARRAY_KEY_CHUNK_SIZE - level_shift)) | 1;
-	else if (index_key->type == &key_type_keyring && (hash & fan_mask) != 0)
+	else if (index_key->key.type == &key_type_keyring && (hash & fan_mask) != 0)
 		hash = (hash + (hash << level_shift)) & ~fan_mask;
-	index_key->hash = hash;
+	index_key->key.hash = hash;
 }
 
 /*
  * Finalise an index key to include a part of the description actually in the
  * index key, to set the domain tag and index IDs, and to calculate the hash.
  */
-void key_set_index_key(struct keyring_index_key *index_key)
+void key_set_index_key(struct keyring_index_key_private *index_key)
 {
-	static struct key_tag default_domain_tag = { .usage = REFCOUNT_INIT(1), };
-	size_t n = min_t(size_t, index_key->desc_len, sizeof(index_key->desc));
+	static struct key_tag_alloc default_domain_tag = {
+		.tag.usage = REFCOUNT_INIT(1),
+	};
+	size_t n = min_t(size_t, index_key->key.desc_len, sizeof(index_key->key.desc));
 
-	memcpy(index_key->desc, index_key->description, n);
+	memcpy(index_key->key.desc, index_key->key.description, n);
 
-	if (!index_key->domain_tag) {
-		if (index_key->type->flags & KEY_TYPE_NET_DOMAIN)
-			index_key->domain_tag = current->nsproxy->net_ns->key_domain;
+	if (!index_key->key.domain_tag) {
+		if (index_key->key.type->flags & KEY_TYPE_NET_DOMAIN)
+			index_key->key.domain_tag = current->nsproxy->net_ns->key_domain;
 		else
-			index_key->domain_tag = &default_domain_tag;
+			index_key->key.domain_tag = &default_domain_tag.tag;
 	}
 
 	/* Preserve the IDs when copying an existing key's index.  In
 	 * particular, its type may already have been unregistered.
 	 */
 	if (!index_key->type_id)
-		index_key->type_id = key_index_id(&index_key->type->index_id);
+		index_key->type_id = key_index_id(&index_key->key.type->index_id);
 	if (!index_key->domain_id)
-		index_key->domain_id = key_index_id(&index_key->domain_tag->index_id);
+		index_key->domain_id = key_index_id(&container_of(index_key->key.domain_tag,
+					      struct key_tag_alloc, tag)->index_id);
 
 	hash_key_type_and_desc(index_key);
 }
@@ -278,8 +281,8 @@ void key_remove_domain(struct key_tag *domain_tag)
 static unsigned long keyring_get_key_chunk(const void *data, int level)
 {
 	const unsigned int id_chunks = sizeof(u64) / sizeof(unsigned long);
-	const struct keyring_index_key *index_key = data;
-	int desc_len = index_key->desc_len;
+	const struct keyring_index_key_private *index_key = data;
+	int desc_len = index_key->key.desc_len;
 	unsigned long chunk = 0;
 	int n = sizeof(chunk);
 	unsigned int offset;
@@ -288,9 +291,9 @@ static unsigned long keyring_get_key_chunk(const void *data, int level)
 	level /= ASSOC_ARRAY_KEY_CHUNK_SIZE;
 	switch (level) {
 	case 0:
-		return index_key->hash;
+		return index_key->key.hash;
 	case 1:
-		return index_key->x;
+		return index_key->key.x;
 	}
 
 	level -= 2;
@@ -301,11 +304,11 @@ static unsigned long keyring_get_key_chunk(const void *data, int level)
 		return index_key->domain_id >> (level * ASSOC_ARRAY_KEY_CHUNK_SIZE);
 	level -= id_chunks;
 
-	offset = sizeof(index_key->desc) + level * sizeof(long);
+	offset = sizeof(index_key->key.desc) + level * sizeof(long);
 	if (desc_len <= offset)
 		return 0;
 
-	d = index_key->description + offset;
+	d = index_key->key.description + offset;
 	desc_len -= offset;
 	if (desc_len > n)
 		desc_len = n;
@@ -320,19 +323,21 @@ static unsigned long keyring_get_key_chunk(const void *data, int level)
 static unsigned long keyring_get_object_key_chunk(const void *object, int level)
 {
 	const struct key *key = keyring_ptr_to_key(object);
-	return keyring_get_key_chunk(&key->index_key, level);
+	struct keyring_index_key_private index_key = key_get_index_key(key);
+
+	return keyring_get_key_chunk(&index_key, level);
 }
 
 static bool keyring_compare_object(const void *object, const void *data)
 {
-	const struct keyring_index_key *index_key = data;
+	const struct keyring_index_key_private *index_key = data;
 	const struct key *key = keyring_ptr_to_key(object);
 
-	return key->index_key.type == index_key->type &&
-		key->index_key.domain_tag == index_key->domain_tag &&
-		key->index_key.desc_len == index_key->desc_len &&
-		memcmp(key->index_key.description, index_key->description,
-		       index_key->desc_len) == 0;
+	return key->index_key.type == index_key->key.type &&
+		key->index_key.domain_tag == index_key->key.domain_tag &&
+		key->index_key.desc_len == index_key->key.desc_len &&
+		memcmp(key->index_key.description, index_key->key.description,
+		       index_key->key.desc_len) == 0;
 }
 
 /*
@@ -342,22 +347,23 @@ static bool keyring_compare_object(const void *object, const void *data)
 static int keyring_diff_objects(const void *object, const void *data)
 {
 	const struct key *key_a = keyring_ptr_to_key(object);
-	const struct keyring_index_key *a = &key_a->index_key;
-	const struct keyring_index_key *b = data;
+	const struct keyring_index_key_private index_a = key_get_index_key(key_a);
+	const struct keyring_index_key_private *a = &index_a;
+	const struct keyring_index_key_private *b = data;
 	unsigned long seg_a, seg_b;
 	int level, i;
 	u64 diff;
 
 	level = 0;
-	seg_a = a->hash;
-	seg_b = b->hash;
+	seg_a = a->key.hash;
+	seg_b = b->key.hash;
 	if ((seg_a ^ seg_b) != 0)
 		goto differ;
 	level += ASSOC_ARRAY_KEY_CHUNK_SIZE / 8;
 
 	/* The inline description contributes one machine-word-sized chunk. */
-	seg_a = a->x;
-	seg_b = b->x;
+	seg_a = a->key.x;
+	seg_b = b->key.x;
 	if ((seg_a ^ seg_b) != 0)
 		goto differ;
 	level += sizeof(unsigned long);
@@ -372,13 +378,13 @@ static int keyring_diff_objects(const void *object, const void *data)
 		return level * 8 + __ffs64(diff);
 	level += sizeof(u64);
 
-	i = sizeof(a->desc);
-	if (a->desc_len <= i)
+	i = sizeof(a->key.desc);
+	if (a->key.desc_len <= i)
 		goto same;
 
-	for (; i < a->desc_len; i++) {
-		seg_a = *(unsigned char *)(a->description + i);
-		seg_b = *(unsigned char *)(b->description + i);
+	for (; i < a->key.desc_len; i++) {
+		seg_a = *(unsigned char *)(a->key.description + i);
+		seg_b = *(unsigned char *)(b->key.description + i);
 		if ((seg_a ^ seg_b) != 0)
 			goto differ_plus_i;
 	}
@@ -387,7 +393,7 @@ same:
 	return -1;
 
 differ_plus_i:
-	level += i - (int)sizeof(a->desc);
+	level += i - (int)sizeof(a->key.desc);
 differ:
 	i = level * 8 + __ffs(seg_a ^ seg_b);
 	return i;
@@ -593,7 +599,7 @@ static int keyring_search_iterator(const void *object, void *iterator_data)
 	kenter("{%d}", key->serial);
 
 	/* ignore keys not of this type */
-	if (key->type != ctx->index_key.type) {
+	if (key->type != ctx->index_key.key.type) {
 		kleave(" = 0 [!type]");
 		return 0;
 	}
@@ -689,14 +695,14 @@ static bool search_nested_keyrings(struct key *keyring,
 
 	kenter("{%d},{%s,%s}",
 	       keyring->serial,
-	       ctx->index_key.type->name,
-	       ctx->index_key.description);
+	       ctx->index_key.key.type->name,
+	       ctx->index_key.key.description);
 
 #define STATE_CHECKS (KEYRING_SEARCH_NO_STATE_CHECK | KEYRING_SEARCH_DO_STATE_CHECK)
 	BUG_ON((ctx->flags & STATE_CHECKS) == 0 ||
 	       (ctx->flags & STATE_CHECKS) == STATE_CHECKS);
 
-	if (ctx->index_key.description)
+	if (ctx->index_key.key.description)
 		key_set_index_key(&ctx->index_key);
 
 	/* Check to see if this top-level keyring is what we are looking for
@@ -955,9 +961,9 @@ key_ref_t keyring_search(key_ref_t keyring,
 			 bool recurse)
 {
 	struct keyring_search_context ctx = {
-		.index_key.type		= type,
-		.index_key.description	= description,
-		.index_key.desc_len	= strlen(description),
+		.index_key.key.type		= type,
+		.index_key.key.description	= description,
+		.index_key.key.desc_len	= strlen(description),
 		.cred			= current_cred(),
 		.match_data.cmp		= key_default_cmp,
 		.match_data.raw_data	= description,
@@ -1111,7 +1117,7 @@ EXPORT_SYMBOL(keyring_restrict);
  * to the returned key reference.
  */
 key_ref_t find_key_to_update(key_ref_t keyring_ref,
-			     const struct keyring_index_key *index_key)
+			     const struct keyring_index_key_private *index_key)
 {
 	struct key *keyring, *key;
 	const void *object;
@@ -1119,7 +1125,7 @@ key_ref_t find_key_to_update(key_ref_t keyring_ref,
 	keyring = key_ref_to_ptr(keyring_ref);
 
 	kenter("{%d},{%s,%s}",
-	       keyring->serial, index_key->type->name, index_key->description);
+	       keyring->serial, index_key->key.type->name, index_key->key.description);
 
 	guard(rcu)();
 	object = assoc_array_find(&keyring->keys, &keyring_assoc_array_ops,
@@ -1229,7 +1235,7 @@ static int keyring_detect_cycle_iterator(const void *object,
 static int keyring_detect_cycle(struct key *A, struct key *B)
 {
 	struct keyring_search_context ctx = {
-		.index_key		= A->index_key,
+		.index_key		= key_get_index_key(A),
 		.match_data.raw_data	= A,
 		.match_data.lookup_type = KEYRING_SEARCH_LOOKUP_DIRECT,
 		.iterator		= keyring_detect_cycle_iterator,
@@ -1306,16 +1312,16 @@ int __key_move_lock(struct key *l_keyring, struct key *u_keyring,
  * Preallocate memory so that a key can be linked into to a keyring.
  */
 int __key_link_begin(struct key *keyring,
-		     const struct keyring_index_key *index_key,
+		     const struct keyring_index_key_private *index_key,
 		     struct assoc_array_edit **_edit)
 {
 	struct assoc_array_edit *edit;
 	int ret;
 
 	kenter("%d,%s,%s,",
-	       keyring->serial, index_key->type->name, index_key->description);
+	       keyring->serial, index_key->key.type->name, index_key->key.description);
 
-	BUG_ON(index_key->desc_len == 0);
+	BUG_ON(index_key->key.desc_len == 0);
 	BUG_ON(*_edit != NULL);
 
 	*_edit = NULL;
@@ -1462,7 +1468,7 @@ int key_link(struct key *keyring, struct key *key)
 	if (ret < 0)
 		goto error;
 
-	ret = __key_link_begin(keyring, &key->index_key, &edit);
+	ret = __key_link_begin_key(keyring, key, &edit);
 	if (ret < 0)
 		goto error_end;
 
@@ -1501,11 +1507,12 @@ static int __key_unlink_begin(struct key *keyring, struct key *key,
 			      struct assoc_array_edit **_edit)
 {
 	struct assoc_array_edit *edit;
+	struct keyring_index_key_private index_key = key_get_index_key(key);
 
 	BUG_ON(*_edit != NULL);
 
 	edit = assoc_array_delete(&keyring->keys, &keyring_assoc_array_ops,
-				  &key->index_key);
+				  &index_key);
 	if (IS_ERR(edit))
 		return PTR_ERR(edit);
 
@@ -1626,7 +1633,7 @@ int key_move(struct key *key,
 	ret = __key_unlink_begin(from_keyring, key, &from_edit);
 	if (ret < 0)
 		goto error;
-	ret = __key_link_begin(to_keyring, &key->index_key, &to_edit);
+	ret = __key_link_begin_key(to_keyring, key, &to_edit);
 	if (ret < 0)
 		goto error;
 

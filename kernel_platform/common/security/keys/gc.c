@@ -163,7 +163,7 @@ static noinline void key_gc_unused_keys(struct list_head *keys)
 		key_put_tag(key->domain_tag);
 		kfree(key->description);
 
-		memzero_explicit(key, sizeof(*key));
+		memzero_explicit(key_alloc_state(key), sizeof(struct key_alloc_state));
 		kmem_cache_free(key_jar, key);
 	}
 }

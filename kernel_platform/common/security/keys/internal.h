@@ -19,6 +19,7 @@
 #include <linux/compat.h>
 #include <linux/mm.h>
 #include <linux/vmalloc.h>
+#include <linux/key_internal.h>
 
 struct iovec;
 
@@ -88,7 +89,39 @@ extern spinlock_t key_serial_lock;
 extern struct mutex key_construction_mutex;
 extern wait_queue_head_t request_key_conswq;
 
-extern void key_set_index_key(struct keyring_index_key *index_key);
+/* Cached IDs must outlive unregistration of the type descriptor. */
+struct key_alloc_state {
+	struct key key;
+	u64 type_id;
+	u64 domain_id;
+};
+
+/* Only keys internals pass this extended index to keyring_assoc_array_ops. */
+struct keyring_index_key_private {
+	struct keyring_index_key key;
+	u64 type_id;
+	u64 domain_id;
+};
+
+static inline struct key_alloc_state *key_alloc_state(struct key *key)
+{
+	return container_of(key, struct key_alloc_state, key);
+}
+
+static inline struct keyring_index_key_private
+key_get_index_key(const struct key *key)
+{
+	const struct key_alloc_state *state =
+		container_of_const(key, struct key_alloc_state, key);
+
+	return (struct keyring_index_key_private) {
+		.key = key->index_key,
+		.type_id = state->type_id,
+		.domain_id = state->domain_id,
+	};
+}
+
+extern void key_set_index_key(struct keyring_index_key_private *index_key);
 extern struct key_type *key_type_lookup(const char *type);
 extern void key_type_put(struct key_type *ktype);
 
@@ -97,8 +130,16 @@ extern int __key_link_lock(struct key *keyring,
 extern int __key_move_lock(struct key *l_keyring, struct key *u_keyring,
 			   const struct keyring_index_key *index_key);
 extern int __key_link_begin(struct key *keyring,
-			    const struct keyring_index_key *index_key,
+			    const struct keyring_index_key_private *index_key,
 			    struct assoc_array_edit **_edit);
+static inline int __key_link_begin_key(struct key *keyring, struct key *key,
+				       struct assoc_array_edit **edit)
+{
+	struct keyring_index_key_private index_key = key_get_index_key(key);
+
+	/* assoc_array_insert consumes the index synchronously, not in apply_edit. */
+	return __key_link_begin(keyring, &index_key, edit);
+}
 extern int __key_link_check_live_key(struct key *keyring, struct key *key);
 extern void __key_link(struct key *keyring, struct key *key,
 		       struct assoc_array_edit **_edit);
@@ -107,10 +148,10 @@ extern void __key_link_end(struct key *keyring,
 			   struct assoc_array_edit *edit);
 
 extern key_ref_t find_key_to_update(key_ref_t keyring_ref,
-				    const struct keyring_index_key *index_key);
+				    const struct keyring_index_key_private *index_key);
 
 struct keyring_search_context {
-	struct keyring_index_key index_key;
+	struct keyring_index_key_private index_key;
 	const struct cred	*cred;
 	struct key_match_data	match_data;
 	unsigned		flags;

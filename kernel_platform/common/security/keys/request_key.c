@@ -379,20 +379,20 @@ static int construct_alloc_key(struct keyring_search_context *ctx,
 	int ret;
 
 	kenter("%s,%s,,,",
-	       ctx->index_key.type->name, ctx->index_key.description);
+	       ctx->index_key.key.type->name, ctx->index_key.key.description);
 
 	*_key = NULL;
 	mutex_lock(&user->cons_lock);
 
 	perm = KEY_POS_VIEW | KEY_POS_SEARCH | KEY_POS_LINK | KEY_POS_SETATTR;
 	perm |= KEY_USR_VIEW;
-	if (ctx->index_key.type->read)
+	if (ctx->index_key.key.type->read)
 		perm |= KEY_POS_READ;
-	if (ctx->index_key.type == &key_type_keyring ||
-	    ctx->index_key.type->update)
+	if (ctx->index_key.key.type == &key_type_keyring ||
+	    ctx->index_key.key.type->update)
 		perm |= KEY_POS_WRITE;
 
-	key = key_alloc(ctx->index_key.type, ctx->index_key.description,
+	key = key_alloc(ctx->index_key.key.type, ctx->index_key.key.description,
 			ctx->cred->fsuid, ctx->cred->fsgid, ctx->cred,
 			perm, flags, NULL);
 	if (IS_ERR(key))
@@ -425,7 +425,7 @@ static int construct_alloc_key(struct keyring_search_context *ctx,
 		goto key_already_present;
 
 	if (dest_keyring) {
-		ret = __key_link_begin(dest_keyring, &key->index_key, &edit);
+		ret = __key_link_begin_key(dest_keyring, key, &edit);
 		if (ret < 0)
 			goto link_alloc_failed;
 		__key_link(dest_keyring, key, &edit);
@@ -446,7 +446,7 @@ key_already_present:
 	mutex_unlock(&key_construction_mutex);
 	key = key_ref_to_ptr(key_ref);
 	if (dest_keyring) {
-		ret = __key_link_begin(dest_keyring, &key->index_key, &edit);
+		ret = __key_link_begin_key(dest_keyring, key, &edit);
 		if (ret < 0)
 			goto link_alloc_failed_unlocked;
 		ret = __key_link_check_live_key(dest_keyring, key);
@@ -499,7 +499,7 @@ static struct key *construct_key_and_link(struct keyring_search_context *ctx,
 
 	kenter("");
 
-	if (ctx->index_key.type == &key_type_keyring)
+	if (ctx->index_key.key.type == &key_type_keyring)
 		return ERR_PTR(-EPERM);
 
 	ret = construct_get_dest_keyring(&dest_keyring);
@@ -581,10 +581,10 @@ struct key *request_key_and_link(struct key_type *type,
 				 unsigned long flags)
 {
 	struct keyring_search_context ctx = {
-		.index_key.type		= type,
-		.index_key.domain_tag	= domain_tag,
-		.index_key.description	= description,
-		.index_key.desc_len	= strlen(description),
+		.index_key.key.type		= type,
+		.index_key.key.domain_tag	= domain_tag,
+		.index_key.key.description	= description,
+		.index_key.key.desc_len	= strlen(description),
 		.cred			= current_cred(),
 		.match_data.cmp		= key_default_cmp,
 		.match_data.raw_data	= description,
@@ -598,7 +598,7 @@ struct key *request_key_and_link(struct key_type *type,
 	int ret;
 
 	kenter("%s,%s,%p,%zu,%p,%p,%lx",
-	       ctx.index_key.type->name, ctx.index_key.description,
+	       ctx.index_key.key.type->name, ctx.index_key.key.description,
 	       callout_info, callout_len, aux, dest_keyring, flags);
 
 	if (type->match_preparse) {
@@ -784,10 +784,10 @@ struct key *request_key_rcu(struct key_type *type,
 			    struct key_tag *domain_tag)
 {
 	struct keyring_search_context ctx = {
-		.index_key.type		= type,
-		.index_key.domain_tag	= domain_tag,
-		.index_key.description	= description,
-		.index_key.desc_len	= strlen(description),
+		.index_key.key.type		= type,
+		.index_key.key.domain_tag	= domain_tag,
+		.index_key.key.description	= description,
+		.index_key.key.desc_len	= strlen(description),
 		.cred			= current_cred(),
 		.match_data.cmp		= key_default_cmp,
 		.match_data.raw_data	= description,

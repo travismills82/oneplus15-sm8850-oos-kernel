@@ -42,7 +42,7 @@ static int key_create_persistent_register(struct user_namespace *ns)
  * to the keyring.
  */
 static int key_get_or_create_persistent(struct user_namespace *ns, kuid_t uid,
-					struct keyring_index_key *index_key,
+					struct keyring_index_key_private *index_key,
 					key_ref_t *persistent_ref)
 {
 	struct key *persistent;
@@ -60,7 +60,7 @@ static int key_get_or_create_persistent(struct user_namespace *ns, kuid_t uid,
 			return 1;
 	}
 
-	persistent = keyring_alloc(index_key->description,
+	persistent = keyring_alloc(index_key->key.description,
 				   uid, INVALID_GID, current_cred(),
 				   ((KEY_POS_ALL & ~KEY_POS_SETATTR) |
 				    KEY_USR_VIEW | KEY_USR_READ),
@@ -80,7 +80,7 @@ static int key_get_or_create_persistent(struct user_namespace *ns, kuid_t uid,
 static long key_get_persistent(struct user_namespace *ns, kuid_t uid,
 			       key_ref_t dest_ref)
 {
-	struct keyring_index_key index_key;
+	struct keyring_index_key_private index_key;
 	struct key *persistent;
 	key_ref_t reg_ref, persistent_ref;
 	char buf[32];
@@ -89,9 +89,9 @@ static long key_get_persistent(struct user_namespace *ns, kuid_t uid,
 
 	/* Look in the register if it exists */
 	memset(&index_key, 0, sizeof(index_key));
-	index_key.type = &key_type_keyring;
-	index_key.description = buf;
-	index_key.desc_len = sprintf(buf, "_persistent.%u", from_kuid(ns, uid));
+	index_key.key.type = &key_type_keyring;
+	index_key.key.description = buf;
+	index_key.key.desc_len = sprintf(buf, "_persistent.%u", from_kuid(ns, uid));
 	key_set_index_key(&index_key);
 
 	if (ns->persistent_keyring_register) {

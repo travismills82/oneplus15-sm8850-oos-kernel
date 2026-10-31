@@ -20,6 +20,7 @@
 #include <linux/sched/task.h>
 #include <linux/uidgid.h>
 #include <linux/cookie.h>
+#include <linux/key_internal.h>
 #include <linux/proc_fs.h>
 
 #include <net/sock.h>
@@ -42,7 +43,9 @@ DECLARE_RWSEM(net_rwsem);
 EXPORT_SYMBOL_GPL(net_rwsem);
 
 #ifdef CONFIG_KEYS
-static struct key_tag init_net_key_domain = { .usage = REFCOUNT_INIT(1) };
+static struct key_tag_alloc init_net_key_domain = {
+	.tag.usage = REFCOUNT_INIT(1),
+};
 #endif
 
 struct net init_net;
@@ -457,6 +460,9 @@ static struct net *net_alloc(void)
 {
 	struct net *net = NULL;
 	struct net_generic *ng;
+#ifdef CONFIG_KEYS
+	struct key_tag_alloc *domain;
+#endif
 
 	ng = net_alloc_generic();
 	if (!ng)
@@ -467,9 +473,10 @@ static struct net *net_alloc(void)
 		goto out_free;
 
 #ifdef CONFIG_KEYS
-	net->key_domain = kzalloc(sizeof(struct key_tag), GFP_KERNEL);
-	if (!net->key_domain)
+	domain = kzalloc(sizeof(*domain), GFP_KERNEL);
+	if (!domain)
 		goto out_free_2;
+	net->key_domain = &domain->tag;
 	refcount_set(&net->key_domain->usage, 1);
 #endif
 
@@ -1219,7 +1226,7 @@ void __init net_ns_init(void)
 	rcu_assign_pointer(init_net.gen, ng);
 
 #ifdef CONFIG_KEYS
-	init_net.key_domain = &init_net_key_domain;
+	init_net.key_domain = &init_net_key_domain.tag;
 #endif
 	preinit_net(&init_net, &init_user_ns);
 

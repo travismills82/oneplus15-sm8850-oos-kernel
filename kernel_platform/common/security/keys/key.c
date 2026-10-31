@@ -228,6 +228,8 @@ struct key *key_alloc(struct key_type *type, const char *desc,
 {
 	struct key_user *user = NULL;
 	struct key *key;
+	struct key_alloc_state *allocation;
+	struct keyring_index_key_private index_key = {};
 	size_t desclen, quotalen;
 	int ret;
 	unsigned long irqflags;
@@ -274,16 +276,21 @@ struct key *key_alloc(struct key_type *type, const char *desc,
 	}
 
 	/* allocate and initialise the key and its description */
-	key = kmem_cache_zalloc(key_jar, GFP_KERNEL);
-	if (!key)
+	allocation = kmem_cache_zalloc(key_jar, GFP_KERNEL);
+	if (!allocation)
 		goto no_memory_2;
 
+	key = &allocation->key;
 	key->index_key.desc_len = desclen;
 	key->index_key.description = kmemdup(desc, desclen + 1, GFP_KERNEL);
 	if (!key->index_key.description)
 		goto no_memory_3;
 	key->index_key.type = type;
-	key_set_index_key(&key->index_key);
+	index_key.key = key->index_key;
+	key_set_index_key(&index_key);
+	key->index_key = index_key.key;
+	allocation->type_id = index_key.type_id;
+	allocation->domain_id = index_key.domain_id;
 
 	refcount_set(&key->usage, 1);
 	init_rwsem(&key->sem);
@@ -522,7 +529,7 @@ int key_instantiate_and_link(struct key *key,
 		if (ret < 0)
 			goto error;
 
-		ret = __key_link_begin(keyring, &key->index_key, &edit);
+		ret = __key_link_begin_key(keyring, key, &edit);
 		if (ret < 0)
 			goto error_link_end;
 
@@ -599,7 +606,7 @@ int key_reject_and_link(struct key *key,
 				__key_link_end(keyring, &key->index_key, edit);
 				return -EPERM;
 			}
-			link_ret = __key_link_begin(keyring, &key->index_key, &edit);
+			link_ret = __key_link_begin_key(keyring, key, &edit);
 			if (link_ret < 0)
 				__key_link_end(keyring, &key->index_key, edit);
 		}
@@ -818,8 +825,8 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 					unsigned long flags,
 					bool allow_update)
 {
-	struct keyring_index_key index_key = {
-		.description	= description,
+	struct keyring_index_key_private index_key = {
+		.key.description	= description,
 	};
 	struct key_preparsed_payload prep;
 	struct assoc_array_edit *edit = NULL;
@@ -831,15 +838,15 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 
 	/* look up the key type to see if it's one of the registered kernel
 	 * types */
-	index_key.type = key_type_lookup(type);
-	if (IS_ERR(index_key.type)) {
+	index_key.key.type = key_type_lookup(type);
+	if (IS_ERR(index_key.key.type)) {
 		key_ref = ERR_PTR(-ENODEV);
 		goto error;
 	}
 
 	key_ref = ERR_PTR(-EINVAL);
-	if (!index_key.type->instantiate ||
-	    (!index_key.description && !index_key.type->preparse))
+	if (!index_key.key.type->instantiate ||
+	    (!index_key.key.description && !index_key.key.type->preparse))
 		goto error_put_type;
 
 	keyring = key_ref_to_ptr(keyring_ref);
@@ -854,24 +861,24 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 	prep.orig_description = description;
 	prep.data = payload;
 	prep.datalen = plen;
-	prep.quotalen = index_key.type->def_datalen;
+	prep.quotalen = index_key.key.type->def_datalen;
 	prep.expiry = TIME64_MAX;
-	if (index_key.type->preparse) {
-		ret = index_key.type->preparse(&prep);
+	if (index_key.key.type->preparse) {
+		ret = index_key.key.type->preparse(&prep);
 		if (ret < 0) {
 			key_ref = ERR_PTR(ret);
 			goto error_free_prep;
 		}
-		if (!index_key.description)
-			index_key.description = prep.description;
+		if (!index_key.key.description)
+			index_key.key.description = prep.description;
 		key_ref = ERR_PTR(-EINVAL);
-		if (!index_key.description)
+		if (!index_key.key.description)
 			goto error_free_prep;
 	}
-	index_key.desc_len = strlen(index_key.description);
+	index_key.key.desc_len = strlen(index_key.key.description);
 	key_set_index_key(&index_key);
 
-	ret = __key_link_lock(keyring, &index_key);
+	ret = __key_link_lock(keyring, &index_key.key);
 	if (ret < 0) {
 		key_ref = ERR_PTR(ret);
 		goto error_free_prep;
@@ -887,7 +894,7 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 		restrict_link = keyring->restrict_link;
 
 	if (restrict_link && restrict_link->check) {
-		ret = restrict_link->check(keyring, index_key.type,
+		ret = restrict_link->check(keyring, index_key.key.type,
 					   &prep.payload, restrict_link->key);
 		if (ret < 0) {
 			key_ref = ERR_PTR(ret);
@@ -908,7 +915,7 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 	 * destination keyring and update that instead if possible
 	 */
 	if (allow_update) {
-		if (index_key.type->update) {
+		if (index_key.key.type->update) {
 			key_ref = find_key_to_update(keyring_ref, &index_key);
 			if (key_ref)
 				goto found_matching_key;
@@ -927,16 +934,16 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 		perm = KEY_POS_VIEW | KEY_POS_SEARCH | KEY_POS_LINK | KEY_POS_SETATTR;
 		perm |= KEY_USR_VIEW;
 
-		if (index_key.type->read)
+		if (index_key.key.type->read)
 			perm |= KEY_POS_READ;
 
-		if (index_key.type == &key_type_keyring ||
-		    index_key.type->update)
+		if (index_key.key.type == &key_type_keyring ||
+		    index_key.key.type->update)
 			perm |= KEY_POS_WRITE;
 	}
 
 	/* allocate a new key */
-	key = key_alloc(index_key.type, index_key.description,
+	key = key_alloc(index_key.key.type, index_key.key.description,
 			cred->fsuid, cred->fsgid, cred, perm, flags, NULL);
 	if (IS_ERR(key)) {
 		key_ref = ERR_CAST(key);
@@ -957,12 +964,12 @@ static key_ref_t __key_create_or_update(key_ref_t keyring_ref,
 	key_ref = make_key_ref(key, is_key_possessed(keyring_ref));
 
 error_link_end:
-	__key_link_end(keyring, &index_key, edit);
+	__key_link_end(keyring, &index_key.key, edit);
 error_free_prep:
-	if (index_key.type->preparse)
-		index_key.type->free_preparse(&prep);
+	if (index_key.key.type->preparse)
+		index_key.key.type->free_preparse(&prep);
 error_put_type:
-	key_type_put(index_key.type);
+	key_type_put(index_key.key.type);
 error:
 	return key_ref;
 
@@ -970,7 +977,7 @@ error:
 	/* we found a matching key, so we're going to try to update it
 	 * - we can drop the locks first as we have the key pinned
 	 */
-	__key_link_end(keyring, &index_key, edit);
+	__key_link_end(keyring, &index_key.key, edit);
 
 	key = key_ref_to_ptr(key_ref);
 	if (test_bit(KEY_FLAG_USER_CONSTRUCT, &key->flags)) {
@@ -1280,7 +1287,7 @@ EXPORT_SYMBOL(unregister_key_type);
 void __init key_init(void)
 {
 	/* allocate a slab in which we can store keys */
-	key_jar = kmem_cache_create("key_jar", sizeof(struct key),
+	key_jar = kmem_cache_create("key_jar", sizeof(struct key_alloc_state),
 			0, SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
 
 	/* add the special key types */
