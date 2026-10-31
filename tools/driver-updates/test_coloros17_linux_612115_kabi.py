@@ -409,7 +409,7 @@ int main(void) {
 
     def test_perf_budget_consumes_reserve_without_counter_alias(self):
         header = (ROOT / 'kernel_platform/common/include/linux/sched/user.h').read_text()
-        self.assertIn('ANDROID_KABI_USE(1, atomic_long_t perf_mlock);', header)
+        self.assertIn('ANDROID_KABI_USE(1, atomic_long_t perf_mlock) __kabi_reserved1;', header)
         self.assertGreater(header.index('ANDROID_KABI_USE(1, atomic_long_t perf_mlock)'),
                            header.index('struct ratelimit_state ratelimit;'))
         self.assertIn('atomic_long_t locked_vm;', header)
@@ -419,9 +419,64 @@ int main(void) {
             full = 'kernel_platform/common/' + path
             raw = subprocess.check_output(['git', '-C', str(ROOT), 'show',
                                            '46fb47434d1067af6076f6491fc046ba6bf912ba:' + full])
-            self.assertEqual((ROOT / full).read_bytes(), raw)
+            current = (ROOT / full).read_bytes()
+            if path == 'kernel/events/core.c':
+                self.assertEqual(current.count(b'->__kabi_reserved1.perf_mlock'), 4)
+                current = current.replace(b'->__kabi_reserved1.perf_mlock', b'->perf_mlock')
+            self.assertEqual(current, raw)
         user = (ROOT / 'kernel_platform/common/kernel/user.c').read_text()
         self.assertIn('kmem_cache_zalloc(uid_cachep, GFP_KERNEL)', user)
+
+    def test_actual_named_reserve_macro_geometry_and_independent_counter(self):
+        text = (ROOT / 'kernel_platform/common/include/linux/android_kabi.h').read_text()
+        lines = text.splitlines()
+
+        def macro(name):
+            start = next(i for i, line in enumerate(lines) if line.startswith('#define ' + name + '('))
+            end = start + 1
+            while lines[end - 1].endswith('\\'):
+                end += 1
+            return '\n'.join(lines[start:end]) + '\n'
+
+        header = (ROOT / 'kernel_platform/common/include/linux/sched/user.h').read_text()
+        field = re.search(r'ANDROID_KABI_USE\(1, atomic_long_t perf_mlock\) __kabi_reserved1;', header)[0]
+        code = r'''
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+typedef uint64_t u64;
+typedef struct { long counter; } atomic_long_t;
+#define FILE_LINE "host reserve fixture"
+#define __stringify(x) #x
+'''
+        for name in ['_ANDROID_KABI_NORMAL_SIZE_ALIGN', '_ANDROID_KABI_REPLACE',
+                     'ANDROID_KABI_RESERVE', 'ANDROID_KABI_USE']:
+            code += macro(name)
+        # The prefix is a host geometry fixture, not the actual ARM64 user
+        # declaration. Actual full offsets are checked from compiled vmlinux.
+        code += '''
+struct user_fixture {
+ char before_locked_vm[88];
+ atomic_long_t locked_vm;
+ char before_reserve[32];
+ FIELD
+ u64 __kabi_reserved2;
+};
+int main(void) {
+ _Static_assert(sizeof(struct user_fixture)==144,"unchanged size");
+ _Static_assert(_Alignof(struct user_fixture)==8,"unchanged alignment");
+ _Static_assert(offsetof(struct user_fixture,__kabi_reserved1)==128,"same reserve");
+ _Static_assert(offsetof(struct user_fixture,__kabi_reserved2)==136,"next reserve");
+ struct user_fixture user={0};
+ user.locked_vm.counter=99;
+ user.__kabi_reserved1.perf_mlock.counter=7;
+ assert(user.locked_vm.counter==99 && user.__kabi_reserved1.perf_mlock.counter==7);
+ assert((char *)&user.__kabi_reserved1.perf_mlock==(char *)&user+128);
+ return 0;
+}
+'''.replace('FIELD', field)
+        result = host_c(code)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_futex_identity_implementation_and_initialization_unchanged(self):
         for path in ['kernel/futex/core.c', 'kernel/fork.c']:

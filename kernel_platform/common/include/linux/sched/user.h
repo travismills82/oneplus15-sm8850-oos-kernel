@@ -37,8 +37,8 @@ struct user_struct {
 	struct ratelimit_state ratelimit;
 
 #ifdef CONFIG_PERF_EVENTS
-	/* Keep perf's independent budget without moving existing user fields. */
-	ANDROID_KABI_USE(1, atomic_long_t perf_mlock);
+	/* Keep the real reserve name in both C and generated Rust bindings. */
+	ANDROID_KABI_USE(1, atomic_long_t perf_mlock) __kabi_reserved1;
 #else
 	ANDROID_KABI_RESERVE(1);
 #endif

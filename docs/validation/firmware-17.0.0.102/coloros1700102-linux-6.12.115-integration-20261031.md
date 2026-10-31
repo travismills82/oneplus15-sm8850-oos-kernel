@@ -562,6 +562,56 @@ name and access the real atomic through it. No whole-type string replacement
 or manual CRC output is required. `perf-rust-binding-root.json` preserves the
 exact qualified generated declaration and candidate type-expansion line.
 
+### Perf reserve-name follow-up: compiled Rust representation
+
+The source follow-up names the real consumed reserve union
+`__kabi_reserved1`; the real `perf_mlock` atomic remains within that union.
+Only four C access paths change to `->__kabi_reserved1.perf_mlock`. After
+normalizing just that spelling, the entire perf implementation matches the
+unadapted stable source byte-for-byte. No counter, reference, lock, accounting
+operation or limit is changed. No C/Rust type-string or compiler processing
+rule is added. Normal GENDWARFKSYMS handling recognizes the original reserved
+parent name in both languages.
+
+All **171 host tests** pass, including a fixture compiling the actual KABI
+macro and checking named-union size/alignment, both reserve offsets and
+independence from `locked_vm`. The normal common build, strict symbol-list
+check and ABI dump pass in 1,282.342 seconds. All 283 executable sections
+(including KCFI words) in the actual perf object are byte-identical before
+and after the naming correction. Debug/type metadata differs, not machine
+code. Final BTF/DWARF retains user_struct size 144 and all old field offsets.
+All 25 natural Rust CRCs now match the qualified baseline.
+
+Both full `Module.symvers` and `vmlinux.symvers` are byte-identical to the
+qualified .114 build. All 10,163 vmlinux export names, CRCs, namespaces and
+classes match. The unchanged installed-provider oracle and independent
+vmlinux-first precedence validation both **PASS**:
+
+```text
+module locations checked:        1,070
+active compatible:               1,032
+dormant:                            38
+active blockers:                     0
+hard ELF imports resolved:      60,701 / 60,701
+weak imports:                        6
+versioned imports:              60,707
+module_layout records:           1,070
+CRC records matched:            61,777 / 61,777
+unique mismatched symbols:           0
+CRC mismatch records:                0
+missing providers:                   0
+namespace failures:                  0
+production-provider mismatches:      0
+```
+
+The 3,220 known duplicate-provider candidates are unchanged, not suppressed.
+The real-provider check does not substitute a convenient module for vmlinux.
+This population retains the four installed canary replacements and the
+stock GPU, not the quarantined rebuilt GPU. Final controls reproduce module
+(1,600), task_struct (5,184), net_device (2,688), DWC3 (1,488) and UFS HBA
+(5,368) layouts exactly. The real stock normal/recovery futex callback KCFI
+checks pass again. Physical .115 behavior is **NOT TESTED**.
+
 **io_uring provenance correction:** the description of the newly created
 `238ad2a9f8cbf` source commit mistakenly gives
 `30982202276ac3007acb1ea221545389391702f3` as the upstream identity.
@@ -588,14 +638,114 @@ the actual generated CRC records, not merely textual type reachability:
 | Perf accounting | 6,572 | 6,594 | 2,817 | 26,171 |
 | MM/futex identity | 6,592 | 6,570 | 2,804 | 26,014 |
 | Keyring private identities | 6,570 | 25 (Rust only) | 23 | 23 |
+| Perf named reserve, C + Rust | 25 | 0 | 0 | 0 |
 
 `stage-summary.json/.tsv` and each `*-all-export-deltas.tsv` retain every
 qualified, preceding-stage and candidate CRC plus module-import edge count.
 The changed CRC values are genuine normal build results; the unchanged fail
-count is not represented as a pass. The remaining perf Rust reserve-name
-representation must be repaired and rebuilt before full compatibility passes.
+count is not represented as a pass. The final zero comes from the completed
+normal build and unchanged real-provider oracle, not a waiver.
 
-**Overall KABI/module compatibility remains FAIL pending the incremental
-compiled/oracle results. GPU modernization remains mandatory and quarantined
-until its remaining provider/GEAS contracts are proven. No .115 release
-candidate images or physical tests are authorized by this report.**
+### Final enforced GKI comparison: FAIL, fully accounted
+
+The actual enforced command was:
+
+```sh
+tools/bazel --output_user_root="$E/bazel" run --jobs=4 \
+  --config=local --cache_dir="$R/kbuild-cache" --kbuild_symtypes \
+  //common:kernel_aarch64_abi_diff
+```
+
+It parses successfully and returns **4 / FAIL**. The 38 prior reviewed
+small-report owner blocks are byte-for-byte unchanged. No prior owner is
+removed or altered. Six additional representation owners bring the total
+to **44**, not 38:
+
+| Additional owner | Runtime/KMI evidence |
+|---|---|
+| `struct mm_struct` | Unique ID in old tail padding; size 1,216 and every old offset retained. |
+| `struct user_struct` | Independent atomic in reserve at 128; size 144, old offsets and perf executable bytes retained. |
+| `struct key_type` | Atomic ID in existing 8-byte reserve at 152; size 184 and old offsets retained. |
+| `struct io_ring_ctx` | Reference-held RCU wakeup state in old tail padding; size 1,536 and old offsets retained. |
+| `bindings::bindings_raw::user_struct` | Same storage and natural Rust CRCs; STG describes the named union. |
+| `bindings::bindings_raw::mm_struct__bindgen_ty_1` | Ignored union in existing padding; same generated Rust layout and natural CRCs. |
+
+Comparison to the actual qualified .114 generated ABI has only those six
+type-representation roots, with no independent function/variable/prototype,
+export or CRC root. Dependent function/variable STG records still change
+transitively; they are not incorrectly called unchanged.
+`enforced-abi-delta-classification.json` and the complete small-report diff
+are retained under `R`. No ignore option or ABI-reference update is used.
+This is installed-module compatibility PASS, **not enforced GKI PASS**.
+
+### Mandatory GPU follow-up / unified-stack stop
+
+GPU modernization is not omitted or represented as qualified. The existing
+VMA/workqueue fixes, six resolved SYNX interfaces, five source-proven provider
+CRC corrections and original GEAS evidence remain intact. Those five proofs
+still require full matched-module integration; the older .114 GPU experiment
+is not relabelled as a .115 result.
+
+The specific external blocker remains stock `oplus_bsp_geas_data`'s
+`get_gpu_bw_data` import, required CRC **0xd8bbf8a1**. Its vendor_dlkm copy is
+active; its vendor_boot copy is dormant. Available `geas_system` source uses
+a different API and cannot replace this consumer. The reviewed real provider
+has matching KCFI and observed two-word result layout but naturally generates
+**0x77ccfbac**. No exact matching OEM declaration or rebuildable `geas_data`
+source was found in the inspected set. Stock KGSL has no DWARF/BTF metadata
+for recovering that declaration.
+
+A bounded follow-up reverified current Lineage source head
+`08b3042484e2cfc03fbd9ccb5073d55d561c0a79` and official OnePlus 15 source
+head `5ab2a689ff87d7d28c511f1762cf41c1b90d965a`; the inspected paths still
+do not supply this interface/consumer. Other OEM reference/search evidence is
+preserved; this is not an exhaustive global absence claim or a Lineage target.
+
+One narrow offline declaration-only hypothesis compiled the complete genuine
+provider body with its recorded pinned compiler arguments. The control gives
+**0x77ccfbac**; normal declaration-only processing gives **0x3787b598**, not
+the stock CRC. This hypothesis is **REJECTED**, not integrated. Failed staging
+setup attempts are preserved and not counted as driver results. No CRC is
+supplied to the generator or edited afterward. No production loader/type rule
+is changed. Evidence: `R/gpu-declonly-probe/result.json`.
+
+The safe prerequisite is the exact OEM bandwidth-interface declaration or a
+verified rebuildable GEAS consumer/dependency closure. No callback cast,
+success stub, type-name brute force, forced CRC or unsafe metadata mask is
+admitted. The rebuilt GPU remains quarantined, as required.
+
+Therefore the complete matched .115 Canoe/GPU distribution/ABI build, new
+AVB/capacity gate and physical canary remain **NOT QUALIFIED / NOT PREPARED**.
+The common/installed-provider PASS does not qualify a generic rebuilt DLKM
+image or updated GPU. The earlier .114 production build is not transferred
+as a .115 PASS. No new ColorOS boot or DLKM release image is packaged.
+
+### Frozen core artifacts and source identity
+
+`R/root2-perf-rust-named/` was built at HEAD
+`4db9d0a53fa4e0a357e58c0f4dd16d71d0c33515` plus common patch SHA256
+`6024d073df37b08cf2da9082a3d8874f08636d15de55cd915a9d78fc4c4f59fb`.
+Embedded release: `6.12.115-android16-6-o-g4db9d0a53fa4-4k`. The patch identity,
+not the release string alone, identifies this source. These are core diagnostic
+outputs, not a physically qualified boot image.
+
+| Artifact | SHA256 |
+|---|---|
+| Image, 42,646,016 bytes | `bb8688d4ab87f95328ccd42fc4c4391b2bb9746b7a3c815f7e361f4a5a24b8f8` |
+| vmlinux | `1a4a720f9855384841cf06a1eed24974816bb3f824b30f84f8c7e91b9002379b` |
+| Full Module.symvers | `6a6413d41ce692c0476a0ccd81e38a446fe1490400f3924c79424c597a390da1` |
+| vmlinux.symvers | `fa6d325e5e5ce232ca7622176829ce7c4bcf7cf7ea47070bf6f48b265da02efb` |
+| Effective config | `abbb37e8fae9073bd5ca5bf539196f4b9baff60fa40714fe1506dc01592f1a27` |
+| Generated ABI | `0ce8ff105a7b5a0375b31bc182cf56624ab60d59a4ff824eda89a4c2400b19ed` |
+
+All 231 imported individual commits and 15 already-present fixes retain their
+original history. No original commit is amended, squashed, removed or rewritten;
+compatibility work is appended. No stable fix is reverted. Effective CONFIG
+values, pinned toolchain, signing, MODVERSIONS, KCFI, SELinux and the existing
+security settings are preserved. No ABI reference or symbol list is updated.
+No installed image, init_boot, slot, AVB state or device is modified. Nothing
+is pushed or published.
+
+**Core .115 installed-module compatibility: PASS. Enforced GKI: FAIL / 44
+accounted owners. Unified canary: BLOCKED by the mandatory GPU/GEAS contract;
+matched production/distribution qualification remains pending.**
