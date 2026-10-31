@@ -342,7 +342,11 @@ CRC and originating symtypes file records are retained in the evidence.
 | Keyring alone | 2 | 4 |
 | **Total** | **2,817** | **26,171** |
 
-These are disjoint cohorts, not sums of overlapping root reachability.
+These are disjoint **type-reachability** cohorts, not sums of overlapping
+root reachability or a claim that each reachable root changes each CRC.
+Declaration/definition visibility, KABI rules and recursive expansion can
+make reachability an over-approximation of a particular CRC dependency.
+The actual incremental generated-CRC effects are measured separately below.
 BSG has no installed direct importer but still has an independently changed
 maintained function prototype. Repairing one root may leave a CRC different
 because another root remains in the same type graph.
@@ -360,8 +364,8 @@ installed partition or qualified artifact is modified by this repair phase.
 
 | Root | Proposed preservation | Current status |
 |---|---|---|
-| Futex MM identity | Place the atomic identity in proven existing tail padding; retain unique-ID initialization/publication and same-width futex identity semantics. | Not applied; compiled layout/CRC proof required. |
-| Perf accounting | Consume a compatible existing user_struct reserve for the independent perf counter. | Not applied. |
+| Futex MM identity | Place the atomic identity in proven existing tail padding; retain unique-ID initialization/publication and same-width futex identity semantics. | Compiled layout/stock-callback proof PASS; root1-futex-mm-final evidence. |
+| Perf accounting | Consume a compatible existing user_struct reserve for the independent perf counter. | Compiled root proof PASS; commit `c3158f6c34c9f665d49eb0a0d8d4772b65e69782`. |
 | Keyring identities | Preserve public prefixes with core-owned private identity state and cached IDs; retain SipHash/address-independent ordering and unregister-safe lifetime. | Ownership/consumer audit in progress; no source change. |
 | Regcache population | Keep the existing operations table intact; hold the optional populate callback in a core-private backend registry. | Compiled root proof PASS; commit `410359e2ca1107485c017f09f23d98c932615e2b`. |
 | Unicode RCU | Keep the public map unchanged inside an allocation-owned private RCU wrapper. | Compiled root proof PASS; commit `173b52b15d776`; full module gate remains failed through other roots. |
@@ -437,8 +441,53 @@ offset/size changes, the RCU head at byte 1,512 and pending atomic at 1,528.
 The two fields consume 20 of the old 24 padding bytes. Existing alignment
 requirements are unchanged. All 344 emitted `io_` KCFI type words match the
 unadapted .115 implementation, with identical direct-only function sets.
-The oracle still fails at 2,817 symbols / 26,171 records, zero missing
-providers and namespace failures; MM, perf and keyring roots remain.
+The oracle at this stage still fails at 2,817 symbols / 26,171 records, zero
+missing providers and namespace failures; subsequent perf evidence is below.
+
+Perf accounting now consumes `user_struct` reserve 1 for its independent
+`atomic_long_t perf_mlock`. It does not alias or reuse `locked_vm`. The
+stable accounting implementation and user allocation source are unchanged.
+The normal common build/strict symbol-list check/ABI dump completed in
+1,286.361 seconds. Actual BTF/DWARF restore size 144 and all existing field
+offsets/sizes; `locked_vm` remains at byte 88, and the new counter occupies
+the existing 8-byte reserve at byte 128. All three checked UID API KCFI words
+match .114. `find_user` and `free_uid` naturally return CRCs `0x2ff6c64a`
+and `0x06fdb8a6`, respectively. All 159 host tests at that stage pass.
+The full installed-provider oracle still fails at 2,817 / 26,171 through
+the remaining shared roots. Full symtypes are archived with the frozen
+`root2-perf/` evidence.
+
+The MM/futex design retains the upstream per-MM opaque unique ID and all
+its atomic publication/initialization code. It moves only the storage to
+existing tail padding and retains the old same-width `futex_key.__tmp`
+member spelling. Actual stock `oplus_locking_strategy.ko` callbacks compare
+the identity as opaque words; they do not dereference it as an MM pointer.
+An initial
+metadata-union variant was deliberately interrupted (exit 8) after 184.090
+seconds to simplify the source representation; it is not a completed build.
+The current 161-test host suite passes on full retry. One preceding run
+timed out in the deliberately broken SHA scatterlist negative fixture;
+the valid implementation did not fail. Both an isolated retry of that
+fixture and the full retry pass without changing code, timeouts or test
+acceptance criteria. All three logs are retained, including the failed run.
+
+The final MM common build, strict symbol-list check and ABI dump pass in
+1,135.717 seconds. Actual BTF/DWARF show `mm_struct` size 1,216 and zero
+existing member offset/size changes. Its unique-ID atomic is at byte 1,160,
+inside old tail padding; `cpu_bitmap` remains at 1,216 and the context at
+968. `futex_key` (24 bytes) and `futex_q` (128) reproduce the qualified
+DWARF layouts exactly. Existing alignment declarations are unchanged.
+The real kernel trace checks and both actual stock normal/recovery OPlus
+callbacks agree: wake-traverse `0xbd35c3ba`, plist-add `0x27336b42`.
+`get_futex_key` also retains its qualified emitted KCFI word. These checks
+use actual binary disassembly, not only source prototypes.
+
+The unchanged full installed-provider oracle now reports **2,804 unique
+symbols / 26,014 CRC mismatch records** (157 fewer records), with zero
+missing providers and namespace failures. All 1,032 active locations are
+still blocked through remaining shared keyring types; no overall PASS is
+claimed. Normal vmlinux-first provider validation reports the same remaining
+26,014 incompatibilities. Keyring is the final unadapted root group.
 
 **io_uring provenance correction:** the description of the newly created
 `238ad2a9f8cbf` source commit mistakenly gives
@@ -449,6 +498,28 @@ The authoritative original commit body in local import
 `d8c618747a6aa90022e19ec614aa7157d0302108`. This correction supersedes
 that one description field. The stable SHA and implementation were correct;
 no source or preserved history is rewritten to correct the description.
+
+### Measured generated-export effects
+
+All stages retain exactly 10,163 vmlinux export names, with zero removals,
+additions, namespace or export-class changes. The following numbers compare
+the actual generated CRC records, not merely textual type reachability:
+
+| Stage | Export CRCs changed from preceding stage | Export CRCs still different from qualified .114 | Unique imported-symbol mismatches | Import CRC mismatch records |
+|---|---:|---:|---:|---:|
+| Unchanged .115 control | 0 | 6,598 | 2,817 | 26,171 |
+| Regcache | 51 | 6,598 | 2,817 | 26,171 |
+| BSG | 1 | 6,598 | 2,817 | 26,171 |
+| Unicode | 28 | 6,598 | 2,817 | 26,171 |
+| io polling | 46 | 6,598 | 2,817 | 26,171 |
+| Perf accounting | 6,572 | 6,594 | 2,817 | 26,171 |
+| MM/futex identity | 6,592 | 6,570 | 2,804 | 26,014 |
+
+`stage-summary.json/.tsv` and each `*-all-export-deltas.tsv` retain every
+qualified, preceding-stage and candidate CRC plus module-import edge count.
+The changed CRC values are genuine normal build results; the unchanged fail
+count is not represented as a pass. Keyring work remains before
+the final shared type graph can be evaluated.
 
 **Overall KABI/module compatibility remains FAIL pending the incremental
 compiled/oracle results. GPU modernization remains mandatory and quarantined

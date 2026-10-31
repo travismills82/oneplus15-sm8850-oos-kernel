@@ -423,6 +423,59 @@ int main(void) {
         user = (ROOT / 'kernel_platform/common/kernel/user.c').read_text()
         self.assertIn('kmem_cache_zalloc(uid_cachep, GFP_KERNEL)', user)
 
+    def test_futex_identity_implementation_and_initialization_unchanged(self):
+        for path in ['kernel/futex/core.c', 'kernel/fork.c']:
+            full = 'kernel_platform/common/' + path
+            raw = subprocess.check_output(['git', '-C', str(ROOT), 'show',
+                                           '46fb47434d1067af6076f6491fc046ba6bf912ba:' + full])
+            current = (ROOT / full).read_bytes()
+            if path == 'kernel/futex/core.c':
+                old = b'key->private.__tmp = get_object_id(&mm->futex_unique_id);'
+                self.assertEqual(current.count(old), 1)
+                current = current.replace(old, b'key->private.mm_seq = get_object_id(&mm->futex_unique_id);')
+            self.assertEqual(current, raw)
+        header = (ROOT / 'kernel_platform/common/include/linux/mm_types.h').read_text()
+        field = header.index('ANDROID_KABI_IGNORE(2, atomic64_t futex_unique_id)')
+        self.assertGreater(field, header.index('ANDROID_KABI_USE(1, struct task_dma_buf_info *dmabuf_info)'))
+        self.assertLess(field, header.index('unsigned long cpu_bitmap[];'))
+
+    def test_actual_futex_union_and_oplus_opaque_comparison(self):
+        code = r'''
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+typedef uint64_t u64;
+struct mm_struct { int unused; };
+'''
+        code += function('include/linux/futex.h', 'union futex_key {') + ';\n'
+        code += function('../../vendor/oplus/kernel/synchronize/futex.c', 'static inline int match_futex(')
+        code += r'''
+int main(void) {
+ _Static_assert(sizeof(union futex_key) == 24, "aggregate size");
+ _Static_assert(_Alignof(union futex_key) == 8, "aggregate alignment");
+ _Static_assert(offsetof(union futex_key, private.__tmp) == 0, "ID slot");
+ _Static_assert(offsetof(union futex_key, private.mm) == 0, "private pointer slot");
+ _Static_assert(offsetof(union futex_key, private.address) == 8, "address slot");
+ _Static_assert(offsetof(union futex_key, private.offset) == 16, "tag slot");
+ union futex_key a = {.private = {.__tmp = 123, .address = 0x4000, .offset = 2}};
+ union futex_key b = a;
+ assert(match_futex(&a, &b));
+ b.private.__tmp = 456;
+ assert(!match_futex(&a, &b));
+ b = a; b.private.offset = 1;
+ assert(!match_futex(&a, &b));
+ struct mm_struct mm = {0};
+ a.private.mm = &mm; a.private.offset = 0;
+ assert(a.both.ptr == (uintptr_t)&mm);
+ b = a;
+ assert(match_futex(&a, &b));
+ assert(!match_futex(NULL, &b));
+ return 0;
+}
+'''
+        result = host_c(code)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()

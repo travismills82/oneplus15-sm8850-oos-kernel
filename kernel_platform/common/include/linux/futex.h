@@ -41,7 +41,8 @@ union futex_key {
 	struct {
 		union {
 			struct mm_struct *mm; /* for private */
-			u64 mm_seq; /* for FUT_OFF_MMSHARED */
+			/* Opaque shared-MM ID; retain the legacy member name. */
+			u64 __tmp;
 		};
 		unsigned long address;
 		unsigned int offset;
