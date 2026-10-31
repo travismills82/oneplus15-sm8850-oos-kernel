@@ -139,6 +139,56 @@ int main(void) {
 }
 '''
 
+UNICODE_PREFIX = r'''
+#include <assert.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+enum { UTF8_NFDI, UTF8_NFDICF, UTF8_NMAX };
+struct rcu_head { void *next; void (*func)(struct rcu_head *); };
+struct utf8data { int value; };
+struct utf8data_table {
+ const struct utf8data *utf8nfdidata, *utf8nfdicfdata;
+ unsigned utf8nfdidata_size, utf8nfdicfdata_size;
+};
+static struct utf8data entry;
+static struct utf8data_table table = {&entry, &entry, 1, 1};
+static void *allocated;
+static int puts, refs, frees, fail_alloc, unsupported;
+static struct rcu_head *queued;
+static void (*queued_fn)(struct rcu_head *);
+static void *test_zalloc(size_t n) {
+ if (fail_alloc) return NULL;
+ assert(!allocated);
+ return allocated = calloc(1, n);
+}
+static void test_free(void *p) {
+ assert(p == allocated);
+ free(p); allocated = NULL; ++frees;
+}
+static const struct utf8data_table *test_get(void) { ++refs; return &table; }
+static void test_put(void) { assert(refs == 1); --refs; ++puts; }
+static void call_rcu(struct rcu_head *head, void (*fn)(struct rcu_head *)) {
+ assert(!queued && refs == 1 && !frees); queued = head; queued_fn = fn;
+}
+#define GFP_KERNEL 0
+#define kzalloc(n, flags) test_zalloc(n)
+#define kfree(p) test_free(p)
+#define symbol_request(x) test_get()
+#define symbol_put(x) test_put()
+#define ERR_PTR(e) ((void *)(long)(e))
+#define container_of(p, t, m) ((t *)((char *)(p) - offsetof(t, m)))
+'''
+
+UNICODE_HELPERS = r'''
+static bool utf8version_is_supported(const struct unicode_map *um, unsigned version) {
+ return !unsupported;
+}
+static const struct utf8data *find_table_version(const struct utf8data *data,
+ unsigned size, unsigned version) { return data; }
+'''
+
 
 class Linux612115Kabi(unittest.TestCase):
     def regcache_case(self, init=0, populate=0):
@@ -213,6 +263,62 @@ class Linux612115Kabi(unittest.TestCase):
         self.assertNotIn('bsg_setup_queue(', probe)
         transport = function('block/bsg-lib.c', 'static int bsg_transport_sg_io_fn(')
         self.assertIn('job->reply_len = bset->reply_len;', transport)
+
+    def unicode_case(self, main):
+        source = (ROOT / 'kernel_platform/common/fs/unicode/utf8-core.c').read_text()
+        header = (ROOT / 'kernel_platform/common/include/linux/unicode.h').read_text()
+        public = re.search(r'struct unicode_map \{.*?\n\};', header, re.S)[0]
+        private = re.search(r'struct unicode_map_rcu \{.*?\n\};', source, re.S)[0]
+        code = UNICODE_PREFIX + public + private + UNICODE_HELPERS
+        for signature in ['struct unicode_map *utf8_load(',
+                          'static void utf8_unload_rcu(', 'void utf8_unload(']:
+            code += function('fs/unicode/utf8-core.c', signature)
+        result = host_c(code + main)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_unicode_deferred_table_and_allocation_lifetime(self):
+        self.unicode_case(r'''
+int main(void) {
+ _Static_assert(sizeof(struct unicode_map) == 32, "public prefix");
+ _Static_assert(offsetof(struct unicode_map_rcu, map) == 0, "allocation base");
+ struct unicode_map *um = utf8_load(1);
+ assert(um == allocated && refs == 1 && !puts && !frees);
+ utf8_unload(um);
+ assert(queued && queued_fn && refs == 1 && !puts && !frees);
+ queued_fn(queued);
+ assert(!refs && puts == 1 && frees == 1 && !allocated);
+ return 0;
+}
+''')
+
+    def test_unicode_load_failure_releases_private_allocation(self):
+        self.unicode_case(r'''
+int main(void) {
+ unsupported = 1;
+ assert(utf8_load(1) == ERR_PTR(-EINVAL));
+ assert(!allocated && !refs && puts == 1 && frees == 1 && !queued);
+ return 0;
+}
+''')
+
+    def test_unicode_allocation_failure_and_null_unload(self):
+        self.unicode_case(r'''
+int main(void) {
+ fail_alloc = 1;
+ assert(utf8_load(1) == ERR_PTR(-ENOMEM));
+ utf8_unload(NULL);
+ assert(!allocated && !refs && !puts && !frees && !queued);
+ return 0;
+}
+''')
+
+    def test_unicode_public_declaration_restored(self):
+        path = 'kernel_platform/common/include/linux/unicode.h'
+        old = subprocess.check_output(['git', '-C', str(ROOT), 'show',
+                                       '79c418a771a8717edb4a3ed2b814fb9e89ec4a7c:' + path], text=True)
+        new = (ROOT / path).read_text()
+        pattern = r'struct unicode_map \{.*?\n\};'
+        self.assertEqual(re.search(pattern, old, re.S)[0], re.search(pattern, new, re.S)[0])
 
 
 if __name__ == '__main__':

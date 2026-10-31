@@ -10,6 +10,12 @@
 
 #include "utf8n.h"
 
+/* The public map is a stable KMI prefix; its lifetime state is core-owned. */
+struct unicode_map_rcu {
+	struct unicode_map map;
+	struct rcu_head rcu;
+};
+
 int utf8_validate(const struct unicode_map *um, const struct qstr *str)
 {
 	if (utf8nlen(um, UTF8_NFDI, str->name, str->len) < 0)
@@ -175,11 +181,13 @@ static const struct utf8data *find_table_version(const struct utf8data *table,
 
 struct unicode_map *utf8_load(unsigned int version)
 {
+	struct unicode_map_rcu *map;
 	struct unicode_map *um;
 
-	um = kzalloc(sizeof(struct unicode_map), GFP_KERNEL);
-	if (!um)
+	map = kzalloc(sizeof(*map), GFP_KERNEL);
+	if (!map)
 		return ERR_PTR(-ENOMEM);
+	um = &map->map;
 	um->version = version;
 
 	um->tables = symbol_request(utf8_data_table);
@@ -201,17 +209,17 @@ struct unicode_map *utf8_load(unsigned int version)
 out_symbol_put:
 	symbol_put(utf8_data_table);
 out_free_um:
-	kfree(um);
+	kfree(map);
 	return ERR_PTR(-EINVAL);
 }
 EXPORT_SYMBOL(utf8_load);
 
 static void utf8_unload_rcu(struct rcu_head *head)
 {
-	struct unicode_map *um = container_of(head, struct unicode_map, rcu);
+	struct unicode_map_rcu *map = container_of(head, struct unicode_map_rcu, rcu);
 
 	symbol_put(utf8_data_table);
-	kfree(um);
+	kfree(map);
 }
 
 /*
@@ -222,8 +230,12 @@ static void utf8_unload_rcu(struct rcu_head *head)
  */
 void utf8_unload(struct unicode_map *um)
 {
-	if (um)
-		call_rcu(&um->rcu, utf8_unload_rcu);
+	struct unicode_map_rcu *map;
+
+	if (!um)
+		return;
+	map = container_of(um, struct unicode_map_rcu, map);
+	call_rcu(&map->rcu, utf8_unload_rcu);
 }
 EXPORT_SYMBOL(utf8_unload);
 
