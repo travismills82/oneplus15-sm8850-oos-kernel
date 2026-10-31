@@ -1029,11 +1029,20 @@ static struct page *follow_pud_mask(struct vm_area_struct *vma,
 		return no_page_table(vma, flags, address);
 	if (pud_leaf(pud)) {
 		ptl = pud_lock(mm, pudp);
-		page = follow_huge_pud(vma, address, pudp, flags, ctx);
+		/* The entry might have changed while we acquired the lock. */
+		pud = pudp_get(pudp);
+		if (unlikely(!pud_present(pud))) {
+			spin_unlock(ptl);
+			return no_page_table(vma, flags, address);
+		}
+		if (likely(pud_leaf(pud))) {
+			page = follow_huge_pud(vma, address, pudp, flags, ctx);
+			spin_unlock(ptl);
+			if (page)
+				return page;
+			return no_page_table(vma, flags, address);
+		}
 		spin_unlock(ptl);
-		if (page)
-			return page;
-		return no_page_table(vma, flags, address);
 	}
 	if (unlikely(pud_bad(pud)))
 		return no_page_table(vma, flags, address);
