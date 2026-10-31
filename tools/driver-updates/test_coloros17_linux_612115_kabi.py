@@ -85,6 +85,60 @@ int main(void) {
 }
 '''
 
+BSG_PREFIX = r'''
+#include <assert.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <errno.h>
+struct device { int value; };
+struct queue_limits { int value; };
+struct bsg_job { void *reply; };
+struct request { struct bsg_job job; };
+struct request_queue { int value; };
+struct blk_mq_tag_set { int value; };
+struct bsg_set { struct blk_mq_tag_set tag_set; unsigned reply_len; };
+typedef int (bsg_job_fn)(struct bsg_job *);
+typedef int (bsg_timeout_fn)(struct request *);
+#define container_of(p, t, m) ((t *)((char *)(p) - offsetof(t, m)))
+#define blk_mq_rq_to_pdu(rq) (&(rq)->job)
+#define GFP_KERNEL 0
+#define SCSI_SENSE_BUFFERSIZE 96
+#define kzalloc(n, flags) calloc(1, n)
+static struct bsg_set set;
+static struct request_queue queue;
+static struct device device;
+static struct queue_limits limits;
+static int request_fn(struct bsg_job *j) { return 0; }
+static int timeout_fn(struct request *r) { return 0; }
+static struct request_queue *bsg_setup_queue_with_reply_len(struct device *dev,
+ const char *name, struct queue_limits *lim, bsg_job_fn *job_fn,
+ bsg_timeout_fn *timeout, int dd_job_size, unsigned reply_len) {
+ assert(dev == &device && name[0] == 'b' && lim == &limits);
+ assert(job_fn == request_fn && timeout == timeout_fn && dd_job_size == 17);
+ set.reply_len = reply_len;
+ return &queue;
+}
+'''
+
+BSG_MAIN = r'''
+int main(void) {
+ struct request rq = {0};
+ assert(bsg_setup_queue(&device, "bsg", &limits, request_fn, timeout_fn, 17) == &queue);
+ assert(set.reply_len == 96);
+ assert(!bsg_init_rq(&set.tag_set, &rq, 0, 0));
+ assert(rq.job.reply);
+ ((volatile char *)rq.job.reply)[95] = 1;
+ free(rq.job.reply);
+ assert(bsg_setup_queue_with_reply_len(&device, "bsg", &limits,
+         request_fn, timeout_fn, 17, 104) == &queue);
+ assert(!bsg_init_rq(&set.tag_set, &rq, 0, 0));
+ assert(rq.job.reply);
+ ((volatile char *)rq.job.reply)[103] = 1;
+ free(rq.job.reply);
+ return 0;
+}
+'''
+
 
 class Linux612115Kabi(unittest.TestCase):
     def regcache_case(self, init=0, populate=0):
@@ -128,6 +182,37 @@ class Linux612115Kabi(unittest.TestCase):
         maple = (base / 'regcache-maple.c').read_text()
         self.assertIn('mas_lock_irqsave(&mas, flags);', maple)
         self.assertIn('mas_unlock_irqrestore(&mas, flags);', maple)
+
+    def test_bsg_legacy_signature_preserved(self):
+        path = 'kernel_platform/common/include/linux/bsg-lib.h'
+        old = subprocess.check_output(['git', '-C', str(ROOT), 'show',
+                                       '79c418a771a8717edb4a3ed2b814fb9e89ec4a7c:' + path], text=True)
+        new = (ROOT / path).read_text()
+        pattern = r'struct request_queue \*bsg_setup_queue\(.*?\);'
+        self.assertEqual(re.search(pattern, old, re.S)[0], re.search(pattern, new, re.S)[0])
+
+    def test_bsg_actual_legacy_forwarding_and_sized_allocation(self):
+        wrapper = function('block/bsg-lib.c', 'struct request_queue *bsg_setup_queue(')
+        alloc = function('block/bsg-lib.c', 'static int bsg_init_rq(')
+        result = host_c(BSG_PREFIX + wrapper + alloc + BSG_MAIN)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_bsg_undersized_reply_negative_control(self):
+        wrapper = function('block/bsg-lib.c', 'struct request_queue *bsg_setup_queue(')
+        alloc = function('block/bsg-lib.c', 'static int bsg_init_rq(')
+        self.assertEqual(alloc.count('kzalloc(bset->reply_len, GFP_KERNEL)'), 1)
+        alloc = alloc.replace('kzalloc(bset->reply_len, GFP_KERNEL)',
+                              'kzalloc(SCSI_SENSE_BUFFERSIZE + 0 * bset->reply_len, GFP_KERNEL)')
+        result = host_c(BSG_PREFIX + wrapper + alloc + BSG_MAIN)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_ufs_uses_sized_reply_not_legacy_wrapper(self):
+        probe = function('drivers/ufs/core/ufs_bsg.c', 'int ufs_bsg_probe(')
+        self.assertIn('bsg_setup_queue_with_reply_len(', probe)
+        self.assertIn('sizeof(struct ufs_rpmb_reply)', probe)
+        self.assertNotIn('bsg_setup_queue(', probe)
+        transport = function('block/bsg-lib.c', 'static int bsg_transport_sg_io_fn(')
+        self.assertIn('job->reply_len = bset->reply_len;', transport)
 
 
 if __name__ == '__main__':

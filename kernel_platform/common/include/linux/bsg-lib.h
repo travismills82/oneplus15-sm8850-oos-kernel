@@ -66,6 +66,10 @@ void bsg_job_done(struct bsg_job *job, int result,
 		  unsigned int reply_payload_rcv_len);
 struct request_queue *bsg_setup_queue(struct device *dev, const char *name,
 		struct queue_limits *lim, bsg_job_fn *job_fn,
+		bsg_timeout_fn *timeout, int dd_job_size);
+struct request_queue *bsg_setup_queue_with_reply_len(struct device *dev,
+		const char *name,
+		struct queue_limits *lim, bsg_job_fn *job_fn,
 		bsg_timeout_fn *timeout, int dd_job_size,
 		unsigned int reply_len);
 void bsg_remove_queue(struct request_queue *q);

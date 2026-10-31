@@ -355,7 +355,7 @@ static const struct blk_mq_ops bsg_mq_ops = {
 };
 
 /**
- * bsg_setup_queue - Create and add the bsg hooks so we can receive requests
+ * bsg_setup_queue_with_reply_len - Create a bsg queue with a sized reply
  * @dev: device to attach bsg device to
  * @name: device to give bsg device
  * @lim: queue limits for the bsg queue
@@ -364,7 +364,8 @@ static const struct blk_mq_ops bsg_mq_ops = {
  * @dd_job_size: size of LLD data needed for each job
  * @reply_len: size of the reply buffer needed for each job
  */
-struct request_queue *bsg_setup_queue(struct device *dev, const char *name,
+struct request_queue *bsg_setup_queue_with_reply_len(struct device *dev,
+		const char *name,
 		struct queue_limits *lim, bsg_job_fn *job_fn,
 		bsg_timeout_fn *timeout, int dd_job_size,
 		unsigned int reply_len)
@@ -415,5 +416,26 @@ out_queue:
 out_tag_set:
 	kfree(bset);
 	return ERR_PTR(ret);
+}
+EXPORT_SYMBOL_GPL(bsg_setup_queue_with_reply_len);
+
+/**
+ * bsg_setup_queue - Create a bsg queue with the legacy SCSI reply size
+ * @dev: device to attach bsg device to
+ * @name: device to give bsg device
+ * @lim: queue limits for the bsg queue
+ * @job_fn: bsg job handler
+ * @timeout: timeout handler function pointer
+ * @dd_job_size: size of LLD data needed for each job
+ *
+ * Keep the existing six-argument module interface. Callers requiring a
+ * larger reply, such as UFS advanced RPMB, must use the sized entry point.
+ */
+struct request_queue *bsg_setup_queue(struct device *dev, const char *name,
+		struct queue_limits *lim, bsg_job_fn *job_fn,
+		bsg_timeout_fn *timeout, int dd_job_size)
+{
+	return bsg_setup_queue_with_reply_len(dev, name, lim, job_fn, timeout,
+					    dd_job_size, SCSI_SENSE_BUFFERSIZE);
 }
 EXPORT_SYMBOL_GPL(bsg_setup_queue);
