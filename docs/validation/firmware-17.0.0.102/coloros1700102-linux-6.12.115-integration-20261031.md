@@ -746,6 +746,33 @@ security settings are preserved. No ABI reference or symbol list is updated.
 No installed image, init_boot, slot, AVB state or device is modified. Nothing
 is pushed or published.
 
+### Committed repair ledger
+
+The built common-source patch exactly equals the common diff committed by
+`fd047e5cdc7ef42ee11f1bed321c79ba2e15d045`; current common tree is
+`d291044f0cab4c86a562498ca77fc5c6aedf3338`. The attestation in
+`R/final-source-content-attestation.json` verifies this mapping without
+rebuilding or silently relabelling the frozen `g4db9d0a53fa4` artifact.
+
+Paths below are relative to `kernel_platform/common/`. Tests and this report
+are separate supporting changes; no generated artifacts/keys are committed.
+
+| Root | Compatibility commit | Source files |
+|---|---|---|
+| Regcache | `410359e2ca1107485c017f09f23d98c932615e2b` | `drivers/base/regmap/internal.h`, `drivers/base/regmap/regcache.c` |
+| BSG | `4d57854484314513f8b687b909279cbeef265174` | `include/linux/bsg-lib.h`, `block/bsg-lib.c`, `drivers/ufs/core/ufs_bsg.c`, `drivers/scsi/mpi3mr/mpi3mr_app.c`, `drivers/scsi/scsi_transport_fc.c`, `drivers/scsi/scsi_transport_iscsi.c`, `drivers/scsi/scsi_transport_sas.c` |
+| Unicode | `173b52b15d7767bf5649f4651dbca675eb922bf7` | `include/linux/unicode.h`, `fs/unicode/utf8-core.c` |
+| io_uring | `238ad2a9f8cbf441a213c0b9f449ce3fee62f4cb` | `include/linux/io_uring_types.h`; provenance description corrected separately by `b8fb656e0c683f63c3780a347ffd57ecd8e264ff` |
+| Perf storage | `c3158f6c34c9f665d49eb0a0d8d4772b65e69782` | `include/linux/sched/user.h` |
+| MM/futex | `9476b56ab6be869da2bd5955eaa72918103df53c` | `include/linux/mm_types.h`, `include/linux/futex.h`, `kernel/futex/core.c` |
+| Keyring | `4db9d0a53fa4e0a357e58c0f4dd16d71d0c33515` | `include/linux/key.h`, `include/linux/key-type.h`, `include/linux/key_internal.h`, `net/core/net_namespace.c`, `security/keys/internal.h`, `security/keys/key.c`, `security/keys/keyring.c`, `security/keys/gc.c`, `security/keys/persistent.c`, `security/keys/proc.c`, `security/keys/process_keys.c`, `security/keys/request_key.c`, `security/keys/request_key_auth.c` |
+| Perf C/Rust reserve identity | `fd047e5cdc7ef42ee11f1bed321c79ba2e15d045` | `include/linux/sched/user.h`, `kernel/events/core.c` |
+
+Every source commit has a description covering preservation and validation.
+All remain separate; neither imported history nor earlier repair commits are
+amended or squashed. The 6.12.115 integration report retains failed stages,
+the initial probe/control failures and the final zero-mismatch evidence.
+
 **Core .115 installed-module compatibility: PASS. Enforced GKI: FAIL / 44
 accounted owners. Unified canary: BLOCKED by the mandatory GPU/GEAS contract;
 matched production/distribution qualification remains pending.**
