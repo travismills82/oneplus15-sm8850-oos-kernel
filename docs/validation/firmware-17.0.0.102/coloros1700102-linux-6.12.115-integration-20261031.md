@@ -267,3 +267,190 @@ source history and raw artifacts are preserved for the next focused repair.
 Production Canoe and matched-driver compilation should follow correction of
 these module-boundary failures, not produce an apparently installable package
 around a known incompatible core.
+
+## Focused KABI repair — input and distribution audit (2026-10-31)
+
+This section records the subsequent repair work; it does **not** change the
+failed raw-.115 results above into a pass. Evidence is preserved separately at:
+
+`/home/travis/Android/kernel-test-backups/coloros17-612115-kabi-repair-20261031-trcyzT/`
+
+### Reference integrity
+
+The frozen `79c418a771a8717edb4a3ed2b814fb9e89ec4a7c` .114 vmlinux export
+map is byte-identical to the physically qualified .114 export map, SHA256
+`fa6d325e5e5ce232ca7622176829ce7c4bcf7cf7ea47070bf6f48b265da02efb`.
+This is not a comparison against an unrelated intermediate SDK.
+
+The read-only audit found:
+
+- zero effective CONFIG-value differences;
+- identical Clang, LLD and Rust compiler binary hashes;
+- no production build-script, SoC target, manifest, KMI-list or ABI-reference
+  changes in the .114→.115 integration;
+- identical `common/gki` input tree
+  `df04beac18d0fa02d78ad76efcdba0c7b2326f14`;
+- unchanged MODVERSIONS, GENDWARFKSYMS stable processing, signing, protected
+  exports, KCFI and established LTO settings;
+- the same exact 1,070-location installed-canary module population, including
+  the four already qualified replacement modules, with a full file-hash
+  inventory (`actual-module-population.tsv`);
+- a verified .114 SDK manifest: no hand-edited symbol-version table is used.
+
+The 15 generated-header differences are version/build-path metadata plus the
+real MM offset change: `MM_CONTEXT_ID` is 968 in .114 and 976 in raw .115.
+The generated CONFIG header differs only in its version comment. Environment
+differences are the source-derived timestamp/epoch and the explicitly enabled
+`KBUILD_SYMTYPES=1` diagnostic output; compiler flags are unchanged.
+
+An unchanged-source .115 control rebuild used the documented Kleaf local
+cache mode, with no Kconfig or compiler-security change:
+
+```sh
+tools/bazel --output_user_root="$E/bazel" build --jobs=4 \
+  --config=local --cache_dir="$R/kbuild-cache" --kbuild_symtypes \
+  //common:kernel_aarch64 //common:kernel_aarch64_abi_dump
+```
+
+It completed successfully in 1,392.574 seconds. Both symbol-version files
+and both ABI dumps are byte-identical to the original raw-.115 build:
+`Module.symvers`, `vmlinux.symvers`, `abi.stg`, and `abi-full.stg`.
+Thus the type-output/cache execution mode does not explain or repair the
+CRC failures. The control outputs are frozen under `control-unchanged-115/`.
+
+### Exact mismatch distribution
+
+There are **2,817 unique imported symbols** behind the **26,171 failing CRC
+records**. `module_layout` accounts for 1,070 records, including the 38
+dormant locations; all 1,032 active records remain blocked in raw .115.
+The corresponding 6,598 changed vmlinux exports include exports not imported
+by this firmware and must not be confused with the 2,817-import count.
+
+All 2,817 are attributable to the reviewed roots in the actual per-translation-
+unit GENDWARFKSYMS type expansions. The pruned STG alone omitted some symbol
+type information; the complete symtypes audit leaves **zero unattributed
+mismatched symbols**. Exact symbol, consumer, provider, required/generated
+CRC and originating symtypes file records are retained in the evidence.
+
+| Type-root dependency cohort | Unique imported symbols | CRC mismatch records |
+|---|---:|---:|
+| MM + keyring | 13 | 157 |
+| MM + keyring + perf | 2 | 11 |
+| MM + keyring + perf + Unicode | 2,743 | 25,420 |
+| MM + keyring + perf + Unicode + io_uring | 24 | 196 |
+| MM + keyring + perf + Unicode + regcache | 33 | 383 |
+| Keyring alone | 2 | 4 |
+| **Total** | **2,817** | **26,171** |
+
+These are disjoint cohorts, not sums of overlapping root reachability.
+BSG has no installed direct importer but still has an independently changed
+maintained function prototype. Repairing one root may leave a CRC different
+because another root remains in the same type graph.
+
+Actual BTF/DWARF controls confirm `struct module` (1,600 bytes), `task_struct`
+(5,184) and `net_device` (2,688) have unchanged existing member offsets and
+sizes. The `module_layout` failure is propagated type-graph fallout, not a
+change in the module object's physical layout. This does not excuse the real
+MM/key/accounting member-offset changes.
+
+### Incremental repair ledger
+
+Work is one root at a time. No ABI reference, KMI symbol list, CRC table,
+installed partition or qualified artifact is modified by this repair phase.
+
+| Root | Proposed preservation | Current status |
+|---|---|---|
+| Futex MM identity | Place the atomic identity in proven existing tail padding; retain unique-ID initialization/publication and same-width futex identity semantics. | Not applied; compiled layout/CRC proof required. |
+| Perf accounting | Consume a compatible existing user_struct reserve for the independent perf counter. | Not applied. |
+| Keyring identities | Preserve public prefixes with core-owned private identity state and cached IDs; retain SipHash/address-independent ordering and unregister-safe lifetime. | Ownership/consumer audit in progress; no source change. |
+| Regcache population | Keep the existing operations table intact; hold the optional populate callback in a core-private backend registry. | Compiled root proof PASS; commit `410359e2ca1107485c017f09f23d98c932615e2b`. |
+| Unicode RCU | Keep the public map unchanged inside an allocation-owned private RCU wrapper. | Compiled root proof PASS; commit `173b52b15d776`; full module gate remains failed through other roots. |
+| io_uring polling RCU | Use proven tail padding without moving existing fields; retain reference-held deferred wakeup and pending-state synchronization. | Compiled root proof PASS; commit `238ad2a9f8cbf`; overall module gate still FAIL. |
+| BSG reply sizing | Preserve the six-argument entry point with a correctly typed wrapper, and use a sized helper for the 104-byte UFS RPMB reply. | Compiled argument/KCFI proof PASS; commit `4d57854484314513f8b687b909279cbeef265174`; final shared-type CRC remains pending. |
+
+The first regcache adaptation leaves cache init/exit outside the map lock and
+population inside it, retaining the .115 stable lock-order corrections.
+All three backend objects are core-owned; no backend currently initializes
+the optional callback. The maple IRQ-safe teardown is untouched. No callback
+cast, allocation-size deception, version override or source rollback is used.
+The extracted-C ASan/UBSan tests exercise a test-only populated backend,
+initialization failure and population failure; these are not physical tests.
+
+Regcache's normal rebuild/dump completed in 126.239 seconds, with strict KMI
+symbol-list checking PASS. Actual BTF and DWARF now reproduce the qualified
+`regcache_ops` (72 bytes) and `regmap` (688 bytes) exactly, with zero existing
+member offset/size changes. All 34 emitted AArch64 KCFI type words match;
+the same eight direct-only helpers have no type word in either build.
+The helper preceding-instruction bytes are not misidentified as KCFI data.
+All 146 host tests pass, including the five new extracted-C regressions.
+
+The full production-precedence oracle remains **FAIL: 2,817 unique symbols,
+26,171 mismatch records**, with zero missing providers or namespace failures.
+The regcache cohort still reaches the unrepaired MM/key/perf/Unicode graph;
+an unchanged total does not invalidate the restored leaf, nor does restoring
+the leaf qualify the kernel. The frozen source patch SHA256 is
+`634674340da2e2b385f97f8693906d893b525e70f46cadf2dc6904786c342b21`,
+which equals the common-source diff recorded by commit `410359e2ca110`.
+
+BSG's compatibility wrapper preserves the exact qualified six-argument
+declaration and forwards to the correctly typed sized implementation with
+`SCSI_SENSE_BUFFERSIZE` (96). UFS alone requests its actual 104-byte
+`ufs_rpmb_reply`. The sized allocation and per-job advertised reply length
+remain intact. The new host tests cover argument forwarding, both buffer
+sizes, and an ASan-detected deliberately undersized allocation negative
+control. No function-pointer cast or forced version is used.
+
+BSG's common build/strict symbol-list check/ABI dump completed successfully
+in 159.572 seconds. Its six-argument type expansion and KCFI ID `0x99ebd488`
+match the qualified function contract; the new sized helper is not retained
+as an additional production export. With the other roots still present,
+the public function's natural CRC is `0x4be95c53`, not yet the qualified
+`0xf6c636b8`. The module oracle remains FAIL at 2,817 symbols / 26,171
+records, zero missing providers/namespaces. There is no stock BSG importer;
+this repair fixes a maintained API, not a count-selected oracle exception.
+
+Unicode's source adaptation retains a 48-byte core allocation: a 32-byte
+public map prefix followed by the same 16-byte RCU state. The public map
+declaration is restored verbatim. Allocation failure, setup failure,
+NULL unload, delayed table release and base-pointer freeing are covered by
+the four new focused host tests. Source ownership audit finds the map is
+allocated by `utf8_load`; no caller-owned static/embedded map is passed to
+the unloading path. Its normal common rebuild/strict symbol-list check/ABI
+dump completed in 160.055 seconds. Actual BTF and DWARF reproduce the old
+32-byte map and every old member offset exactly. The private 48-byte wrapper
+contains that map at offset zero and the 16-byte callback head at offset 32.
+All ten pre-existing UTF8 KCFI words match; the additional internal RCU
+callback is the required stable lifetime fix. All 154 host tests pass.
+The complete oracle remains FAIL at 2,817 symbols / 26,171 records, with
+zero missing providers and namespace failures. No count-selected module
+replacement or oracle exception is introduced.
+
+io_uring's deferred-wakeup functions are unchanged byte-for-byte in source.
+Only the two new fields move into the established tail padding using
+`ANDROID_KABI_IGNORE`, without a byte-size override. The new extracted-C
+tests verify concurrent coalescing, reference-held deferred wakeups, repeat
+wakeups, and detection of a deliberately omitted lifetime reference. These
+are host control-flow tests, not an RCU weak-memory or device proof. The
+normal common build/strict symbol-list check/ABI dump completed successfully
+in 168.179 seconds. Actual BTF confirms size 1,536, zero existing member
+offset/size changes, the RCU head at byte 1,512 and pending atomic at 1,528.
+The two fields consume 20 of the old 24 padding bytes. Existing alignment
+requirements are unchanged. All 344 emitted `io_` KCFI type words match the
+unadapted .115 implementation, with identical direct-only function sets.
+The oracle still fails at 2,817 symbols / 26,171 records, zero missing
+providers and namespace failures; MM, perf and keyring roots remain.
+
+**io_uring provenance correction:** the description of the newly created
+`238ad2a9f8cbf` source commit mistakenly gives
+`30982202276ac3007acb1ea221545389391702f3` as the upstream identity.
+The authoritative original commit body in local import
+`d97c442fb26f4a4482de70b19af4f661eb886dd3` identifies upstream
+**`b88902d8745a701d24275d012f0830e3628e2a22`**, with stable backport
+`d8c618747a6aa90022e19ec614aa7157d0302108`. This correction supersedes
+that one description field. The stable SHA and implementation were correct;
+no source or preserved history is rewritten to correct the description.
+
+**Overall KABI/module compatibility remains FAIL pending the incremental
+compiled/oracle results. GPU modernization remains mandatory and quarantined
+until its remaining provider/GEAS contracts are proven. No .115 release
+candidate images or physical tests are authorized by this report.**
