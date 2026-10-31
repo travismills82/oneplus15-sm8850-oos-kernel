@@ -189,6 +189,68 @@ static const struct utf8data *find_table_version(const struct utf8data *data,
  unsigned size, unsigned version) { return data; }
 '''
 
+IO_POLL_PREFIX = r'''
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdatomic.h>
+#include <pthread.h>
+typedef struct { _Atomic int value; } atomic_t;
+struct rcu_head { void *next; void (*func)(struct rcu_head *); };
+struct percpu_ref { _Atomic int count; };
+struct io_ring_ctx {
+ bool poll_wq;
+ struct percpu_ref refs;
+ struct rcu_head poll_wq_rcu;
+ atomic_t poll_wq_rcu_pending;
+};
+static struct io_ring_ctx ctx;
+static struct rcu_head *queued;
+static void (*queued_fn)(struct rcu_head *);
+static int wakes;
+#define container_of(p, t, m) ((t *)((char *)(p) - offsetof(t, m)))
+static void atomic_set(atomic_t *a, int n) { atomic_store(&a->value, n); }
+static int atomic_xchg(atomic_t *a, int n) { return atomic_exchange(&a->value, n); }
+static bool wq_has_sleeper(bool *p) { return *p; }
+static void percpu_ref_get(struct percpu_ref *p) { atomic_fetch_add(&p->count, 1); }
+static void percpu_ref_put(struct percpu_ref *p) { assert(atomic_fetch_sub(&p->count, 1) == 1); }
+static void io_poll_wq_wake(struct io_ring_ctx *p) {
+ assert(!atomic_load(&p->poll_wq_rcu_pending.value));
+ assert(atomic_load(&p->refs.count) == 1); ++wakes;
+}
+static void call_rcu_hurry(struct rcu_head *head, void (*fn)(struct rcu_head *)) {
+ assert(!queued && !queued_fn); queued = head; queued_fn = fn;
+}
+'''
+
+IO_POLL_MAIN = r'''
+static void *wake_thread(void *arg) { io_local_work_wake_poll(&ctx); return NULL; }
+static void flush(void) {
+ assert(queued == &ctx.poll_wq_rcu && queued_fn);
+ struct rcu_head *head = queued;
+ void (*fn)(struct rcu_head *) = queued_fn;
+ queued = NULL; queued_fn = NULL;
+ fn(head);
+}
+int main(void) {
+ io_local_work_wake_poll(&ctx);
+ assert(!queued && !atomic_load(&ctx.refs.count));
+ ctx.poll_wq = true;
+ pthread_t threads[16];
+ for (int i = 0; i < 16; ++i) assert(!pthread_create(&threads[i], NULL, wake_thread, NULL));
+ for (int i = 0; i < 16; ++i) assert(!pthread_join(threads[i], NULL));
+ assert(atomic_load(&ctx.refs.count) == 1 && !wakes);
+ assert(atomic_load(&ctx.poll_wq_rcu_pending.value) == 1);
+ flush();
+ assert(!atomic_load(&ctx.refs.count) && wakes == 1);
+ io_local_work_wake_poll(&ctx);
+ assert(atomic_load(&ctx.refs.count) == 1);
+ flush();
+ assert(!atomic_load(&ctx.refs.count) && wakes == 2);
+ return 0;
+}
+'''
+
 
 class Linux612115Kabi(unittest.TestCase):
     def regcache_case(self, init=0, populate=0):
@@ -319,6 +381,31 @@ int main(void) {
         new = (ROOT / path).read_text()
         pattern = r'struct unicode_map \{.*?\n\};'
         self.assertEqual(re.search(pattern, old, re.S)[0], re.search(pattern, new, re.S)[0])
+
+    def test_io_poll_reference_and_coalescing(self):
+        code = function('io_uring/io_uring.c', 'static void io_poll_wq_wake_rcu(')
+        code += function('io_uring/io_uring.c', 'static void io_local_work_wake_poll(')
+        result = host_c(IO_POLL_PREFIX + code + IO_POLL_MAIN)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_io_poll_missing_reference_negative_control(self):
+        code = function('io_uring/io_uring.c', 'static void io_poll_wq_wake_rcu(')
+        code += function('io_uring/io_uring.c', 'static void io_local_work_wake_poll(')
+        self.assertEqual(code.count('percpu_ref_get(&ctx->refs);'), 1)
+        code = code.replace('percpu_ref_get(&ctx->refs);', '(void)percpu_ref_get;')
+        result = host_c(IO_POLL_PREFIX + code + IO_POLL_MAIN)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_io_poll_fix_body_unchanged_and_state_at_tail(self):
+        path = 'kernel_platform/common/io_uring/io_uring.c'
+        raw = subprocess.check_output(['git', '-C', str(ROOT), 'show',
+                                       '46fb47434d1067af6076f6491fc046ba6bf912ba:' + path], text=True)
+        for signature in ['static void io_poll_wq_wake_rcu(', 'static void io_local_work_wake_poll(']:
+            self.assertIn(function('io_uring/io_uring.c', signature), raw)
+        header = (ROOT / 'kernel_platform/common/include/linux/io_uring_types.h').read_text()
+        self.assertGreater(header.index('ANDROID_KABI_IGNORE(9, struct rcu_head poll_wq_rcu)'),
+                           header.index('**sqe_pages;'))
+        self.assertIn('ANDROID_KABI_IGNORE(10, atomic_t poll_wq_rcu_pending)', header)
 
 
 if __name__ == '__main__':
