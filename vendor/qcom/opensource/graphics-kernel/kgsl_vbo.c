@@ -589,7 +589,7 @@ void kgsl_sharedmem_bind_ranges(struct kgsl_sharedmem_bind_op *op)
 	kref_get(&op->ref);
 
 	INIT_WORK(&op->work, kgsl_sharedmem_bind_worker);
-	schedule_work(&op->work);
+	queue_work(system_wq, &op->work);
 }
 
 struct kgsl_sharedmem_bind_fence {
