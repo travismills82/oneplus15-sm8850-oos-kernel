@@ -29,9 +29,6 @@ struct user_struct {
 	defined(CONFIG_SECRETMEM)
 	atomic_long_t locked_vm;	/* pinned pages charged to RLIMIT_MEMLOCK */
 #endif
-#ifdef CONFIG_PERF_EVENTS
-	atomic_long_t perf_mlock;	/* perf buffer pages within perf_event_mlock_kb */
-#endif
 #ifdef CONFIG_WATCH_QUEUE
 	atomic_t nr_watches;	/* The number of watches this user currently has */
 #endif
@@ -39,7 +36,12 @@ struct user_struct {
 	/* Miscellaneous per-user rate limit */
 	struct ratelimit_state ratelimit;
 
+#ifdef CONFIG_PERF_EVENTS
+	/* Keep perf's independent budget without moving existing user fields. */
+	ANDROID_KABI_USE(1, atomic_long_t perf_mlock);
+#else
 	ANDROID_KABI_RESERVE(1);
+#endif
 	ANDROID_KABI_RESERVE(2);
 };
 

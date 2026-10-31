@@ -407,6 +407,22 @@ int main(void) {
                            header.index('**sqe_pages;'))
         self.assertIn('ANDROID_KABI_IGNORE(10, atomic_t poll_wq_rcu_pending)', header)
 
+    def test_perf_budget_consumes_reserve_without_counter_alias(self):
+        header = (ROOT / 'kernel_platform/common/include/linux/sched/user.h').read_text()
+        self.assertIn('ANDROID_KABI_USE(1, atomic_long_t perf_mlock);', header)
+        self.assertGreater(header.index('ANDROID_KABI_USE(1, atomic_long_t perf_mlock)'),
+                           header.index('struct ratelimit_state ratelimit;'))
+        self.assertIn('atomic_long_t locked_vm;', header)
+
+    def test_perf_accounting_and_user_allocation_implementation_unchanged(self):
+        for path in ['kernel/events/core.c', 'kernel/user.c']:
+            full = 'kernel_platform/common/' + path
+            raw = subprocess.check_output(['git', '-C', str(ROOT), 'show',
+                                           '46fb47434d1067af6076f6491fc046ba6bf912ba:' + full])
+            self.assertEqual((ROOT / full).read_bytes(), raw)
+        user = (ROOT / 'kernel_platform/common/kernel/user.c').read_text()
+        self.assertIn('kmem_cache_zalloc(uid_cachep, GFP_KERNEL)', user)
+
 
 if __name__ == '__main__':
     unittest.main()
