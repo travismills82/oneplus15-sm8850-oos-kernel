@@ -60,6 +60,62 @@ def safe_path(value):
         raise ValueError('Kbuild input paths must not contain whitespace/shell metacharacters')
     return path
 
+def standalone_hermetic_base(environment, prepared_k):
+    """Use the standalone branch pinned by the hash-verified build env."""
+    defaults = re.findall(
+        r'^[ \t]*KLEAF_HERMETIC_BASE=\$\{KLEAF_HERMETIC_BASE:-([^}\r\n]+)\}[ \t]*$',
+        environment.read_text(), re.M)
+    candidates = [value for value in defaults if value.startswith('bazel-out/')]
+    if len(candidates) != 1:
+        raise ValueError('Expected exactly one standalone hermetic-tools fallback in qualified environment')
+    value = candidates[0]
+    path = Path(value)
+    if (not re.fullmatch(r'bazel-out/[A-Za-z0-9_.+-]+/bin/build/kernel/hermetic-tools', value)
+            or path.as_posix() != value or any(part in ('.', '..') for part in path.parts)):
+        raise ValueError('Non-canonical standalone hermetic-tools fallback')
+    if not (prepared_k / path).is_dir():
+        raise ValueError('Qualified standalone hermetic-tools directory is missing')
+    return value
+
+def read_kernel_sdk(path, expected_sha256):
+    """Read an explicitly hash-pinned, separately reviewed normal-build SDK.
+
+    This is not build attestation or runtime qualification. The release audit
+    must establish provenance of the normal build and its artifacts first.
+    Paths and every byte are rechecked; no generated CRC table is synthesized.
+    """
+    if not re.fullmatch(r'[0-9a-f]{64}', expected_sha256 or '') or digest(path) != expected_sha256:
+        raise ValueError('Kernel SDK manifest hash is missing or differs')
+    data = json.loads(path.read_text())
+    required = {'schema_version', 'kernel_source_commit', 'common_tree', 'build_log', 'build_exit', 'inputs'}
+    if not isinstance(data, dict) or set(data) != required or data['schema_version'] != 1:
+        raise ValueError('Unsupported/incomplete kernel SDK manifest')
+    for name in ('kernel_source_commit', 'common_tree'):
+        if not isinstance(data[name], str) or not re.fullmatch(r'[0-9a-f]{40}', data[name]):
+            raise ValueError('Invalid kernel SDK source identity')
+    names = {'frozen_symvers', 'prepare_archive', 'environment', 'vmlinux_symvers',
+             'localversion', 'kernel_config', 'Image'}
+    if not isinstance(data['inputs'], dict) or set(data['inputs']) != names:
+        raise ValueError('Incomplete/unexpected kernel SDK inputs')
+    def verify_record(record):
+        if not isinstance(record, dict) or set(record) != {'path', 'sha256'}:
+            raise ValueError('Invalid SDK artifact record')
+        value = record['path']
+        if not isinstance(value, str) or not Path(value).is_absolute():
+            raise ValueError('SDK paths must be absolute')
+        artifact = safe_path(value)
+        if (not isinstance(record['sha256'], str)
+                or not re.fullmatch(r'[0-9a-f]{64}', record['sha256'])
+                or digest(artifact) != record['sha256']):
+            raise ValueError(f'Kernel SDK artifact changed: {artifact}')
+        return artifact
+    inputs = {name: verify_record(record) for name, record in data['inputs'].items()}
+    verify_record(data['build_log'])
+    exit_file = verify_record(data['build_exit'])
+    if exit_file.read_text().strip() != '0':
+        raise ValueError('Kernel SDK build did not succeed')
+    return data, inputs
+
 def snapshot_inputs(module):
     """Hash copied code/build definitions, not generated object files."""
     result = {}
@@ -149,18 +205,32 @@ def parser():
     p.add_argument('--extra-symvers', type=safe_path, action='append', default=[])
     p.add_argument('--freeze-source-tree', action='append', default=[], help='also copy a package/dependency source subtree, e.g. vendor/qcom/opensource/wlan')
     p.add_argument('--jobs', type=int, default=4)
+    p.add_argument('--kernel-sdk-manifest', type=safe_path,
+                   help='reviewed hash-pinned SDK from a new normal common build')
+    p.add_argument('--kernel-sdk-manifest-sha256', help='required immutable manifest hash')
     p.add_argument('--plan-only', action='store_true', help='validate inputs and print plan without writes/compilation')
     return p
 
 def plan(args):
     source = args.source_worktree
     prepared = args.prepared_worktree or source
+    sdk = None
+    sdk_inputs = None
+    manifest_path = getattr(args, 'kernel_sdk_manifest', None)
+    manifest_hash = getattr(args, 'kernel_sdk_manifest_sha256', None)
+    if bool(manifest_path) != bool(manifest_hash):
+        raise ValueError('Kernel SDK manifest and its explicit SHA256 are required together')
+    if manifest_path:
+        sdk, sdk_inputs = read_kernel_sdk(manifest_path, manifest_hash)
+        if git(source, 'rev-parse', sdk['kernel_source_commit'] + ':kernel_platform/common') != sdk['common_tree']:
+            raise ValueError('SDK source commit/common tree disagree')
+    common_tree = sdk['common_tree'] if sdk else COMMON_TREE
     package, target = label_parts(args.label)
     if not re.fullmatch(r'[0-9a-f]{40}', args.expected_head) or git(source, 'rev-parse', 'HEAD') != args.expected_head:
         raise ValueError('Source HEAD differs from the explicitly reviewed revision')
-    if git(source, 'rev-parse', 'HEAD:kernel_platform/common') != COMMON_TREE or git(source, 'diff', 'HEAD', '--', 'kernel_platform/common'):
+    if git(source, 'rev-parse', 'HEAD:kernel_platform/common') != common_tree or git(source, 'diff', 'HEAD', '--', 'kernel_platform/common'):
         raise ValueError('Common source/config differs from frozen kernel source: separate kernel build required')
-    if git(prepared, 'rev-parse', 'HEAD:kernel_platform/common') != COMMON_TREE or git(prepared, 'diff', 'HEAD', '--', 'kernel_platform/common'):
+    if git(prepared, 'rev-parse', 'HEAD:kernel_platform/common') != common_tree or git(prepared, 'diff', 'HEAD', '--', 'kernel_platform/common'):
         raise ValueError('Preparation workspace common tree differs from the frozen SDK')
     if not 1 <= args.jobs <= 16:
         raise ValueError('jobs must be1..16; coordinate parallel module builds')
@@ -198,24 +268,30 @@ def plan(args):
               'vmlinux_symvers': QUALIFIED / 'kernel_platform/bazel-bin/common/kernel_aarch64/vmlinux.symvers',
               'localversion': QUALIFIED / 'kernel_platform/bazel-bin/common/kernel_aarch64_config/out_dir/localversion',
               'ddk_config': config / '.config', 'ddk_makefile': generated / 'Makefile'}
+    expected_symvers = SYMVERS_SHA
+    expected_inputs = QUALIFIED_INPUT_HASHES
+    if sdk:
+        inputs.update({name: sdk_inputs[name] for name in
+                       ('frozen_symvers', 'prepare_archive', 'environment', 'vmlinux_symvers', 'localversion')})
+        expected_symvers = sdk['inputs']['frozen_symvers']['sha256']
+        expected_inputs = {name: sdk['inputs'][name]['sha256'] for name in QUALIFIED_INPUT_HASHES}
     for path in inputs.values():
         if not path.is_file():
             raise ValueError(f'Missing normal prepared input: {path}')
-    if digest(inputs['frozen_symvers']) != SYMVERS_SHA:
+    if digest(inputs['frozen_symvers']) != expected_symvers:
         raise ValueError('Frozen qualified Module.symvers changed')
-    for name, expected in QUALIFIED_INPUT_HASHES.items():
+    for name, expected in expected_inputs.items():
         if digest(inputs[name]) != expected:
             raise ValueError(f'Qualified prebuilt input changed: {name}')
     for path in args.extra_symvers:
         if not path.is_file() or not path.name.endswith('Module.symvers'):
             raise ValueError(f'SDK input must be an existing real producer Module.symvers: {path}')
-    hermetic = list((k / 'bazel-out').glob('*/bin/build/kernel/hermetic-tools'))
-    hermetic = [p for p in hermetic if p.is_dir()]
-    if len(hermetic) != 1:
-        raise ValueError(f'Expected one prepared hermetic-tools directory, found{len(hermetic)}')
+    hermetic = standalone_hermetic_base(inputs['environment'], k)
     return {'source': source, 'prepared': prepared, 'package': package, 'target': target,
             'generated': generated, 'config': config, 'inputs': inputs,
-            'hermetic': str(hermetic[0].relative_to(k)), 'run': args.run_dir}
+            'hermetic': hermetic, 'run': args.run_dir, 'common_tree': common_tree,
+            'kernel_sdk': sdk, 'kernel_sdk_manifest': manifest_path,
+            'kernel_sdk_manifest_sha256': manifest_hash}
 
 def execute(args, p):
     run = p['run']; sandbox = run / 'workspace/build'
@@ -271,7 +347,11 @@ def execute(args, p):
     hashes.update({str(v): digest(v) for v in args.extra_symvers})
     manifest = {'source_head': args.expected_head, 'label': args.label, 'module_outputs': args.module_out,
                 'builder_source_sha256': TOOL_SOURCE_SHA256,
-                'common_tree': COMMON_TREE, 'input_sha256': hashes, 'source_status': git(p['source'], 'status', '--short'),
+                'common_tree': p['common_tree'], 'input_sha256': hashes, 'source_status': git(p['source'], 'status', '--short'),
+                'kernel_sdk_manifest': str(p['kernel_sdk_manifest']) if p['kernel_sdk_manifest'] else None,
+                'kernel_sdk_manifest_sha256': p['kernel_sdk_manifest_sha256'],
+                'kernel_source_commit': p['kernel_sdk']['kernel_source_commit'] if p['kernel_sdk'] else None,
+                'hermetic_tools_base': p['hermetic'],
                 'configuration_inputs_edited': False, 'kernel_Image_built': False,
                 'copied_source_inputs': len(copied_inputs), 'generated_input_sha256': generated_inputs,
                 'freeze_source_trees': args.freeze_source_tree,
@@ -305,6 +385,11 @@ make -C {q(str(root / 'common'))} O={q(str(out))} M={q('../' + package)} LLVM=1 
         raise ValueError('Copied source/generated build inputs changed during compilation')
     if snapshot_closure(root, package, args.freeze_source_tree) != copied_closure:
         raise ValueError('Explicitly frozen source dependency closure changed during compilation')
+    if (git(p['source'], 'rev-parse', 'HEAD:kernel_platform/common') != p['common_tree']
+            or git(p['source'], 'diff', 'HEAD', '--', 'kernel_platform/common')):
+        raise ValueError('Common source changed during module compilation')
+    if p['kernel_sdk_manifest']:
+        read_kernel_sdk(p['kernel_sdk_manifest'], p['kernel_sdk_manifest_sha256'])
     if result.returncode == 0:
         built = sandbox / 'kernel-output' / package
         actual = sorted(str(path.relative_to(built)) for path in built.rglob('*.ko'))
