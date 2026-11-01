@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "release_tag": "coloros17.0.0.102-linux-6.12.115-boot-only-canary",
+  "release_status": "CANARY_PRERELEASE",
+  "delivery_model": "boot-only-with-untouched-stock-dlkm",
+  "firmware": "CPH2745_17.0.0.102(EX01)",
+  "tested_device": "OnePlus 15 SM8850 / CPH2745IN / OP611FL1",
+  "tested_slot": "b",
+  "required_bootloader_state": "already unlocked / ORANGE",
+  "kernel_release": "6.12.115-android16-6-o-ga3b501fee3c3-4k",
+  "kernel_build_source": "a3b501fee3c3c9e44579f46fd78e2282d05e29e8",
+  "kernel_common_tree": "c74ab6f64f685145302559ce9fa2a2b00dc4c385",
+  "publication_commit": "release tag target; documentation and offline scope tooling only",
+  "boot": {
+    "file": "boot.img",
+    "bytes": 100663296,
+    "sha256": "7eba8fe7265c316265a274c893ae7886ba4598942862fb642d0b34fc61bd8e6e",
+    "Image_bytes": 42646016,
+    "Image_sha256": "417dd7d89e159ecf6d0f8e7032ac6f44b79d2589c3c1b6ccd92dc47b170cf30a",
+    "header_version": 4,
+    "header_bytes": 1584,
+    "ramdisk_bytes": 0,
+    "header_cmdline": "",
+    "rebuilt_for_publication": false,
+    "repackaged_for_publication": false,
+    "physical_full_readback": "PASS"
+  },
+  "build_inputs": {
+    "Module_symvers_sha256": "6a6413d41ce692c0476a0ccd81e38a446fe1490400f3924c79424c597a390da1",
+    "vmlinux_symvers_sha256": "fa6d325e5e5ce232ca7622176829ce7c4bcf7cf7ea47070bf6f48b265da02efb",
+    "config_sha256": "abbb37e8fae9073bd5ca5bf539196f4b9baff60fa40714fe1506dc01592f1a27",
+    "prepared_SDK_manifest_sha256": "98c38045969a0c06a2ce277c4a71ab3f6bab5f7b307702bc24359cbce8ea4953",
+    "build_environment_sha256": "755fb8efdaf37c88c85e5cfd01dde0f357ec145786424b54b6c2b080c19bba46",
+    "stable_commits_imported_individually": 231,
+    "stable_fixes_already_present": 15,
+    "core_KABI_repairs_retained": true,
+    "task_flag_separation_retained": true,
+    "NTFS3_enabled": false
+  },
+  "AVB": {
+    "algorithm": "SHA256_RSA4096",
+    "boot_public_key_sha1": "2597c218aae470a130f61162feaae70afd97f011",
+    "key_authority": "same qualified development/test boot key as .114; not OEM boot signing authority",
+    "flags": 0,
+    "rollback_index": 0,
+    "rollback_index_location": 0,
+    "signature_and_hash_verification": "PASS",
+    "os_version": "16",
+    "security_patch": "2026-10-01",
+    "fingerprint": "qti/canoe/canoe:16/BP2A.250605.015/1792254911768:user/release-keys",
+    "original_stock_parent_required": true,
+    "custom_parent_included": false,
+    "locked_OEM_chain_compliance_claimed": false
+  },
+  "stock_prerequisites_not_release_assets": {
+    "vendor_dlkm": {
+      "firmware_file_bytes": 154849280,
+      "sha256": "82f90a9e0aba489a880bfa844ec13e0facb870c70752647568a290d45492dc47"
+    },
+    "system_dlkm": {
+      "firmware_file_bytes": 14512128,
+      "sha256": "3c1538210e986317784a7bf0f29487858ea0ea15bd2b6804cbcffd93a85d3e5a"
+    },
+    "vendor_boot": {
+      "firmware_file_bytes": 100663296,
+      "sha256": "d0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000"
+    },
+    "parent_vbmeta": {
+      "firmware_file_bytes": 12288,
+      "firmware_file_sha256": "5338ad8b14d98c41e0be8f10a8ad4fc48218dc61f3fcba362fc2f2167c171cc9",
+      "raw_partition_bytes": 65536,
+      "raw_partition_sha256": "750918fafedd2ffbaaceee5830f2f8a77ed1b5c8d6e149f05739dadc39c93918",
+      "padding": "unchanged complete stock payload followed by zero partition padding"
+    }
+  },
+  "runtime_module_model": {
+    "providers": "all original stock .102 module partitions",
+    "replacement_modules": [],
+    "excluded_modules": [],
+    "GEAS": "stock modules enabled, original stock KGSL provider",
+    "get_gpu_bw_data_expected_and_actual_CRC": "0xd8bbf8a1",
+    "module_blacklist": "absent",
+    "module_shadow_loader": "absent",
+    "BT_HIDP_PPP_RFKILL_SLHC": "all modular"
+  },
+  "stock_module_oracle": {
+    "result": "PASS",
+    "locations": 1070,
+    "active_compatible": 1032,
+    "dormant": 38,
+    "hard_imports_required": 60701,
+    "hard_imports_resolved": 60701,
+    "CRC_records": 61777,
+    "CRC_matches": 61777,
+    "missing_providers": 0,
+    "CRC_mismatches": 0,
+    "namespace_failures": 0,
+    "active_blockers": 0,
+    "production_provider_mismatches": 0,
+    "vmlinux_first_edges": 54785,
+    "compiled_unsigned_import_edges_checked": 54986,
+    "unsigned_import_policy_failures": 0,
+    "protected_export_collisions": 0
+  },
+  "preserved_build_gates": {
+    "common_build": "PASS",
+    "strict_KMI_symbol_check": "PASS",
+    "ABI_generation": "PASS",
+    "enforced_GKI_comparison": "FAIL",
+    "reviewed_prior_differences": 38,
+    "documented_115_representation_differences": 6,
+    "ABI_reference_updated": false,
+    "security_completeness": "NOT ESTABLISHED",
+    "new_production_rebuild_for_publication": "NOT RUN"
+  },
+  "publication_checks": {
+    "cleaned_tree_driver_host_tests": "202 PASS",
+    "boot_only_scope_fixtures": "20 PASS, included in 202",
+    "actual_boot_and_final_config_scope": "PASS",
+    "AVB_signature_and_payload_hash": "PASS",
+    "kernel_implementation_changes": "NONE"
+  },
+  "physical_observations": {
+    "date": "2026-11-01",
+    "Android_boot": "PASS",
+    "user0": "RUNNING_UNLOCKED",
+    "CE_DE_access": "PASS",
+    "F2FS_inlinecrypt": "PASS",
+    "original_vendor_dm_verity_root": "1374ff0726349e3ca91b2999a786c12af12530aff39a836c58dae68839f1669c",
+    "vendor_and_system_verity": "HEALTHY",
+    "critical_stock_module_identity_checks": 9,
+    "all_three_stock_GEAS_loaded": true,
+    "basic_WiFi_ICMP": "3/3",
+    "observation_window_seconds_at_least": 240,
+    "fatal_kernel_or_module_errors_observed": 0,
+    "known_stock_WARN_families": "present; not a clean-WARN qualification",
+    "full_hardware_retest": "NOT PERFORMED",
+    "TWRP_PIN_test": "NOT PERFORMED",
+    "unplugged_suspend": "NOT PERFORMED",
+    "repeated_boots": "NOT PERFORMED",
+    "earlier_modified_DLKM_hardware_results_transferred": false
+  },
+  "release_assets": ["boot.img", "boot.img.sha256", "SHA256SUMS", "manifest.json", "README.md"],
+  "allowed_write_partitions": ["active boot only"],
+  "DLKM_or_vbmeta_included": false,
+  "init_boot_change_required": false,
+  "recovery_change_required": false,
+  "release_readiness": "CANARY ONLY; extended hardware, WARN, GKI and security limitations disclosed"
+}

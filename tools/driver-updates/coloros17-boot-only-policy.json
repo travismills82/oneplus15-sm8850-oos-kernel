@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "device": "OnePlus 15 SM8850 / Canoe",
+  "firmware": "CPH2745_17.0.0.102(EX01)",
+  "kernel_series": "6.12.115",
+  "delivery_model": "boot-only-with-untouched-stock-dlkm",
+  "allowed_image_assets": ["boot.img"],
+  "allowed_write_partitions": ["boot"],
+  "replacement_modules": [],
+  "disabled_stock_modules": [],
+  "module_providers": "original ColorOS .102 system_dlkm, vendor_dlkm and vendor_boot",
+  "GEAS": "enabled with the original stock GPU provider",
+  "required_modular_config": {
+    "CONFIG_BT": "m",
+    "CONFIG_BT_HIDP": "m",
+    "CONFIG_PPP": "m",
+    "CONFIG_RFKILL": "m",
+    "CONFIG_SLHC": "m"
+  },
+  "boot_header_version": 4,
+  "boot_partition_bytes": 100663296,
+  "boot_header_cmdline": "",
+  "stock_module_locations": 1070,
+  "stock_active_compatible": 1032,
+  "stock_dormant": 38,
+  "core_KABI_repairs": "retained",
+  "task_flag_separation": "retained",
+  "enforced_GKI": "FAIL: 38 prior reviewed plus six documented representation differences",
+  "physical_qualification": "exact boot-only image passed readback, Android/FBE, stock-module identity and 240-second observation; extended hardware qualification pending"
+}

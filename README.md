@@ -8,10 +8,35 @@ Kernel releases are firmware-specific. Never cross-flash a boot image merely
 because it targets the same phone family; each OxygenOS build has its own
 kernel, module, FBE/user0, and boot-container contract.
 
+## Current development: Linux 6.12.115, boot.img only
+
+The repaired .115 core is now delivered against the **untouched stock ColorOS
+17.0.0.102 DLKM stack**. The boot-only canary retains stock GPU/GEAS, Bluetooth,
+PPP and all other stock module providers. No replacement DLKM or vbmeta image
+is included. The experimental updated-Adreno/no-GEAS stack is not this release.
+
+The exact tested `boot.img` is published unchanged; its kernel build source is
+`a3b501fee3c3c9e44579f46fd78e2282d05e29e8`. All .115 stable imports, KABI
+repairs and the OPlus task-flag separation remain intact. The ten later
+packaging/documentation commits were replaced by one boot-only release commit
+with the owner's explicit approval; no kernel implementation was rolled back.
+
+This is a **canary prerelease**, not a fully qualified stable promotion.
+Encrypted Android boot, stock-module compatibility and a four-minute health
+window passed. Full hardware retesting and unplugged suspend remain pending;
+enforced GKI comparison remains FAIL with 38 prior reviewed plus six documented
+representation differences. The .114 release remains latest stable.
+
+Read the [installation instructions and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-boot-only-canary/README.md)
+and [exact validation record](docs/validation/firmware-17.0.0.102/coloros1700102-linux115-boot-only-20261101.md).
+Devices still using experimental modified DLKM/parent metadata must restore the
+matched original firmware pair separately before installing this boot image.
+
 ## Current releases
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-ga3b501fee3c3-4k` | Boot-only **canary prerelease**; extended qualification pending | `coloros17.0.0.102-linux-6.12.115-boot-only-canary` |
 | ColorOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.114-android16-6-o-gb6bd4a40410d-4k` | Stable boot-only security release; scoped qualification and known GKI differences disclosed | `coloros17.0.0.102-linux-6.12.114-kmi6-security` |
 | ColorOS/OxygenOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.112-android16-6-o-g3b4aea7fd691-4k` | Stable boot-only release | `coloros17.0.0.102-linux-6.12.112-kmi6` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.112-android16-6-o-g8dd9cb4790b7-4k` | Watchdog-corrected boot/stability release | `oos16.0.10.601-linux-6.12.112-kmi6-watchdog` |
