@@ -1,0 +1,13 @@
+{
+  "firmware": "CPH2745IN_17.0.0.102",
+  "diagnostic_only": true,
+  "disabled_canonical_names": [
+    "oplus_bsp_geas_cpu",
+    "oplus_bsp_geas_system",
+    "oplus_bsp_geas_data"
+  ],
+  "remove_from_partition": "vendor_dlkm",
+  "preserve_other_partition_bytes": true,
+  "kernel_enforcement": "module_blacklist",
+  "replacement": "msm_kgsl"
+}
