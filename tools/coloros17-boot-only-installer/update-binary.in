@@ -1,0 +1,178 @@
+#!/sbin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Exact ColorOS .102 contract; only the current active boot partition is writable.
+set -eu
+set -o pipefail
+[ "$#" -ge 3 ] || exit 1
+OUTFD="$2"
+ZIPFILE="$3"
+TAG='@RELEASE_TAG@'
+BOOT_SHA='@BOOT_SHA256@'
+BOOT_BYTES=100663296
+WRITE_STARTED=0
+MANIFEST_MOUNT=''
+WORKDIR=''
+
+ui_print() {
+    if [ -e "/proc/self/fd/$OUTFD" ]; then
+        printf 'ui_print %s\nui_print\n' "$*" > "/proc/self/fd/$OUTFD"
+    else
+        printf '%s\n' "$*"
+    fi
+}
+abort_install() { ui_print "ERROR: $*"; exit 1; }
+hash_file() { sha256sum "$1" | awk '{print $1}'; }
+
+@FAMILY_GUARD@
+
+resolve_boot_partition() {
+    resolved=''
+    for directory in /dev/block/by-name /dev/block/bootdevice/by-name; do
+        node="$directory/boot$1"
+        [ -b "$node" ] || continue
+        canonical="$(readlink -f "$node")" || return 1
+        [ -b "$canonical" ] || return 1
+        [ -z "$resolved" ] || [ "$canonical" = "$resolved" ] || return 1
+        resolved="$canonical"
+    done
+    [ -n "$resolved" ] || return 1
+    printf '%s\n' "$resolved"
+}
+
+check_snapshots() {
+    grep -q ' /metadata ' /proc/mounts || abort_install '/metadata is not mounted; cannot prove snapshot safety.'
+    [ -f /metadata/ota/state ] && [ ! -s /metadata/ota/state ] ||
+        abort_install 'OTA state is active or unknown; finish the update/merge first.'
+    [ -d /metadata/ota/snapshots ] || abort_install 'snapshot state directory is unavailable.'
+    [ -z "$(ls -A /metadata/ota/snapshots)" ] || abort_install 'snapshot states exist; no flash permitted.'
+}
+
+require_stock() {
+    [ -b "$1" ] || abort_install "required partition is unavailable: $1"
+    [ "$(hash_file "$1")" = "$2" ] || abort_install "non-stock ColorOS .102 contract: $1"
+}
+
+choose_backup_root() {
+    for directory in /sdcard /external_sd /usb-otg; do
+        filesystem="$(df -kP "$directory" 2>/dev/null | awk 'NR == 2 {print $1}')" || continue
+        case "$filesystem" in
+            /dev/block/*|/dev/fuse)
+                if [ -d "$directory" ] && [ -w "$directory" ]; then
+                    printf '%s/TWRP/kernel-flash-backups\n' "$directory"
+                    return 0
+                fi ;;
+        esac
+    done
+    return 1
+}
+
+restore_boot() {
+    [ "$(hash_file "$BACKUP_IMAGE")" = "$OLD_SHA" ] || return 1
+    dd if="$BACKUP_IMAGE" of="$BOOT_BLOCK" bs=4M conv=fsync || return 1
+    sync || return 1
+    [ "$(hash_file "$BOOT_BLOCK")" = "$OLD_SHA" ] || return 1
+    ui_print 'Original boot restored and hash-verified.'
+}
+
+cleanup() {
+    result=$?
+    trap - EXIT HUP INT TERM
+    if [ "$WRITE_STARTED" = 1 ]; then
+        ui_print 'Write/read-back interrupted or failed; restoring the complete boot backup.'
+        if ! restore_boot; then
+            ui_print "ROLLBACK FAILED. Restore $BACKUP_IMAGE to boot$slot from recovery/fastboot."
+        fi
+        result=1
+    fi
+    if [ -n "$MANIFEST_MOUNT" ]; then umount "$MANIFEST_MOUNT" || result=1; fi
+    exit "$result"
+}
+trap cleanup EXIT
+trap 'abort_install "Installation interrupted"' HUP INT TERM
+
+for tool in awk blockdev date dd df getprop grep lpdump ls mkdir mktemp mount readlink sha256sum sync tr umount unzip wc; do
+    command -v "$tool" >/dev/null 2>&1 || abort_install "recovery tool missing: $tool"
+done
+[ -r "$ZIPFILE" ] || abort_install 'installer ZIP is not readable.'
+detect_oneplus15_family
+
+# Raw bootconfig, not possibly overridden Android getprop values.
+grep -Eq 'androidboot.vbmeta.device_state[[:space:]]*=[[:space:]]*"unlocked"' /proc/bootconfig ||
+    abort_install 'raw bootconfig does not confirm an unlocked bootloader.'
+grep -Eq 'androidboot.verifiedbootstate[[:space:]]*=[[:space:]]*"orange"' /proc/bootconfig ||
+    abort_install 'raw verified-boot state is not the tested ORANGE state.'
+grep -Fq "androidboot.slot_suffix = \"$slot\"" /proc/bootconfig ||
+    abort_install 'slot property disagrees with raw bootconfig.'
+
+BOOT_A="$(resolve_boot_partition _a)" || abort_install 'ambiguous or missing boot_a.'
+BOOT_B="$(resolve_boot_partition _b)" || abort_install 'ambiguous or missing boot_b.'
+[ "$BOOT_A" != "$BOOT_B" ] || abort_install 'boot slots alias the same partition.'
+case "$slot" in
+    _a) BOOT_BLOCK="$BOOT_A"; slot_number=0 ;;
+    _b) BOOT_BLOCK="$BOOT_B"; slot_number=1 ;;
+esac
+[ "$(blockdev --getsize64 "$BOOT_BLOCK")" = "$BOOT_BYTES" ] ||
+    abort_install 'boot capacity differs from the full-partition AVB image.'
+
+check_snapshots
+layout="$(lpdump --slot="$slot_number" 2>&1)" || abort_install 'cannot inspect active super metadata.'
+for partition in system_dlkm vendor_dlkm my_manifest; do
+    printf '%s\n' "$layout" | grep -Eq "^[[:space:]]*Name: $partition$slot[[:space:]]*$" ||
+        abort_install "active super metadata lacks $partition$slot."
+done
+
+# These exact full-partition hashes were read on the physically tested .102 phone.
+require_stock "/dev/block/mapper/system_dlkm$slot" '3c1538210e986317784a7bf0f29487858ea0ea15bd2b6804cbcffd93a85d3e5a'
+require_stock "/dev/block/mapper/vendor_dlkm$slot" '82f90a9e0aba489a880bfa844ec13e0facb870c70752647568a290d45492dc47'
+require_stock "/dev/block/by-name/vbmeta$slot" '750918fafedd2ffbaaceee5830f2f8a77ed1b5c8d6e149f05739dadc39c93918'
+require_stock "/dev/block/by-name/vendor_boot$slot" 'd0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000'
+require_stock "/dev/block/by-name/dtbo$slot" '5600107425a28b7efc85d02fd158a875904678efd426889ba91d6b4f510b0b0f'
+
+WORKDIR="$(mktemp -d /tmp/coloros17-kernel.XXXXXX)" || abort_install 'cannot allocate RAM staging.'
+mkdir "$WORKDIR/manifest"
+MANIFEST_BLOCK="/dev/block/mapper/my_manifest$slot"
+[ -b "$MANIFEST_BLOCK" ] || abort_install 'firmware manifest mapper is unavailable.'
+mount -o ro "$MANIFEST_BLOCK" "$WORKDIR/manifest" || abort_install 'cannot inspect firmware read-only.'
+MANIFEST_MOUNT="$WORKDIR/manifest"
+[ -r "$MANIFEST_MOUNT/build.prop" ] || abort_install 'firmware build.prop is absent.'
+display="$(awk -F= '$1 == "ro.build.display.id" {print substr($0, index($0, "=") + 1)}' "$MANIFEST_MOUNT/build.prop")"
+[ "$display" = 'CPH2745_17.0.0.102(EX01)' ] || abort_install "unsupported firmware: $display"
+umount "$MANIFEST_MOUNT" || abort_install 'cannot unmount firmware inspection.'
+MANIFEST_MOUNT=''
+
+BOOT_IMAGE="$WORKDIR/boot.img"
+unzip -p "$ZIPFILE" boot.img > "$BOOT_IMAGE" || abort_install 'cannot extract boot.img.'
+[ "$(wc -c < "$BOOT_IMAGE" | tr -d '[:space:]')" = "$BOOT_BYTES" ] || abort_install 'boot length mismatch.'
+[ "$(dd if="$BOOT_IMAGE" bs=8 count=1 2>/dev/null)" = 'ANDROID!' ] || abort_install 'invalid boot header.'
+[ "$(hash_file "$BOOT_IMAGE")" = "$BOOT_SHA" ] || abort_install 'boot checksum mismatch.'
+
+if [ "${INSTALLER_DRY_RUN:-0}" = 1 ]; then
+    ui_print "DRY RUN PASS: exact firmware/stock contract verified; would write only boot$slot."
+    exit 0
+fi
+
+backup_root="$(choose_backup_root)" || abort_install 'decrypt /data or mount durable external storage for rollback.'
+mkdir -p "$backup_root"
+BACKUP_DIR="$backup_root/$TAG-boot$slot-$(date +%Y%m%d-%H%M%S)-$$"
+mkdir "$BACKUP_DIR" || abort_install 'cannot create a unique durable backup directory.'
+BACKUP_IMAGE="$BACKUP_DIR/boot$slot.img"
+OLD_SHA="$(hash_file "$BOOT_BLOCK")" || abort_install 'cannot hash original boot.'
+dd if="$BOOT_BLOCK" of="$BACKUP_IMAGE" bs=4M conv=fsync || abort_install 'boot backup failed; no flash.'
+[ "$(wc -c < "$BACKUP_IMAGE" | tr -d '[:space:]')" = "$BOOT_BYTES" ] || abort_install 'incomplete backup; no flash.'
+[ "$(hash_file "$BACKUP_IMAGE")" = "$OLD_SHA" ] || abort_install 'backup hash mismatch; no flash.'
+[ "$(hash_file "$BOOT_BLOCK")" = "$OLD_SHA" ] || abort_install 'original boot changed during backup.'
+printf 'old_sha256=%s\nnew_sha256=%s\nslot=%s\ntarget=%s\n' "$OLD_SHA" "$BOOT_SHA" "$slot" "$BOOT_BLOCK" > "$BACKUP_DIR/manifest.txt"
+sync
+check_snapshots
+[ "$(getprop ro.boot.slot_suffix)" = "$slot" ] || abort_install 'active slot changed during preflight.'
+ui_print "Backup verified: $BACKUP_IMAGE"
+ui_print "Writing only boot$slot. No DLKM, vbmeta, init_boot, recovery or userdata formatting."
+WRITE_STARTED=1
+dd if="$BOOT_IMAGE" of="$BOOT_BLOCK" bs=4M conv=fsync || abort_install 'boot write failed.'
+sync
+[ "$(hash_file "$BOOT_BLOCK")" = "$BOOT_SHA" ] || abort_install 'complete boot read-back mismatch.'
+WRITE_STARTED=0
+printf 'result=verified\n' >> "$BACKUP_DIR/manifest.txt"
+sync
+ui_print "Installed and verified boot$slot. Reboot System without switching slots."
+ui_print 'KernelSU/SUSFS canary: extended hardware qualification is pending; keep the backup.'

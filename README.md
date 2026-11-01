@@ -8,7 +8,29 @@ Kernel releases are firmware-specific. Never cross-flash a boot image merely
 because it targets the same phone family; each OxygenOS build has its own
 kernel, module, FBE/user0, and boot-container contract.
 
-## Current development: Linux 6.12.115, boot.img only
+## Current canary: Linux 6.12.115 with KernelSU + SUSFS
+
+Main now includes pinned official KernelSU 32716 (UAPI 6) and SUSFS v2.3.0,
+built into the repaired .115 boot-only kernel. Uname spoofing support is enabled;
+no spoof values or hide rules are configured automatically. The separate
+`feature/coloros17-linux115-kernelsu-susfs` development branch is retained.
+
+Firmware: **ColorOS CPH2745_17.0.0.102(EX01)**, OnePlus 15 CPH2745IN / OP611FL1,
+unlocked/ORANGE. Release assets are the exact tested `boot.img`, a boot-only
+TWRP ZIP, matching official API-6 Manager APK, checksums and instructions.
+Original stock DLKM, vbmeta, init_boot, vendor_boot, DTBO and recovery stay
+unchanged. No replacement module or vbmeta image is supplied.
+
+This is a **canary/prerelease**, not a stable promotion. Android/user0, F2FS
+inlinecrypt and live SUSFS availability passed; complete hardware, Manager and
+unplugged-suspend qualification remain pending. Enforced GKI retains 44
+inherited differences. Linux .114 remains latest stable.
+
+[Download the KernelSU/SUSFS canary](https://github.com/travismills82/oneplus15-sm8850-oos-kernel/releases/tag/coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary) ·
+[Installation, rollback and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary/README.md) ·
+[Source and validation](docs/features/kernelsu-susfs-coloros17.md).
+
+## Prior Linux 6.12.115 boot-only baseline (without KernelSU/SUSFS)
 
 The repaired .115 core is now delivered against the **untouched stock ColorOS
 17.0.0.102 DLKM stack**. The boot-only canary retains stock GPU/GEAS, Bluetooth,
@@ -36,6 +58,7 @@ matched original firmware pair separately before installing this boot image.
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-gf116d2166542-4k` | KernelSU 32716/API6 + SUSFS v2.3.0; **canary prerelease**, boot-only ZIP and Manager APK included | `coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary` |
 | ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-ga3b501fee3c3-4k` | Boot-only **canary prerelease**; extended qualification pending | `coloros17.0.0.102-linux-6.12.115-boot-only-canary` |
 | ColorOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.114-android16-6-o-gb6bd4a40410d-4k` | Stable boot-only security release; scoped qualification and known GKI differences disclosed | `coloros17.0.0.102-linux-6.12.114-kmi6-security` |
 | ColorOS/OxygenOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.112-android16-6-o-g3b4aea7fd691-4k` | Stable boot-only release | `coloros17.0.0.102-linux-6.12.112-kmi6` |
