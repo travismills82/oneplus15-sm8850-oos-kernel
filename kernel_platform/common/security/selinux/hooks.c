@@ -110,6 +110,10 @@
 #define SELINUX_INODE_INIT_XATTRS 1
 
 struct selinux_state selinux_state;
+#ifdef CONFIG_KSU_SUSFS
+extern bool ksu_selinux_hide_running __read_mostly;
+extern int susfs_security_context_to_sid(const char *scontext, u32 scontext_len, u32 *sid, gfp_t gfp);
+#endif // #ifdef CONFIG_KSU_SUSFS
 
 /*
  * ANDROID: selinux_state is part of the KMI, and backporting capabilities into
@@ -6883,6 +6887,170 @@ static int selinux_setprocattr(const char *name, void *value, size_t size)
 	return -EINVAL;
 }
 
+#ifdef CONFIG_KSU_SUSFS
+static int susfs_selinux_lsm_setattr(u64 attr, void *value, size_t size)
+{
+	struct task_security_struct *tsec;
+	struct cred *new;
+	u32 mysid = current_sid(), sid = 0, ptsid;
+	int error;
+	char *str = value;
+
+	/*
+	 * Basic control over ability to set these attributes at all.
+	 */
+	switch (attr) {
+	case LSM_ATTR_EXEC:
+		error = avc_has_perm(mysid, mysid, SECCLASS_PROCESS,
+				     PROCESS__SETEXEC, NULL);
+		break;
+	case LSM_ATTR_FSCREATE:
+		error = avc_has_perm(mysid, mysid, SECCLASS_PROCESS,
+				     PROCESS__SETFSCREATE, NULL);
+		break;
+	case LSM_ATTR_KEYCREATE:
+		error = avc_has_perm(mysid, mysid, SECCLASS_PROCESS,
+				     PROCESS__SETKEYCREATE, NULL);
+		break;
+	case LSM_ATTR_SOCKCREATE:
+		error = avc_has_perm(mysid, mysid, SECCLASS_PROCESS,
+				     PROCESS__SETSOCKCREATE, NULL);
+		break;
+	case LSM_ATTR_CURRENT:
+		error = avc_has_perm(mysid, mysid, SECCLASS_PROCESS,
+				     PROCESS__SETCURRENT, NULL);
+		break;
+	default:
+		error = -EOPNOTSUPP;
+		break;
+	}
+	if (error)
+		return error;
+
+	/* Obtain a SID for the context, if one was specified. */
+	if (size && str[0] && str[0] != '\n') {
+		if (str[size-1] == '\n') {
+			str[size-1] = 0;
+			size--;
+		}
+		error = susfs_security_context_to_sid(value, size,
+						&sid, GFP_KERNEL);
+		if (error == -EINVAL && attr == LSM_ATTR_FSCREATE) {
+			if (!has_cap_mac_admin(true)) {
+				struct audit_buffer *ab;
+				size_t audit_size;
+
+				/* We strip a nul only if it is at the end,
+				 * otherwise the context contains a nul and
+				 * we should audit that */
+				if (str[size - 1] == '\0')
+					audit_size = size - 1;
+				else
+					audit_size = size;
+				ab = audit_log_start(audit_context(),
+						     GFP_ATOMIC,
+						     AUDIT_SELINUX_ERR);
+				if (!ab)
+					return error;
+				audit_log_format(ab, "op=fscreate invalid_context=");
+				audit_log_n_untrustedstring(ab, value,
+							    audit_size);
+				audit_log_end(ab);
+
+				return error;
+			}
+			error = security_context_to_sid_force(value, size,
+							&sid);
+		}
+		if (error)
+			return error;
+	}
+
+	new = prepare_creds();
+	if (!new)
+		return -ENOMEM;
+
+	/* Permission checking based on the specified context is
+	   performed during the actual operation (execve,
+	   open/mkdir/...), when we know the full context of the
+	   operation.  See selinux_bprm_creds_for_exec for the execve
+	   checks and may_create for the file creation checks. The
+	   operation will then fail if the context is not permitted. */
+	tsec = selinux_cred(new);
+	if (attr == LSM_ATTR_EXEC) {
+		tsec->exec_sid = sid;
+	} else if (attr == LSM_ATTR_FSCREATE) {
+		tsec->create_sid = sid;
+	} else if (attr == LSM_ATTR_KEYCREATE) {
+		if (sid) {
+			error = avc_has_perm(mysid, sid,
+					     SECCLASS_KEY, KEY__CREATE, NULL);
+			if (error)
+				goto abort_change;
+		}
+		tsec->keycreate_sid = sid;
+	} else if (attr == LSM_ATTR_SOCKCREATE) {
+		tsec->sockcreate_sid = sid;
+	} else if (attr == LSM_ATTR_CURRENT) {
+		error = -EINVAL;
+		if (sid == 0)
+			goto abort_change;
+
+		if (!current_is_single_threaded()) {
+			error = security_bounded_transition(tsec->sid, sid);
+			if (error)
+				goto abort_change;
+		}
+
+		/* Check permissions for the transition. */
+		error = avc_has_perm(tsec->sid, sid, SECCLASS_PROCESS,
+				     PROCESS__DYNTRANSITION, NULL);
+		if (error)
+			goto abort_change;
+
+		/* Check for ptracing, and update the task SID if ok.
+		   Otherwise, leave SID unchanged and fail. */
+		ptsid = ptrace_parent_sid();
+		if (ptsid != 0) {
+			error = avc_has_perm(ptsid, sid, SECCLASS_PROCESS,
+					     PROCESS__PTRACE, NULL);
+			if (error)
+				goto abort_change;
+		}
+
+		tsec->sid = sid;
+	} else {
+		error = -EINVAL;
+		goto abort_change;
+	}
+
+	commit_creds(new);
+	return size;
+
+abort_change:
+	abort_creds(new);
+	return error;
+}
+
+static int susfs_selinux_setprocattr(const char *name, void *value, size_t size)
+{
+	int attr = lsm_name_to_attr(name);
+
+	if (attr)
+		return susfs_selinux_lsm_setattr(attr, value, size);
+	return -EINVAL;
+}
+
+static int handle_selinux_setprocattr(const char *name, void *value, size_t size)
+{
+	if ((likely(!strcmp(name, "current") &&
+				current_uid().val >= 10000 &&
+				ksu_selinux_hide_running)))
+		return susfs_selinux_setprocattr(name, value, size);
+	return selinux_setprocattr(name, value, size);
+}
+#endif // #ifdef CONFIG_KSU_SUSFS
+
 static int selinux_ismaclabel(const char *name)
 {
 	return (strcmp(name, XATTR_SELINUX_SUFFIX) == 0);
@@ -7517,8 +7685,11 @@ static struct security_hook_list selinux_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(getselfattr, selinux_getselfattr),
 	LSM_HOOK_INIT(setselfattr, selinux_setselfattr),
 	LSM_HOOK_INIT(getprocattr, selinux_getprocattr),
+#ifdef CONFIG_KSU_SUSFS
+	LSM_HOOK_INIT(setprocattr, handle_selinux_setprocattr),
+#else
 	LSM_HOOK_INIT(setprocattr, selinux_setprocattr),
-
+#endif // #ifdef CONFIG_KSU_SUSFS
 	LSM_HOOK_INIT(ismaclabel, selinux_ismaclabel),
 	LSM_HOOK_INIT(secctx_to_secid, selinux_secctx_to_secid),
 	LSM_HOOK_INIT(release_secctx, selinux_release_secctx),

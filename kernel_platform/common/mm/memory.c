@@ -80,6 +80,9 @@
 #include <linux/ptrace.h>
 #include <linux/vmalloc.h>
 #include <linux/sched/sysctl.h>
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+#include <linux/susfs_def.h>
+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
 
 #include <trace/events/kmem.h>
 #include <trace/hooks/mm.h>
@@ -6956,6 +6959,15 @@ static int __access_remote_vm(struct mm_struct *mm, unsigned long addr,
 		struct page *page = get_user_page_vma_remote(mm, addr,
 							     gup_flags, &vma);
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+		/* GUP must populate vma before it can be checked. */
+		if (vma && vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file))) {
+			if (!IS_ERR_OR_NULL(page))
+				put_page(page);
+			break;
+		}
+#endif
+
 		if (IS_ERR(page)) {
 			/* We might need to expand the stack to access it */
 			vma = vma_lookup(mm, addr);
@@ -6969,6 +6981,12 @@ static int __access_remote_vm(struct mm_struct *mm, unsigned long addr,
 				/* Try again if stack expansion worked */
 				continue;
 			}
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+			/* GUP failure may leave only the VM_IO/VM_PFNMAP path. */
+			if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
+				break;
+#endif
 
 			/*
 			 * Check if this is a VM_IO | VM_PFNMAP VMA, which
