@@ -1798,7 +1798,7 @@ extern struct pid __rcu *cad_pid;
 						 * I am cleaning dirty pages from some other bdi. */
 #define PF_KTHREAD		0x00200000	/* I am a kernel thread */
 #define PF_RANDOMIZE		0x00400000	/* Randomize virtual address space */
-#define PF_NO_NOTIFY_SIGNAL	0x00800000	/* see no_notify_signal_save() */
+#define PF__HOLE__00800000	0x00800000	/* OPlus PF_MEMALLOC_BOOST */
 #define PF__HOLE__01000000	0x01000000
 #define PF__HOLE__02000000	0x02000000
 #define PF_NO_SETAFFINITY	0x04000000	/* Userland is not allowed to meddle with cpus_mask */
@@ -1861,6 +1861,7 @@ static __always_inline bool is_user_task(struct task_struct *task)
 #define PFA_SPEC_IB_DISABLE		5	/* Indirect branch speculation restricted */
 #define PFA_SPEC_IB_FORCE_DISABLE	6	/* Indirect branch speculation permanently restricted */
 #define PFA_SPEC_SSB_NOEXEC		7	/* Speculative Store Bypass clear on execve() */
+#define PFA_NO_NOTIFY_SIGNAL		8	/* see no_notify_signal_save() */
 
 #define TASK_PFA_TEST(name, func)					\
 	static inline bool task_##func(struct task_struct *p)		\
@@ -1876,6 +1877,8 @@ static __always_inline bool is_user_task(struct task_struct *task)
 
 TASK_PFA_TEST(NO_NEW_PRIVS, no_new_privs)
 TASK_PFA_SET(NO_NEW_PRIVS, no_new_privs)
+
+TASK_PFA_TEST(NO_NOTIFY_SIGNAL, no_notify_signal)
 
 TASK_PFA_TEST(SPREAD_PAGE, spread_page)
 TASK_PFA_SET(SPREAD_PAGE, spread_page)

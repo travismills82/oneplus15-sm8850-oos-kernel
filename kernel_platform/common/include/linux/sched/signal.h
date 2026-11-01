@@ -387,19 +387,24 @@ static inline int task_sigpending(struct task_struct *p)
 	return unlikely(test_tsk_thread_flag(p,TIF_SIGPENDING));
 }
 
-/* Prevent TIF_NOTIFY_SIGNAL from interrupting this task. */
+/*
+ * Prevent TIF_NOTIFY_SIGNAL from interrupting this task. Keep this state in
+ * atomic_flags: the shipping OPlus modules use flags bit 0x00800000 for
+ * PF_MEMALLOC_BOOST, including in precompiled allocation paths.
+ * The returned previous state is an opaque token, not a flags snapshot.
+ */
 static inline unsigned int no_notify_signal_save(void)
 {
-	unsigned int flags = current->flags;
-
-	current->flags |= PF_NO_NOTIFY_SIGNAL;
-	return flags;
+	return test_and_set_bit(PFA_NO_NOTIFY_SIGNAL, &current->atomic_flags);
 }
 
-/* Restore the previous PF_NO_NOTIFY_SIGNAL state. */
+/* Restore only the previous notification state, preserving nesting. */
 static inline void no_notify_signal_restore(unsigned int flags)
 {
-	current_restore_flags(flags, PF_NO_NOTIFY_SIGNAL);
+	if (flags)
+		set_bit(PFA_NO_NOTIFY_SIGNAL, &current->atomic_flags);
+	else
+		clear_bit(PFA_NO_NOTIFY_SIGNAL, &current->atomic_flags);
 }
 
 DEFINE_LOCK_GUARD_0(no_notify_signal,
@@ -416,7 +421,7 @@ static inline int signal_pending(struct task_struct *p)
 	 * that asked not to be interrupted by it, see no_notify_signal_save().
 	 */
 	if (unlikely(test_tsk_thread_flag(p, TIF_NOTIFY_SIGNAL)) &&
-	    likely(!(READ_ONCE(p->flags) & PF_NO_NOTIFY_SIGNAL)))
+	    likely(!task_no_notify_signal(p)))
 		return 1;
 	return task_sigpending(p);
 }
