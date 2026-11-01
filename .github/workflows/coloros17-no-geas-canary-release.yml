@@ -1,0 +1,56 @@
+name: ColorOS 17 restricted no-GEAS canary
+
+on:
+  push:
+    paths:
+      - 'tools/build-coloros17-no-geas-canary.py'
+      - 'tools/test-coloros17-no-geas-canary.py'
+      - 'tools/releases/coloros17-linux115-no-geas*'
+      - 'docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/**'
+      - '.github/workflows/coloros17-no-geas-canary-release.yml'
+  pull_request:
+    paths:
+      - 'tools/*coloros17-no-geas-canary.py'
+      - 'tools/releases/coloros17-linux115-no-geas*'
+      - 'docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/**'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require BusyBox ash for recovery-shell fixture coverage
+        run: |
+          if ! command -v busybox >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y busybox
+          fi
+      - name: Host fixtures, negative checks and committed metadata
+        run: |
+          python3 -B tools/test-coloros17-no-geas-canary.py
+          bash -n tools/releases/coloros17-linux115-no-geas-installer.sh
+          bash -n tools/releases/coloros17-linux115-no-geas-update-binary.in
+          python3 -B tools/build-coloros17-no-geas-canary.py metadata \
+            docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/canary-manifest.json
+
+  published-assets:
+    if: github.event_name == 'release' && github.event.release.tag_name == 'coloros17.0.0.102-linux-6.12.115-no-geas-canary'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 20
+      - name: Download and verify the exact published canary
+        run: |
+          gh release download "$RELEASE_TAG" --dir release-assets
+          python3 -B tools/build-coloros17-no-geas-canary.py verify \
+            --assets release-assets --commit "$(git rev-parse HEAD)" --repo .

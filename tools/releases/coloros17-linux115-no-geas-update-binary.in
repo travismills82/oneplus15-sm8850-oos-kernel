@@ -1,0 +1,43 @@
+#!/sbin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Two-image restricted canary; no vbmeta payload or write operation.
+set -eu
+set -o pipefail
+umask 077
+[ "$#" -ge 3 ] || exit 1
+OUTFD=$2; ZIPFILE=$3
+WORKDIR="/tmp/coloros17-linux115-canary-$$"
+MANIFEST_MOUNT=''
+ui_print() {
+    if [ -n "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
+        printf 'ui_print %s\nui_print\n' "$*" > "/proc/self/fd/$OUTFD"
+    else
+        printf '%s\n' "$*"
+    fi
+}
+cleanup() {
+    [ -z "$MANIFEST_MOUNT" ] || umount "$MANIFEST_MOUNT" 2>/dev/null || true
+    rm -rf "$WORKDIR"
+}
+trap cleanup EXIT
+for tool in awk basename blkid blockdev cat date dd df dmctl find getprop grep id ls mkdir mount readlink rm sed sha256sum sync tr umount uname unzip wc; do
+    command -v "$tool" >/dev/null 2>&1 || { ui_print "Missing recovery tool: $tool"; exit 1; }
+done
+[ -r "$ZIPFILE" ] || exit 1
+awk '$2=="/tmp" && $3=="tmpfs" {ok=1} END {exit !ok}' /proc/mounts || { ui_print '/tmp is not tmpfs.'; exit 1; }
+available=$(awk '$1=="MemAvailable:" {print $2}' /proc/meminfo)
+case "$available" in ''|*[!0-9]*) exit 1 ;; esac
+[ "$available" -ge 786432 ] || { ui_print 'At least 768 MiB available RAM is required for safe tmpfs extraction.'; exit 1; }
+free_tmp=$(df -Pk /tmp | awk 'NR==2 {print $4}')
+case "$free_tmp" in ''|*[!0-9]*) exit 1 ;; esac
+[ "$free_tmp" -ge 300000 ] || { ui_print 'Insufficient tmpfs capacity.'; exit 1; }
+mkdir "$WORKDIR"
+for member in boot.img vendor_dlkm.img installer.sh contract.sh; do
+    unzip -p "$ZIPFILE" "$member" > "$WORKDIR/$member" || exit 1
+    [ -s "$WORKDIR/$member" ] || exit 1
+done
+[ "$(sha256sum "$WORKDIR/installer.sh" | awk '{print $1}')" = '@HELPER_SHA256@' ] || exit 1
+[ "$(sha256sum "$WORKDIR/contract.sh" | awk '{print $1}')" = '@CONTRACT_SHA256@' ] || exit 1
+. "$WORKDIR/contract.sh"
+. "$WORKDIR/installer.sh"
+canary_install "${COLOROS115_CANARY_MODE:-flash}" "$WORKDIR"
