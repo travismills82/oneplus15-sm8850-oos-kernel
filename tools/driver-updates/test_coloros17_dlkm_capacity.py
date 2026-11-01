@@ -14,8 +14,9 @@ M = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(M)
 
 
-def fixture(*, partition_sectors=16, overlap=False, group_max=16384, duplicate=False, zero=False):
-    partition = struct.pack("<36sIIII", b"vendor_dlkm_a", 1, 0, 1, 0)
+def fixture(*, partition_sectors=16, overlap=False, group_max=16384, duplicate=False, zero=False,
+            partition_name=b"vendor_dlkm_a"):
+    partition = struct.pack("<36sIIII", partition_name, 1, 0, 1, 0)
     extent = struct.pack("<QIQI", partition_sectors, 1 if zero else 0, 0 if zero else 2048, 0)
     if overlap:
         partition += struct.pack("<36sIIII", b"system_dlkm_a", 1, 1, 1, 0)
@@ -70,6 +71,24 @@ class CapacityTests(unittest.TestCase):
         report = M.evaluate(self.inspect(fixture()), [("vendor_dlkm_a", self.candidate)], "none")
         self.assertEqual(report["capacity_status"], "FAIL")
         self.assertEqual(report["candidates"][0]["capacity_deficit_bytes"], 4096)
+
+    def test_real_snapshot_cow_name_is_accepted(self):
+        report = self.inspect(fixture(partition_name=b"vendor_dlkm_b-cow"))
+        self.assertEqual(report["partitions"]["vendor_dlkm_b-cow"]["size"], 8192)
+
+    def test_cow_name_does_not_bypass_overlap_check(self):
+        with self.assertRaisesRegex(M.Invalid, "physical extent overlap"):
+            self.inspect(fixture(partition_name=b"vendor_dlkm_b-cow", overlap=True))
+
+    def test_cow_name_does_not_bypass_snapshot_gate(self):
+        report = self.inspect(fixture(partition_name=b"vendor_dlkm_b-cow"))
+        result = M.evaluate(report, [("vendor_dlkm_b-cow", self.candidate)], "active")
+        self.assertEqual(result["snapshot_gate"], "BLOCKED")
+
+    def test_lp_name_still_rejects_paths_and_hidden_suffixes(self):
+        for value in (b"../vendor", b"vendor/dlkm", b"vendor dlkm", b"vendor\0hidden", b"\xffvendor"):
+            with self.subTest(value=value), self.assertRaises(M.Invalid):
+                M.name(struct.pack("<36s", value))
 
     def test_unknown_and_active_snapshots_do_not_pass(self):
         for state in ("unknown", "active"):

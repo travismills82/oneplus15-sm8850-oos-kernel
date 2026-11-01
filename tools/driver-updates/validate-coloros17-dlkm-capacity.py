@@ -33,7 +33,11 @@ def digest(data):
 def name(raw):
     head, _, tail = raw.partition(b"\0")
     require(not any(tail), "nonzero bytes after partition-name terminator")
-    require(head and all(c in b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_" for c in head),
+    # libsnapshot creates real LP entries as <snapshot-name>-cow. The old
+    # metadata-format comment omits '-', but liblp accepts these bounded
+    # names and SnapshotManager passes them to MetadataBuilder::AddPartition.
+    # Keep path separators, whitespace, non-ASCII and embedded suffixes invalid.
+    require(head and all(c in b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in head),
             "invalid LP name")
     return head.decode("ascii")
 
