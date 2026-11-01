@@ -19,7 +19,7 @@
 #include "kgsl_sharedmem.h"
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
-#include <mm_osvelte/common.h>
+#include "kgsl_osvelte_log.h"
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 
 /*

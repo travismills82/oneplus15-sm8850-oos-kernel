@@ -41,8 +41,8 @@
 #include "kgsl_util.h"
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
-#include <mm_osvelte/sys-memstat.h>
-#include <mm_osvelte/common.h>
+#include "kgsl_coloros_mtrack.h"
+#include "kgsl_osvelte_log.h"
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 
 /* Instantiate tracepoints */
