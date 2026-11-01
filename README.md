@@ -22,6 +22,31 @@ kernel, module, FBE/user0, and boot-container contract.
 
 Use only the release matching the installed firmware.
 
+## Experimental Linux 6.12.115 source — updated Adreno, GEAS disabled
+
+The development source includes the individually preserved .115 update,
+ColorOS KABI repairs, Qualcomm backports and updated Adreno implementation.
+The exact tested candidate still identifies build parent
+`a3b501fee3c3c9e44579f46fd78e2282d05e29e8`; documentation and packaging commits
+do not rebuild or relabel those tested bytes. The .114 boot-only release above
+remains the latest stable release.
+
+The .115 experiment uses a matched kernel and modified vendor_dlkm, unlike
+the older boot-only releases. Initial encrypted boot, hardware GLES/Vulkan,
+the enabled-module oracle and owner-reported peripheral checks passed.
+GEAS is intentionally disabled, not ABI-repaired. USB-disconnected suspend,
+measured GEAS performance/power equivalence and security completeness remain
+open. Enforced GKI comparison remains FAIL with 38 prior reviewed differences
+plus six documented representation differences.
+
+No .115 release or TWRP installer is published yet. The owner requires vbmeta
+to be excluded; publication is held while the existing-parent authentication
+requirement is resolved. Do not install the experimental vendor_dlkm with an
+unmatched stock parent or use the old boot-only installer for this experiment.
+
+See the [extended qualification](docs/validation/firmware-17.0.0.102/coloros1700102-linux-612115-no-geas-extended-qualification.md)
+and [publication constraint](docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/publication-status.md).
+
 ## Linux 6.12.114 security release for ColorOS 17.0.0.102
 
 This firmware-bound **boot.img-only** release preserves stock `system_dlkm`,
