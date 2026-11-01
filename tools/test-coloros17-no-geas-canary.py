@@ -283,6 +283,13 @@ class Packaging(unittest.TestCase):
         self.build()
         with self.assertRaises(ValueError):M.verify(self.out,commit='0'*40)
 
+    def test_invalid_finalization_source_does_not_mutate_assets(self):
+        self.build()
+        before={p.name:M.sha(p) for p in self.out.iterdir()}
+        with contextlib.redirect_stdout(io.StringIO()),self.assertRaises(subprocess.CalledProcessError):
+            M.finalize(self.out,'0'*40)
+        self.assertEqual({p.name:M.sha(p) for p in self.out.iterdir()},before)
+
 
 @unittest.skipUnless(shutil.which('busybox'),'BusyBox ash is not installed on this host')
 class RecoveryAshTransaction(RecoveryTransaction):

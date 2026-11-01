@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shlex
@@ -168,6 +169,16 @@ def metadata(m, allow_symbolic=False):
     return p
 
 
+def verify_source(p, commit, repo):
+    require(commit and COMMIT.fullmatch(commit), 'exact tagged commit required for source audit')
+    local_env={**os.environ,'GIT_NO_LAZY_FETCH':'1'}
+    subprocess.run(['git','-C',str(repo),'cat-file','-e',commit+'^{commit}'],check=True,capture_output=True,env=local_env,timeout=30)
+    subprocess.run(['git','-C',str(repo),'merge-base','--is-ancestor',p['kernel_source_commit'],commit],check=True,capture_output=True,env=local_env,timeout=30)
+    tree=subprocess.check_output(['git','-C',str(repo),'rev-parse',commit+':kernel_platform/common'],text=True,env=local_env,timeout=30).strip()
+    require(tree==p['common_tree'], 'published kernel source differs from tested build')
+    subprocess.run(['git','-C',str(repo),'diff','--exit-code',p['kernel_source_commit'],commit,'--','kernel_platform','vendor'],check=True,capture_output=True,env=local_env,timeout=30)
+
+
 def verify(folder: Path, commit=None, allow_symbolic=False, repo=None):
     manifest = json.loads((folder/'canary-manifest.json').read_text())
     p = metadata(manifest, allow_symbolic)
@@ -205,11 +216,7 @@ def verify(folder: Path, commit=None, allow_symbolic=False, repo=None):
     if commit:
         require(manifest['publication_commit']==commit, 'publication commit differs')
     if repo:
-        require(commit and COMMIT.fullmatch(commit), 'exact tagged commit required for source audit')
-        subprocess.run(['git','-C',str(repo),'merge-base','--is-ancestor',p['kernel_source_commit'],commit],check=True)
-        tree=subprocess.check_output(['git','-C',str(repo),'rev-parse',commit+':kernel_platform/common'],text=True).strip()
-        require(tree==p['common_tree'], 'published kernel source differs from tested build')
-        subprocess.run(['git','-C',str(repo),'diff','--exit-code',p['kernel_source_commit'],commit,'--','kernel_platform','vendor'],check=True,stdout=subprocess.DEVNULL)
+        verify_source(p,commit,repo)
     print('EXACT TWO-IMAGE CANARY VERIFICATION PASS',flush=True)
 
 
@@ -218,6 +225,8 @@ def finalize(folder: Path, commit: str):
     verify(folder,allow_symbolic=True)
     path=folder/'canary-manifest.json';m=json.loads(path.read_text())
     require(m['publication_commit']=='TAG_TARGET', 'refusing to refinalize a sealed release')
+    # Reject an absent/wrong commit before changing either metadata file.
+    verify_source(m['contract'],commit,ROOT)
     m['publication_commit']=commit
     path.write_bytes(encoded(m));(folder/'SHA256SUMS').write_bytes(filesums(folder))
     verify(folder,commit=commit,repo=ROOT)
@@ -236,7 +245,7 @@ def main():
         elif a.action=='verify':verify(a.assets,a.commit,a.allow_symbolic,a.repo)
         elif a.action=='finalize':finalize(a.assets,a.commit)
         else:metadata(json.loads(a.manifest.read_text()),allow_symbolic=True);print('Canary metadata PASS; not physical qualification')
-    except (OSError,ValueError,KeyError,zipfile.BadZipFile,subprocess.CalledProcessError) as e:
+    except (OSError,ValueError,KeyError,zipfile.BadZipFile,subprocess.CalledProcessError,subprocess.TimeoutExpired) as e:
         ap.exit(1, 'ERROR: '+str(e)+'\n')
 
 

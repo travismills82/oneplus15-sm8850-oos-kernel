@@ -13,7 +13,8 @@
     "physical_zip_install": "NOT TESTED"
   },
   "host_validation": {
-    "fixture_tests": "PASS: 31 unittest tests, including Bash and BusyBox ash transactions and negative subcases",
+    "fixture_tests": "PASS: 32 unittest tests, including Bash and BusyBox ash transactions and negative subcases",
+    "publication_source_gate": "PASS; rejects unavailable/wrong source identities before mutating asset metadata",
     "backup_write_readback_and_interruption_rollback_fixtures": "PASS",
     "wrong_parent_snapshot_capacity_firmware_slot_companion_battery_rejection": "PASS",
     "no_vbmeta_payload_or_write_boundary": "PASS",
