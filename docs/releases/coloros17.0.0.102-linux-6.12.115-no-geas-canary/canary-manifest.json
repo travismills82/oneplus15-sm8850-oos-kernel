@@ -1,0 +1,99 @@
+{
+  "contract": {
+    "GEAS": "intentionally disabled; original ABI contract unresolved",
+    "common_tree": "c74ab6f64f685145302559ce9fa2a2b00dc4c385",
+    "effective_config_sha256": "abbb37e8fae9073bd5ca5bf539196f4b9baff60fa40714fe1506dc01592f1a27",
+    "enabled_module_oracle": {
+      "GEAS_excluded_locations": 6,
+      "active_blockers": 0,
+      "active_compatible": 1029,
+      "crc_mismatches": 0,
+      "crc_records": 61337,
+      "dormant": 35,
+      "hard_imports": 60267,
+      "missing_providers": 0,
+      "namespace_failures": 0,
+      "production_provider_mismatches": 0,
+      "records": 1064
+    },
+    "firmware": "CPH2745_17.0.0.102(EX01)",
+    "init_boot": "read-only prerequisite; not packaged or written",
+    "kernel_image_sha256": "417dd7d89e159ecf6d0f8e7032ac6f44b79d2589c3c1b6ccd92dc47b170cf30a",
+    "kernel_release": "6.12.115-android16-6-o-ga3b501fee3c3-4k",
+    "kernel_source_commit": "a3b501fee3c3c9e44579f46fd78e2282d05e29e8",
+    "kernel_version": "6.12.115",
+    "maximum_battery_temperature_deciC": 450,
+    "minimum_battery_percent": 30,
+    "module_symvers_sha256": "6a6413d41ce692c0476a0ccd81e38a446fe1490400f3924c79424c597a390da1",
+    "payloads": {
+      "boot.img": {
+        "bytes": 100663296,
+        "sha256": "931a69b0ce9ec911a144431a0f685bd2000c770900efdea8a49bb2cdef5bccd9"
+      },
+      "vendor_dlkm.img": {
+        "bytes": 154849280,
+        "sha256": "0837cac0d888e862e4ad21eb7f2dbe58ae4f72bbb5534de2475adb783cf89804"
+      }
+    },
+    "profile": "coloros17-linux115-no-geas-existing-parent-canary-v1",
+    "qualification": {
+      "GEAS_performance_power_equivalence": "NOT ESTABLISHED",
+      "GKI": "FAIL: 38 prior reviewed differences plus six representation differences",
+      "payload_physical_canary": "PASS with disclosed warnings and coverage limits",
+      "release_class": "restricted experimental prerelease, not stable",
+      "security_completeness": "NOT ESTABLISHED",
+      "unplugged_suspend": "NOT TESTED",
+      "zip_physical_install": "NOT TESTED"
+    },
+    "recovery": "3.7.1_16-OnePlus_15",
+    "recovery_kernel": "6.12.114-android16-6-o-gb6bd4a40410d-4k",
+    "release_tag": "coloros17.0.0.102-linux-6.12.115-no-geas-canary",
+    "replacement_modules_sha256": {
+      "msm_kgsl.ko": "d8711d3bb64a936e89c7df13996af3d7e4c6b71c83e217ea09e23d3abc965aa8",
+      "qce50_dlkm.ko": "eea2b5252aa6838b1091af37fa901827254cf33e7707cd5113d7eaa0aead5f62",
+      "qcrypto-msm_dlkm.ko": "6606b6a4bcb9818271015f66658c201020a1a9761bbb37554020ad8e65fa0bfb",
+      "rmnet_core.ko": "0ad99c698fcaffdf0acd2656b8e4c4a113ec41c173828f4dec40ea25e6d5e287",
+      "wcd9xxx_dlkm.ko": "5e10de199ea0eb39cde0d4c771995851f9dfc6c284eb8a0b98fc595cbfe5bec4"
+    },
+    "required_companions": {
+      "dtbo_b": "5600107425a28b7efc85d02fd158a875904678efd426889ba91d6b4f510b0b0f",
+      "init_boot_b": "d0fce3c1448150276e06bfca3d617605ba4f5a421d8122d18f90105b8fc2257b",
+      "system_dlkm_b": "3c1538210e986317784a7bf0f29487858ea0ea15bd2b6804cbcffd93a85d3e5a",
+      "vendor_boot_b": "d0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000"
+    },
+    "required_existing_parent_bytes": 65536,
+    "required_existing_parent_sha256": "54074cca444676d400f842411329a925340249bb3861abea132528d4eb97d11c",
+    "required_existing_vendor_sha256": "0837cac0d888e862e4ad21eb7f2dbe58ae4f72bbb5534de2475adb783cf89804",
+    "required_super_prefix_bytes": 8388608,
+    "required_super_prefix_sha256": "81a320c930b085e20afc61cf9b208240a667d8aff0127d57465756f50d93181d",
+    "schema_version": 1,
+    "slot": "_b",
+    "vbmeta": "read-only prerequisite; not packaged or written",
+    "vendor_extent": {
+      "sectors": 302440,
+      "start": 22396928
+    },
+    "write_order": [
+      "vendor_dlkm_b",
+      "boot_b"
+    ],
+    "write_scope": [
+      "vendor_dlkm_b",
+      "boot_b"
+    ],
+    "zip_name": "Kernel-ColorOS-17-17.0.0.102-6.12.115-no-GEAS-canary-twrp.zip"
+  },
+  "contract_script_sha256": "49bfe7e38afad32f1237d46af79a8a657b6df3d3ddf9c9faa161c8f8f6626acb",
+  "device_actions": "NONE",
+  "frozen_candidate_seal_sha256": "1656d8fc35bff3999aae1d20548b258a0d0214d36996c32be096ba819539f36a",
+  "installer_sha256": "71e8bc25ed6b072154ccee2347e534315bb3ff1b3d8f0c8a857adc072dfa5724",
+  "payload_rebuilds": false,
+  "publication_commit": "TAG_TARGET",
+  "schema_version": 1,
+  "zip": {
+    "bytes": 57896860,
+    "name": "Kernel-ColorOS-17-17.0.0.102-6.12.115-no-GEAS-canary-twrp.zip",
+    "sha256": "f4a1ff206ea07047c728e9551e340fbdabad8e87d0f53b48416961ee5fdb8cbd"
+  },
+  "zip_validation": "offline fixture/static tests only; no physical ZIP install"
+}

@@ -1,5 +1,12 @@
 # ColorOS 17.0.0.102 .115 no-GEAS canary publication checkpoint
 
+**Historical hold, superseded by the owner's subsequent explicit publication
+instruction on 2026-11-01.** The selected package is option 1 below: a restricted
+existing-matched-installation-only canary, without a vbmeta asset or write.
+The [release notes](release-notes.md) and machine-readable contract define its
+fail-closed prerequisites. Stock-parent deployment is still unsupported, not
+silently solved by publication. The original reasoning below is preserved.
+
 The owner authorized pushing the source history to main and requested a canary
 release and TWRP ZIP. The subsequent explicit constraint is: **do not include
 vbmeta**. No vbmeta asset or installer write is prepared under this checkpoint.

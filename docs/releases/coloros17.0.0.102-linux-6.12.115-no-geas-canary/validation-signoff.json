@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "release_class": "restricted experimental prerelease; not stable",
+  "owner_authorization": "Publish existing Linux 6.12.115 boot.img, vendor_dlkm.img and a TWRP ZIP; exclude vbmeta",
+  "kernel_build_source": "a3b501fee3c3c9e44579f46fd78e2282d05e29e8",
+  "kernel_release": "6.12.115-android16-6-o-ga3b501fee3c3-4k",
+  "zip": {
+    "name": "Kernel-ColorOS-17-17.0.0.102-6.12.115-no-GEAS-canary-twrp.zip",
+    "bytes": 57896860,
+    "sha256": "f4a1ff206ea07047c728e9551e340fbdabad8e87d0f53b48416961ee5fdb8cbd",
+    "independent_rebuild": "PASS; byte-identical archive from a separate output directory",
+    "payload_match": "PASS; exact frozen physically tested boot/vendor bytes",
+    "physical_zip_install": "NOT TESTED"
+  },
+  "host_validation": {
+    "fixture_tests": "PASS: 31 unittest tests, including Bash and BusyBox ash transactions and negative subcases",
+    "backup_write_readback_and_interruption_rollback_fixtures": "PASS",
+    "wrong_parent_snapshot_capacity_firmware_slot_companion_battery_rejection": "PASS",
+    "no_vbmeta_payload_or_write_boundary": "PASS",
+    "archive_checksums_permissions_and_exact_members": "PASS",
+    "boot_AVB_signature_and_hash": "PASS",
+    "vendor_AVB_footer_and_hashtree": "PASS",
+    "Python_and_recovery_shell_syntax": "PASS"
+  },
+  "preserved_image_qualification": {
+    "three_image_original_canary_readbacks": "PASS; includes the required pre-existing parent, not published here",
+    "Android_FBE_user0_inlinecrypt_verity": "PASS",
+    "GLES_Vulkan_graphics": "PASS; 480.073 seconds, 470745 frames, 32 context/device cycles",
+    "owner_hardware_checks": "PASS: Wi-Fi/BT reconnect, mobile traffic/call, camera/video, speaker/microphone, fingerprint, OTG read/eject",
+    "GEAS_excluded_module_oracle": "PASS: 1029 active, 35 dormant; zero missing providers, CRC/namespace failures or active blockers",
+    "GPU_KCFI_and_reviewed_private_UAPI_checks": "PASS with documented stock-debug-information limits",
+    "enforced_GKI": "FAIL: 38 prior reviewed differences plus six documented representation differences",
+    "kernel_WARNs": "Six startup plus one additional pre-existing schedinfo warning disclosed; not a clean-WARN pass",
+    "unplugged_suspend": "NOT TESTED",
+    "GEAS_performance_power_equivalence": "NOT ESTABLISHED",
+    "security_completeness": "NOT ESTABLISHED"
+  },
+  "deployment": {
+    "stock_parent_installation": "UNSUPPORTED; installer rejects it",
+    "scope": "Existing matching parent/vendor, exact tested companions, active slot B and fixed tested layout only",
+    "write_order": ["vendor_dlkm_b", "boot_b"],
+    "vbmeta": "READ ONLY; not an asset, backup payload or write target",
+    "init_boot": "READ ONLY; unchanged",
+    "kernel_or_module_rebuild": false,
+    "physical_actions_during_packaging": "NONE",
+    "stable_latest_replacement": false
+  },
+  "reports": [
+    "../../validation/firmware-17.0.0.102/coloros1700102-linux115-no-geas-physical-20261101.md",
+    "../../validation/firmware-17.0.0.102/coloros1700102-linux115-no-geas-post-benchmark-20261101.md",
+    "../../validation/firmware-17.0.0.102/coloros1700102-linux-612115-no-geas-extended-qualification.md"
+  ]
+}

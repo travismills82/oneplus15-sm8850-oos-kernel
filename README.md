@@ -12,6 +12,7 @@ kernel, module, FBE/user0, and boot-container contract.
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS 17.0.0.102(EX01), existing matched parent only | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-ga3b501fee3c3-4k` | Restricted updated-Adreno no-GEAS **canary prerelease**; not a stock-parent installation or stable release | `coloros17.0.0.102-linux-6.12.115-no-geas-canary` |
 | ColorOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.114-android16-6-o-gb6bd4a40410d-4k` | Stable boot-only security release; scoped qualification and known GKI differences disclosed | `coloros17.0.0.102-linux-6.12.114-kmi6-security` |
 | ColorOS/OxygenOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.112-android16-6-o-g3b4aea7fd691-4k` | Stable boot-only release | `coloros17.0.0.102-linux-6.12.112-kmi6` |
 | OxygenOS 16.0.10.601(EX01) | CPH2749 / OP611FL1 | `6.12.112-android16-6-o-g8dd9cb4790b7-4k` | Watchdog-corrected boot/stability release | `oos16.0.10.601-linux-6.12.112-kmi6-watchdog` |
@@ -39,13 +40,17 @@ measured GEAS performance/power equivalence and security completeness remain
 open. Enforced GKI comparison remains FAIL with 38 prior reviewed differences
 plus six documented representation differences.
 
-No .115 release or TWRP installer is published yet. The owner requires vbmeta
-to be excluded; publication is held while the existing-parent authentication
-requirement is resolved. Do not install the experimental vendor_dlkm with an
-unmatched stock parent or use the old boot-only installer for this experiment.
+The [restricted .115 canary](https://github.com/travismills82/oneplus15-sm8850-oos-kernel/releases/tag/coloros17.0.0.102-linux-6.12.115-no-geas-canary)
+contains the exact tested `boot.img`, `vendor_dlkm.img`, and a TWRP ZIP to write
+only those two images. **vbmeta is not included or written.** The ZIP requires
+the exact matching parent/vendor and tested companions already installed; it
+rejects untouched stock-parent devices. This is not a generic stock-to-custom
+install path. The new ZIP has offline fixture validation, not a physical ZIP
+install test. Read the prerequisites before downloading or flashing.
 
-See the [extended qualification](docs/validation/firmware-17.0.0.102/coloros1700102-linux-612115-no-geas-extended-qualification.md)
-and [publication constraint](docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/publication-status.md).
+See the [installation and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/release-notes.md),
+[extended qualification](docs/validation/firmware-17.0.0.102/coloros1700102-linux-612115-no-geas-extended-qualification.md)
+and [authentication constraint](docs/releases/coloros17.0.0.102-linux-6.12.115-no-geas-canary/publication-status.md).
 
 ## Linux 6.12.114 security release for ColorOS 17.0.0.102
 
