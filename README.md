@@ -30,6 +30,27 @@ inherited differences. Linux .114 remains latest stable.
 [Installation, rollback and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary/README.md) ·
 [Source and validation](docs/features/kernelsu-susfs-coloros17.md).
 
+## Droidspaces support in current source
+
+Current source also enables the missing Droidspaces container prerequisites,
+with stock task/Rust Binder ABI preservation and no DLKM replacements. The
+experimental branch `experiment/coloros17-linux115-droidspaces` is retained.
+The exact boot-only candidate passed Android/FBE, its live requirements checker
+(`requirements_met=1`) and a five-minute startup observation on the connected
+`.102` device. KernelSU-patched init_boot and all stock module/AVB partitions
+were preserved. Full distro sessions, hardware and unplugged-suspend tests are
+still pending; this is **not stable-release qualification**.
+
+The enforced GKI comparison remains **FAIL**: all 44 prior owners are unchanged,
+with one additional reviewed C-private IPC-padding owner. Original stock-module
+and production-provider checks pass without CRC/signing bypasses.
+
+This source update does not replace the existing release assets linked above;
+the new Droidspaces boot image has not been published as a GitHub release.
+See the [source/config/ABI audit](docs/features/droidspaces-coloros17.md),
+[physical canary record](docs/validation/firmware-17.0.0.102/coloros1700102-droidspaces-canary-20261103.md)
+and [remaining test plan](docs/validation/firmware-17.0.0.102/coloros1700102-droidspaces-test-plan.md).
+
 ## Prior Linux 6.12.115 boot-only baseline (without KernelSU/SUSFS)
 
 The repaired .115 core is now delivered against the **untouched stock ColorOS
