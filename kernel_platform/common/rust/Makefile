@@ -328,7 +328,12 @@ quiet_cmd_bindgen = BINDGEN $@
 		$(bindgen_target_cflags) $(bindgen_target_extra)
 
 $(obj)/bindings/bindings_generated.rs: private bindgen_target_flags = \
-    $(shell grep -Ev '^#|^$$' $(src)/bindgen_parameters)
+    $(shell grep -Ev '^#|^$$' $(src)/bindgen_parameters) \
+    $(if $(and $(CONFIG_SYSVIPC),$(CONFIG_ARM64),$(CONFIG_GENDWARFKSYMS)),--no-default sysv_sem --no-default sysv_shm)
+# These C-private IPC records have no Rust constructors or users. Do not create
+# new manual Default implementations: they would renumber unrelated exported
+# implementations (including rb_node/rb_root) imported by stock Rust Binder.
+# Their true C definitions remain visible; only default construction is omitted.
 $(obj)/bindings/bindings_generated.rs: private bindgen_target_extra = ; \
     sed -Ei 's/pub const RUST_CONST_HELPER_([a-zA-Z0-9_]*)/pub const \1/g' $@
 $(obj)/bindings/bindings_generated.rs: $(src)/bindings/bindings_helper.h \

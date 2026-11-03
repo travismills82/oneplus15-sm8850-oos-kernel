@@ -16,6 +16,8 @@
 #include <linux/cpumask_types.h>
 
 #include <linux/cache.h>
+#include <linux/align.h>
+#include <linux/build_bug.h>
 #include <linux/irqflags_types.h>
 #include <linux/smp_types.h>
 #include <linux/pid_types.h>
@@ -866,6 +868,24 @@ struct task_struct {
 	int				normal_prio;
 	unsigned int			rt_priority;
 
+#if defined(CONFIG_SYSVIPC) && defined(CONFIG_ARM64) && defined(CONFIG_GENDWARFKSYMS)
+	/*
+	 * GKI has alignment padding before se. Keep IPC state naturally aligned
+	 * inside that gap, not in the vendor-visible tail or a packed overlay.
+	 * The assertions below reject configurations where it would not fit.
+	 */
+#ifndef __BINDGEN__
+	/*
+	 * Rust retains the old padding view of this gap. IPC lifecycle code is
+	 * C-only; exposing these unions renumbers bindgen's existing anonymous
+	 * types without changing any live field offset. Rust must not access
+	 * the private IPC state through its legacy task_struct view.
+	 */
+	ANDROID_KABI_IGNORE(0, struct sysv_sem sysvsem);
+	ANDROID_KABI_IGNORE(1, struct sysv_shm sysvshm);
+#endif
+#endif
+
 	struct sched_entity		se;
 	struct sched_rt_entity		rt;
 	struct sched_dl_entity		dl;
@@ -1172,7 +1192,7 @@ struct task_struct {
 
 	struct nameidata		*nameidata;
 
-#ifdef CONFIG_SYSVIPC
+#if defined(CONFIG_SYSVIPC) && (!defined(CONFIG_ARM64) || !defined(CONFIG_GENDWARFKSYMS))
 	struct sysv_sem			sysvsem;
 	struct sysv_shm			sysvshm;
 #endif
@@ -1686,6 +1706,18 @@ struct task_struct {
 	 * Do not put anything below here!
 	 */
 };
+
+#if defined(CONFIG_SYSVIPC) && defined(CONFIG_ARM64) && defined(CONFIG_GENDWARFKSYMS) && !defined(__BINDGEN__)
+static_assert(offsetof(struct task_struct, se) ==
+	      ALIGN(offsetof(struct task_struct, rt_priority) +
+		    sizeof(((struct task_struct *)0)->rt_priority),
+		    __alignof__(struct sched_entity)),
+	      "SysV IPC state must fit entirely in the pre-existing se alignment gap");
+static_assert(offsetof(struct task_struct, sysvsem) % __alignof__(struct sysv_sem) == 0);
+static_assert(offsetof(struct task_struct, sysvshm) % __alignof__(struct sysv_shm) == 0);
+static_assert(offsetof(struct task_struct, sysvshm) + sizeof(struct sysv_shm) <=
+	      offsetof(struct task_struct, se));
+#endif
 
 /*
  * Preserve the OxygenOS 16.0.10.601 task_struct type identity while keeping
