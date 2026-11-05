@@ -26,7 +26,7 @@ def sha(data):
 
 
 class Installer(unittest.TestCase):
-    def case(self, mode='good', slot='_b'):
+    def case(self, mode='good', slot='_b', profile='kernelsu-susfs'):
         with tempfile.TemporaryDirectory(prefix='coloros17-installer-fixture-') as tmp:
             r = Path(tmp)
             for name in ['by-name', 'mapper', 'bin', 'sdcard', 'tmp', 'metadata/ota/snapshots']:
@@ -42,7 +42,7 @@ class Installer(unittest.TestCase):
                 'by-name/vbmeta': '750918fafedd2ffbaaceee5830f2f8a77ed1b5c8d6e149f05739dadc39c93918',
                 'by-name/vendor_boot': 'd0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000',
                 'by-name/dtbo': '5600107425a28b7efc85d02fd158a875904678efd426889ba91d6b4f510b0b0f'}
-            source = packager.render('fixture-canary', sha(payload)).replace('BOOT_BYTES=100663296', 'BOOT_BYTES=8192')
+            source = packager.render('fixture-canary', sha(payload), profile).replace('BOOT_BYTES=100663296', 'BOOT_BYTES=8192')
             for name, digest in protected.items():
                 data = ('STOCK ' + name).encode()
                 for s in ['_a', '_b']:
@@ -54,7 +54,7 @@ class Installer(unittest.TestCase):
             (r / 'bootconfig').write_text('androidboot.vbmeta.device_state = "unlocked"\n'
                                          'androidboot.verifiedbootstate = "orange"\n'
                                          f'androidboot.slot_suffix = "{slot}"\n')
-            (r / 'firmware.prop').write_text('ro.build.display.id=CPH2745_17.0.0.102(EX01)\n')
+            (r / 'firmware.prop').write_text('ro.build.display.id=' + packager.PROFILES[profile]['firmware'] + '\n')
             for before, after in {
                 '/dev/block/bootdevice/by-name': str(r / 'by-name-alias'),
                 '/dev/block/by-name': str(r / 'by-name'),
@@ -97,6 +97,8 @@ exec /bin/dd "$@"
                 path.chmod(0o755)
             if mode == 'wrong_firmware':
                 (r / 'firmware.prop').write_text('ro.build.display.id=CPH2749_17.0.0.102(EX01)\n')
+            elif mode == 'old_region':
+                (r / 'firmware.prop').write_text('ro.build.display.id=CPH2745_17.0.0.102(EX01)\n')
             elif mode == 'wrong_stock':
                 (r / ('mapper/vendor_dlkm' + slot)).write_bytes(b'changed vendor')
             elif mode == 'wrong_parent':
@@ -150,16 +152,29 @@ exec /bin/dd "$@"
     def test_active_a(self): self.case(slot='_a')
     def test_dry_run(self): self.case('dry_run')
     def test_recovery_shell_syntax(self):
-        result = subprocess.run(['busybox', 'sh', '-n'],
-                                input=packager.render('syntax-canary', '0' * 64),
-                                text=True, capture_output=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
+        for profile in packager.PROFILES:
+            result = subprocess.run(['busybox', 'sh', '-n'],
+                                    input=packager.render('syntax-canary', '0' * 64, profile),
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
     def test_rejections_and_rollback(self):
         for mode in ['wrong_firmware', 'wrong_stock', 'wrong_parent', 'ota', 'snapshot',
                      'unknown_ota', 'locked', 'slot_conflict', 'capacity', 'alias',
                      'missing_partition', 'corrupt_payload', 'no_backup', 'backup_failure',
                      'partial_write', 'bad_readback']:
             with self.subTest(mode=mode): self.case(mode)
+
+    def test_droidspaces_active_slots_and_dry_run(self):
+        for slot in ['_a', '_b']:
+            for mode in ['good', 'dry_run']:
+                with self.subTest(slot=slot, mode=mode): self.case(mode, slot, 'droidspaces')
+
+    def test_droidspaces_rejections_and_rollback(self):
+        for mode in ['wrong_firmware', 'old_region', 'wrong_stock', 'wrong_parent',
+                     'ota', 'snapshot', 'unknown_ota', 'locked', 'slot_conflict',
+                     'capacity', 'alias', 'missing_partition', 'corrupt_payload',
+                     'no_backup', 'backup_failure', 'partial_write', 'bad_readback']:
+            with self.subTest(mode=mode): self.case(mode, profile='droidspaces')
 
 
 if __name__ == '__main__':

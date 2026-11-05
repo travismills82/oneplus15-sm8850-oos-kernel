@@ -6,12 +6,14 @@ on:
       - "docs/releases/**"
       - "docs/controlled-stack-release-process.md"
       - "tools/*controlled-stack-release*.py"
+      - "tools/*coloros17*"
       - ".github/workflows/controlled-stack-release-validate.yml"
   push:
     paths:
       - "docs/releases/**"
       - "docs/controlled-stack-release-process.md"
       - "tools/*controlled-stack-release*.py"
+      - "tools/*coloros17*"
       - ".github/workflows/controlled-stack-release-validate.yml"
   release:
     types: [published]
@@ -30,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validate all committed release records
         shell: bash
         run: |
@@ -43,6 +47,12 @@ jobs:
               --manifest "$manifest" \
               --signoff "$release_dir/validation-signoff.json" \
               --allow-symbolic-release-commit
+          done
+          for manifest in docs/releases/*-droidspaces-canary/manifest.json; do
+            [ -f "$manifest" ] || continue
+            found=1
+            python3 tools/validate-coloros17-droidspaces-release.py \
+              --manifest "$manifest" --repo .
           done
           [ "$found" -eq 1 ]
 
@@ -79,6 +89,10 @@ jobs:
               --sha256sums release-assets/SHA256SUMS \
               --release-commit "$commit" \
               --repo .
+          elif [ "$RELEASE_TAG" = 'coloros17.0.0.102-linux-6.12.115-droidspaces-canary' ]; then
+            python3 tools/validate-coloros17-droidspaces-release.py \
+              --manifest release-assets/manifest.json \
+              --assets release-assets --repo . --release-commit "$commit"
           else
             [ -f release-assets/boot.img ]
             [ -f release-assets/boot.img.sha256 ]

@@ -136,7 +136,7 @@ mount -o ro "$MANIFEST_BLOCK" "$WORKDIR/manifest" || abort_install 'cannot inspe
 MANIFEST_MOUNT="$WORKDIR/manifest"
 [ -r "$MANIFEST_MOUNT/build.prop" ] || abort_install 'firmware build.prop is absent.'
 display="$(awk -F= '$1 == "ro.build.display.id" {print substr($0, index($0, "=") + 1)}' "$MANIFEST_MOUNT/build.prop")"
-[ "$display" = 'CPH2745_17.0.0.102(EX01)' ] || abort_install "unsupported firmware: $display"
+[ "$display" = '@FIRMWARE_DISPLAY_ID@' ] || abort_install "unsupported firmware: $display"
 umount "$MANIFEST_MOUNT" || abort_install 'cannot unmount firmware inspection.'
 MANIFEST_MOUNT=''
 
@@ -175,4 +175,4 @@ WRITE_STARTED=0
 printf 'result=verified\n' >> "$BACKUP_DIR/manifest.txt"
 sync
 ui_print "Installed and verified boot$slot. Reboot System without switching slots."
-ui_print 'KernelSU/SUSFS canary: extended hardware qualification is pending; keep the backup.'
+ui_print '@FEATURE_LABEL@ canary: extended hardware qualification is pending; keep the backup.'
