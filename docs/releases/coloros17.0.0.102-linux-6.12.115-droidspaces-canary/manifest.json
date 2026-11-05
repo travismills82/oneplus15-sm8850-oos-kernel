@@ -1,0 +1,80 @@
+{
+  "schema": "coloros17-droidspaces-boot-only-v1",
+  "release_tag": "coloros17.0.0.102-linux-6.12.115-droidspaces-canary",
+  "prerelease": true,
+  "stable_qualified": false,
+  "firmware": "CPH2747_17.0.0.102(EX01)",
+  "source_commit": "4f960022774c379000abdb40d230ab563bc86dd7",
+  "common_tree": "6d074b67a27e4ccd1582be8178ab0bf8284870aa",
+  "kernel_release": "6.12.115-android16-6-o-gd6552d3625e0-4k",
+  "Image_sha256": "a952292f1067c8a4507cb60346e6de82d69104f6a22cbf0093ffe94bb69489a1",
+  "config_sha256": "dcb3585a692d6ba12bfbe01aa647654962a8c962c68593aaa0fc7552af7f3536",
+  "Module_symvers_sha256": "e01ecec95a9603acdb9333f6c2672d573f39e02f0f98c93e50996358ce1b4aa8",
+  "write_partitions": ["boot"],
+  "replacement_modules": [],
+  "Droidspaces_userspace_embedded": false,
+  "stock_contract": {
+    "system_dlkm": "3c1538210e986317784a7bf0f29487858ea0ea15bd2b6804cbcffd93a85d3e5a",
+    "vendor_dlkm": "82f90a9e0aba489a880bfa844ec13e0facb870c70752647568a290d45492dc47",
+    "vbmeta": "750918fafedd2ffbaaceee5830f2f8a77ed1b5c8d6e149f05739dadc39c93918",
+    "vendor_boot": "d0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000",
+    "dtbo": "5600107425a28b7efc85d02fd158a875904678efd426889ba91d6b4f510b0b0f"
+  },
+  "enforced_GKI": {
+    "result": "FAIL",
+    "prior_owners": 44,
+    "current_owners": 45,
+    "ABI_reference_updated": false
+  },
+  "qualification": {
+    "Android_FBE": "PASS",
+    "live_requirements_checker": "PASS",
+    "full_distro_sessions": "NOT TESTED",
+    "extended_hardware": "NOT TESTED",
+    "exact_recovery_ZIP_install": "HOST TESTS ONLY"
+  },
+  "module_oracle": {
+    "modules": 1070,
+    "active_compatible": 1032,
+    "dormant": 38,
+    "hard_imports": 60701,
+    "CRC_records": 61777,
+    "missing": 0,
+    "CRC_mismatches": 0,
+    "namespace_failures": 0,
+    "active_blockers": 0,
+    "production_provider_mismatches": 0
+  },
+  "AVB": {
+    "algorithm": "SHA256_RSA4096",
+    "flags": 0,
+    "rollback_index": 0,
+    "rollback_index_location": 0,
+    "OS_property": "16",
+    "security_patch": "2026-10-01",
+    "fingerprint": "qti/canoe/canoe:16/BP2A.250605.015/1792254911768:user/release-keys",
+    "key_sha1": "2597c218aae470a130f61162feaae70afd97f011"
+  },
+  "artifacts": {
+    "boot.img": {
+      "sha256": "0cb2cdff300f522beccb4cbdedb0549579161bb48e30f756ea020c7bf5e643cc",
+      "bytes": 100663296
+    },
+    "boot.img.sha256": {
+      "sha256": "baf23be2e1318b1a5c3531ac1b013f0ff1eb4ce302ad2b4a1496c80fe492813a",
+      "bytes": 75
+    },
+    "kernel-coloros-17.0.0.102-linux-6.12.115-droidspaces-TWRP.zip": {
+      "sha256": "67858b4dc623ce4944fabcfc865faca2507ec08739d323814cb4b2991571c6cb",
+      "bytes": 100670094
+    },
+    "kernel-coloros-17.0.0.102-linux-6.12.115-droidspaces-TWRP.zip.sha256": {
+      "sha256": "a27b8eec4d9fdeb6569ddffb8cf9a28756e427b1fb03b6699ec3297eefd01340",
+      "bytes": 128
+    },
+    "README.md": {
+      "sha256": "6a743acae6c3ff6e87353b0177605b23a1416d902f50ee04d8cacc4549039f25",
+      "bytes": 8306
+    }
+  }
+}

@@ -30,7 +30,7 @@ inherited differences. Linux .114 remains latest stable.
 [Installation, rollback and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary/README.md) ·
 [Source and validation](docs/features/kernelsu-susfs-coloros17.md).
 
-## Droidspaces support in current source
+## Droidspaces boot-only canary release
 
 Current source also enables the missing Droidspaces container prerequisites,
 with stock task/Rust Binder ABI preservation and no DLKM replacements. The
@@ -45,8 +45,18 @@ The enforced GKI comparison remains **FAIL**: all 44 prior owners are unchanged,
 with one additional reviewed C-private IPC-padding owner. Original stock-module
 and production-provider checks pass without CRC/signing bypasses.
 
-This source update does not replace the existing release assets linked above;
-the new Droidspaces boot image has not been published as a GitHub release.
+The exact running Droidspaces `boot.img` is now supplied as a separate canary,
+with a guarded boot-only TWRP ZIP. This is the **CPH2747_17.0.0.102(EX01)**
+stock-partition contract verified on the connected phone, not universal support
+for other regions/firmware. KernelSU and SUSFS remain built in; the Droidspaces
+app/runtime and ARM64 Linux rootfs are installed separately. Existing
+KernelSU-patched init_boot is retained. No DLKM, vbmeta or init_boot is included.
+
+[Download the Droidspaces canary](https://github.com/travismills82/oneplus15-sm8850-oos-kernel/releases/tag/coloros17.0.0.102-linux-6.12.115-droidspaces-canary) ·
+[Installation, rollback, checksums and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-droidspaces-canary/README.md).
+
+The earlier KernelSU/SUSFS release above remains unchanged. This new release
+reuses the physically tested bytes, without rebuilding or repackaging boot.img.
 See the [source/config/ABI audit](docs/features/droidspaces-coloros17.md),
 [physical canary record](docs/validation/firmware-17.0.0.102/coloros1700102-droidspaces-canary-20261103.md)
 and [remaining test plan](docs/validation/firmware-17.0.0.102/coloros1700102-droidspaces-test-plan.md).
@@ -79,6 +89,7 @@ matched original firmware pair separately before installing this boot image.
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS CPH2747_17.0.0.102(EX01), exact stock DLKM/parent | CPH2747 / OP611FL1, slot A | `6.12.115-android16-6-o-gd6552d3625e0-4k` | Droidspaces kernel prerequisites + KernelSU/SUSFS; **canary prerelease**, full distro/extended tests pending | `coloros17.0.0.102-linux-6.12.115-droidspaces-canary` |
 | ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-gf116d2166542-4k` | KernelSU 32716/API6 + SUSFS v2.3.0; **canary prerelease**, boot-only ZIP and Manager APK included | `coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary` |
 | ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-ga3b501fee3c3-4k` | Boot-only **canary prerelease**; extended qualification pending | `coloros17.0.0.102-linux-6.12.115-boot-only-canary` |
 | ColorOS 17.0.0.102(EX01) | CPH2745IN / OP611FL1 | `6.12.114-android16-6-o-gb6bd4a40410d-4k` | Stable boot-only security release; scoped qualification and known GKI differences disclosed | `coloros17.0.0.102-linux-6.12.114-kmi6-security` |
