@@ -18,6 +18,14 @@ The owner also reported Wi-Fi/Bluetooth, mobile data, camera/video, audio/mic,
 fingerprint and OTG working. Stock GPU/GEAS, DLKM and KernelSU init_boot remain
 unchanged.
 
+CAKE is now built in alongside the existing built-in FQ and FQ-CoDel. The
+CAKE-enabled image passed Android/FBE and live isolated qdisc packet/counter/
+lifecycle tests without changing any production interface or default traffic
+policy. Stock DLKM and KernelSU init_boot remain untouched. New full hardware,
+congestion-performance and controlled-power qualification are separate gates.
+See the [CAKE feature and ABI record](docs/features/traffic-control-coloros17.md)
+and [CAKE physical canary](docs/validation/firmware-17.0.0.102/coloros1700102-linux-6.12.116-cake-physical-canary-20261107.md).
+
 This is **functional canary qualification, not a new stable release**.
 Enforced GKI still FAILS with 45 unchanged owners. Existing HBP, eBPF/BHB and
 QCOM suspend-time timekeeping warnings remain disclosed; controlled idle/power
