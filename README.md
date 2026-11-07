@@ -8,7 +8,27 @@ Kernel releases are firmware-specific. Never cross-flash a boot image merely
 because it targets the same phone family; each OxygenOS build has its own
 kernel, module, FBE/user0, and boot-container contract.
 
-## Current canary: Linux 6.12.115 with KernelSU + SUSFS
+## Current development: Linux 6.12.116 boot-only canary
+
+Main source now includes the complete Linux 6.12.115 to 6.12.116 stable
+interval as four individual upstream-derived commits. The exact boot-only
+candidate passed Android/user0 FBE, stock-DLKM compatibility, KernelSU/SUSFS
+and the live Droidspaces requirements checker on **CPH2747_17.0.0.102(EX01)**.
+The owner also reported Wi-Fi/Bluetooth, mobile data, camera/video, audio/mic,
+fingerprint and OTG working. Stock GPU/GEAS, DLKM and KernelSU init_boot remain
+unchanged.
+
+This is **functional canary qualification, not a new stable release**.
+Enforced GKI still FAILS with 45 unchanged owners. Existing HBP, eBPF/BHB and
+QCOM suspend-time timekeeping warnings remain disclosed; controlled idle/power
+and extended stability qualification are outstanding. No .116 release assets
+are published by this source update; the existing .115 releases below remain
+unchanged.
+
+[.116 source, build and ABI record](docs/validation/firmware-17.0.0.102/coloros1700102-linux-6.12.116-integration-20261107.md) ·
+[.116 physical canary and limitations](docs/validation/firmware-17.0.0.102/coloros1700102-linux-6.12.116-physical-canary-20261107.md).
+
+## Published canary: Linux 6.12.115 with KernelSU + SUSFS
 
 Main now includes pinned official KernelSU 32716 (UAPI 6) and SUSFS v2.3.0,
 built into the repaired .115 boot-only kernel. Uname spoofing support is enabled;
