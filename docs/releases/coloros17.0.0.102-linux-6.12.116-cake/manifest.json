@@ -1,0 +1,58 @@
+{
+  "schema": "coloros17-cake-boot-only-v1",
+  "release_tag": "coloros17.0.0.102-linux-6.12.116-cake",
+  "release_commit": "TAG_TARGET",
+  "prerelease": false,
+  "release_channel": "stable",
+  "channel_basis": "owner-requested normal/latest publication; not full technical qualification",
+  "stable_qualified": false,
+  "firmware": "CPH2747_17.0.0.102(EX01)",
+  "source_commit": "737f8bbabba274fec2d38cb22df9f854daebfa9b",
+  "common_tree": "481a38e99f82a476cdfa1ec1023cd9d4232dcaae",
+  "kernel_release": "6.12.116-android16-6-o-gc2e2f95d3c3c-4k",
+  "Image_sha256": "456436bea4d1d1f126b4ebfce9001253871f4b0edf1d2af07c8116f836428038",
+  "config_sha256": "da9bf33efeac03dd29e0cefb9fb2f6aaad272b8b2458886fb0e30c06840656c5",
+  "Module_symvers_sha256": "e01ecec95a9603acdb9333f6c2672d573f39e02f0f98c93e50996358ce1b4aa8",
+  "write_partitions": ["boot"],
+  "replacement_modules": [],
+  "Droidspaces_userspace_embedded": false,
+  "stock_contract": {
+    "system_dlkm": "3c1538210e986317784a7bf0f29487858ea0ea15bd2b6804cbcffd93a85d3e5a",
+    "vendor_dlkm": "82f90a9e0aba489a880bfa844ec13e0facb870c70752647568a290d45492dc47",
+    "vbmeta": "750918fafedd2ffbaaceee5830f2f8a77ed1b5c8d6e149f05739dadc39c93918",
+    "vendor_boot": "d0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000",
+    "dtbo": "5600107425a28b7efc85d02fd158a875904678efd426889ba91d6b4f510b0b0f"
+  },
+  "enforced_GKI": {"result": "FAIL", "owners": 45, "CAKE_new_owners": 0, "ABI_reference_updated": false},
+  "qualification": {
+    "common_build": "PASS",
+    "strict_symbol_list": "PASS",
+    "common_ABI_generation": "PASS",
+    "compiled_ABI_layout_KCFI": "UNCHANGED",
+    "AVB_integrity": "PASS",
+    "full_boot_readback": "PASS",
+    "Android_FBE": "PASS",
+    "live_requirements_checker": "PASS",
+    "isolated_qdisc_traffic_lifecycle": "PASS",
+    "full_distro_sessions": "NOT TESTED",
+    "extended_hardware": "NOT TESTED",
+    "controlled_unplugged_power": "NOT QUALIFIED",
+    "extended_stability": "NOT QUALIFIED"
+  },
+  "module_oracle": {
+    "modules": 1070, "active_compatible": 1032, "dormant": 38,
+    "hard_imports": 60701, "CRC_records": 61777,
+    "missing": 0, "CRC_mismatches": 0, "namespace_failures": 0,
+    "active_blockers": 0, "production_provider_mismatches": 0
+  },
+  "AVB": {
+    "algorithm": "SHA256_RSA4096", "flags": 0,
+    "rollback_index": 0, "rollback_index_location": 0,
+    "OS_property": "16", "security_patch": "2026-10-01",
+    "fingerprint": "qti/canoe/canoe:16/BP2A.250605.015/1792254911768:user/release-keys",
+    "key_sha1": "2597c218aae470a130f61162feaae70afd97f011"
+  },
+  "artifacts": {
+    "boot.img": {"sha256": "f7cb7d973ce43de176a27fe8b9ad5e694b35e9d042d6e5875cf50c339f43ec16", "bytes": 100663296}
+  }
+}

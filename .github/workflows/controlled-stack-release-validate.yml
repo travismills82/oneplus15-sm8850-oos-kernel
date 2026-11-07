@@ -54,6 +54,12 @@ jobs:
             python3 tools/validate-coloros17-droidspaces-release.py \
               --manifest "$manifest" --repo .
           done
+          for manifest in docs/releases/*-cake/manifest.json; do
+            [ -f "$manifest" ] || continue
+            found=1
+            python3 tools/validate-coloros17-cake-release.py \
+              --manifest "$manifest" --repo .
+          done
           [ "$found" -eq 1 ]
 
   published-assets:
@@ -62,7 +68,8 @@ jobs:
     if: >-
       (github.event_name == 'release' &&
        contains(join(github.event.release.assets.*.name, ','), '-TWRP.zip')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+      (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' &&
+       inputs.release_tag != 'coloros17.0.0.102-linux-6.12.116-cake')
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -153,3 +160,29 @@ jobs:
               --source-commit "$source_commit" \
               --stock-system-dlkm-sha256 "$stock_system_dlkm_sha256"
           fi
+
+  cake-boot-only-assets:
+    # This raw-boot profile supplies no unqualified recovery installer.
+    if: >-
+      (github.event_name == 'release' &&
+       github.event.release.tag_name == 'coloros17.0.0.102-linux-6.12.116-cake') ||
+      (github.event_name == 'workflow_dispatch' &&
+       inputs.release_tag == 'coloros17.0.0.102-linux-6.12.116-cake')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release_tag }}
+          fetch-depth: 0
+      - name: Verify exact raw boot release and disclosed qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "$RELEASE_TAG" --dir release-assets
+          commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          python3 tools/validate-coloros17-cake-release.py \
+            --manifest release-assets/manifest.json --assets release-assets \
+            --repo . --release-commit "$commit"

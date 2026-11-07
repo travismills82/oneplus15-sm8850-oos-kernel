@@ -8,7 +8,7 @@ Kernel releases are firmware-specific. Never cross-flash a boot image merely
 because it targets the same phone family; each OxygenOS build has its own
 kernel, module, FBE/user0, and boot-container contract.
 
-## Current development: Linux 6.12.116 boot-only canary
+## Latest normal release: Linux 6.12.116 + CAKE (boot.img only)
 
 Main source now includes the complete Linux 6.12.115 to 6.12.116 stable
 interval as four individual upstream-derived commits. The exact boot-only
@@ -26,12 +26,17 @@ congestion-performance and controlled-power qualification are separate gates.
 See the [CAKE feature and ABI record](docs/features/traffic-control-coloros17.md)
 and [CAKE physical canary](docs/validation/firmware-17.0.0.102/coloros1700102-linux-6.12.116-cake-physical-canary-20261107.md).
 
-This is **functional canary qualification, not a new stable release**.
-Enforced GKI still FAILS with 45 unchanged owners. Existing HBP, eBPF/BHB and
-QCOM suspend-time timekeeping warnings remain disclosed; controlled idle/power
-and extended stability qualification are outstanding. No .116 release assets
-are published by this source update; the existing .115 releases below remain
-unchanged.
+The exact tested CAKE image is published in the **normal/latest (non-prerelease)
+channel at the owner's request**. This is a scoped release, not a claim that
+all stable-qualification gates passed. Enforced GKI still FAILS with 45
+unchanged owners. Existing HBP, eBPF/BHB and QCOM suspend-time timekeeping
+warnings remain disclosed; controlled idle/power, new full hardware and extended
+stability qualification are outstanding. Only `boot.img` plus checksums and
+documentation are supplied, with no new unqualified recovery installer. The
+existing .115 release assets remain unchanged.
+
+[Download Linux 6.12.116 + CAKE](https://github.com/travismills82/oneplus15-sm8850-oos-kernel/releases/tag/coloros17.0.0.102-linux-6.12.116-cake) ·
+[Installation, rollback and disclosed limits](docs/releases/coloros17.0.0.102-linux-6.12.116-cake/README.md).
 
 [.116 source, build and ABI record](docs/validation/firmware-17.0.0.102/coloros1700102-linux-6.12.116-integration-20261107.md) ·
 [.116 physical canary and limitations](docs/validation/firmware-17.0.0.102/coloros1700102-linux-6.12.116-physical-canary-20261107.md).
@@ -52,7 +57,8 @@ unchanged. No replacement module or vbmeta image is supplied.
 This is a **canary/prerelease**, not a stable promotion. Android/user0, F2FS
 inlinecrypt and live SUSFS availability passed; complete hardware, Manager and
 unplugged-suspend qualification remain pending. Enforced GKI retains 44
-inherited differences. Linux .114 remains latest stable.
+inherited differences. At that canary's publication, Linux .114 was the stable
+baseline; the latest normal release is listed above.
 
 [Download the KernelSU/SUSFS canary](https://github.com/travismills82/oneplus15-sm8850-oos-kernel/releases/tag/coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary) ·
 [Installation, rollback and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary/README.md) ·
@@ -106,7 +112,8 @@ This is a **canary prerelease**, not a fully qualified stable promotion.
 Encrypted Android boot, stock-module compatibility and a four-minute health
 window passed. Full hardware retesting and unplugged suspend remain pending;
 enforced GKI comparison remains FAIL with 38 prior reviewed plus six documented
-representation differences. The .114 release remains latest stable.
+representation differences. At that publication .114 was the stable baseline;
+the latest normal release is listed above.
 
 Read the [installation instructions and limitations](docs/releases/coloros17.0.0.102-linux-6.12.115-boot-only-canary/README.md)
 and [exact validation record](docs/validation/firmware-17.0.0.102/coloros1700102-linux115-boot-only-20261101.md).
@@ -117,6 +124,7 @@ matched original firmware pair separately before installing this boot image.
 
 | Firmware | Device physically tested | Kernel | Status | Release tag |
 |---|---|---|---|---|
+| ColorOS CPH2747_17.0.0.102(EX01), exact stock DLKM/parent | CPH2747 / OP611FL1, slot A | `6.12.116-android16-6-o-gc2e2f95d3c3c-4k` | CAKE + KernelSU/SUSFS + Droidspaces prerequisites; **normal/latest by owner request**, scoped qualification, GKI FAIL and power/extended tests pending | `coloros17.0.0.102-linux-6.12.116-cake` |
 | ColorOS CPH2747_17.0.0.102(EX01), exact stock DLKM/parent | CPH2747 / OP611FL1, slot A | `6.12.115-android16-6-o-gd6552d3625e0-4k` | Droidspaces kernel prerequisites + KernelSU/SUSFS; **canary prerelease**, full distro/extended tests pending | `coloros17.0.0.102-linux-6.12.115-droidspaces-canary` |
 | ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-gf116d2166542-4k` | KernelSU 32716/API6 + SUSFS v2.3.0; **canary prerelease**, boot-only ZIP and Manager APK included | `coloros17.0.0.102-linux-6.12.115-kernelsu-susfs-canary` |
 | ColorOS 17.0.0.102(EX01), original stock DLKM/parent | CPH2745IN / OP611FL1, slot B | `6.12.115-android16-6-o-ga3b501fee3c3-4k` | Boot-only **canary prerelease**; extended qualification pending | `coloros17.0.0.102-linux-6.12.115-boot-only-canary` |
