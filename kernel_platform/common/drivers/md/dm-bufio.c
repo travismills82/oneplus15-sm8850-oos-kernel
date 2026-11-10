@@ -2512,6 +2512,8 @@ struct dm_bufio_client *dm_bufio_client_create(struct block_device *bdev, unsign
 
 	init_waitqueue_head(&c->free_buffer_wait);
 	c->async_write_error = 0;
+	/* An empty client does not own the oldest buffer. */
+	c->oldest_buffer = jiffies;
 
 	c->dm_io = dm_io_client_create();
 	if (IS_ERR(c->dm_io)) {
@@ -2748,9 +2750,13 @@ static unsigned long __evict_a_few(unsigned long nr_buffers)
 
 	dm_bufio_unlock(c);
 
-	if (count)
+	if (count) {
 		c->oldest_buffer = oldest_buffer;
-	__insert_client(c);
+		__insert_client(c);
+	} else {
+		/* Let the next pass reach another client instead of retrying this one. */
+		list_add_tail(&c->client_list, &dm_bufio_all_clients);
+	}
 
 	return count;
 }
@@ -2775,10 +2781,13 @@ static void evict_old(void)
 {
 	unsigned long threshold = dm_bufio_cache_size -
 		dm_bufio_cache_size / DM_BUFIO_LOW_WATERMARK_RATIO;
+	int unproductive = 0;
 
 	mutex_lock(&dm_bufio_clients_lock);
 	while (dm_bufio_current_allocated > threshold) {
-		if (!__evict_a_few(64))
+		if (__evict_a_few(64))
+			unproductive = 0;
+		else if (++unproductive >= dm_bufio_client_count)
 			break;
 		cond_resched();
 	}
