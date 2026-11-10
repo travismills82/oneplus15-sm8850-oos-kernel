@@ -108,26 +108,47 @@ static int kvm_ptdump_build_levels(struct ptdump_pg_level *level, u32 start_lvl)
 
 #define PKVM_HANDLE(kvm) ((kvm) != NULL ? (kvm)->arch.pkvm.handle : 0)
 
-static u32 ptdump_get_ranges(struct kvm *kvm)
+static int ptdump_get_geometry(struct kvm *kvm, u32 *ia_bits, s8 *start_level)
 {
-	if (!is_protected_kvm_enabled())
-		return kvm->arch.mmu.pgt->ia_bits;
-	return kvm_call_hyp_nvhe(__pkvm_ptdump, PKVM_HANDLE(kvm), PKVM_PTDUMP_GET_RANGE);
-}
+	struct kvm_pgtable *pgt;
+	int ret = -ENOENT;
 
-static s8 ptdump_get_level(struct kvm *kvm)
-{
-	if (!is_protected_kvm_enabled())
-		return kvm->arch.mmu.pgt->start_level;
-	return kvm_call_hyp_nvhe(__pkvm_ptdump, PKVM_HANDLE(kvm), PKVM_PTDUMP_GET_LEVEL);
+	/* Protected guest and host geometry comes from the hypervisor. */
+	if (is_protected_kvm_enabled()) {
+		if (ia_bits)
+			*ia_bits = kvm_call_hyp_nvhe(__pkvm_ptdump, PKVM_HANDLE(kvm),
+						    PKVM_PTDUMP_GET_RANGE);
+		if (start_level)
+			*start_level = kvm_call_hyp_nvhe(__pkvm_ptdump, PKVM_HANDLE(kvm),
+							PKVM_PTDUMP_GET_LEVEL);
+		return 0;
+	}
+
+	if (!kvm)
+		return -ENOENT;
+	read_lock(&kvm->mmu_lock);
+	pgt = kvm->arch.mmu.pgt;
+	if (pgt) {
+		if (ia_bits)
+			*ia_bits = pgt->ia_bits;
+		if (start_level)
+			*start_level = pgt->start_level;
+		ret = 0;
+	}
+	read_unlock(&kvm->mmu_lock);
+	return ret;
 }
 
 static struct kvm_ptdump_guest_state *kvm_ptdump_parser_create(struct kvm *kvm)
 {
 	struct kvm_ptdump_guest_state *st;
 	int ret;
-	u32 ia_bits = ptdump_get_ranges(kvm);
-	s8 start_level = ptdump_get_level(kvm);
+	u32 ia_bits;
+	s8 start_level;
+
+	ret = ptdump_get_geometry(kvm, &ia_bits, &start_level);
+	if (ret)
+		return ERR_PTR(ret);
 
 	st = kzalloc(sizeof(struct kvm_ptdump_guest_state), GFP_KERNEL_ACCOUNT);
 	if (!st)
@@ -157,7 +178,7 @@ static struct kvm_ptdump_guest_state *kvm_ptdump_parser_create(struct kvm *kvm)
 
 static int kvm_ptdump_guest_show(struct seq_file *m, void *unused)
 {
-	int ret;
+	int ret = 0;
 	struct kvm_ptdump_guest_state *st = m->private;
 	struct kvm *kvm = st->kvm;
 	struct kvm_s2_mmu *mmu = &kvm->arch.mmu;
@@ -171,7 +192,8 @@ static int kvm_ptdump_guest_show(struct seq_file *m, void *unused)
 	parser_state->seq = m;
 
 	write_lock(&kvm->mmu_lock);
-	ret = kvm_pgtable_walk(mmu->pgt, 0, BIT(mmu->pgt->ia_bits), &walker);
+	if (mmu->pgt)
+		ret = kvm_pgtable_walk(mmu->pgt, 0, BIT(mmu->pgt->ia_bits), &walker);
 	write_unlock(&kvm->mmu_lock);
 
 	return ret;
@@ -223,18 +245,20 @@ static const struct file_operations kvm_ptdump_guest_fops = {
 static int kvm_pgtable_range_show(struct seq_file *m, void *unused)
 {
 	struct kvm *kvm = m->private;
-	u32 ia_bits = ptdump_get_ranges(kvm);
+	u32 ia_bits;
 
-	seq_printf(m, "%2u\n", ia_bits);
+	if (!ptdump_get_geometry(kvm, &ia_bits, NULL))
+		seq_printf(m, "%2u\n", ia_bits);
 	return 0;
 }
 
 static int kvm_pgtable_levels_show(struct seq_file *m, void *unused)
 {
 	struct kvm *kvm = m->private;
-	s8 start_level = ptdump_get_level(kvm);
+	s8 start_level;
 
-	seq_printf(m, "%1d\n", KVM_PGTABLE_MAX_LEVELS - start_level);
+	if (!ptdump_get_geometry(kvm, NULL, &start_level))
+		seq_printf(m, "%1d\n", KVM_PGTABLE_MAX_LEVELS - start_level);
 	return 0;
 }
 
