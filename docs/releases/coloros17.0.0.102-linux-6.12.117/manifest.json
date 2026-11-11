@@ -1,0 +1,111 @@
+{
+  "schema": "coloros17-linux117-boot-only-v1",
+  "release_tag": "coloros17.0.0.102-linux-6.12.117",
+  "release_commit": "TAG_TARGET",
+  "prerelease": false,
+  "release_channel": "normal",
+  "channel_basis": "owner-authorized publication after scoped physical qualification; not full technical stable qualification",
+  "stable_qualified": false,
+  "firmware": "CPH2747_17.0.0.102(EX01)",
+  "source_commit": "9218fe3f104bda23fb7e638f3f4a7236794b598b",
+  "validation_commit": "f204c46d91cc2a54dd8ef1a2a8b6ead7a445e288",
+  "common_tree": "2e69273bcb66991b801cdce148ff66a7958e08e1",
+  "kernel_release": "6.12.117-android16-6-o-g9218fe3f104b-4k",
+  "Image_sha256": "2e9a03d847908563c07f56338b3e9a0a9a8af7486a63d99742479552789b9091",
+  "config_sha256": "902bfd6eff25d941cf2a19791022ea3a8cdd338fd6801b793b62c54b81a83ded",
+  "Module_symvers_sha256": "af4d9aab9fb20ed169d6251f58af3579fa32fa1d3f3e6f346b7d4686224e7371",
+  "generated_ABI_sha256": "935602a0cf5795fd82e26fce78e06298bf59c23a4c0b30f23b9d6abdd7a18971",
+  "write_partitions": [
+    "boot"
+  ],
+  "replacement_modules": [],
+  "Droidspaces_userspace_embedded": false,
+  "stock_contract": {
+    "system_dlkm": "3c1538210e986317784a7bf0f29487858ea0ea15bd2b6804cbcffd93a85d3e5a",
+    "vendor_dlkm": "82f90a9e0aba489a880bfa844ec13e0facb870c70752647568a290d45492dc47",
+    "vbmeta": "750918fafedd2ffbaaceee5830f2f8a77ed1b5c8d6e149f05739dadc39c93918",
+    "vendor_boot": "d0805a3cf5007294f2976f3f579c31e120b2d98e600a170f93dfec78b6baf000",
+    "dtbo": "5600107425a28b7efc85d02fd158a875904678efd426889ba91d6b4f510b0b0f"
+  },
+  "upstream": {
+    "series": "Linux stable 6.12.116..6.12.117; not a new ACK tag merge",
+    "parent": "5c40a1750f44dd6c7292d8c8d0b4ffff1734576e",
+    "target": "d3417611a3b40b7f04a29e558cebac2bf69889d7",
+    "ordered_commits": 1535,
+    "individually_imported": 1525,
+    "already_present_equivalents": 10,
+    "separate_IR_prerequisite": 1,
+    "reviewed_context_adaptations": 14,
+    "downstream_KABI_commits": 7,
+    "tag_signature_verification": "UNVERIFIED: signer public key not locally installed"
+  },
+  "enforced_GKI": {
+    "result": "FAIL",
+    "owners": 53,
+    "unchanged_prior_owners": 45,
+    "new_reviewed_owners": 8,
+    "unexplained_new_owners": 0,
+    "ABI_reference_updated": false
+  },
+  "qualification": {
+    "common_build": "PASS",
+    "strict_symbol_list": "PASS",
+    "common_ABI_generation": "PASS",
+    "compiled_existing_export_records": 10676,
+    "existing_export_changes": 0,
+    "additive_exports": [
+      "__skb_vlan_pop"
+    ],
+    "compiled_layout_roots": 30,
+    "shared_KCFI_symbol_records_unchanged": 2535,
+    "Rust_KCFI": "four formatting prefixes unchanged; two Default prefixes intentionally corrected; metadata-only annotations preserve runtime bytes",
+    "historical_host_tests": "201/202 PASS; one obsolete .115 whole-file futex freeze assertion FAIL",
+    "focused_117_source_guards": "17 PASS",
+    "AVB_integrity": "PASS offline; existing development boot key",
+    "full_boot_readback": "PASS",
+    "Android_FBE": "PASS",
+    "loaded_stock_module_build_ID_matches": 691,
+    "live_requirements_checker": "PASS: installed Droidspaces 7.2.0, requirements_met=1",
+    "isolated_qdisc_traffic_lifecycle": "PASS",
+    "owner_radios_camera_video_calls_fingerprint_USB_sharing": "PASS, owner reported",
+    "standalone_audio_recording": "NOT SEPARATELY REPORTED",
+    "OTG_storage": "NOT CONFIRMED",
+    "TWRP_decryption": "NOT TESTED on this artifact",
+    "full_distro_sessions": "NOT TESTED",
+    "controlled_unplugged_power": "NOT QUALIFIED",
+    "repeated_boots_extended_stability": "NOT QUALIFIED"
+  },
+  "module_oracle": {
+    "modules": 1070,
+    "active_compatible": 1032,
+    "dormant": 38,
+    "hard_imports": 60701,
+    "CRC_records": 61777,
+    "missing": 0,
+    "CRC_mismatches": 0,
+    "namespace_failures": 0,
+    "active_blockers": 0,
+    "production_provider_mismatches": 0
+  },
+  "AVB": {
+    "algorithm": "SHA256_RSA4096",
+    "flags": 0,
+    "rollback_index": 0,
+    "rollback_index_location": 0,
+    "OS_property": "16",
+    "security_patch": "2026-10-01",
+    "fingerprint": "qti/canoe/canoe:16/BP2A.250605.015/1792254911768:user/release-keys",
+    "key_sha1": "2597c218aae470a130f61162feaae70afd97f011"
+  },
+  "rollback": {
+    "kernel": "6.12.116 CAKE",
+    "boot_sha256": "f7cb7d973ce43de176a27fe8b9ad5e694b35e9d042d6e5875cf50c339f43ec16",
+    "release_tag": "coloros17.0.0.102-linux-6.12.116-cake"
+  },
+  "artifacts": {
+    "boot.img": {
+      "sha256": "3cef6c673b60f189d19c95113a72e49c924a2f2800d8726b3b43f0fe1e8d4c51",
+      "bytes": 100663296
+    }
+  }
+}
