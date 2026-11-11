@@ -897,7 +897,8 @@ static enum lru_status inode_lru_isolate(struct list_head *item,
 		return LRU_SKIP;
 
 	trace_android_vh_inode_lru_isolate(inode, &skip);
-	if (skip) {
+	/* Leave an inode pinned for page-cache isolation with its current walker. */
+	if (skip || (inode->i_state & I_LRU_ISOLATING)) {
 		spin_unlock(&inode->i_lock);
 		return LRU_SKIP;
 	}
