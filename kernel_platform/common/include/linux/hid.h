@@ -677,7 +677,6 @@ struct hid_device {							/* device report descriptor */
 	__s32 battery_max;
 	__s32 battery_report_type;
 	__s32 battery_report_id;
-	__s32 battery_report_offset;
 	__s32 battery_charge_status;
 	enum hid_battery_status battery_status;
 	bool battery_avoid_query;
@@ -726,7 +725,11 @@ struct hid_device {							/* device report descriptor */
 	struct hid_bpf bpf;						/* hid-bpf data */
 #endif /* CONFIG_HID_BPF */
 
+#ifdef CONFIG_HID_BATTERY_STRENGTH
+	ANDROID_KABI_USE(1, __s32 battery_report_offset);
+#else
 	ANDROID_KABI_RESERVE(1);
+#endif
 	ANDROID_KABI_RESERVE(2);
 };
 
