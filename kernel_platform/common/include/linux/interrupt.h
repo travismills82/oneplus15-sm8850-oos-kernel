@@ -4,6 +4,7 @@
 #define _LINUX_INTERRUPT_H
 
 #include <linux/kernel.h>
+#include <linux/android_kabi.h>
 #include <linux/bitops.h>
 #include <linux/cleanup.h>
 #include <linux/irqreturn.h>
@@ -134,7 +135,8 @@ struct irqaction {
 	unsigned long		thread_mask;
 	const char		*name;
 	struct proc_dir_entry	*dir;
-	struct callback_head	thread_dtor;
+	/* Fits the existing ARM64 cacheline tail padding; no object-size change. */
+	ANDROID_KABI_IGNORE(0, struct callback_head thread_dtor);
 } ____cacheline_internodealigned_in_smp;
 
 extern irqreturn_t no_action(int cpl, void *dev_id);
