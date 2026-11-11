@@ -432,7 +432,24 @@ quiet_cmd_rustc_library = $(if $(skip_clippy),RUSTC,$(RUSTC_OR_CLIPPY_QUIET)) L 
 		$(CC) $(CLANG_FLAGS) $(KBUILD_CFLAGS) -Wno-override-module -c $(patsubst %.o,%.m.bc,$@) -o $@ \
 		$(cmd_ld_single)) \
 	$(if $(rustc_objcopy),;$(OBJCOPY) $(rustc_objcopy) $@) \
+	$(if $(rustc_kabi_rules),;$(OBJCOPY) --add-section .discard.gendwarfksyms.kabi_rules=$(rustc_kabi_rules) $@ $@.kabi && mv $@.kabi $@) \
 	$(cmd_objtool)
+
+# Preserve the qualified compiler-alias descriptions without restoring unsafe
+# MergeFunctions or changing a single runtime/KCFI byte. Only source-compiled
+# Android KABI annotation bytes are added; normal gendwarfksyms computes CRCs.
+ifeq ($(CONFIG_ARM64)$(CONFIG_CFI_CLANG)$(CONFIG_GENDWARFKSYMS),yyy)
+targets += kabi/coloros17_legacy_aliases.o kabi/coloros17_legacy_aliases.bin
+
+quiet_cmd_rust_kabi_rules = KABI $@
+      cmd_rust_kabi_rules = $(OBJCOPY) -O binary --only-section=.discard.gendwarfksyms.kabi_rules $< $@
+
+$(obj)/kabi/coloros17_legacy_aliases.bin: $(obj)/kabi/coloros17_legacy_aliases.o FORCE
+	$(call if_changed,rust_kabi_rules)
+
+$(obj)/core.o $(obj)/bindings.o: private rustc_kabi_rules = $(obj)/kabi/coloros17_legacy_aliases.bin
+$(obj)/core.o $(obj)/bindings.o: $(obj)/kabi/coloros17_legacy_aliases.bin
+endif
 
 rust-analyzer:
 	$(Q)$(srctree)/scripts/generate_rust_analyzer.py \
