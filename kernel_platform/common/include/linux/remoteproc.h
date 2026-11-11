@@ -319,7 +319,8 @@ struct rproc {
 	bool has_iommu;
 	bool auto_boot;
 	bool sysfs_read_only;
-	bool subdevs_started;
+	/* Uses existing padding before dump_segments; retain the old layout. */
+	ANDROID_KABI_IGNORE(3, bool subdevs_started);
 	struct list_head dump_segments;
 	int nb_vdev;
 	u8 elf_class;
