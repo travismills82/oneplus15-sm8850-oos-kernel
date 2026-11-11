@@ -14,6 +14,7 @@
 #ifndef _CPUFREQ_GOVERNOR_H
 #define _CPUFREQ_GOVERNOR_H
 
+#include <linux/android_kabi.h>
 #include <linux/atomic.h>
 #include <linux/irq_work.h>
 #include <linux/cpufreq.h>
@@ -94,11 +95,11 @@ struct policy_dbs_info {
 	/* Multiplier for increasing sample delay temporarily. */
 	unsigned int rate_mult;
 	unsigned int idle_periods;	/* For conservative */
-	/* Maximum load from the current policy sample. */
-	unsigned int max_sample_load;
 	/* Status indicators */
 	bool is_shared;		/* This object is used by multiple CPUs */
 	bool work_in_progress;	/* Work is being queued up or in progress */
+	/* Maximum sample load fits in the original object's tail padding. */
+	ANDROID_KABI_IGNORE(0, unsigned int max_sample_load);
 };
 
 static inline void gov_update_sample_delay(struct policy_dbs_info *policy_dbs,
