@@ -491,6 +491,26 @@ struct pkvm_hyp_vcpu *pkvm_get_loaded_hyp_vcpu(void)
 	return __this_cpu_read(loaded_hyp_vcpu);
 }
 
+bool pkvm_vcpu_has_mte(struct kvm_vcpu *vcpu)
+{
+	struct pkvm_hyp_vcpu *hyp_vcpu = pkvm_get_loaded_hyp_vcpu();
+	struct kvm *kvm;
+	bool has_mte;
+
+	/* The loaded vCPU holds a reference to its hypervisor VM. */
+	if (hyp_vcpu && (vcpu == &hyp_vcpu->vcpu || vcpu == hyp_vcpu->host_vcpu))
+		return kvm_has_mte(&pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu)->kvm);
+
+	/* An unloaded host vCPU's VM is readable only while shared and pinned. */
+	kvm = kern_hyp_va(READ_ONCE(vcpu->kvm));
+	if (hyp_pin_shared_mem(kvm, kvm + 1))
+		return false;
+
+	has_mte = kvm_has_mte(kvm);
+	hyp_unpin_shared_mem(kvm, kvm + 1);
+	return has_mte;
+}
+
 static void pkvm_init_features_from_host(struct pkvm_hyp_vm *hyp_vm, const struct kvm *host_kvm)
 {
 	struct kvm *kvm = &hyp_vm->kvm;
