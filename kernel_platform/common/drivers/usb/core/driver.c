@@ -2106,5 +2106,5 @@ const struct bus_type usb_bus_type = {
 	.match =	usb_device_match,
 	.uevent =	usb_uevent,
 	.need_parent_lock =	true, /* Legacy ABI value; core uses the predicate. */
-	.need_parent_lock_for = usb_need_parent_lock,
+	.__kabi_reserved1 = { .need_parent_lock_for = usb_need_parent_lock },
 };

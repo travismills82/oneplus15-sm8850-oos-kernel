@@ -109,7 +109,7 @@ struct bus_type {
 
 	bool need_parent_lock;
 
-	ANDROID_KABI_USE(1, bool (*need_parent_lock_for)(const struct device *dev));
+	ANDROID_KABI_USE(1, bool (*need_parent_lock_for)(const struct device *dev)) __kabi_reserved1;
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);

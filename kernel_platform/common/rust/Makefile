@@ -329,7 +329,11 @@ quiet_cmd_bindgen = BINDGEN $@
 
 $(obj)/bindings/bindings_generated.rs: private bindgen_target_flags = \
     $(shell grep -Ev '^#|^$$' $(src)/bindgen_parameters) \
+    --no-default irqaction__bindgen_ty_1 --no-default 'bus_type__bindgen_ty_1.*' \
     $(if $(and $(CONFIG_SYSVIPC),$(CONFIG_ARM64),$(CONFIG_GENDWARFKSYMS)),--no-default sysv_sem --no-default sysv_shm)
+# New C-private IRQ work and bus-lock reserve unions have no Rust constructors
+# or users. Keep their actual types visible, but do not add unused Default
+# methods that can alias and change the versioned stock Rust Binder exports.
 # These C-private IPC records have no Rust constructors or users. Do not create
 # new manual Default implementations: they would renumber unrelated exported
 # implementations (including rb_node/rb_root) imported by stock Rust Binder.

@@ -20,8 +20,9 @@
  */
 static inline bool device_needs_parent_lock(const struct device *dev)
 {
-	return dev->parent && dev->bus && dev->bus->need_parent_lock_for &&
-		dev->bus->need_parent_lock_for(dev);
+	return dev->parent && dev->bus &&
+	       dev->bus->__kabi_reserved1.need_parent_lock_for &&
+	       dev->bus->__kabi_reserved1.need_parent_lock_for(dev);
 }
 
 /**
