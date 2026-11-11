@@ -64,8 +64,10 @@ struct fwnode_handle;
  *			this bus.
  * @pm:		Power management operations of this bus, callback the specific
  *		device driver's pm-ops.
- * @need_parent_lock:	When probing or removing a device on this bus, the
- *			device core should lock the device's parent.
+ * @need_parent_lock:	Legacy ABI storage; not used for driver-core locking.
+ * @need_parent_lock_for: Select devices that require their parent lock during
+ *			probe/removal. A selected device must hold a parent reference.
+ *			Uses reserved storage without extending struct device_type.
  *
  * A bus is a channel between the processor and one or more devices. For the
  * purposes of the device model, all devices are connected via a bus, even if
@@ -107,7 +109,7 @@ struct bus_type {
 
 	bool need_parent_lock;
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, bool (*need_parent_lock_for)(const struct device *dev));
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);

@@ -971,7 +971,7 @@ static int __device_attach_driver(struct device_driver *drv, void *_data)
  */
 static void __device_driver_lock(struct device *dev, struct device *parent)
 {
-	if (dev->type && dev->type->need_parent_lock && parent)
+	if (device_needs_parent_lock(dev) && parent)
 		device_lock(parent);
 	device_lock(dev);
 }
@@ -988,7 +988,7 @@ static void __device_driver_lock(struct device *dev, struct device *parent)
 static void __device_driver_unlock(struct device *dev, struct device *parent)
 {
 	device_unlock(dev);
-	if (dev->type && dev->type->need_parent_lock && parent)
+	if (device_needs_parent_lock(dev) && parent)
 		device_unlock(parent);
 }
 

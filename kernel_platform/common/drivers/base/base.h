@@ -10,7 +10,19 @@
  * shared outside of the drivers/base/ directory.
  *
  */
+#include <linux/device.h>
 #include <linux/notifier.h>
+
+/*
+ * Only devices whose provider guarantees a live parent may select this lock.
+ * In particular, USB interfaces qualify, but USB devices/hubs do not. Never
+ * read an appended device_type field from a retained stock module's object.
+ */
+static inline bool device_needs_parent_lock(const struct device *dev)
+{
+	return dev->parent && dev->bus && dev->bus->need_parent_lock_for &&
+		dev->bus->need_parent_lock_for(dev);
+}
 
 /**
  * struct subsys_private - structure to hold the private to the driver core portions of the bus_type/class structure.

@@ -2096,8 +2096,15 @@ int usb_disable_usb2_hardware_lpm(struct usb_device *udev)
 
 #endif /* CONFIG_PM */
 
+static bool usb_need_parent_lock(const struct device *dev)
+{
+	return is_usb_interface(dev);
+}
+
 const struct bus_type usb_bus_type = {
 	.name =		"usb",
 	.match =	usb_device_match,
 	.uevent =	usb_uevent,
+	.need_parent_lock =	true, /* Legacy ABI value; core uses the predicate. */
+	.need_parent_lock_for = usb_need_parent_lock,
 };
