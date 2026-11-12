@@ -2118,9 +2118,11 @@ continue_unlock:
 
 			/* flush inline_data */
 			if (page_private_inline(&folio->page)) {
+				nid_t ino = ino_of_node(&folio->page);
+
 				clear_page_private_inline(&folio->page);
 				folio_unlock(folio);
-				flush_inline_data(sbi, ino_of_node(&folio->page));
+				flush_inline_data(sbi, ino);
 				goto lock_node;
 			}
 
