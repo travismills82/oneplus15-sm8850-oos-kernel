@@ -873,6 +873,19 @@ static bool folio_referenced_one(struct folio *folio,
 			return false;
 		}
 
+		/*
+		 * Nonpresent device-exclusive PTEs still map this folio for
+		 * a device. Only consult the notifier: CPU young-bit helpers
+		 * and the look-around hook require a present PTE.
+		 */
+		if (pvmw.pte && !pte_present(ptep_get(pvmw.pte))) {
+			if (mmu_notifier_clear_flush_young(vma->vm_mm, address,
+							  address + PAGE_SIZE))
+				referenced++;
+			pra->mapcount--;
+			continue;
+		}
+
 		if (lru_gen_enabled() && pvmw.pte) {
 			trace_android_vh_look_around(&pvmw, folio, vma, &referenced);
 			if (lru_gen_look_around(&pvmw))
