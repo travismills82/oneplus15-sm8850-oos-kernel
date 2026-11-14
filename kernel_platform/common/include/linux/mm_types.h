@@ -747,15 +747,16 @@ struct vm_area_struct {
 	 * Can only be written (using WRITE_ONCE()) while holding both:
 	 *  - mmap_lock (in write mode)
 	 *  - vm_refcnt bit at VMA_LOCK_OFFSET is set
+	 * The exception is __mm_reset_vma_seqcounts(), which stores zero with
+	 * only the mmap write lock held when the mm seqcount wraps.
 	 * Can be read reliably while holding one of:
 	 *  - mmap_lock (in read or write mode)
-	 *  - vm_refcnt bit at VMA_LOCK_OFFSET is set or vm_refcnt > 1
+	 *  - vm_refcnt bit at VMA_LOCK_OFFSET is set
 	 * Can be read unreliably (using READ_ONCE()) for pessimistic bailout
 	 * while holding nothing (except RCU to keep the VMA struct allocated).
 	 *
-	 * This sequence counter is explicitly allowed to overflow; sequence
-	 * counter reuse can only lead to occasional unnecessary use of the
-	 * slowpath.
+	 * Assigned the odd mm seqcount on write lock. The reset prevents that
+	 * value from aliasing a future write after 2^31 mmap write lock cycles.
 	 */
 	unsigned int vm_lock_seq;
 #endif
