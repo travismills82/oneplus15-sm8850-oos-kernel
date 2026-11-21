@@ -24,6 +24,12 @@ MODULE_LICENSE("GPL");
 static LIST_HEAD(snd_hwdep_devices);
 static DEFINE_MUTEX(register_mutex);
 
+/* snd_hwdep_new() owns the allocation; keep the DSP lock out of its KABI. */
+struct snd_hwdep_private {
+	struct snd_hwdep hwdep;
+	struct mutex dsp_mutex;
+};
+
 static int snd_hwdep_dev_free(struct snd_device *device);
 static int snd_hwdep_dev_register(struct snd_device *device);
 static int snd_hwdep_dev_disconnect(struct snd_device *device);
@@ -206,13 +212,14 @@ static int snd_hwdep_dsp_status(struct snd_hwdep *hw,
 static int snd_hwdep_dsp_load(struct snd_hwdep *hw,
 			      struct snd_hwdep_dsp_image *info)
 {
+	struct snd_hwdep_private *priv = container_of(hw, struct snd_hwdep_private, hwdep);
 	int err;
 	
 	if (! hw->ops.dsp_load)
 		return -ENXIO;
 	if (info->index >= 32)
 		return -EINVAL;
-	guard(mutex)(&hw->dsp_mutex);
+	guard(mutex)(&priv->dsp_mutex);
 	/* check whether the dsp was already loaded */
 	if (hw->dsp_loaded & (1u << info->index))
 		return -EBUSY;
@@ -344,7 +351,7 @@ static void snd_hwdep_free(struct snd_hwdep *hwdep)
 	if (hwdep->private_free)
 		hwdep->private_free(hwdep);
 	put_device(hwdep->dev);
-	kfree(hwdep);
+	kfree(container_of(hwdep, struct snd_hwdep_private, hwdep));
 }
 
 /**
@@ -363,6 +370,7 @@ static void snd_hwdep_free(struct snd_hwdep *hwdep)
 int snd_hwdep_new(struct snd_card *card, char *id, int device,
 		  struct snd_hwdep **rhwdep)
 {
+	struct snd_hwdep_private *priv;
 	struct snd_hwdep *hwdep;
 	int err;
 	static const struct snd_device_ops ops = {
@@ -375,13 +383,14 @@ int snd_hwdep_new(struct snd_card *card, char *id, int device,
 		return -ENXIO;
 	if (rhwdep)
 		*rhwdep = NULL;
-	hwdep = kzalloc(sizeof(*hwdep), GFP_KERNEL);
-	if (!hwdep)
+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+	if (!priv)
 		return -ENOMEM;
+	hwdep = &priv->hwdep;
 
 	init_waitqueue_head(&hwdep->open_wait);
 	mutex_init(&hwdep->open_mutex);
-	mutex_init(&hwdep->dsp_mutex);
+	mutex_init(&priv->dsp_mutex);
 	hwdep->card = card;
 	hwdep->device = device;
 	if (id)
