@@ -2826,7 +2826,7 @@ update_inode:
 			return -EFSCORRUPTED;
 		}
 
-		f2fs_invalidate_blocks(sbi, ni.blk_addr);
+		f2fs_invalidate_blocks(sbi, ni.blk_addr, 1);
 		dec_valid_node_count(sbi, inode, false);
 		set_node_addr(sbi, &ni, NULL_ADDR, false);
 		/* drop the cached xattr node, which may be dirty */
