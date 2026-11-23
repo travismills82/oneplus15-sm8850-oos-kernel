@@ -103,10 +103,30 @@ const u8 ip_frag_ecn_table[16] = {
 };
 EXPORT_SYMBOL(ip_frag_ecn_table);
 
+static size_t inet_frag_truesize_offset(const struct inet_frags *f)
+{
+	return ALIGN((size_t)f->qsize, __alignof__(unsigned int));
+}
+
+static size_t inet_frag_alloc_size(const struct inet_frags *f)
+{
+	return inet_frag_truesize_offset(f) + sizeof(unsigned int);
+}
+
+/*
+ * Keep the protocol's queue and derived object layout unchanged. The
+ * core-owned slab adds a zero-initialized counter after each complete
+ * protocol object. It follows the same lifetime and locking as the queue.
+ */
+static unsigned int *inet_frag_truesize(struct inet_frag_queue *q)
+{
+	return (unsigned int *)((u8 *)q + inet_frag_truesize_offset(q->fqdir->f));
+}
+
 int inet_frags_init(struct inet_frags *f)
 {
-	f->frags_cachep = kmem_cache_create(f->frags_cache_name, f->qsize, 0, 0,
-					    NULL);
+	f->frags_cachep = kmem_cache_create(f->frags_cache_name,
+					    inet_frag_alloc_size(f), 0, 0, NULL);
 	if (!f->frags_cachep)
 		return -ENOMEM;
 
@@ -353,7 +373,7 @@ void inet_frag_queue_flush(struct inet_frag_queue *q,
 	q->rb_fragments = RB_ROOT;
 	q->fragments_tail = NULL;
 	q->last_run_head = NULL;
-	q->truesize = 0;
+	*inet_frag_truesize(q) = 0;
 }
 EXPORT_SYMBOL(inet_frag_queue_flush);
 
@@ -374,7 +394,7 @@ void inet_frag_destroy(struct inet_frag_queue *q)
 	fqdir = q->fqdir;
 	f = fqdir->f;
 	sum_truesize = inet_frag_rbtree_purge(&q->rb_fragments, reason);
-	sum = sum_truesize + f->qsize;
+	sum = sum_truesize + inet_frag_alloc_size(f);
 
 	call_rcu(&q->rcu, inet_frag_destroy_rcu);
 
@@ -394,7 +414,7 @@ static struct inet_frag_queue *inet_frag_alloc(struct fqdir *fqdir,
 
 	q->fqdir = fqdir;
 	f->constructor(q, arg);
-	add_frag_mem_limit(fqdir, f->qsize);
+	add_frag_mem_limit(fqdir, inet_frag_alloc_size(f));
 
 	timer_setup(&q->timer, f->frag_expire, 0);
 	spin_lock_init(&q->lock);
@@ -458,7 +478,7 @@ int inet_frag_queue_insert(struct inet_frag_queue *q, struct sk_buff *skb,
 {
 	struct sk_buff *last = q->fragments_tail;
 
-	if (skb->truesize > INET_FRAG_MAX_TRUESIZE - q->truesize)
+	if (skb->truesize > INET_FRAG_MAX_TRUESIZE - *inet_frag_truesize(q))
 		return IPFRAG_TOOBIG;
 
 	/* An IP fragment is never a GSO packet, but an untrusted source
@@ -523,7 +543,7 @@ int inet_frag_queue_insert(struct inet_frag_queue *q, struct sk_buff *skb,
 
 	FRAG_CB(skb)->ip_defrag_offset = offset;
 
-	q->truesize += skb->truesize;
+	*inet_frag_truesize(q) += skb->truesize;
 	return IPFRAG_OK;
 }
 EXPORT_SYMBOL(inet_frag_queue_insert);
@@ -577,9 +597,9 @@ void *inet_frag_reasm_prepare(struct inet_frag_queue *q, struct sk_buff *skb,
 
 	if (sk && is_skb_wmem(skb)) {
 		/* skb->truesize is already charged to sk, and is part of
-		 * q->truesize. inet_frag_reasm_finish() settles the charge.
+		 * the queue's truesize. inet_frag_reasm_finish() settles the charge.
 		 */
-		if (!inet_frag_wmem_reserve(sk, q->truesize - skb->truesize))
+		if (!inet_frag_wmem_reserve(sk, *inet_frag_truesize(q) - skb->truesize))
 			return NULL;
 		/* TX: skb->sk might have been passed as argument to
 		 * dst->output and must remain valid until tx completes.
@@ -681,7 +701,7 @@ out_restore_sk:
 		 */
 		if (!nextp)
 			inet_frag_wmem_adjust(sk, (int)head->truesize -
-						  (int)q->truesize);
+						  (int)*inet_frag_truesize(q));
 	}
 
 	return nextp;
@@ -756,12 +776,12 @@ void inet_frag_reasm_finish(struct inet_frag_queue *q, struct sk_buff *head,
 	head->tstamp = q->stamp;
 	head->tstamp_type = q->tstamp_type;
 
-	/* After inet_frag_reasm_prepare(), q->truesize is charged to sk.
+	/* After inet_frag_reasm_prepare(), the queue's truesize is charged to sk.
 	 * sum_truesize also includes what it added (skb_unclone() and
 	 * frag_list clone).
 	 */
 	if (sk)
-		inet_frag_wmem_adjust(sk, sum_truesize - (int)q->truesize);
+		inet_frag_wmem_adjust(sk, sum_truesize - (int)*inet_frag_truesize(q));
 }
 EXPORT_SYMBOL(inet_frag_reasm_finish);
 
