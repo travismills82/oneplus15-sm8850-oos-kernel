@@ -1362,6 +1362,7 @@ static inline struct clk_hw *__clk_get_hw(struct clk *clk)
 
 struct clk *__clk_hw_get_clk(struct clk_hw *hw, const char *con_id,
 			     struct module *owner);
+struct clk *(clk_hw_get_clk)(struct clk_hw *hw, const char *con_id);
 struct clk *devm_clk_hw_get_clk(struct device *dev, struct clk_hw *hw,
 				const char *con_id);
 

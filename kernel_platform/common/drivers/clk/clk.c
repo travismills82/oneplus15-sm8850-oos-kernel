@@ -4267,6 +4267,13 @@ struct clk *__clk_hw_get_clk(struct clk_hw *hw, const char *con_id,
 }
 EXPORT_SYMBOL(__clk_hw_get_clk);
 
+/* Legacy consumers cannot pass their module identity; keep the safe pin. */
+struct clk *(clk_hw_get_clk)(struct clk_hw *hw, const char *con_id)
+{
+	return __clk_hw_get_clk(hw, con_id, NULL);
+}
+EXPORT_SYMBOL(clk_hw_get_clk);
+
 static int clk_cpy_name(const char **dst_p, const char *src, bool must_exist)
 {
 	const char *dst;
