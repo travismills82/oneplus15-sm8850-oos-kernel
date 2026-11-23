@@ -15,13 +15,14 @@ p.add_argument('--qemu', type=Path, required=True)
 p.add_argument('--kernel', type=Path, required=True)
 p.add_argument('--initramfs', type=Path, required=True)
 p.add_argument('--log', type=Path, required=True)
+p.add_argument('--kernel-args', default='', help='additional arguments for the isolated guest only')
 a = p.parse_args()
 assert a.kernel.read_bytes()[:4] != b'\x7fELF', 'Use the actual ARM64 Image'
 command = [str(a.qemu), '-machine', 'virt,gic-version=3', '-cpu', 'max',
            '-accel', 'tcg,thread=multi', '-smp', '2', '-m', '1536', '-display', 'none',
            '-monitor', 'none', '-serial', 'stdio', '-nic', 'none', '-no-reboot',
            '-kernel', str(a.kernel), '-initrd', str(a.initramfs),
-           '-append', 'console=ttyAMA0 rdinit=/init panic=1']
+           '-append', ('console=ttyAMA0 rdinit=/init panic=1 ' + a.kernel_args).strip()]
 def sha(path):
     with path.open('rb') as source:
         return hashlib.file_digest(source, 'sha256').hexdigest()
