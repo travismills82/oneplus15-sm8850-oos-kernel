@@ -371,19 +371,24 @@ void blk_mq_unquiesce_queue(struct request_queue *q)
 }
 EXPORT_SYMBOL_GPL(blk_mq_unquiesce_queue);
 
+struct blk_mq_tagset_quiesce {
+	spinlock_t lock;
+	unsigned int depth;
+};
+
 void blk_mq_quiesce_tagset(struct blk_mq_tag_set *set)
 {
 	struct request_queue *q;
 
-	spin_lock(&set->quiesce_lock);
-	set->quiesce_depth++;
+	spin_lock(&set->quiesce->lock);
+	set->quiesce->depth++;
 	rcu_read_lock();
 	list_for_each_entry_rcu(q, &set->tag_list, tag_set_list) {
 		if (!blk_queue_skip_tagset_quiesce(q))
 			blk_mq_quiesce_queue_nowait(q);
 	}
 	rcu_read_unlock();
-	spin_unlock(&set->quiesce_lock);
+	spin_unlock(&set->quiesce->lock);
 
 	blk_mq_wait_quiesce_done(set);
 }
@@ -393,16 +398,16 @@ void blk_mq_unquiesce_tagset(struct blk_mq_tag_set *set)
 {
 	struct request_queue *q;
 
-	spin_lock(&set->quiesce_lock);
-	if (set->quiesce_depth)
-		set->quiesce_depth--;
+	spin_lock(&set->quiesce->lock);
+	if (set->quiesce->depth)
+		set->quiesce->depth--;
 	rcu_read_lock();
 	list_for_each_entry_rcu(q, &set->tag_list, tag_set_list) {
 		if (!blk_queue_skip_tagset_quiesce(q))
 			blk_mq_unquiesce_queue(q);
 	}
 	rcu_read_unlock();
-	spin_unlock(&set->quiesce_lock);
+	spin_unlock(&set->quiesce->lock);
 }
 EXPORT_SYMBOL_GPL(blk_mq_unquiesce_tagset);
 
@@ -4384,13 +4389,13 @@ static void blk_mq_add_queue_tag_set(struct blk_mq_tag_set *set,
 	 * A queue that joins a quiesced tag set is quiesced like the others,
 	 * and blk_mq_unquiesce_tagset() finds what it is going to undo.
 	 */
-	spin_lock(&set->quiesce_lock);
+	spin_lock(&set->quiesce->lock);
 	list_add_tail_rcu(&q->tag_set_list, &set->tag_list);
 	if (!blk_queue_skip_tagset_quiesce(q)) {
-		for (i = 0; i < set->quiesce_depth; i++)
+		for (i = 0; i < set->quiesce->depth; i++)
 			blk_mq_quiesce_queue_nowait(q);
 	}
-	spin_unlock(&set->quiesce_lock);
+	spin_unlock(&set->quiesce->lock);
 
 	mutex_unlock(&set->tag_list_lock);
 }
@@ -4901,11 +4906,17 @@ int blk_mq_alloc_tag_set(struct blk_mq_tag_set *set)
 	}
 
 	ret = -ENOMEM;
+	set->quiesce = kzalloc_node(sizeof(*set->quiesce), GFP_KERNEL,
+				    set->numa_node);
+	if (!set->quiesce)
+		goto out_cleanup_srcu;
+	spin_lock_init(&set->quiesce->lock);
+
 	set->tags = kcalloc_node(set->nr_hw_queues,
 				 sizeof(struct blk_mq_tags *), GFP_KERNEL,
 				 set->numa_node);
 	if (!set->tags)
-		goto out_cleanup_srcu;
+		goto out_free_quiesce;
 
 	for (i = 0; i < set->nr_maps; i++) {
 		set->map[i].mq_map = kcalloc_node(nr_cpu_ids,
@@ -4924,8 +4935,6 @@ int blk_mq_alloc_tag_set(struct blk_mq_tag_set *set)
 
 	mutex_init(&set->tag_list_lock);
 	INIT_LIST_HEAD(&set->tag_list);
-	spin_lock_init(&set->quiesce_lock);
-	set->quiesce_depth = 0;
 
 	return 0;
 
@@ -4936,6 +4945,9 @@ out_free_mq_map:
 	}
 	kfree(set->tags);
 	set->tags = NULL;
+out_free_quiesce:
+	kfree(set->quiesce);
+	set->quiesce = NULL;
 out_cleanup_srcu:
 	if (set->flags & BLK_MQ_F_BLOCKING)
 		cleanup_srcu_struct(set->srcu);
@@ -4981,6 +4993,8 @@ void blk_mq_free_tag_set(struct blk_mq_tag_set *set)
 
 	kfree(set->tags);
 	set->tags = NULL;
+	kfree(set->quiesce);
+	set->quiesce = NULL;
 	if (set->flags & BLK_MQ_F_BLOCKING) {
 		cleanup_srcu_struct(set->srcu);
 		kfree(set->srcu);

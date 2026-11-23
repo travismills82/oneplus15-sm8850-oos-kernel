@@ -12,6 +12,7 @@
 #include <linux/android_kabi.h>
 
 struct blk_mq_tags;
+struct blk_mq_tagset_quiesce;
 struct blk_flush_queue;
 
 #define BLKDEV_MIN_RQ	4
@@ -517,10 +518,7 @@ enum hctx_type {
  * @tag_list_lock: Serializes tag_list accesses.
  * @tag_list:	   List of the request queues that use this tag set. See also
  *		   request_queue.tag_set_list.
- * @quiesce_lock:  Serializes blk_mq_[un]quiesce_tagset() against each other
- *		   and against a request queue being added to @tag_list.
- * @quiesce_depth: How often blk_mq_quiesce_tagset() has been called without
- *		   blk_mq_unquiesce_tagset().
+ * @quiesce:	   Private tag-set quiesce lock and nesting state.
  * @srcu:	   Use as lock when type of the request queue is blocking
  *		   (BLK_MQ_F_BLOCKING).
  */
@@ -543,11 +541,9 @@ struct blk_mq_tag_set {
 
 	struct mutex		tag_list_lock;
 	struct list_head	tag_list;
-	spinlock_t		quiesce_lock;
-	unsigned int		quiesce_depth;
 	struct srcu_struct	*srcu;
 
-	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_USE(1, struct blk_mq_tagset_quiesce *quiesce);
 };
 
 /**
