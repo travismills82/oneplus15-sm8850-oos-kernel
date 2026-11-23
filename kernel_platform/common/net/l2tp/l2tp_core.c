@@ -1235,7 +1235,7 @@ static int l2tp_xmit_core(struct l2tp_session *session, struct sk_buff *skb, uns
 	bool send_seq = READ_ONCE(session->send_seq);
 	unsigned int data_len = skb->len;
 	struct sock *sk = tunnel->sock;
-	u16 hdr_len = session->hdr_len;
+	u16 hdr_len = READ_ONCE(session->hdr_len);
 	int headroom, uhlen, udp_len;
 	int ret = NET_XMIT_SUCCESS;
 	struct inet_sock *inet;
@@ -1771,18 +1771,22 @@ static void l2tp_session_del_work(struct work_struct *work)
 	l2tp_session_put(session);
 }
 
-static void l2tp_session_set_header_len(struct l2tp_session *session, int version,
-					enum l2tp_encap_type encap)
+void l2tp_session_set_header_len(struct l2tp_session *session, int version,
+				 enum l2tp_encap_type encap)
 {
+	u16 hdr_len;
+
 	if (version == L2TP_HDR_VER_2) {
-		session->hdr_len = 10;
+		hdr_len = 10;
 	} else {
-		session->hdr_len = 4 + session->cookie_len;
-		session->hdr_len += l2tp_get_l2specific_len(session);
+		hdr_len = 4 + session->cookie_len;
+		hdr_len += l2tp_get_l2specific_len(session);
 		if (encap == L2TP_ENCAPTYPE_UDP)
-			session->hdr_len += 4;
+			hdr_len += 4;
 	}
+	WRITE_ONCE(session->hdr_len, hdr_len);
 }
+EXPORT_SYMBOL_GPL(l2tp_session_set_header_len);
 
 struct l2tp_session *l2tp_session_create(int priv_size, struct l2tp_tunnel *tunnel, u32 session_id,
 					 u32 peer_session_id, struct l2tp_session_cfg *cfg)
