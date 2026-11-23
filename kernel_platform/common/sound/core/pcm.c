@@ -878,6 +878,11 @@ static int snd_pcm_dev_free(struct snd_device *device)
 	return snd_pcm_free(pcm);
 }
 
+struct snd_pcm_runtime_alloc {
+	struct snd_pcm_runtime runtime;
+	struct snd_refcount use_refs;
+};
+
 int snd_pcm_attach_substream(struct snd_pcm *pcm, int stream,
 			     struct file *file,
 			     struct snd_pcm_substream **rsubstream)
@@ -943,9 +948,16 @@ int snd_pcm_attach_substream(struct snd_pcm *pcm, int stream,
 	if (substream == NULL)
 		return -EAGAIN;
 
-	runtime = kzalloc(sizeof(*runtime), GFP_KERNEL);
-	if (runtime == NULL)
-		return -ENOMEM;
+	{
+		struct snd_pcm_runtime_alloc *allocation;
+
+		allocation = kzalloc(sizeof(*allocation), GFP_KERNEL);
+		if (!allocation)
+			return -ENOMEM;
+
+		runtime = &allocation->runtime;
+		runtime->use_refs = &allocation->use_refs;
+	}
 
 	size = PAGE_ALIGN(sizeof(struct snd_pcm_mmap_status));
 	runtime->status = alloc_pages_exact(size, GFP_KERNEL);
@@ -967,7 +979,7 @@ int snd_pcm_attach_substream(struct snd_pcm *pcm, int stream,
 
 	init_waitqueue_head(&runtime->sleep);
 	init_waitqueue_head(&runtime->tsleep);
-	snd_refcount_init(&runtime->refcnt);
+	snd_refcount_init(runtime->use_refs);
 
 	__snd_pcm_set_state(runtime, SNDRV_PCM_STATE_OPEN);
 	mutex_init(&runtime->buffer_mutex);

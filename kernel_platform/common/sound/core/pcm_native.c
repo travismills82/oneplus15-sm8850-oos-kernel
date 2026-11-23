@@ -2179,7 +2179,7 @@ static int snd_pcm_drain(struct snd_pcm_substream *substream,
 			if (runtime->state == SNDRV_PCM_STATE_DRAINING) {
 				to_check = runtime;
 				/* pin the draining substream */
-				snd_refcount_get(&to_check->refcnt);
+				snd_refcount_get(to_check->use_refs);
 
 				init_wait_entry(&wait, 0);
 				prepare_to_wait(&to_check->sleep, &wait,
@@ -2206,7 +2206,7 @@ static int snd_pcm_drain(struct snd_pcm_substream *substream,
 		snd_pcm_stream_lock_irq(substream);
 		finish_wait(&to_check->sleep, &wait);
 		/* unpin the draining substream again now */
-		snd_refcount_put(&to_check->refcnt);
+		snd_refcount_put(to_check->use_refs);
 
 		if (card->shutdown) {
 			result = -ENODEV;
@@ -2758,7 +2758,7 @@ void snd_pcm_release_substream(struct snd_pcm_substream *substream)
 
 	snd_pcm_drop(substream);
 	if (substream->hw_opened) {
-		snd_refcount_sync(&substream->runtime->refcnt);
+		snd_refcount_sync(substream->runtime->use_refs);
 		if (substream->runtime->state != SNDRV_PCM_STATE_OPEN)
 			do_hw_free(substream);
 		substream->ops->close(substream);
