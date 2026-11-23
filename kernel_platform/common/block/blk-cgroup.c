@@ -111,6 +111,21 @@ static struct cgroup_subsys_state *blkcg_css(void)
 	return task_css(current, io_cgrp_id);
 }
 
+struct blkg_allocation {
+	struct blkcg_gq blkg;
+#ifdef CONFIG_BLK_CGROUP_PUNT_BIO
+	/* Keep punt work independent of the legacy free_work union. */
+	struct work_struct punt_work;
+#endif
+};
+
+#ifdef CONFIG_BLK_CGROUP_PUNT_BIO
+static struct work_struct *blkg_punt_work(struct blkcg_gq *blkg)
+{
+	return &container_of(blkg, struct blkg_allocation, blkg)->punt_work;
+}
+#endif
+
 static void blkg_free_workfn(struct work_struct *work)
 {
 	struct blkcg_gq *blkg = container_of(work, struct blkcg_gq,
@@ -120,7 +135,7 @@ static void blkg_free_workfn(struct work_struct *work)
 
 #ifdef CONFIG_BLK_CGROUP_PUNT_BIO
 	/* It may have been queued for bios which an earlier run has taken */
-	cancel_work_sync(&blkg->async_bio_work);
+	cancel_work_sync(blkg_punt_work(blkg));
 #endif
 
 	/*
@@ -210,8 +225,8 @@ static struct workqueue_struct *blkcg_punt_bio_wq;
 
 static void blkg_async_bio_workfn(struct work_struct *work)
 {
-	struct blkcg_gq *blkg = container_of(work, struct blkcg_gq,
-					     async_bio_work);
+	struct blkcg_gq *blkg = &container_of(work, struct blkg_allocation,
+					      punt_work)->blkg;
 	struct bio_list bios = BIO_EMPTY_LIST;
 	struct bio *bio;
 	struct blk_plug plug;
@@ -252,7 +267,7 @@ void blkcg_punt_bio_submit(struct bio *bio)
 		spin_lock(&blkg->async_bio_lock);
 		bio_list_add(&blkg->async_bios, bio);
 		spin_unlock(&blkg->async_bio_lock);
-		queue_work(blkcg_punt_bio_wq, &blkg->async_bio_work);
+		queue_work(blkcg_punt_bio_wq, blkg_punt_work(blkg));
 		blkg_put(blkg);
 	} else {
 		/* never bounce for the root cgroup */
@@ -311,13 +326,15 @@ static inline struct blkcg *blkcg_parent(struct blkcg *blkcg)
 static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct gendisk *disk,
 				   gfp_t gfp_mask)
 {
+	struct blkg_allocation *allocation;
 	struct blkcg_gq *blkg;
 	int i, cpu;
 
 	/* alloc and init base part */
-	blkg = kzalloc_node(sizeof(*blkg), gfp_mask, disk->queue->node);
-	if (!blkg)
+	allocation = kzalloc_node(sizeof(*allocation), gfp_mask, disk->queue->node);
+	if (!allocation)
 		return NULL;
+	blkg = &allocation->blkg;
 	if (percpu_ref_init(&blkg->refcnt, blkg_release, 0, gfp_mask))
 		goto out_free_blkg;
 	blkg->iostat_cpu = alloc_percpu_gfp(struct blkg_iostat_set, gfp_mask);
@@ -333,7 +350,7 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct gendisk *disk,
 #ifdef CONFIG_BLK_CGROUP_PUNT_BIO
 	spin_lock_init(&blkg->async_bio_lock);
 	bio_list_init(&blkg->async_bios);
-	INIT_WORK(&blkg->async_bio_work, blkg_async_bio_workfn);
+	INIT_WORK(blkg_punt_work(blkg), blkg_async_bio_workfn);
 #endif
 
 	u64_stats_init(&blkg->iostat.sync);

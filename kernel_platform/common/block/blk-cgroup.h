@@ -78,9 +78,11 @@ struct blkcg_gq {
 #ifdef CONFIG_BLK_CGROUP_PUNT_BIO
 	spinlock_t			async_bio_lock;
 	struct bio_list			async_bios;
-	struct work_struct		async_bio_work;
 #endif
-	struct work_struct		free_work;
+	union {
+		struct work_struct	async_bio_work;
+		struct work_struct	free_work;
+	};
 
 	atomic_t			use_delay;
 	atomic64_t			delay_nsec;
