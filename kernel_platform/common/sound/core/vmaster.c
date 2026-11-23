@@ -33,6 +33,7 @@ struct link_master {
 	struct link_ctl_info info;
 	int val;		/* the master value */
 	unsigned int tlv[4];
+	struct mutex hook_lock;
 	void (*hook)(void *private_data, int);
 	void *hook_private_data;
 };
@@ -359,6 +360,13 @@ static int sync_followers(struct link_master *master, int old_val, int new_val)
 	return 0;
 }
 
+static void master_call_hook(struct link_master *master)
+{
+	guard(mutex)(&master->hook_lock);
+	if (master->hook)
+		master->hook(master->hook_private_data, master->val);
+}
+
 static int master_put(struct snd_kcontrol *kcontrol,
 		      struct snd_ctl_elem_value *ucontrol)
 {
@@ -380,8 +388,8 @@ static int master_put(struct snd_kcontrol *kcontrol,
 	err = sync_followers(master, old_val, new_val);
 	if (err < 0)
 		return err;
-	if (master->hook && !first_init)
-		master->hook(master->hook_private_data, master->val);
+	if (!first_init)
+		master_call_hook(master);
 	return 1;
 }
 
@@ -400,6 +408,7 @@ static void master_free(struct snd_kcontrol *kcontrol)
 		sctl->list = olist; /* keep the current linked-list */
 		kfree(follower);
 	}
+	mutex_destroy(&master->hook_lock);
 	kfree(master);
 }
 
@@ -437,9 +446,11 @@ struct snd_kcontrol *snd_ctl_make_virtual_master(char *name,
 	if (!master)
 		return NULL;
 	INIT_LIST_HEAD(&master->followers);
+	mutex_init(&master->hook_lock);
 
 	kctl = snd_ctl_new1(&knew, master);
 	if (!kctl) {
+		mutex_destroy(&master->hook_lock);
 		kfree(master);
 		return NULL;
 	}
@@ -467,7 +478,6 @@ EXPORT_SYMBOL(snd_ctl_make_virtual_master);
 
 /**
  * snd_ctl_add_vmaster_hook - Add a hook to a vmaster control
- * @card: the card instance
  * @kcontrol: vmaster kctl element
  * @hook: the hook function
  * @private_data: the private_data pointer to be saved
@@ -475,17 +485,18 @@ EXPORT_SYMBOL(snd_ctl_make_virtual_master);
  * Adds the given hook to the vmaster control element so that it's called
  * at each time when the value is changed.
  *
- * Takes the card's controls_rwsem lock internally.
+ * Serializes registration with invocation, including explicit sync calls.
+ * Hooks must not register another hook from inside the callback.
  *
  * Return: Zero.
  */
-int snd_ctl_add_vmaster_hook(struct snd_card *card, struct snd_kcontrol *kcontrol,
+int snd_ctl_add_vmaster_hook(struct snd_kcontrol *kcontrol,
 			     void (*hook)(void *private_data, int),
 			     void *private_data)
 {
 	struct link_master *master = snd_kcontrol_chip(kcontrol);
 
-	guard(rwsem_write)(&card->controls_rwsem);
+	guard(mutex)(&master->hook_lock);
 	master->hook = hook;
 	master->hook_private_data = private_data;
 	return 0;
@@ -519,8 +530,8 @@ void snd_ctl_sync_vmaster(struct snd_kcontrol *kcontrol, bool hook_only)
 			return;
 	}
 
-	if (master->hook && !first_init)
-		master->hook(master->hook_private_data, master->val);
+	if (!first_init)
+		master_call_hook(master);
 }
 EXPORT_SYMBOL_GPL(snd_ctl_sync_vmaster);
 
