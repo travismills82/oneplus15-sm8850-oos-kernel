@@ -8,10 +8,11 @@
  *                   Abramo Bagnara <abramo@alsa-project.org>
  */
 
-#include <sound/core.h>
 #include <sound/asound.h>
 #include <sound/memalloc.h>
 #include <sound/minors.h>
+
+struct snd_refcount;
 #include <linux/poll.h>
 #include <linux/mm.h>
 #include <linux/bitops.h>
