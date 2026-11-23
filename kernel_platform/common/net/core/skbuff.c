@@ -1531,6 +1531,9 @@ EXPORT_SYMBOL(napi_consume_skb);
 
 static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 {
+	const size_t cpu_off = offsetof(typeof(new->headers), alloc_cpu);
+	const size_t cpu_end = cpu_off + sizeof(new->alloc_cpu);
+
 	new->tstamp		= old->tstamp;
 	/* We do not copy old->sk */
 	new->dev		= old->dev;
@@ -1544,7 +1547,11 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 	 */
 	new->queue_mapping = old->queue_mapping;
 
-	memcpy(&new->headers, &old->headers, sizeof(new->headers));
+	/* Keep the stock sk_buff layout, but preserve a new skb's alloc_cpu. */
+	memcpy(&new->headers, &old->headers, cpu_off);
+	memcpy((u8 *)&new->headers + cpu_end, (const u8 *)&old->headers + cpu_end,
+	       sizeof(new->headers) - cpu_end);
+	CHECK_SKB_FIELD(alloc_cpu);
 	CHECK_SKB_FIELD(protocol);
 	CHECK_SKB_FIELD(csum);
 	CHECK_SKB_FIELD(hash);
