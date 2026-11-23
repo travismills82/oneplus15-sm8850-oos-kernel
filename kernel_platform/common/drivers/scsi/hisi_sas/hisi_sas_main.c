@@ -1635,7 +1635,7 @@ void hisi_sas_spinup_notify(struct hisi_hba *hisi_hba,
 		return;
 
 	if (sshdr.sense_key != NOT_READY ||
-	    sshdr.sense_code != LU_NOT_READY_NOTIFY_REQUIRED)
+	    scsi_sense_code(&sshdr) != LU_NOT_READY_NOTIFY_REQUIRED)
 		return;
 
 	if (!pm_runtime_get_if_active(hisi_hba->dev))

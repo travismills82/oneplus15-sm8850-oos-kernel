@@ -514,33 +514,33 @@ static void send_mode_select(struct work_struct *work)
 				REQ_FAILFAST_TRANSPORT | REQ_FAILFAST_DRIVER;
 	struct scsi_failure failure_defs[] = {
 		{
-			.sense_key = NO_SENSE,
+			.sense = NO_SENSE,
 			.asc = SCMD_FAILURE_ASC_ANY,
 			.ascq = SCMD_FAILURE_ASCQ_ANY,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = ABORTED_COMMAND,
+			.sense = ABORTED_COMMAND,
 			.asc = SCMD_FAILURE_ASC_ANY,
 			.ascq = SCMD_FAILURE_ASCQ_ANY,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = UNIT_ATTENTION,
+			.sense = UNIT_ATTENTION,
 			.asc = SCMD_FAILURE_ASC_ANY,
 			.ascq = SCMD_FAILURE_ASCQ_ANY,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		/* LUN Not Ready and is in the Process of Becoming Ready */
 		{
-			.sense_key = NOT_READY,
+			.sense = NOT_READY,
 			.asc = 0x04,
 			.ascq = 0x01,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		/* Command Lock contention */
 		{
-			.sense_key = ILLEGAL_REQUEST,
+			.sense = ILLEGAL_REQUEST,
 			.asc = 0x91,
 			.ascq = 0x36,
 			.allowed = SCMD_FAILURE_NO_LIMIT,

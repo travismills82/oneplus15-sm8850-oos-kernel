@@ -63,18 +63,8 @@ extern u64 scsilun_to_int(struct scsi_lun *);
 struct scsi_sense_hdr {		/* See SPC-3 section 4.5 */
 	u8 response_code;	/* permit: 0x0, 0x70, 0x71, 0x72, 0x73 */
 	u8 sense_key;
-	union {
-		struct {
-#if defined(__BIG_ENDIAN)
-			u8 asc;
-			u8 ascq;
-#elif defined(__LITTLE_ENDIAN)
-			u8 ascq;
-			u8 asc;
-#endif
-		};
-		u16 sense_code;
-	};
+	u8 asc;
+	u8 ascq;
 	u8 byte4;
 	u8 byte5;
 	u8 byte6;
@@ -91,12 +81,17 @@ static inline bool scsi_sense_valid(const struct scsi_sense_hdr *sshdr)
 
 static inline u8 scsi_sense_asc(const struct scsi_sense_hdr *sshdr)
 {
-	return scsi_sense_code_asc(sshdr->sense_code);
+	return sshdr->asc;
 }
 
 static inline u8 scsi_sense_ascq(const struct scsi_sense_hdr *sshdr)
 {
-	return scsi_sense_code_ascq(sshdr->sense_code);
+	return sshdr->ascq;
+}
+
+static inline u16 scsi_sense_code(const struct scsi_sense_hdr *sshdr)
+{
+	return ((u16)sshdr->asc << 8) | sshdr->ascq;
 }
 
 extern bool scsi_normalize_sense(const u8 *sense_buffer, int sb_len,

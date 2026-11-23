@@ -17,40 +17,40 @@ static void scsi_lib_test_multiple_sense(struct kunit *test)
 {
 	struct scsi_failure multiple_sense_failure_defs[] = {
 		{
-			.sense_key = DATA_PROTECT,
+			.sense = DATA_PROTECT,
 			.asc = 0x1,
 			.ascq = 0x1,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = UNIT_ATTENTION,
+			.sense = UNIT_ATTENTION,
 			.asc = 0x11,
 			.ascq = 0x0,
 			.allowed = SCSI_LIB_TEST_MAX_ALLOWED,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = NOT_READY,
+			.sense = NOT_READY,
 			.asc = 0x11,
 			.ascq = 0x22,
 			.allowed = SCSI_LIB_TEST_MAX_ALLOWED,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = ABORTED_COMMAND,
+			.sense = ABORTED_COMMAND,
 			.asc = 0x11,
 			.ascq = SCMD_FAILURE_ASCQ_ANY,
 			.allowed = SCSI_LIB_TEST_MAX_ALLOWED,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = HARDWARE_ERROR,
+			.sense = HARDWARE_ERROR,
 			.asc = SCMD_FAILURE_ASC_ANY,
 			.allowed = SCSI_LIB_TEST_MAX_ALLOWED,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = ILLEGAL_REQUEST,
+			.sense = ILLEGAL_REQUEST,
 			.asc = 0x91,
 			.ascq = 0x36,
 			.allowed = SCSI_LIB_TEST_MAX_ALLOWED,
@@ -109,7 +109,7 @@ static void scsi_lib_test_any_sense(struct kunit *test)
 {
 	struct scsi_failure any_sense_failure_defs[] = {
 		{
-			.sense_key = SCMD_FAILURE_SENSE_KEY_ANY,
+			.sense = SCMD_FAILURE_SENSE_KEY_ANY,
 			.allowed = SCSI_LIB_TEST_MAX_ALLOWED,
 			.result = SCMD_FAILURE_RESULT_ANY,
 		},
@@ -209,14 +209,14 @@ static void scsi_lib_test_total_allowed(struct kunit *test)
 {
 	struct scsi_failure total_allowed_defs[] = {
 		{
-			.sense_key = UNIT_ATTENTION,
+			.sense = UNIT_ATTENTION,
 			.asc = SCMD_FAILURE_ASC_ANY,
 			.ascq = SCMD_FAILURE_ASCQ_ANY,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		/* Fail all CCs except the UA above */
 		{
-			.sense_key = SCMD_FAILURE_SENSE_KEY_ANY,
+			.sense = SCMD_FAILURE_SENSE_KEY_ANY,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		/* Retry any other errors not listed above */
@@ -253,12 +253,12 @@ static void scsi_lib_test_mixed_total(struct kunit *test)
 {
 	struct scsi_failure mixed_total_defs[] = {
 		{
-			.sense_key = UNIT_ATTENTION,
+			.sense = UNIT_ATTENTION,
 			.asc = 0x28,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},
 		{
-			.sense_key = UNIT_ATTENTION,
+			.sense = UNIT_ATTENTION,
 			.asc = 0x29,
 			.result = SAM_STAT_CHECK_CONDITION,
 		},

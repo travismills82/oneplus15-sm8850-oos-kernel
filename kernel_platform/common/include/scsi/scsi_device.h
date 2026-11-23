@@ -511,6 +511,7 @@ extern void scsi_sanitize_inquiry_string(unsigned char *s, int len);
  * to match any sense key, ASC, and ASCQ value.
  */
 #define SCMD_FAILURE_SENSE_KEY_ANY	0xff
+#define SCMD_FAILURE_SENSE_ANY		SCMD_FAILURE_SENSE_KEY_ANY
 #define SCMD_FAILURE_SENSE_CODE_ANY	0xffff
 #define SCMD_FAILURE_ASC_ANY		0xff
 #define SCMD_FAILURE_ASCQ_ANY		0xff
@@ -519,19 +520,9 @@ extern void scsi_sanitize_inquiry_string(unsigned char *s, int len);
 
 struct scsi_failure {
 	int result;
-	u8 sense_key;
-	union {
-		struct {
-#if defined(__BIG_ENDIAN)
-			u8 asc;
-			u8 ascq;
-#elif defined(__LITTLE_ENDIAN)
-			u8 ascq;
-			u8 asc;
-#endif
-		};
-		u16 sense_code;
-	};
+	u8 sense;
+	u8 asc;
+	u8 ascq;
 	/*
 	 * Number of times scsi_execute_cmd will retry the failure. It does
 	 * not count for the total_allowed.
@@ -543,12 +534,12 @@ struct scsi_failure {
 
 static inline u8 scsi_failure_asc(const struct scsi_failure *failure)
 {
-	return scsi_sense_code_asc(failure->sense_code);
+	return failure->asc;
 }
 
 static inline u8 scsi_failure_ascq(const struct scsi_failure *failure)
 {
-	return scsi_sense_code_ascq(failure->sense_code);
+	return failure->ascq;
 }
 
 struct scsi_failures {
