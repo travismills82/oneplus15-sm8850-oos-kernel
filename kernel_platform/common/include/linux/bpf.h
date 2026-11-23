@@ -1582,7 +1582,6 @@ struct bpf_prog_aux {
 	union {
 		struct work_struct work;
 		struct rcu_head	rcu;
-		struct rcu_work rwork;
 	};
 	ANDROID_KABI_RESERVE(1);
 };

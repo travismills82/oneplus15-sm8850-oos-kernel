@@ -2897,12 +2897,10 @@ static void bpf_free_used_btfs(struct bpf_prog_aux *aux)
 	kfree(aux->used_btfs);
 }
 
-static void bpf_prog_free_images(struct work_struct *work)
+static void bpf_prog_free_images(struct bpf_prog_aux *aux)
 {
-	struct bpf_prog_aux *aux;
 	int i;
 
-	aux = container_of(to_rcu_work(work), struct bpf_prog_aux, rwork);
 	for (i = 0; i < aux->real_func_cnt; i++) {
 		/* We can just unlink the subprog poke descriptor table as
 		 * it was originally linked to the main program and is also
@@ -2917,6 +2915,20 @@ static void bpf_prog_free_images(struct work_struct *work)
 	} else {
 		bpf_jit_free(aux->prog);
 	}
+}
+
+static void bpf_prog_free_images_work(struct work_struct *work)
+{
+	bpf_prog_free_images(container_of(work, struct bpf_prog_aux, work));
+}
+
+static void bpf_prog_free_images_rcu(struct rcu_head *rcu)
+{
+	struct bpf_prog_aux *aux = container_of(rcu, struct bpf_prog_aux, rcu);
+
+	/* The RCU callback now owns the union. Resume teardown in process context. */
+	INIT_WORK(&aux->work, bpf_prog_free_images_work);
+	queue_work(system_percpu_wq, &aux->work);
 }
 
 static void bpf_prog_free_deferred(struct work_struct *work)
@@ -2949,11 +2961,10 @@ static void bpf_prog_free_deferred(struct work_struct *work)
 	if (aux->dst_trampoline)
 		bpf_trampoline_put(aux->dst_trampoline);
 	/* The symbols are looked up under rcu_read_lock() */
-	INIT_RCU_WORK(&aux->rwork, bpf_prog_free_images);
 	if (ksyms)
-		queue_rcu_work(system_percpu_wq, &aux->rwork);
+		call_rcu_hurry(&aux->rcu, bpf_prog_free_images_rcu);
 	else
-		bpf_prog_free_images(&aux->rwork.work);
+		bpf_prog_free_images(aux);
 }
 
 void bpf_prog_free(struct bpf_prog *fp)
