@@ -446,6 +446,11 @@ struct pci_sriov {
 	u16		driver_max_VFs;	/* Max num VFs driver supports */
 	struct pci_dev	*dev;		/* Lowest numbered PF */
 	struct pci_dev	*self;		/* This PF */
+	/* Retired VF config cache; retain its slots in the stock type graph. */
+	u32		class;
+	u8		hdr_type;
+	u16		subsystem_vendor;
+	u16		subsystem_device;
 	resource_size_t	barsz[PCI_SRIOV_NUM_BARS];	/* VF BAR size */
 	bool		drivers_autoprobe; /* Auto probing of VFs by driver */
 
