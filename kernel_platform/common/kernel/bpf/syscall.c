@@ -3709,7 +3709,15 @@ static int bpf_perf_link_fill_uprobe(const struct perf_event *event,
 	info->perf_event.uprobe.name_len = ulen;
 	info->perf_event.uprobe.offset = offset;
 	info->perf_event.uprobe.cookie = event->bpf_cookie;
-	info->perf_event.uprobe.ref_ctr_offset = ref_ctr_offset;
+	/*
+	 * The UAPI extension occupies bytes already covered by the larger
+	 * perf_event union. Keep the internal type used by stock modules.
+	 * In the uprobe representation, this slot is not a kprobe field.
+	 */
+	static_assert(offsetof(typeof(info->perf_event), kprobe.missed) ==
+		      offsetofend(typeof(info->perf_event), uprobe.cookie));
+	memcpy(&info->perf_event.kprobe.missed, &ref_ctr_offset,
+	       sizeof(ref_ctr_offset));
 	return 0;
 }
 
