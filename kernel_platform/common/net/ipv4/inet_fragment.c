@@ -591,12 +591,30 @@ void *inet_frag_reasm_prepare(struct inet_frag_queue *q, struct sk_buff *skb,
 	}
 
 	if (head != skb) {
+		struct rb_node old_node = skb->rbnode;
+
 		fp = skb_clone(skb, GFP_ATOMIC);
 		if (!fp) {
 			head = skb;
 			goto out_restore_sk;
 		}
 		FRAG_CB(fp)->next_frag = FRAG_CB(skb)->next_frag;
+
+		if (orig_truesize) {
+			/* prevent skb_morph from releasing sk */
+			skb->sk = NULL;
+			skb->destructor = NULL;
+		}
+		if (!skb_morph(skb, head)) {
+			kfree_skb(fp);
+			head = skb;
+			goto out_restore_sk;
+		}
+
+		/* skb_morph() overwrites the old links. Do not change the queue
+		 * until the morph succeeds.
+		 */
+		skb->rbnode = old_node;
 		if (RB_EMPTY_NODE(&skb->rbnode))
 			FRAG_CB(parent)->next_frag = fp;
 		else
@@ -605,12 +623,6 @@ void *inet_frag_reasm_prepare(struct inet_frag_queue *q, struct sk_buff *skb,
 		if (q->fragments_tail == skb)
 			q->fragments_tail = fp;
 
-		if (orig_truesize) {
-			/* prevent skb_morph from releasing sk */
-			skb->sk = NULL;
-			skb->destructor = NULL;
-		}
-		skb_morph(skb, head);
 		FRAG_CB(skb)->next_frag = FRAG_CB(head)->next_frag;
 		rb_replace_node(&head->rbnode, &skb->rbnode,
 				&q->rb_fragments);

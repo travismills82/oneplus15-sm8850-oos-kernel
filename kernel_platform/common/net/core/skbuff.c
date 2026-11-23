@@ -1575,9 +1575,25 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 
 }
 
+/* Increment the shared-head count without carrying into the nohdr half. */
+static bool skb_shared_data_tryget(struct sk_buff *skb)
+{
+	atomic_t *dataref = &skb_shinfo(skb)->dataref;
+	int old = atomic_read(dataref);
+
+	do {
+		unsigned int refs = old & SKB_DATAREF_MASK;
+
+		if (unlikely(!refs || refs == SKB_DATAREF_MASK))
+			return false;
+	} while (!atomic_try_cmpxchg_relaxed(dataref, &old, old + 1));
+
+	return true;
+}
+
 /*
- * You should not add any new code to this function.  Add it to
- * __copy_skb_header above instead.
+ * The caller has already taken a data reference. Changes to which header
+ * fields are copied should be made in __copy_skb_header().
  */
 static struct sk_buff *__skb_clone(struct sk_buff *n, struct sk_buff *skb)
 {
@@ -1606,7 +1622,6 @@ static struct sk_buff *__skb_clone(struct sk_buff *n, struct sk_buff *skb)
 	C(truesize);
 	refcount_set(&n->users, 1);
 
-	atomic_inc(&(skb_shinfo(skb)->dataref));
 	skb->cloned = 1;
 
 	return n;
@@ -1646,10 +1661,14 @@ EXPORT_SYMBOL_GPL(alloc_skb_for_msg);
  *	This is identical to skb_clone except that the target skb is
  *	supplied by the user.
  *
- *	The target skb is returned upon exit.
+ *	Return: the target skb, or %NULL at the shared-data reference limit.
+ *	On failure the target skb is unchanged.
  */
 struct sk_buff *skb_morph(struct sk_buff *dst, struct sk_buff *src)
 {
+	if (!skb_shared_data_tryget(src))
+		return NULL;
+
 	skb_release_all(dst, SKB_CONSUMED);
 	return __skb_clone(dst, src);
 }
@@ -2059,8 +2078,8 @@ EXPORT_SYMBOL_GPL(skb_copy_ubufs);
  *
  *	Duplicate an &sk_buff. The new one is not owned by a socket. Both
  *	copies share the same packet data but not structure. The new
- *	buffer has a reference count of 1. If the allocation fails the
- *	function returns %NULL otherwise the new buffer is returned.
+ *	buffer has a reference count of 1. The function returns %NULL if
+ *	allocation fails or the shared-data reference limit is reached.
  *
  *	If this function is called from an interrupt gfp_mask() must be
  *	%GFP_ATOMIC.
@@ -2092,6 +2111,10 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
 		n->fclone = SKB_FCLONE_UNAVAILABLE;
 	}
 
+	if (!skb_shared_data_tryget(skb)) {
+		kfree_skbmem(n);
+		return NULL;
+	}
 	return __skb_clone(n, skb);
 }
 EXPORT_SYMBOL(skb_clone);
