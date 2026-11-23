@@ -543,7 +543,12 @@ struct blk_mq_tag_set {
 	struct list_head	tag_list;
 	struct srcu_struct	*srcu;
 
+	/* Rust has no access to the block core's private quiesce state. */
+#ifdef __BINDGEN__
+	ANDROID_KABI_RESERVE(1);
+#else
 	ANDROID_KABI_USE(1, struct blk_mq_tagset_quiesce *quiesce);
+#endif
 };
 
 /**
