@@ -89,9 +89,9 @@ static inline u8 scsi_sense_ascq(const struct scsi_sense_hdr *sshdr)
 	return sshdr->ascq;
 }
 
-static inline u16 scsi_sense_code(const struct scsi_sense_hdr *sshdr)
+static inline u16 scsi_sense_hdr_code(const struct scsi_sense_hdr *sshdr)
 {
-	return ((u16)sshdr->asc << 8) | sshdr->ascq;
+	return scsi_sense_code(sshdr->asc, sshdr->ascq);
 }
 
 extern bool scsi_normalize_sense(const u8 *sense_buffer, int sb_len,
